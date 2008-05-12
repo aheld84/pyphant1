@@ -68,8 +68,8 @@ class OscThickness2CurrentDensity(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def calcCurrentDensity(self, osc, model, subscriber=0):
         #Compute conversion factor between units
-        #{u'\\Psi_{1}': PhysicalQuantity(1.0,'mA/cm**2'), 
-        # u'\\Psi_{2}': 1.0, u'\\Psi_{3}': PhysicalQuantity(1.0,'nm'), 
+        #{u'\\Psi_{1}': PhysicalQuantity(1.0,'mA/cm**2'),
+        # u'\\Psi_{2}': 1.0, u'\\Psi_{3}': PhysicalQuantity(1.0,'nm'),
         # u'\\Psi_{4}': 1.0, u'\\Psi_{0}': 1.0}
         unit = model._units[u'\\Psi_{3}']
         inputUnit = osc.unit
@@ -88,7 +88,7 @@ class OscThickness2CurrentDensity(Worker.Worker):
         else:
             diameter = PhysicalQuantities.PhysicalQuantity(self.paramDiameter.value.encode('latin-1'))
             factor = 0.25 * numpy.pi * diameter**2
-        
+
         scaledUnit = factor * model._units[u'\\Psi_{1}']
         #Build Fieldcontainer
         result = DataContainer.FieldContainer(resultData,

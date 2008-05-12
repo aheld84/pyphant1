@@ -79,9 +79,9 @@ class ThicknessSmoother(Worker.Worker):
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "Coat Thickness Smoother"
-    
+
     _sockets = [("osc", Connectors.TYPE_IMAGE)]
-    
+
     @Worker.plug(Connectors.TYPE_IMAGE)
     def calcSmoother(self, osc, subscriber=0):
         x,y = copy.deepcopy(osc.dimensions[0].data),copy.deepcopy(osc.dimensions[1].data)

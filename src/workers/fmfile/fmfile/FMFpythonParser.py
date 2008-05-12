@@ -75,16 +75,16 @@ IMAG=59
 
 # token names
 tokenNames = [
-    "<invalid>", "<EOR>", "<DOWN>", "<UP>", 
-    "CONFIG", "HEADER", "COMMON_SECTION", "DATADEF_SECTION", "DATA_SECTION", 
-    "BODY", "ITEM", "DATASET", "KEY", "DATETIME", "DATE", "TIME", "NUMBER", 
-    "VARIABLE", "IDENTIFIER", "QUANTITY", "UNIT", "STRING", "COLSPEC", "LONGNAME", 
-    "DEPS", "NEWLINE", "WS", "COMMENT", "LBRACK", "RBRACK", "LPAREN", "RPAREN", 
-    "ASTERISK", "COLON", "EQUALS", "PLUS", "NPLUS", "DIGIT", "MINUS", "NMINUS", 
-    "LCURLY", "RCURLY", "UNDERSCORE", "HAT", "DIV", "DOLLAR", "PERCENTAGE", 
-    "LESSTHAN", "GREATERTHAN", "DIGITS", "LETTERS", "EXPONENT", "FFLOAT", 
-    "IINT", "ESC", "GERMANDATE", "ISODATE", "FLOAT", "INT", "IMAG", "RWORD", 
-    "WORD", "PUNCTUATION", "LITERAL", "'reference'", "'data definitions'", 
+    "<invalid>", "<EOR>", "<DOWN>", "<UP>",
+    "CONFIG", "HEADER", "COMMON_SECTION", "DATADEF_SECTION", "DATA_SECTION",
+    "BODY", "ITEM", "DATASET", "KEY", "DATETIME", "DATE", "TIME", "NUMBER",
+    "VARIABLE", "IDENTIFIER", "QUANTITY", "UNIT", "STRING", "COLSPEC", "LONGNAME",
+    "DEPS", "NEWLINE", "WS", "COMMENT", "LBRACK", "RBRACK", "LPAREN", "RPAREN",
+    "ASTERISK", "COLON", "EQUALS", "PLUS", "NPLUS", "DIGIT", "MINUS", "NMINUS",
+    "LCURLY", "RCURLY", "UNDERSCORE", "HAT", "DIV", "DOLLAR", "PERCENTAGE",
+    "LESSTHAN", "GREATERTHAN", "DIGITS", "LETTERS", "EXPONENT", "FFLOAT",
+    "IINT", "ESC", "GERMANDATE", "ISODATE", "FLOAT", "INT", "IMAG", "RWORD",
+    "WORD", "PUNCTUATION", "LITERAL", "'reference'", "'data definitions'",
     "'data'", "','"
 ]
 
@@ -100,7 +100,7 @@ class FMFpythonParser(Parser):
 
 
 
-                
+
         self.adaptor = CommonTreeAdaptor()
 
 
@@ -192,10 +192,10 @@ class FMFpythonParser(Parser):
                     stream_dataSection.add(dataSection4.tree)
                 # AST Rewrite
                 # elements: datadefSection, referenceSection, dataSection, commonSection
-                # token labels: 
+                # token labels:
                 # rule labels: retval
-                # token list labels: 
-                # rule list labels: 
+                # token list labels:
+                # rule list labels:
                 if self.backtracking == 0:
 
                     retval.tree = root_0
@@ -354,10 +354,10 @@ class FMFpythonParser(Parser):
 
                 # AST Rewrite
                 # elements: commonitem, ASTERISK, 64
-                # token labels: 
+                # token labels:
                 # rule labels: retval
-                # token list labels: 
-                # rule list labels: 
+                # token list labels:
+                # rule list labels:
                 if self.backtracking == 0:
 
                     retval.tree = root_0
@@ -530,10 +530,10 @@ class FMFpythonParser(Parser):
 
                 # AST Rewrite
                 # elements: colitem, ASTERISK, 65
-                # token labels: 
+                # token labels:
                 # rule labels: retval
-                # token list labels: 
-                # rule list labels: 
+                # token list labels:
+                # rule list labels:
                 if self.backtracking == 0:
 
                     retval.tree = root_0
@@ -695,10 +695,10 @@ class FMFpythonParser(Parser):
 
                 # AST Rewrite
                 # elements: 66, dataitem, ASTERISK
-                # token labels: 
+                # token labels:
                 # rule labels: retval
-                # token list labels: 
-                # rule list labels: 
+                # token list labels:
+                # rule list labels:
                 if self.backtracking == 0:
 
                     retval.tree = root_0
@@ -860,10 +860,10 @@ class FMFpythonParser(Parser):
 
                 # AST Rewrite
                 # elements: headername, commonitem
-                # token labels: 
+                # token labels:
                 # rule labels: retval
-                # token list labels: 
-                # rule list labels: 
+                # token list labels:
+                # rule list labels:
                 if self.backtracking == 0:
 
                     retval.tree = root_0
@@ -1087,10 +1087,10 @@ class FMFpythonParser(Parser):
                     stream_NEWLINE.add(NEWLINE33)
                 # AST Rewrite
                 # elements: colspec, key
-                # token labels: 
+                # token labels:
                 # rule labels: retval
-                # token list labels: 
-                # rule list labels: 
+                # token list labels:
+                # rule list labels:
                 if self.backtracking == 0:
 
                     retval.tree = root_0
@@ -1212,10 +1212,10 @@ class FMFpythonParser(Parser):
                     stream_NEWLINE.add(NEWLINE35)
                 # AST Rewrite
                 # elements: cell
-                # token labels: 
+                # token labels:
                 # rule labels: retval
-                # token list labels: 
-                # rule list labels: 
+                # token list labels:
+                # rule list labels:
                 if self.backtracking == 0:
 
                     retval.tree = root_0
@@ -1329,10 +1329,10 @@ class FMFpythonParser(Parser):
                     stream_NEWLINE.add(NEWLINE39)
                 # AST Rewrite
                 # elements: key, value
-                # token labels: 
+                # token labels:
                 # rule labels: retval
-                # token list labels: 
-                # rule list labels: 
+                # token list labels:
+                # rule list labels:
                 if self.backtracking == 0:
 
                     retval.tree = root_0
@@ -1441,10 +1441,10 @@ class FMFpythonParser(Parser):
                         stream_number.add(number40.tree)
                     # AST Rewrite
                     # elements: number
-                    # token labels: 
+                    # token labels:
                     # rule labels: retval
-                    # token list labels: 
-                    # rule list labels: 
+                    # token list labels:
+                    # rule list labels:
                     if self.backtracking == 0:
 
                         retval.tree = root_0
@@ -1479,10 +1479,10 @@ class FMFpythonParser(Parser):
                         stream_WORD.add(WORD41)
                     # AST Rewrite
                     # elements: WORD
-                    # token labels: 
+                    # token labels:
                     # rule labels: retval
-                    # token list labels: 
-                    # rule list labels: 
+                    # token list labels:
+                    # rule list labels:
                     if self.backtracking == 0:
 
                         retval.tree = root_0
@@ -1517,10 +1517,10 @@ class FMFpythonParser(Parser):
                         stream_LITERAL.add(LITERAL42)
                     # AST Rewrite
                     # elements: LITERAL
-                    # token labels: 
+                    # token labels:
                     # rule labels: retval
-                    # token list labels: 
-                    # rule list labels: 
+                    # token list labels:
+                    # rule list labels:
                     if self.backtracking == 0:
 
                         retval.tree = root_0
@@ -1657,10 +1657,10 @@ class FMFpythonParser(Parser):
 
                 # AST Rewrite
                 # elements: deps, unit, identifier
-                # token labels: 
+                # token labels:
                 # rule labels: retval
-                # token list labels: 
-                # rule list labels: 
+                # token list labels:
+                # rule list labels:
                 if self.backtracking == 0:
 
                     retval.tree = root_0
@@ -1815,10 +1815,10 @@ class FMFpythonParser(Parser):
                     stream_RPAREN.add(RPAREN52)
                 # AST Rewrite
                 # elements: identifier
-                # token labels: 
+                # token labels:
                 # rule labels: retval
-                # token list labels: 
-                # rule list labels: 
+                # token list labels:
+                # rule list labels:
                 if self.backtracking == 0:
 
                     retval.tree = root_0
@@ -2288,10 +2288,10 @@ class FMFpythonParser(Parser):
                         stream_number.add(number55.tree)
                     # AST Rewrite
                     # elements: number
-                    # token labels: 
+                    # token labels:
                     # rule labels: retval
-                    # token list labels: 
-                    # rule list labels: 
+                    # token list labels:
+                    # rule list labels:
                     if self.backtracking == 0:
 
                         retval.tree = root_0
@@ -2340,10 +2340,10 @@ class FMFpythonParser(Parser):
                         stream_quantity.add(quantity58.tree)
                     # AST Rewrite
                     # elements: identifier, quantity
-                    # token labels: 
+                    # token labels:
                     # rule labels: retval
-                    # token list labels: 
-                    # rule list labels: 
+                    # token list labels:
+                    # rule list labels:
                     if self.backtracking == 0:
 
                         retval.tree = root_0
@@ -2386,10 +2386,10 @@ class FMFpythonParser(Parser):
                         stream_datetime.add(datetime59.tree)
                     # AST Rewrite
                     # elements: datetime
-                    # token labels: 
+                    # token labels:
                     # rule labels: retval
-                    # token list labels: 
-                    # rule list labels: 
+                    # token list labels:
+                    # rule list labels:
                     if self.backtracking == 0:
 
                         retval.tree = root_0
@@ -2419,10 +2419,10 @@ class FMFpythonParser(Parser):
                         stream_catchall.add(catchall60.tree)
                     # AST Rewrite
                     # elements: catchall
-                    # token labels: 
+                    # token labels:
                     # rule labels: retval
-                    # token list labels: 
-                    # rule list labels: 
+                    # token list labels:
+                    # rule list labels:
                     if self.backtracking == 0:
 
                         retval.tree = root_0
@@ -2663,10 +2663,10 @@ class FMFpythonParser(Parser):
 
                 # AST Rewrite
                 # elements: date, time
-                # token labels: 
+                # token labels:
                 # rule labels: retval
-                # token list labels: 
-                # rule list labels: 
+                # token list labels:
+                # rule list labels:
                 if self.backtracking == 0:
 
                     retval.tree = root_0
@@ -3331,10 +3331,10 @@ class FMFpythonParser(Parser):
 
                 # AST Rewrite
                 # elements: number, unit
-                # token labels: 
+                # token labels:
                 # rule labels: retval
-                # token list labels: 
-                # rule list labels: 
+                # token list labels:
+                # rule list labels:
                 if self.backtracking == 0:
 
                     retval.tree = root_0
@@ -3509,7 +3509,7 @@ class FMFpythonParser(Parser):
         self.number()
         self.following.pop()
         if self.failed:
-            return 
+            return
 
 
     # $ANTLR end synpred1
@@ -3524,15 +3524,15 @@ class FMFpythonParser(Parser):
         self.identifier()
         self.following.pop()
         if self.failed:
-            return 
+            return
         self.match(self.input, EQUALS, self.FOLLOW_EQUALS_in_synpred21917)
         if self.failed:
-            return 
+            return
         self.following.append(self.FOLLOW_quantity_in_synpred21919)
         self.quantity()
         self.following.pop()
         if self.failed:
-            return 
+            return
 
 
     # $ANTLR end synpred2
@@ -3547,7 +3547,7 @@ class FMFpythonParser(Parser):
         self.datetime()
         self.following.pop()
         if self.failed:
-            return 
+            return
 
 
     # $ANTLR end synpred3
@@ -3560,7 +3560,7 @@ class FMFpythonParser(Parser):
         # FMFpython.g:199:11: FLOAT ( NPLUS | NMINUS ) IMAG
         self.match(self.input, FLOAT, self.FOLLOW_FLOAT_in_synpred42184)
         if self.failed:
-            return 
+            return
         if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
             self.input.consume();
             self.errorRecovery = False
@@ -3569,7 +3569,7 @@ class FMFpythonParser(Parser):
         else:
             if self.backtracking > 0:
                 self.failed = True
-                return 
+                return
 
             mse = MismatchedSetException(None, self.input)
             self.recoverFromMismatchedSet(
@@ -3580,7 +3580,7 @@ class FMFpythonParser(Parser):
 
         self.match(self.input, IMAG, self.FOLLOW_IMAG_in_synpred42192)
         if self.failed:
-            return 
+            return
 
 
     # $ANTLR end synpred4
@@ -3593,7 +3593,7 @@ class FMFpythonParser(Parser):
         # FMFpython.g:200:11: INT ( NPLUS | NMINUS ) IMAG
         self.match(self.input, INT, self.FOLLOW_INT_in_synpred52204)
         if self.failed:
-            return 
+            return
         if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
             self.input.consume();
             self.errorRecovery = False
@@ -3602,7 +3602,7 @@ class FMFpythonParser(Parser):
         else:
             if self.backtracking > 0:
                 self.failed = True
-                return 
+                return
 
             mse = MismatchedSetException(None, self.input)
             self.recoverFromMismatchedSet(
@@ -3613,7 +3613,7 @@ class FMFpythonParser(Parser):
 
         self.match(self.input, IMAG, self.FOLLOW_IMAG_in_synpred52212)
         if self.failed:
-            return 
+            return
 
 
     # $ANTLR end synpred5
@@ -3626,7 +3626,7 @@ class FMFpythonParser(Parser):
         # FMFpython.g:201:11: FLOAT
         self.match(self.input, FLOAT, self.FOLLOW_FLOAT_in_synpred62224)
         if self.failed:
-            return 
+            return
 
 
     # $ANTLR end synpred6
@@ -3639,7 +3639,7 @@ class FMFpythonParser(Parser):
         # FMFpython.g:202:11: INT
         self.match(self.input, INT, self.FOLLOW_INT_in_synpred72236)
         if self.failed:
-            return 
+            return
 
 
     # $ANTLR end synpred7
@@ -3718,7 +3718,7 @@ class FMFpythonParser(Parser):
 
 
 
- 
+
 
     FOLLOW_referenceSection_in_config1273 = frozenset([28])
     FOLLOW_commonSection_in_config1275 = frozenset([28])

@@ -58,7 +58,7 @@ def normation(normationStr):
         except:
             unit = float(normationStr)
     return unit
-            
+
 def loadDataFromZip(filename, subscriber=1):
     z = zipfile.ZipFile(filename, 'r')
     names = z.namelist()
@@ -136,7 +136,7 @@ def unpackAndCollateFields(variableAttr, data):
                                                if dim.longname!=u'Index']
                 units[field.longname] = normation(field.unit)
                 shortnames[field.longname]=field.shortname
-    return fieldData, dependencies, units, shortnames    
+    return fieldData, dependencies, units, shortnames
 
 def readZipFile(filename, subscriber=1):
     data = loadDataFromZip(filename, subscriber)
@@ -150,7 +150,7 @@ def readZipFile(filename, subscriber=1):
         if dependencies[fieldName]==[]:
             independentFieldsNames.append(fieldName)
     for fieldName in independentFieldsNames:
-        del dependencies[fieldName] 
+        del dependencies[fieldName]
     #Build independent fields
     independentFields = {}
     for indepField in independentFieldsNames:
@@ -161,7 +161,7 @@ def readZipFile(filename, subscriber=1):
     #QUESTION: Can a field depend on a dependent field?
     for field,dependency in dependencies.iteritems():
         newField = DataContainer.FieldContainer(numpy.array(fieldData[field]),
-                                                dimensions=[independentFields[indepField] for indepField in dependency], 
+                                                dimensions=[independentFields[indepField] for indepField in dependency],
                                                 longname=field,
                                                 shortname=shortnames[field],
                                                 unit = units[field],rescale=True)
@@ -224,7 +224,7 @@ def readSingleFile(b, pixelName):
         for i in xrange(len(preParsedData[None])):
             data[i].data = preParsedData[None][i]
     #The FieldContainer objects containing indices have to be set directly,
-    #otherwise the respective dimenensional FieldContainers are numpy.arrays 
+    #otherwise the respective dimenensional FieldContainers are numpy.arrays
     #of zero with, which cannot be plotted, nor saved to hdf.
     for field in data:
         for i,dim in enumerate(field.dimensions):

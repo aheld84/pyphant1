@@ -45,7 +45,7 @@ import scipy.interpolate
 from Scientific.Physics import PhysicalQuantities
 import copy
 
-        
+
 class ExtremumFinder(Worker.Worker):
     API = 2
     VERSION = 1

@@ -21,7 +21,7 @@ for root, dirs, files in os.walk("."):
             exec 'import '+mod
             mod = sys.modules[mod]
             suites.append(unittest.TestLoader().loadTestsFromModule(mod))
-            
+
 
 suite = unittest.TestSuite(suites)
 

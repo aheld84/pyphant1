@@ -97,7 +97,7 @@ def fixedPoints(lambdaVec,kappa1=0.0):
     return x0,slope,mask
 
 class TestExtremumFinder(unittest.TestCase):
-    """Sets up a mirror symmetric bistable potential with a continuous distretisation and computes its local extrema and the respective curvatures.""" 
+    """Sets up a mirror symmetric bistable potential with a continuous distretisation and computes its local extrema and the respective curvatures."""
     def setUp(self):
         self.n = 1000
         self.u = numpy.linspace(-1.5,1.5,self.n)
@@ -111,7 +111,7 @@ class TestExtremumFinder(unittest.TestCase):
                                    unit='1 V',dimensions=[self.xField],
                                    longname = 'electric potential',
                                    shortname=r'\varphi')
-        
+
     def testRoots(self):
         """Test the correct computation of all local extrema for a bistable potential."""
         #Predict result
@@ -127,7 +127,7 @@ class TestExtremumFinder(unittest.TestCase):
         result = w.locate(self.V)
         #Testing
         DC.assertEqual(result,expectedResult)
-        
+
     def testMinima(self):
         """Test the correct computation of all local minima for a bistable potential."""
         #Predict result
@@ -160,7 +160,7 @@ class TestExtremumFinder(unittest.TestCase):
         DC.assertEqual(result,expectedResult)
 
 class TestExtremumFinderTable(unittest.TestCase):
-    """Sets up a mirror symmetric bistable potential with a continuous distretisation and computes its local extrema and the respective curvatures.""" 
+    """Sets up a mirror symmetric bistable potential with a continuous distretisation and computes its local extrema and the respective curvatures."""
     def setUp(self):
         self.n = 10000
         self.m = 10
@@ -168,13 +168,13 @@ class TestExtremumFinderTable(unittest.TestCase):
         self.errLevelPos = 6
         self.errLevelCurv= 5
         self.test = DC.assertEqual
-        
+
     def prepareDimensions(self):
         X,LAMB = scipy.meshgrid(numpy.linspace(-1.5,1.5,self.n),
                                 numpy.linspace(-1.0,1.0,self.m))
         self.lambDim = LAMB[:,0]
         self.xDim = X
-        
+
     def testRoots(self):
         """Test the correct computation of all local extrema for a bistable potential."""
         #Prepare dimensions
@@ -214,7 +214,7 @@ class TestExtremumFinderTable(unittest.TestCase):
         self.test(result,expectedResult)
 
 class TestExtremumFinderTableFail(TestExtremumFinderTable):
-    """Sets up a mirror symmetric bistable potential with a continuous distretisation, computes its local extrema and the respective curvatures. This test succeeds, if the deviation between expected and computed result due to the insufficient spatial resolution is detected.""" 
+    """Sets up a mirror symmetric bistable potential with a continuous distretisation, computes its local extrema and the respective curvatures. This test succeeds, if the deviation between expected and computed result due to the insufficient spatial resolution is detected."""
     def setUp(self):
         self.n = 1000
         self.m = 10

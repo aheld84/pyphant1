@@ -63,7 +63,7 @@ class TestPrune(unittest.TestCase):
                                                    shortname='a',
                                                    unit='1m')
         self.fieldC.seal()
-        
+
     def testPruning1D(self):
         worker = WM.RegionOfInterest()
         worker.paramStart.value='1s'

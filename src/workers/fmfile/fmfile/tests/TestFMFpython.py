@@ -4,7 +4,7 @@ sys.path.append('..')
 
 import antlr3
 import antlr3.tree
-from FMFpythonLexer import FMFpythonLexer 
+from FMFpythonLexer import FMFpythonLexer
 from FMFpythonParser import FMFpythonParser
 from FMFpythonTree import FMFpythonTree
 

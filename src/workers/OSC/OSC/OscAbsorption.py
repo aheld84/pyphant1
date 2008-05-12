@@ -72,7 +72,7 @@ def grid2Index(field, extension=0):
     fmin = f.min()
     amplitude = fmax-fmin
     extent = extension/200.*amplitude
-    f.sort()        
+    f.sort()
     fd = f[1:]-f[:-1]
     try:
         fstep = fd.min()
@@ -114,8 +114,8 @@ class OscAbsorptionCalculator(Worker.Worker):
             A[A>1] = 1
             A[A<0] = 0
         dim = condense(I)
-        Abso = DataContainer.FieldContainer(A, 
-                                            longname=u'absorption', 
+        Abso = DataContainer.FieldContainer(A,
+                                            longname=u'absorption',
                                             shortname=ur'\tilde{A}')
         Abso.dimensions[-1] = dim[-1]
         Abso.seal()
@@ -134,11 +134,11 @@ class OscAbsorptionExtractor(Worker.Worker):
     def extractSpec(self, osc, subscriber=0):
         a = osc[u'Absorption']
         l = osc[u'Wellenlänge[nm]']
-        lam = DataContainer.FieldContainer(l.data[self.paramIndex.value-1], l.unit, 
+        lam = DataContainer.FieldContainer(l.data[self.paramIndex.value-1], l.unit,
                                            l.error,l.dimensions, l.longname, u"\lambda")
-        Abso = DataContainer.FieldContainer(a.data[self.paramIndex.value-1], a.unit, 
-                                            a.error,[lam], 
-                                            osc.longname+u", Abs Pixel %i"%self.paramIndex.value, 
+        Abso = DataContainer.FieldContainer(a.data[self.paramIndex.value-1], a.unit,
+                                            a.error,[lam],
+                                            osc.longname+u", Abs Pixel %i"%self.paramIndex.value,
                                             u"A")
         Abso.seal()
         return Abso
@@ -191,13 +191,13 @@ class ColumnExtractor(Worker.Worker):
                 oldDim = col.dimensions[0]
                 dim = DataContainer.FieldContainer(oldDim.data[index],
                                                    unit = oldDim.unit,
-                                                   longname=oldDim.longname, 
+                                                   longname=oldDim.longname,
                                                    shortname=oldDim.shortname)
             data = col.maskedData[index]
             result = DataContainer.FieldContainer( data.data, mask=data.mask,
                                                    unit = col.unit,
                                                    dimensions = [dim],
-                                                   longname=col.longname, 
+                                                   longname=col.longname,
                                                    shortname=col.shortname)
             result.seal()
         return result
@@ -259,7 +259,7 @@ class OscMapper(Worker.Worker):
         result = DataContainer.FieldContainer( img, fCon.unit, mask=mask, dimensions=[yDim, xDim],
                                                longname=u'Map of %s for %s'%(fCon.longname, osc.longname), shortname=fCon.shortname)
         return result
-            
+
     @Worker.plug(Connectors.TYPE_IMAGE)
     def mapHeights(self, osc, subscriber=0):
         xCon = osc[self.paramXAxis.value]

@@ -54,7 +54,7 @@ class ExtremumFinder(Worker.Worker):
     _sockets = [("field", Connectors.TYPE_IMAGE)]
     _params = [("extremum", u"extremum", [u"minima",u"maxima",u"both"], None)
                ]
-    
+
     @Worker.plug(Connectors.TYPE_IMAGE)
     def locate(self, field, subscriber=0):
         extremaPos = []

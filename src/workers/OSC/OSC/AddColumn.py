@@ -41,7 +41,7 @@ from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 import copy
 
-        
+
 class AddColumn(Worker.Worker):
     API = 2
     VERSION = 1

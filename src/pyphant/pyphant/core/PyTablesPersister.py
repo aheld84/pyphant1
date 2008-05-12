@@ -150,7 +150,7 @@ def saveSample(h5, resultGroup, result):
     columns = []
     for column in result.columns:
         columns.append(saveResult(column,h5))
-    h5.setNodeAttr(resultGroup, "columns", columns)    
+    h5.setNodeAttr(resultGroup, "columns", columns)
 
 def loadSample(h5, resNode):
     result = DataContainer.SampleContainer.__new__(DataContainer.SampleContainer)
@@ -186,7 +186,7 @@ def saveField(h5, resultGroup, result):
         h5.setNodeAttr(resultGroup.data,key,value)
     h5.setNodeAttr(resultGroup, "longname", result.longname.encode("utf-8"))
     h5.setNodeAttr(resultGroup, "shortname", result.shortname.encode("utf-8"))
-    
+
     if result.error != None:
         h5.createArray(resultGroup, "error", result.error,
                        (u"Error of "+result.longname).encode("utf-8"))

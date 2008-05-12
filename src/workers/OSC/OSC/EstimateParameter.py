@@ -44,7 +44,7 @@ import scipy.interpolate
 from Scientific.Physics import PhysicalQuantities
 import copy
 
-        
+
 class EstimateParameter(Worker.Worker):
     API = 2
     VERSION = 1

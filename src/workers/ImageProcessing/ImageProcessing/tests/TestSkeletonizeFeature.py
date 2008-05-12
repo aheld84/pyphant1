@@ -6,27 +6,27 @@
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
-# * Redistributions of source code must retain the above copyright 
+# * Redistributions of source code must retain the above copyright
 #   notice, this list of conditions and the following disclaimer.
-# * Redistributions in binary form must reproduce the above copyright 
-#   notice, this list of conditions and the following disclaimer in the 
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
 #   documentation and/or other materials provided with the distribution.
-# * Neither the name of the Freiburg Materials Research Center, 
-#   University of Freiburg nor the names of its contributors may be used to 
-#   endorse or promote products derived from this software without specific 
+# * Neither the name of the Freiburg Materials Research Center,
+#   University of Freiburg nor the names of its contributors may be used to
+#   endorse or promote products derived from this software without specific
 #   prior written permission.
 #
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
-# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED 
-# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
-# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""Provides unittest classes TestSkeletonizeFeature, TestSkeletonizeCross, and TestCheckNeighbours.
@@ -57,7 +57,7 @@ import pylab
 #Define helper function providing the curved feature
 def ring(width=1,radius=9,center=[0,0],dim=11):
     x0, y0 = center
-    circle = lambda x,y: numpy.sqrt((x-x0)**2 + (y-y0)**2)            
+    circle = lambda x,y: numpy.sqrt((x-x0)**2 + (y-y0)**2)
     quarterCone = numpy.fromfunction(circle,[dim,dim])
     innerRadius = numpy.floor(float(radius)-float(width)/2)
     outerRadius = numpy.floor(float(radius)+float(width)/2)
@@ -90,7 +90,7 @@ class TestSkeletonizeCurvedFeature(unittest.TestCase):
         result = self.worker.execute(referenceField)
         numpy.testing.assert_array_equal(self.quarterRing, result.data)
         self.assertEqual(result.unit,referenceField.unit)
-        
+
 class TestSkeletonizeFeature(unittest.TestCase):
     """Tests the correct computation of skeletons from simple feature objects like strings."""
     def setUp(self):
@@ -98,7 +98,7 @@ class TestSkeletonizeFeature(unittest.TestCase):
         self.worker = IM.SkeletonizeFeature(None)
         self.feature = TDM.stringFeature(self.dim,distanceToBorder=2)
         self.wideFeature=TDM.stringFeature(self.dim,width=3)
-        
+
     def testSkeletonizeThinFeature(self):
         """A feature of width one is already the skeleton and should not be modified."""
         referenceField = DataContainer.FieldContainer(
@@ -161,7 +161,7 @@ class TestSkeletonizeBlocks(unittest.TestCase):
         skeleton     = feature.copy()
         feature[1:4,4:7] = I.FEATURE_COLOR
         skeleton[2,5] = I.FEATURE_COLOR
-        
+
         referenceField = DataContainer.FieldContainer(
             feature,
             unit = '1',
@@ -180,7 +180,7 @@ class TestCheckNeighbours(unittest.TestCase):
         self.binIm = numpy.zeros((3,3))
         self.binIm[:,:] = self.B
         self.binIm[1,1] = self.F
-        
+
     def assertEqualRot(self,input,proof,cases=1):
         for n in xrange(cases):
             rotIm = numpy.rot90(input,n)
@@ -190,7 +190,7 @@ class TestCheckNeighbours(unittest.TestCase):
     def testSinglePixel(self):
         """An isolated pixel has 0 feature pixels, 8 background pixels and 0 transitions."""
         self.assertEqualRot(self.binIm,(0,4,0))
-        
+
     def test2CloseConnectedPixel(self):
         """If a pixel is connected to the central pixel, the latter has 1 neighboured feature pixels, 3 closely neighboured background pixels and 1 transition from feature to background."""
         self.binIm[1,2] = self.F
@@ -282,7 +282,7 @@ class TestCheckNeighbours(unittest.TestCase):
         proof = (4,2,2)
         self.assertEqualRot(self.binIm,proof,4)
         self.assertEqualRot(self.B-self.binIm,proof,4)
-    
+
     def test2DiagConnectedPairsOfPixel(self):
         """If two pairs of feature or background pixels are directly connected to the central pixel the latter has 4 neighboured feature pixels, 2 closely neighboured background pixels and 2 transition from feature to background."""
         self.binIm[0,0:2] = self.F
@@ -290,12 +290,12 @@ class TestCheckNeighbours(unittest.TestCase):
         proof = (4,2,2)
         self.assertEqualRot(self.binIm,proof,4)
         self.assertEqualRot(self.B-self.binIm,proof,4)
-        
+
     def test2x3Block(self):
         """If five feature pixels are connected in a single block to the  central pixel the latter has 5 neighboured feature pixels, 1 closely neighboured background pixels and 1 transition from feature to background."""
         self.binIm[:,1:] = self.F
         proof = (5,1,1)
         self.assertEqualRot(self.binIm,proof,4)
-    
+
 if __name__ == '__main__':
     unittest.main()

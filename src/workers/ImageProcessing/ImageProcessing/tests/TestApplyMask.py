@@ -6,27 +6,27 @@
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
-# * Redistributions of source code must retain the above copyright 
+# * Redistributions of source code must retain the above copyright
 #   notice, this list of conditions and the following disclaimer.
-# * Redistributions in binary form must reproduce the above copyright 
-#   notice, this list of conditions and the following disclaimer in the 
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
 #   documentation and/or other materials provided with the distribution.
-# * Neither the name of the Freiburg Materials Research Center, 
-#   University of Freiburg nor the names of its contributors may be used to 
-#   endorse or promote products derived from this software without specific 
+# * Neither the name of the Freiburg Materials Research Center,
+#   University of Freiburg nor the names of its contributors may be used to
+#   endorse or promote products derived from this software without specific
 #   prior written permission.
 #
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
-# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED 
-# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
-# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""Provides unittest classes TestApplyMask and TestApplyMask3D.
@@ -65,7 +65,7 @@ class TestApplyMask(unittest.TestCase):
             longname='Linear Reference Field',
             shortname='R')
         self.inputField.seal()
-        
+
         self.mask = DataContainer.FieldContainer(
             TDM.stringFeature(self.dim),
             unit = '1',
@@ -88,7 +88,7 @@ class TestApplyMask(unittest.TestCase):
             numpy.testing.assert_array_equal(resultDim.data,inputDim.data)
             assert(resultDim.unit == inputDim.unit,
                    'Units of input and output dimensions has to be equal.')
-            
+
     def testReturnedTable(self):
         """Checking the extracted samples by applying a string-like mask to the input field."""
         result = self.worker.findMaskPoints(self.inputField,self.mask)
@@ -167,7 +167,7 @@ class TestApplyMask3D(unittest.TestCase):
         afoot[self.dim/2,self.dim/2,self.dim/2] = numpy.sin(3*round(self.dim/2))
         numpy.testing.assert_array_equal(afoot,result.data)
         assert(result.unit == self.inputField.unit)
-        
+
         for resultDim,inputDim in zip(self.inputField.dimensions,
                                       result.dimensions):
             numpy.testing.assert_array_equal(resultDim.data,inputDim.data)
@@ -198,4 +198,4 @@ if __name__ == '__main__':
 #    suite = unittest.TestLoader().loadTestsFromName("TestApplyMask.TestApplyMask3D.testReturnedTable")
 #    unittest.TextTestRunner().run(suite)
     unittest.main()
-    
+

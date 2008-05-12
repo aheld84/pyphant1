@@ -61,7 +61,7 @@ class Metrics:
         metric = self.metric.copy()
         result = scipy.amin(metric+square)
         return result
-    
+
     def checkDimensions(self):
         try:
             if not (self.dimensions[0].unit == self.dimensions[1].unit):
@@ -76,7 +76,7 @@ class Metrics:
                 raise ValueError,"Each dimension has to be equally spaced."
         self.dx = delta[0].min()
         self.dy = delta[1].min()
-        
+
 class DistanceMapper(Worker.Worker):
     API = 2
     VERSION = 2
@@ -98,7 +98,7 @@ class DistanceMapper(Worker.Worker):
         nx += 2
         ny += 2
         im=scipy.zeros((nx,ny),dtype=image.data.dtype)
-        im[:,:]=I.FEATURE_COLOR 
+        im[:,:]=I.FEATURE_COLOR
         im[1:-1,1:-1] = image.data
         g=nx*nx+ny*ny
         a=scipy.where(im==I.FEATURE_COLOR, g, 0).astype('d')
@@ -117,7 +117,7 @@ class DistanceMapper(Worker.Worker):
             for (x,y) in reversed(featurePixels):
                 acc+=perc
                 subscriber %= acc
-                a[x,y]=metric.distance(a[x-1:x+2,y-1:y+2])                    
+                a[x,y]=metric.distance(a[x-1:x+2,y-1:y+2])
         a=scipy.where(a==g, 0, a)
         result=DataContainer.FieldContainer(a[1:-1,1:-1]*metric.dx,
                                             image.dimensions[0].unit,

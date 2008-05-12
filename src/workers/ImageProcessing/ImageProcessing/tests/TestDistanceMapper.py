@@ -6,27 +6,27 @@
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
-# * Redistributions of source code must retain the above copyright 
+# * Redistributions of source code must retain the above copyright
 #   notice, this list of conditions and the following disclaimer.
-# * Redistributions in binary form must reproduce the above copyright 
-#   notice, this list of conditions and the following disclaimer in the 
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
 #   documentation and/or other materials provided with the distribution.
-# * Neither the name of the Freiburg Materials Research Center, 
-#   University of Freiburg nor the names of its contributors may be used to 
-#   endorse or promote products derived from this software without specific 
+# * Neither the name of the Freiburg Materials Research Center,
+#   University of Freiburg nor the names of its contributors may be used to
+#   endorse or promote products derived from this software without specific
 #   prior written permission.
 #
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
-# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED 
-# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
-# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
@@ -59,7 +59,7 @@ def stringFeature(Nx,width=1,directions=1,distanceToBorder=1):
     Returns an array width a string-like feature (directions=1) or a
     cross feature (directions=2).
     """
-    assert directions in [1,2], "Option directions has to be 1 or 2."  
+    assert directions in [1,2], "Option directions has to be 1 or 2."
     featureField = numpy.zeros((Nx,Nx))
     featureField[:,:] = I.BACKGROUND_COLOR
     for d in range(directions):
@@ -106,8 +106,8 @@ class TestBroadFeaturesTouchingTheBoundary(unittest.TestCase):
 
     def testDistanceMappingInvertedString(self):
         """
-        Consider two features, which are divided by a vertical line. 
-        The respective distances increase by dx for each column counted 
+        Consider two features, which are divided by a vertical line.
+        The respective distances increase by dx for each column counted
         from the centre line.
         """
         referenceField = DataContainer.FieldContainer(
@@ -126,8 +126,8 @@ class TestBroadFeaturesTouchingTheBoundary(unittest.TestCase):
 
     def testDistanceMappingNyMuchGreaterThanNx(self):
         """
-        Consider two features, which are divided by a horizonzal line. 
-        The respective distances increase by dy for each row counted 
+        Consider two features, which are divided by a horizonzal line.
+        The respective distances increase by dy for each row counted
         from the centre line.
         """
         pos = 50
@@ -150,8 +150,8 @@ class TestBroadFeaturesTouchingTheBoundary(unittest.TestCase):
 
     def testDistanceMappingNyMuchGreaterThanNxDxDy(self):
         """
-        Consider two features, which are divided by a horizonzal line. 
-        The respective distances increase by dy for each row counted 
+        Consider two features, which are divided by a horizonzal line.
+        The respective distances increase by dy for each row counted
         from the centre line.
         """
         pos = 50
@@ -177,8 +177,8 @@ class TestBroadFeaturesTouchingTheBoundary(unittest.TestCase):
 
     def testDistanceMappingInvertedStringDxDy(self):
         """
-        Consider two features, which are divided by a vertical line. 
-        The respective distances increase by dx for each column counted 
+        Consider two features, which are divided by a vertical line.
+        The respective distances increase by dx for each column counted
         from the centre line.
         """
         referenceField = DataContainer.FieldContainer(
@@ -200,10 +200,10 @@ class TestBroadFeaturesTouchingTheBoundary(unittest.TestCase):
 
     def testDistanceMappingInvertedStringDyDx(self):
         """
-        Consider two features, which are divided by a vertical line. 
-        The respective distances increase by dx for each column counted 
+        Consider two features, which are divided by a vertical line.
+        The respective distances increase by dx for each column counted
         from the centre line.
-        """        
+        """
         self.dydx = 0.01
         self.yDim = DataContainer.FieldContainer(
             numpy.linspace(-self.dydx,self.dydx,self.dim),
@@ -229,8 +229,8 @@ class TestBroadFeaturesTouchingTheBoundary(unittest.TestCase):
 
     def testDistanceMappingInvertedHorizontalString(self):
         """
-        Consider two features, which are divided by a horizontal line. 
-        The respective distances increase by dx for each row counted 
+        Consider two features, which are divided by a horizontal line.
+        The respective distances increase by dx for each row counted
         from the centre line.
         """
         referenceField = DataContainer.FieldContainer(
@@ -267,7 +267,7 @@ class TestBroadFeaturesTouchingTheBoundary(unittest.TestCase):
              [   dy,   dy, dy, dy],
              [    0,    0,  0,  0],
              [   dy,   dy, dy, dy],
-             [ 2*dx,   dx,  0, dx],        
+             [ 2*dx,   dx,  0, dx],
              [rt+dx,   rt, dy, dy],
              [ 2*rt, 2*dx, dx,  0]])
         afoot=DataContainer.FieldContainer(afoot/dx,
@@ -295,7 +295,7 @@ class TestBroadFeaturesTouchingTheBoundary(unittest.TestCase):
              [   dy,   dy, dy, dy],
              [    0,    0,  0,  0],
              [   dy,   dy, dy, dy],
-             [ 2*dx,   dx,  0, dx],        
+             [ 2*dx,   dx,  0, dx],
              [rt+dx,   rt, dy, dy],
              [ 3*dx, 2*dx, dx,  0]])
         afoot=DataContainer.FieldContainer(afoot,
@@ -316,7 +316,7 @@ class TestDistanceMapperBoundary(unittest.TestCase):
         self.worker = IM.DistanceMapper(None)
         self.dist = 0
         self.innerDist = 0
-        
+
     def testDistanceMappingString(self):
         """
         All elements of a string-like feature have distance 1 to the
@@ -388,7 +388,7 @@ class TestDistanceMapperBoundary(unittest.TestCase):
         result = self.worker.calculateDistanceMap(referenceField)
         #Compute result afoot
         afoot = numpy.where(referenceField.data == I.FEATURE_COLOR,1.0,0)
-        innerString = stringFeature(self.dim,distanceToBorder=self.innerDist)        
+        innerString = stringFeature(self.dim,distanceToBorder=self.innerDist)
         #Compute result afoot
         afoot = numpy.where(innerString == I.FEATURE_COLOR,2.0,afoot)
         dx = referenceField.data.shape[0]
@@ -407,7 +407,7 @@ class TestDistanceMapperBoundary(unittest.TestCase):
             shortname='S')
         referenceField.seal()
         result = self.worker.calculateDistanceMap(referenceField)
-        #Compute result afoot        
+        #Compute result afoot
         afoot = numpy.where(referenceField.data == I.FEATURE_COLOR,1.0,0).astype('d')
         afoot[self.dim/2,self.dim/2]=2.0**0.5
         numpy.testing.assert_array_equal(afoot,result.data)
@@ -431,7 +431,7 @@ class TestDistanceMapperBoundary(unittest.TestCase):
 
         afoot = numpy.where(referenceField.data == I.FEATURE_COLOR,1.0,0)
         innerCross = stringFeature(self.dim,directions=2,distanceToBorder=self.innerDist)
-        #Compute result afoot        
+        #Compute result afoot
         afoot = numpy.where(innerCross == I.FEATURE_COLOR,2.0,afoot).astype('d')
         left = self.dim/2-1
         right= self.dim/2+2
@@ -495,7 +495,7 @@ class TestDistanceMapper(TestDistanceMapperBoundary):
                              'Unit of distance should me mum but is %s.' % axisUnit.unit.name())
         self.failUnless(result.unit.unit.name() == 'nm',
                         'Unit of distance map has to be choosen appropriately.')
-        
+
 
 class TestDistanceMapperDimensions(unittest.TestCase):
     """
@@ -509,7 +509,7 @@ class TestDistanceMapperDimensions(unittest.TestCase):
         self.dim = 11
         self.worker = IM.DistanceMapper(None)
         self.field = stringFeature(self.dim,width=3,directions=2)
-        
+
     def testUnequalDimensionUnits(self):
         """
         Check for assertion if the units of the dimension
@@ -534,7 +534,7 @@ class TestDistanceMapperDimensions(unittest.TestCase):
         spaced.
         """
         defaultDim = DataContainer.FieldContainer(numpy.linspace(1,11,11))
-        
+
         exceptDim = DataContainer.FieldContainer(defaultDim.data.copy())
         exceptDim.data[5]=exceptDim.data[5]+0.1
 
@@ -553,7 +553,7 @@ class TestDistanceMapperDimensions(unittest.TestCase):
         """
         defaultDim = DataContainer.FieldContainer(numpy.linspace(1,11,11))
         defaultDim.data[5]=defaultDim.data[5]+0.1
-        
+
         exceptDim = DataContainer.FieldContainer(defaultDim.data.copy())
 
 
@@ -612,7 +612,7 @@ class TestDifferentDiscretisation(unittest.TestCase):
             unit = '1m',
             longname= 'height',
             shortname='h')
-        
+
     def testDistanceMappingVerticalString(self):
         """
         All elements of a perpendicular string-like feature have
@@ -701,7 +701,7 @@ class TestDifferentDiscretisation(unittest.TestCase):
                 shortname='S')
             referenceField.seal()
             result = self.worker.calculateDistanceMap(referenceField)
-            #Compute result afoot        
+            #Compute result afoot
             afoot = numpy.where(referenceField.data == I.FEATURE_COLOR,1.0,0).astype('d')
             dx,dy = map(lambda dim: dim.data[1]-dim.data[0],[self.xDim,yDim])
             afoot[5,:] = dy/dx

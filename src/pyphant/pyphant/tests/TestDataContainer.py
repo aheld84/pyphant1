@@ -7,27 +7,27 @@
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
-# * Redistributions of source code must retain the above copyright 
+# * Redistributions of source code must retain the above copyright
 #   notice, this list of conditions and the following disclaimer.
-# * Redistributions in binary form must reproduce the above copyright 
-#   notice, this list of conditions and the following disclaimer in the 
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
 #   documentation and/or other materials provided with the distribution.
-# * Neither the name of the Freiburg Materials Research Center, 
-#   University of Freiburg nor the names of its contributors may be used to 
-#   endorse or promote products derived from this software without specific 
+# * Neither the name of the Freiburg Materials Research Center,
+#   University of Freiburg nor the names of its contributors may be used to
+#   endorse or promote products derived from this software without specific
 #   prior written permission.
 #
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
-# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED 
-# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
-# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""Provides unittest classes FieldContainerTestCase, SampleContainerTest, and TestCreateDType.
@@ -77,7 +77,7 @@ class DataContainerTestCase(unittest.TestCase):
     def testDefaultAttribute(self):
         "Checking if the default attribute has correctly been set to an empty dictionary."
         self.assertEqual(self.dc.attributes,{},'Expected an empty dictionary as attribute, but found %s.' % self.dc.attributes )
-            
+
 class FieldContainerTestCase(unittest.TestCase):
     def setUp(self):
         self.testData = scipy.array([[0.,1.,2.],[3.,4.,5.],[6.,7.,8.]])
@@ -163,7 +163,7 @@ class FieldContainerTestCase(unittest.TestCase):
         field1.dimensions[0].data *= 10
         field2 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
         self.assertNotEqual( field1, field2 )
-        
+
     def testEqualMasked(self):
         field1 = FieldContainer(self.testData,1,mask=self.testMask,longname=self.longname,shortname=self.shortname)
         field2 = FieldContainer(self.testData,1,mask=self.testMask,longname=self.longname,shortname=self.shortname)
@@ -219,7 +219,7 @@ class FieldContainerTestCase(unittest.TestCase):
         nt.assert_array_almost_equal( sumField.data, field1.data/2000+field2.data )
         self.assertEqual(sumField.unit, PhysicalQuantity('2 m'))
         self.assertEqual(sumField.shortname, u"%s + %s" % (self.shortname, self.shortname))
-        
+
     def testSubtraction(self):
         field1 = FieldContainer(numpy.random.randn(7,13),1,longname=self.longname,shortname=self.shortname)
         field2 = FieldContainer(numpy.random.randn(7,13),1,longname=self.longname,shortname=self.shortname)
@@ -242,7 +242,7 @@ class FieldContainerTestCase(unittest.TestCase):
         nt.assert_array_almost_equal( sumField.data, field1.data/2000-field2.data )
         self.assertEqual(sumField.unit, PhysicalQuantity('2 m'))
         self.assertEqual(sumField.shortname, u"%s - %s" % (self.shortname, self.shortname))
-        
+
 
 class SampleContainerTest(unittest.TestCase):
     def setUp(self):
@@ -263,7 +263,7 @@ class SampleContainerTest(unittest.TestCase):
         self.longname=u"Toller Sample"
         self.shortname=u"phi"
         self.sampleContainer=SampleContainer([self.intSample, self.floatSample], self.longname, self.shortname)
-        
+
     def testLabeling(self):
         self.assertEqual(self.sampleContainer.label,"%s %s" % (self.longname,self.shortname))
 
@@ -276,7 +276,7 @@ class SampleContainerTest(unittest.TestCase):
         self.assertEqual(sample, copiedSample)
         self.assertEqual(sample.hash, copiedSample.hash) #equal because only real data is considered
         self.assertNotEqual(sample.id, copiedSample.id) #unique due to timestamp in dimension ids
-        
+
     def testSeal(self):
         sample = self.sampleContainer
         sample.seal()
@@ -297,13 +297,13 @@ class SampleContainerTest(unittest.TestCase):
 
     def testSingleSample(self):
         #string = numpy.rec.fromrecords([(s,) for s in [u'Hello',u'World!',u'Bäh!']])
-#        strings = 
+#        strings =
         uField = FieldContainer(scipy.array([u'Hello',u'World!',u'Bäh!']),longname=u'Text',shortname='\gamma')
         table  = SampleContainer([uField]) #was: table  = SampleContainer([uField]). Intent unclear
 
     def testStringSample(self):
         #string = numpy.rec.fromrecords([(s,) for s in [u'Hello',u'World!',u'Bäh!']])
-#        strings = 
+#        strings =
         uField = FieldContainer(scipy.array([u'Hello',u'World!',u'Bäh!']),longname=u'Text',shortname='\gamma')
         sample = SampleContainer([uField])
         sample.seal()
@@ -387,7 +387,7 @@ class FieldContainerRescaling(unittest.TestCase):
         for dim in [0,1]:
             axisUnit   = field.dimensions[dim].unit
             self.assertEqual(axisUnit.unit.name(),'mum')
-        
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) == 1:

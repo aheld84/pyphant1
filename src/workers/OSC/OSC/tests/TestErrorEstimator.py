@@ -60,7 +60,7 @@ class TestLocalNoise(unittest.TestCase):
         expected[0] = stdRand
         expected[-1]= stdRand
         result = OE.localNoise(self.data,samples=3)
-        
+
         numpy.testing.assert_array_almost_equal(expected,result,err_msg='Expected local noise is %s, but should be %s.' % (result,expected))
 
     def testLinearEvenSamples(self):
@@ -72,8 +72,8 @@ class TestLocalNoise(unittest.TestCase):
         expected[:2] = stdRand
         expected[-1:]= stdRand
         result = OE.localNoise(self.data,samples=4)
-        
+
         numpy.testing.assert_array_almost_equal(expected,result,err_msg='Expected local noise is %s, but should be %s.' % (result,expected))
-        
+
 if __name__ == '__main__':
     unittest.main()

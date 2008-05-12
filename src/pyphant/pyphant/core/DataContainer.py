@@ -100,7 +100,7 @@ class IndexMarker(object):
 
     def __ne__(self,other):
         return not self.__eq__(other)
-        
+
 #INDEX must be a list of objects providing a .seal(self) method.
 #It is used as a marker to terminate the recursive inclusion of FieldContainers.
 INDEX=[IndexMarker()]
@@ -199,7 +199,7 @@ class DataContainer(object):
                                                     enc(datetime.datetime.utcnow().isoformat('_')),
                                                     self.hash,
                                                     self.typeString)
-                
+
 
 class FieldContainer(DataContainer):
     u"""FieldContainer(data, unit=1, error=None,dimensions=None, longname=u"Sampled Field",
@@ -255,7 +255,7 @@ class FieldContainer(DataContainer):
             if not isPhysicalQuantity(self.unit) and self.unit == 1:
                 label = u"%s $%s%s$ / a.u." % (self.longname.title(),self.shortname,dependency)
         except:
-            pass #just a ScientificPython bug 
+            pass #just a ScientificPython bug
         return label.replace('mu',u'\\textmu{}').replace('1.0 ',r'')
     label=property(_getLabel)
 
@@ -312,7 +312,7 @@ class FieldContainer(DataContainer):
                 dim.seal()
         super(FieldContainer, self).seal(id)
         self.lock.release()
-        
+
     def inUnitsOf(self, other):
         if not isPhysicalQuantity(self.unit):
             if isPhysicalQuantity(other.unit):
@@ -330,7 +330,7 @@ class FieldContainer(DataContainer):
             newSelf.error *= factor
         newSelf.unit = copy.deepcopy(other.unit)
         return newSelf
-        
+
 
     def rescale(self):
         if isPhysicalQuantity(self.unit):
@@ -361,7 +361,7 @@ class FieldContainer(DataContainer):
             return
         self.data *= unitAmplitude/oldFieldAmplitude
         self.unit = newUnit/unitAmplitude
-        
+
     def __eq__(self, other):
         diagnosis = logging.getLogger('DataContainer')
         if type(self) != type(other):
@@ -411,7 +411,7 @@ class FieldContainer(DataContainer):
                         diagnosis.debug('The fields cannot be compared, because some elements of the first field are NaN and the mask has not been set.')
                     if numpy.sometrue(numpy.isnan(scaledOtherData)):
                         diagnosis.debug('The fields cannot be compared, because some elements of the second field are NaN and the mask has not been set.')
-                    else: 
+                    else:
                         difference = numpy.abs(scaledData-scaledOtherData)
                         diagnosis.debug('The scaled fields differ, data-otherData: %s\n%s\n%s' % (difference.max(),
                                                                                        scaledData,
@@ -557,7 +557,7 @@ class FieldContainer(DataContainer):
 
     def __repr__(self):
         return self.__str__()
-    
+
     maskedData = property( lambda self: numpy.ma.array(self.data, mask=self.mask) )
     maskedError = property( lambda self: numpy.ma.array(self.error, mask=self.mask) )
 
@@ -697,4 +697,4 @@ def assertEqual(con1,con2):
         return True
     else:
         raise AssertionError, diagnosis.getvalue()
-    
+

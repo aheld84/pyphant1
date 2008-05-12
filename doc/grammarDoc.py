@@ -1,6 +1,6 @@
 import sys
 sys.path.append('../src/workers/OSC/OSC/tests')
-import grammar 
+import grammar
 
 definitions = {}
 for key,value in grammar.__dict__.iteritems():

@@ -60,7 +60,7 @@ class TestImageVisualizer(unittest.TestCase):
         self.errLevelPos = 6
         self.errLevelCurv= 5
         self.tmpdir = tempfile.gettempdir()
-        
+
     def testVisualization(self):
         X,LAMB = numpy.meshgrid(numpy.linspace(-1.5,1.5,self.n),
                                 numpy.linspace(-1.0,1.0,self.m))
@@ -86,8 +86,8 @@ class TestImageVisualizer(unittest.TestCase):
         self.V.seal()
         #Visualise result
         visualizer = ImageVisualizer(self.V,show=False)
-        filename = self.tmpdir+'/pyphant-'+DC.parseId(self.V.id)[0]+'.png' 
+        filename = self.tmpdir+'/pyphant-'+DC.parseId(self.V.id)[0]+'.png'
         visualizer.figure.savefig(filename)
-        
+
 if __name__ == '__main__':
     unittest.main()

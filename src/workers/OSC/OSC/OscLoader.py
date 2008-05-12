@@ -72,7 +72,7 @@ LINE_HANDLER = collections.defaultdict(lambda :addAttributeLine)
 LINE_HANDLER[u'Section']=startSection
 LINE_HANDLER[u'SPALTENBESCHRIFTUNG']=addDataColumn
 LINE_HANDLER[u'MESSDATEN']=addTableLine
-                 
+
 def readZipFile(filename, data=None, subscriber=0):
     if data == None:
         data = []
@@ -112,7 +112,7 @@ def createFieldContainer(key,array):
             quantities = [PhysicalQuantities.PhysicalQuantity(string.encode('latin-1')) for string in array]
             firstUnit = quantities[0].unit
             scaledArray = [quant.inUnitsOf(firstUnit).value for quant in quantities]
-            fieldContainer = DataContainer.FieldContainer(numpy.array(scaledArray), unit='1. %s' % firstUnit.name(), 
+            fieldContainer = DataContainer.FieldContainer(numpy.array(scaledArray), unit='1. %s' % firstUnit.name(),
                                                           longname=key)
         except:
             fieldContainer = DataContainer.FieldContainer(numpy.array(array), unit=fieldUnit, longname=key)

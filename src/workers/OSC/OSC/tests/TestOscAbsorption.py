@@ -102,7 +102,7 @@ class TestOscAbsorptionCalculator(unittest.TestCase):
                        DC.FieldContainer(self.x,longname='position',shortname='x',unit='1m')]
         expectedResult = DC.FieldContainer(numpy.ones((self.m,self.n),'float')-self.I.data,
                                            dimensions=expectedDim,
-                                           longname=u'absorption', 
+                                           longname=u'absorption',
                                            shortname=ur'\tilde{A}')
         self.assertEqual(result,expectedResult)
 
@@ -118,7 +118,7 @@ class TestOscAbsorptionCalculator(unittest.TestCase):
         afoot[afoot>1]=1
         expectedResult = DC.FieldContainer(afoot,
                                            dimensions=expectedDim,
-                                           longname=u'absorption', 
+                                           longname=u'absorption',
                                            shortname=ur'\tilde{A}')
         self.assertEqual(result,expectedResult)
 
@@ -133,7 +133,7 @@ class TestOscAbsorptionCalculator(unittest.TestCase):
                        DC.FieldContainer(self.x,longname='position',shortname='x',unit='1m')]
         expectedResult = DC.FieldContainer(numpy.ones((self.m,self.n),'float')-self.I.data,
                                            dimensions=expectedDim,
-                                           longname=u'absorption', 
+                                           longname=u'absorption',
                                            shortname=ur'\tilde{A}')
         self.assertEqual(result,expectedResult)
 
@@ -147,7 +147,7 @@ class TestOscAbsorptionCalculator(unittest.TestCase):
         expectedDim = copy.deepcopy(self.sampleC['I'].dimensions)
         expectedResult = DC.FieldContainer(numpy.ones((self.m,self.n),'float')-self.I.data,
                                            dimensions=expectedDim,
-                                           longname=u'absorption', 
+                                           longname=u'absorption',
                                            shortname=ur'\tilde{A}')
         self.assertEqual(result,expectedResult)
 

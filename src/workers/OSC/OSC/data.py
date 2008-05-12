@@ -2026,7 +2026,7 @@ def discreteLocalNoise(A):
         xs.append(l)
         sums.append(numpy.sum(sq[l-dA/2:l+dA/2]))
     return numpy.array(xs),numpy.array(sums)/dA
-    
+
 x, lna = discreteLocalNoise(A)
 noiseLevelTCK = scipy.interpolate.splrep(l[x],lna, k=1)
 #noiseLevel = numpy.square(scipy.interpolate.splev(l, noiseLevelTCK))
@@ -2041,7 +2041,7 @@ smoothA = scipy.interpolate.splev(l[mask], smoothATCK)
 pylab.plot(l[mask], A[mask], '.', l[mask],smoothA,l[mask], noiseLevel[mask]*1e6+1)
 pylab.xlabel('wave length $\lambda$ / nm')
 pylab.ylabel('absorbtion $A(\lambda)$ / a.u.')
-pylab.legend(('Absorbtion $A(\lambda):N(\lambda) < 10^{-6}$', 
+pylab.legend(('Absorbtion $A(\lambda):N(\lambda) < 10^{-6}$',
              r'Smoothed Absorbtion $\bar{A}(\lambda)$',
              'Local noise level $N(\lambda)$'))
 pylab.xlim(320,600)

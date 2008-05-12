@@ -83,7 +83,7 @@ class Smoother(Worker.Worker):
                                              error = osc.error,
                                              unit=osc.unit,
                                              dimensions = osc.dimensions,
-                                             longname=u'Smoothed %s'%osc.longname, 
+                                             longname=u'Smoothed %s'%osc.longname,
                                              shortname='\\widetilde{%s}'%osc.shortname)
         result.seal()
         return result

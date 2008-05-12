@@ -60,14 +60,14 @@ class RegionOfInterest(Worker.Worker):
     def prune(self, osc, subscriber=0):
         yCon = copy.deepcopy(osc)
         xCon = copy.deepcopy(osc.dimensions[-1])
-        
+
         def rescaleUnit(quantityParam):
             if PhysicalQuantities.isPhysicalQuantity(xCon.unit):
                 try:
                     quantity = PhysicalQuantities.PhysicalQuantity(quantityParam.value.encode('utf-8'))
                     print quantity
                     return quantity.inUnitsOf(xCon.unit.unit).value
-                except: 
+                except:
                     raise TypeError, 'Unit %s cannot be expressed in units of %s.' % (quantityParam.value,xCon.unit)
             else:
                try:
@@ -75,9 +75,9 @@ class RegionOfInterest(Worker.Worker):
                    return quantity/xCon.unit
                except:
                     raise TypeError, 'Unit %s cannot be expressed in units of %s.' % (quantityParam.value,xCon.unit)
-        
+
         start,stop = map(rescaleUnit,[self.paramStart,self.paramStop])
-        
+
         x = xCon.data
         index = numpy.logical_and(x >= start,x<=stop)
         newX = numpy.extract(index, x)
@@ -89,7 +89,7 @@ class RegionOfInterest(Worker.Worker):
             yIndex = numpy.repeat(index[numpy.newaxis,:], yCon.data.shape[0], 0)
             yd = yCon.data.shape[0]
         else:
-            yIndex = index 
+            yIndex = index
             yd = 1
         xd = newXCon.data.shape[0]
         newY = numpy.extract(yIndex, yCon.data).reshape(yd, xd)
