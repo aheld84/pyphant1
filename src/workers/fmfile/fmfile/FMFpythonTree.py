@@ -1992,7 +1992,7 @@ class FMFpythonTree(TreeParser):
 
                     fieldDict = {}
                     for col, data in zip(coldefs, fields):
-                            fieldDict[col[1]]=DC.FieldContainer(numpy.array(data), col[3], longname=col[0], shortname=col[1])
+                        fieldDict[col[1]]=DC.FieldContainer(numpy.array(data), col[3], longname=col[0], shortname=col[1])
                     for col in coldefs:
                         if len(col[2])>0:
                             fieldDict[col[1]].dimensions = [ fieldDict[key] for key in col[2] ]

@@ -319,7 +319,7 @@ class FieldContainer(DataContainer):
                 raise ValueError("Incompatible Units: self.unit = <%s>, other.unit = <%s>"%(self.unit, other.unit))
             factor = float(self.unit)/float(other.unit)
         elif not isPhysicalQuantity(other.unit):
-                raise ValueError("Incompatible Units: self.unit = <%s>, other.unit = <%s>"%(self.unit, other.unit))
+            raise ValueError("Incompatible Units: self.unit = <%s>, other.unit = <%s>"%(self.unit, other.unit))
         else:
             if not self.unit.isCompatible(other.unit.unit):
                 raise ValueError("Incompatible Units: self.unit = <%s>, other.unit = <%s>"%(self.unit, other.unit))

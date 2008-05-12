@@ -102,9 +102,9 @@ class TestApplyMask(unittest.TestCase):
                     result[2].data.tolist())
         for row in table:
             try:
-                 afoot.remove(row)
+                afoot.remove(row)
             except ValueError,e:
-                 self.fail('Row %s not found.' % row)
+                self.fail('Row %s not found.' % row)
 
     def testReturnedTableUnits(self):
         """Checking the units of table columns."""
@@ -189,9 +189,9 @@ class TestApplyMask3D(unittest.TestCase):
                     result[3].data.tolist())
         for row in table:
             try:
-                 afoot.remove(row)
+                afoot.remove(row)
             except ValueError,e:
-                 self.fail('Row %s not found.' % str(row))
+                self.fail('Row %s not found.' % str(row))
 
 
 if __name__ == '__main__':

@@ -70,10 +70,10 @@ class RegionOfInterest(Worker.Worker):
                 except:
                     raise TypeError, 'Unit %s cannot be expressed in units of %s.' % (quantityParam.value,xCon.unit)
             else:
-               try:
-                   quantity = float(quantityParam.value.encode('utf-8'))
-                   return quantity/xCon.unit
-               except:
+                try:
+                    quantity = float(quantityParam.value.encode('utf-8'))
+                    return quantity/xCon.unit
+                except:
                     raise TypeError, 'Unit %s cannot be expressed in units of %s.' % (quantityParam.value,xCon.unit)
 
         start,stop = map(rescaleUnit,[self.paramStart,self.paramStop])

@@ -87,9 +87,9 @@ def collectAttributes(data):
         v = l[0]
         isConst=True
         for i in l[1:]:
-           if i!=v:
-               isConst=False
-               #break
+            if i!=v:
+                isConst=False
+                #break
         if isConst:
             commonAttr[k]=v
         else:
