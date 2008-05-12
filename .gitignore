@@ -1,0 +1,14 @@
+*.py[co]
+*~
+PKG-INFO
+SOURCES.txt
+dependency_links.txt
+entry_points.txt
+requires.txt
+top_level.txt
+.svn
+build
+dist
+*.egg-info
+\#*\#
+

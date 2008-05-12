@@ -1,0 +1,66 @@
+None
+real : INT
+             | REAL
+colvar : WORD
+               | WORD LPAREN deps RPAREN
+columnLine : KEY COLON colspec NEWLINE
+config : config section
+               | section
+dataSection : DATAHEADER NEWLINE dataLines
+                    | DATAHEADER DATA
+deps : deps COMMA WORD
+             | WORD
+unitspec : LBRACK WORD RBRACK
+quantity : IDENTIFIER number
+                 | IDENTIFIER number WORD
+colspec : colvar
+                | colvar unitspec
+complex : IMAG
+                | COMPLEX
+sentence : sentence WORD
+                 | WORD
+columnSection : COLHEADER NEWLINE columnLines
+value : sentence
+              | DATETIME
+              | TIME
+              | number
+              | quantity
+columnLines : columnLines columnLine
+                    | columnLine
+commonLine : KEY COLON value NEWLINE
+dataLine : cells NEWLINE
+number : real
+               | complex
+commonSection : HEADER NEWLINE commonLines
+dataLines : dataLines dataLine
+                  | dataLine
+commonLines : commonLines commonLine
+                    | commonLine
+cell : number
+section : commonSection
+                | columnSection
+                | dataSection
+cells : cells cell
+              | cell
+t_INITIAL_COLON :
+t_cspec_LPAREN \(
+t_value_data_NUM (?P<R>(?:[+-]\ *)?(?:\d+\.\d*|\.\d+|\d+)([eE][+-]?\d+)?)(?P<I>[iIjJ]|\ *[+-]\ *(?:\d+\.\d*|\.\d+|\d+)([eE][+-]?\d+)?[iIjJ])?
+t_INITIAL_columns_data_NEWLINE \n+
+t_value_cspec_NEWLINE \n+
+t_ANY_ignore  	
+t_ANY_error Lexer function reporting illegal characters.
+t_INITIAL_columns_HEADER \[[^\]]+]
+t_cspec_RBRACK \]
+t_value_TIME (?P<H>\d{2}):(?P<m>\d{2})(:(?P<s>\d{2})(\.(?P<f>\d{6}))?)?
+t_cspec_COMMA ,
+t_value_WORD [^\n]+
+t_INITIAL_columns_COMMENT ;.*\n
+t_value_DATETIME_ISO (?P<Y>\d{4})-(?P<M>\d{2})-(?P<d>\d{2})(.(?P<H>\d{2})(:(?P<m>\d{2})(:(?P<s>\d{2})(\.(?P<f>\d{6}))?)?)?)?
+t_cspec_RPAREN \)
+t_columns_COLON :
+t_cspec_WORD [^\s[\](\),]+
+t_value_DATETIME_german (?P<d>\d{2})\.(?P<M>\d{2})\.(?P<Y>\d{4})(.(?P<H>\d{2})(:(?P<m>\d{2})(:(?P<s>\d{2})(\.(?P<f>\d{6}))?)?)?)?
+t_data_DATA [^[]+
+t_value_IDENTIFIER (?P<id>\S+)[ \t]*=
+t_INITIAL_columns_KEY [^[\]:]+
+t_cspec_LBRACK \[
