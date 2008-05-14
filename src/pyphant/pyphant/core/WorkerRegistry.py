@@ -60,8 +60,14 @@ class WorkerRegistry(singletonmixin.Singleton):
                 wm = worker.load()
                 for module in wm.workers:
                     try:
-                        self._logger.info("Trying to import "+worker.module_name+"."+module)
-                        exec 'import '+worker.module_name+'.'+module
+                        moduleName = worker.module_name+"."+module
+                        self._logger.info("Trying to import "+moduleName)
+                        exec 'import '+moduleName
+                        try:
+                            version=eval(moduleName+".__version__")
+                        except:
+                            version="unknown"
+                        self._logger.info("Import module %s in version %s" %(moduleName, version))
                     except ImportError, e:
                         self._logger.warning("worker archive " + worker.module_name
                                              + " contains invalid worker "+module+": " + str(e))
