@@ -98,16 +98,21 @@ class Chart(object):
         pylab.show()
 
 
-#class BarChart(Chart):
-#    name = u"Bar chart"
-#    def draw(self):
-#        # xerr and yerr added due to error in matplotlib 0.87.4
-#        self.error = pylab.zeros(len(self.abscissae[0]))
-#        for i in xrange(len(self.ordinates)):
-#            pylab.bar(self.abscissae[i],self.ordinates[i],
-#                      xerr = self.error,yerr = self.error,
-#                      capsize=0,
-#                      width=pylab.min(pylab.diff(self.abscissae[i])))
+class BarChart(Chart):
+    name = u"Bar chart"
+    def draw(self):
+        width = numpy.min(numpy.diff(self.abscissa))
+        if self.error == None:
+            for ordinate in self.maskedData:
+                pylab.bar(self.abscissa, ordinate, capsize=0,
+                          width=width)
+        else:
+            for i in xrange(self.data.shape[0]):
+                line = pylab.bar(self.abscissa, self.maskedData[i],
+                                 yerr=self.error[i],
+                                 width=width)
+        xextent = (self.xmax-self.xmin)*0.03
+        pylab.axis([self.xmin-xextent, self.xmax+width+xextent, 0, self.ymax*1.03])
 
 
 class LineChart(Chart):
@@ -135,21 +140,7 @@ class ScatterPlot(LineChart):
     linestyle = 'o'
 
 
-#DataVisReg.getInstance().registerVisualizer(pyphant.core.Connectors.TYPE_IMAGE, BarChart)
+DataVisReg.getInstance().registerVisualizer(pyphant.core.Connectors.TYPE_IMAGE, BarChart)
 DataVisReg.getInstance().registerVisualizer(pyphant.core.Connectors.TYPE_IMAGE, LineChart)
 DataVisReg.getInstance().registerVisualizer(pyphant.core.Connectors.TYPE_IMAGE, ScatterPlot)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
