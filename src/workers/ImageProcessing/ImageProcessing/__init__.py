@@ -41,17 +41,14 @@ BACKGROUND_COLOR=255
 FEATURE_COLOR=0
 
 workers=[ "ApplyMask",
-          "ClippingWorker",
           "DiffWorker",
           "DistanceMapper",
           "EdgeFillWorker",
           "EdgeTouchingFeatureRemover",
           "ImageLoaderWorker",
 	  "InvertWorker",
-#          "OptimalContrastWorker",
           "Medianiser",
           "SkeletonizeFeature",
-#          "SlopeCalculator",
           "ThresholdingWorker",
           "UltimatePointsCalculator"]
 
