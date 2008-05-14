@@ -50,7 +50,7 @@ class Histogram(Worker.Worker):
     _sockets=[("vector", Connectors.TYPE_IMAGE)]
     _params = [("bins", "Bins", 10, None)]
 
-    @Worker.plug(Connectors.TYPE_ARRAY)
+    @Worker.plug(Connectors.TYPE_IMAGE)
     def calculateHistogram(self, vector, subscriber=0):
         bins=self.paramBins.value
         histo= numpy.histogram(vector.data, bins, range=(numpy.floor(vector.data.min()),
