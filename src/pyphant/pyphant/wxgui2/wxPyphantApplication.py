@@ -45,7 +45,8 @@ if HOMEDIR==u'~':
 else:
     logging.basicConfig(level=logging.DEBUG,
                         filename=os.path.join(HOMEDIR, u'pyphant.log'),
-                        filemode='w')
+                        filemode='w',
+                        format="%(asctime)s - %(levelname)s:%(name)s:%(thread)d:%(module)s:%(message)s")
     console = logging.StreamHandler()
     console.setLevel(logging.WARNING)
     logging.getLogger('').addHandler(console)
