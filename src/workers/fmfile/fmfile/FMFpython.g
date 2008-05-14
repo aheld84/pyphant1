@@ -88,11 +88,11 @@ IINT    : '0' ('x' | 'X') ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' )+ //hex
         | '0' DIGITS* //octal
         | '1'..'9' DIGITS* //decimal
         ;
-fragment        
+fragment
 ESC     : '\\' .;
 
 
-GERMANDATE 
+GERMANDATE
         : DIGIT? DIGIT '.' DIGIT? DIGIT '.' (DIGIT DIGIT)? DIGIT DIGIT;
 ISODATE : DIGIT DIGIT DIGIT DIGIT MINUS DIGIT DIGIT MINUS DIGIT DIGIT;
 
@@ -112,14 +112,14 @@ WORD    : RWORD
         | LESSTHAN RWORD GREATERTHAN
         ;
 
-PUNCTUATION 
+PUNCTUATION
         : '.' | ',' | ';';
 
 LITERAL : '"' (ESC|~('\\'|'\n'|'"'))* '"'
         | '\'' (ESC|~('\\'|'\n'|'\''))* '\''
         ;
 
-config  
+config
         : referenceSection commonSection* datadefSection dataSection
         -> ^(CONFIG referenceSection commonSection* datadefSection dataSection)
         ;
@@ -129,7 +129,7 @@ referenceSection
         -> ^(COMMON_SECTION ^(HEADER ASTERISK 'reference') ^(BODY commonitem+));
 
 datadefSection
-        : LBRACK ASTERISK 'data definitions' RBRACK NEWLINE colitem+ 
+        : LBRACK ASTERISK 'data definitions' RBRACK NEWLINE colitem+
         -> ^(DATADEF_SECTION ^(HEADER ASTERISK 'data definitions') ^(BODY colitem+));
 
 dataSection
@@ -137,7 +137,7 @@ dataSection
         -> ^(DATA_SECTION ^(HEADER ASTERISK 'data') ^(BODY dataitem*));
 
 commonSection
-        : LBRACK headername RBRACK NEWLINE commonitem+ 
+        : LBRACK headername RBRACK NEWLINE commonitem+
         -> ^(COMMON_SECTION ^(HEADER headername) ^(BODY commonitem+));
 
 headername
@@ -160,7 +160,7 @@ deps    : LPAREN identifier ( ',' identifier)* RPAREN -> identifier+;
 
 key     : ~LBRACK .*;
 
-value   
+value
 options {
     backtrack=true;
     memoize=true;
@@ -179,10 +179,10 @@ identifier
         ;
 */
 
-catchall 
+catchall
         : ~NEWLINE*;
 
-datetime 
+datetime
         : date time? -> ^(DATETIME ^(DATE date) ^(TIME time?));
 
 date    : GERMANDATE | ISODATE;
@@ -192,18 +192,18 @@ time    : INT COLON INT (COLON FLOAT)?;
 number  : (NPLUS|NMINUS)? absnumber;
 
 fragment
-absnumber       
+absnumber
 options {
     backtrack=true;
 }
         : FLOAT (NPLUS|NMINUS) IMAG
         | INT (NPLUS|NMINUS) IMAG
         | FLOAT
-        | INT 
+        | INT
         | IMAG
-        ; 
+        ;
 
-quantity 
+quantity
         : number unit? -> ^(QUANTITY ^(NUMBER number) ^(UNIT unit?));
 
 unit    : WORD ((ASTERISK|DIV) WORD)*;

@@ -118,6 +118,7 @@ class ExtremumFinder(Worker.Worker):
             else:
                 x0.append(numpy.NaN)
                 DeltaX.append(numpy.NaN)
+                dyy.append(numpy.NaN)
             extremaPos.append(numpy.array(x0))
             extremaError.append(numpy.array(DeltaX))
             extremaCurv.append(numpy.array(dyy))
@@ -136,13 +137,8 @@ class ExtremumFinder(Worker.Worker):
                 numExt = len(extremaPos[i])
                 if numExt == 1:
                     X0[i,0]=extremaPos[i][0]
-                    XCurv[i,0]=extremaCurv[i][0]
-                    XError[i,0]=extremaError[i][0]
-                    # Last two lines above were:
-                    # XCurv[i,0]=extremaCurv[i]
-                    # XError[i,0]=extremaError[i]
-                    # This is clearly illegal, but above patch is not semantically checked,
-                    # though syntactically correct. This MUST be checked!
+                    XCurv[i,0]=extremaCurv[i]
+                    XError[i,0]=extremaError[i]
                 else:
                     for j in xrange(numExt):
                         X0[i,j]=extremaPos[i][j]
