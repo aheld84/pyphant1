@@ -38,9 +38,10 @@ __version__ = "$Revision$"
 # $Source$
 
 
-import sys
+import sys,logging
 import unittest
 sys.path.append("..")
+logging.basicConfig(level=logging.DEBUG)
 
 import pkg_resources
 
@@ -271,15 +272,13 @@ class TestError(unittest.TestCase):
                                        error=numpy.repeat(0.1,len(y)),
                                        dimensions=[DC.FieldContainer(x,longname='abscissae',shortname='x')],
                                        longname='parabel',
-                                       shortname='f'
-                                       )
-        error  = inputField.error[0] / (y[1]-2*y[2]+y[3])**2
+                                       shortname='f')
+        error  = inputField.error[slice(0,1)] / (y[1]-2*y[2]+y[3])**2
         error *= numpy.abs(y[2]-y[3]) + numpy.abs(y[1]-y[3]) + numpy.abs(y[1]-y[2])
         expectedResult = DC.FieldContainer(numpy.array([0.0]),
                                            longname = 'position of the local minimum of parabel',
                                            shortname = 'x_0',
-                                           error = error
-                                           )
+                                           error = error)
         w = EF.ExtremumFinder(None)
         w.paramExtremum.value=u'minima'
         #Retrieve result from worker
@@ -295,17 +294,15 @@ class TestError(unittest.TestCase):
                                                                      longname='type',shortname=r'\theta'),
                                                    DC.FieldContainer(x,longname='abscissae',shortname='x')],
                                        longname='parabel',
-                                       shortname='f'
-                                       )
+                                       shortname='f')
         def error(y):
             error  = inputField.error[0,0] / (y[1]-2*y[2]+y[3])**2
             error *= numpy.abs(y[2]-y[3]) + numpy.abs(y[1]-y[3]) + numpy.abs(y[1]-y[2])
             return error
-        expectedResult = DC.FieldContainer(numpy.array([[0.2,-0.1]]),
+        expectedResult = DC.FieldContainer(numpy.array([0.2,-0.1]),
                                            longname = 'position of the local minimum of parabel',
                                            shortname = 'x_0',
-                                           error = numpy.array([error(field[0]),error(field[1])])
-                                           )
+                                           error = numpy.array([error(field[0]),error(field[1])]))
         expectedResult.dimensions[-1] = DC.FieldContainer(numpy.array([1,2]),
                                                           longname='type',
                                                           shortname=r'\theta')

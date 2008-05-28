@@ -37,9 +37,12 @@ __id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 
-import sys
-import unittest
+import sys,unittest,logging
 sys.path.append("..")
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s %(message)s')#,
+#                    filename='/tmp/myapp.log',
+#                    filemode='w')
 
 import pkg_resources
 
@@ -155,12 +158,17 @@ class TestBroadFeaturesTouchingTheBoundary(unittest.TestCase):
         from the centre line.
         """
         pos = 50
-        featureField = numpy.zeros((101,11))
+        Nx=101
+        featureField = numpy.zeros((Nx,11))
         featureField[:,:] = I.FEATURE_COLOR
         featureField[pos,:] = I.BACKGROUND_COLOR
+        xDim = DataContainer.FieldContainer(numpy.linspace(-1,1,Nx),
+                                                 unit = '1m',
+                                                 longname= 'width',
+                                                 shortname='w')
         referenceField = DataContainer.FieldContainer(
             featureField,
-            dimensions = [self.xDim, self.yDim],
+            dimensions = [xDim, self.yDim],
             unit = '1',
             longname='Inverted String Feature',
             shortname='S')
@@ -276,9 +284,17 @@ class TestBroadFeaturesTouchingTheBoundary(unittest.TestCase):
         self.assertEqual(afoot, result)
 
     def testPitchforkDxDy(self):
+        xDim = DataContainer.FieldContainer(numpy.linspace(-1,1,9),
+                                            unit = '1m',
+                                            longname= 'width',
+                                            shortname='w')
+        yDim = DataContainer.FieldContainer(numpy.linspace(-self.dydx,self.dydx,4),
+                                            unit = '1m',
+                                            longname= 'height',
+                                            shortname='h')
         referenceField = DataContainer.FieldContainer(
             self.pf,
-            dimensions = [self.xDim, self.yDim],
+            dimensions = [xDim, yDim],
             unit = '1',
             longname='Inverted String Feature',
             shortname='S')
