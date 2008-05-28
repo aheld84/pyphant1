@@ -101,6 +101,10 @@ class IndexMarker(object):
 
     def __ne__(self,other):
         return not self.__eq__(other)
+    
+    def isValid(self):
+        return True
+
 
 #INDEX must be a list of objects providing a .seal(self) method.
 #It is used as a marker to terminate the recursive inclusion of FieldContainers.
@@ -245,6 +249,7 @@ class FieldContainer(DataContainer):
             self.rescale()
             for dim in self.dimensions:
                 dim.rescale()
+        assert self.isValid()
 
     def _getLabel(self):
         dependency = '(%s' % self.dimensions[0].shortname
@@ -558,36 +563,63 @@ class FieldContainer(DataContainer):
     def __repr__(self):
         return self.__str__()
 
+    def __getitem__(self, args):
+        if isinstance(args, type(2)):
+            args = slice(args, args+1)
+        try:
+            len(args)
+        except:
+            args = [args]
+        data = self.data[args]
+        dimensions = []
+        for i,l in enumerate(data.shape[:len(args)]):
+            if l==1:
+                pass # treat as attribute
+            else:
+                if isinstance(self.dimensions[i], IndexMarker):
+                    dimensions.append(self.dimensions[i])
+                else:
+                    dimensions.append(self.dimensions[i][args[i]])
+        for i in xrange(len(args)-1,len(data.shape)-1):
+            dimensions.append(copy.deepcopy(self.dimensions[i]))
+        data = data.squeeze()
+        if self.mask!=None:
+            mask = self.mask[args].squeeze()
+        else:
+            mask = None
+        if self.error!=None:
+            error = self.error[args].squeeze()
+        else:
+            error = None
+        field = FieldContainer(data, dimensions=dimensions,
+                               longname=self.longname,
+                               shortname=self.shortname,
+                               mask=mask,
+                               error=error,
+                               unit=self.unit)
+        return field
+
+    def isValid(self):
+        if not ( len(self.dimensions)==1 
+                 and isinstance(self.dimensions[0], IndexMarker) ):
+            dimshape = tuple([len(d.data) for d in self.dimensions])
+            if self.data.shape!=dimshape:
+                _logger.debug("Shape of data %s and of dimensions %s do not match."%(self.data.shape, dimshape))
+                return False
+            for d in self.dimensions:
+                if not d.isValid():
+                    _logger.debug("Invalid dimension %s."%d.longname)
+                    return False
+        if (self.mask!=None) and (self.data.shape!=self.mask.shape):
+            _logger.debug("Shape of data %s and of mask %s do not match."%(self.data.shape, self.mask.shape))
+            return False
+        if (self.error!=None) and (self.data.shape!=self.error.shape):
+            _logger.debug("Shape of data %s and of error %s do not match."%(self.data.shape, self.error.shape))
+            return False
+        return True
+
     maskedData = property( lambda self: numpy.ma.array(self.data, mask=self.mask) )
     maskedError = property( lambda self: numpy.ma.array(self.error, mask=self.mask) )
-
-
-def createDType(columns):
-    """Returns numpy.dtype object describing the provided list of
-    FieldContainers."""
-    names = [col.shortname for col in columns]
-    formats = [numpy.dtype(str(col.data.shape[1:])+col.data.dtype.str.replace('U0','U1')) for col in columns]
-    titles = [col.longname for col in columns]
-
-    nameList = True
-    for listing in [names,titles]:
-        for topic in listing:
-            N = listing.count(topic)
-            if N > 1:
-                for j in xrange(N):
-                    pos = listing.index(topic)
-                    if nameList:
-                        listing[pos] += "_{"+str(j)+"}"
-                    else:
-                        listing[pos] += names[j].capitalize()
-            nameList = False
-
-    #Workaround for numpy ticket 485
-    if numpy.__version__ == '1.0.1':
-        result = scipy.dtype({'names':names, 'formats':formats})
-    else:
-        result = scipy.dtype({'names':names, 'formats':formats, 'titles':titles})
-    return result
 
 
 class SampleContainer(DataContainer):

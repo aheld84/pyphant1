@@ -30,7 +30,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""Provides unittest classes FieldContainerTestCase, SampleContainerTest, and TestCreateDType.
+u"""Provides unittest classes FieldContainerTestCase, SampleContainerTest.
 """
 
 __id__ = "$Id$"
@@ -45,7 +45,7 @@ pkg_resources.require("Pyphant")
 import scipy
 import copy
 from Scientific.Physics.PhysicalQuantities import PhysicalQuantity
-from pyphant.core.DataContainer import (INDEX, generateIndex, FieldContainer, SampleContainer,createDType,DataContainer)
+from pyphant.core.DataContainer import (INDEX, generateIndex, FieldContainer, SampleContainer,DataContainer,assertEqual)
 import numpy.testing as nt
 import numpy
 
@@ -244,6 +244,40 @@ class FieldContainerTestCase(unittest.TestCase):
         self.assertEqual(sumField.shortname, u"%s - %s" % (self.shortname, self.shortname))
 
 
+class IsValidFieldContainer(unittest.TestCase):
+    def setUp(self):
+        self.field = FieldContainer(numpy.random.randn(7,13),
+                                    longname="voltage",
+                                    shortname="U",
+                                    unit="1V")
+
+    def testWrongDimension(self):
+        self.field.dimensions[0].data = self.field.dimensions[0].data[:-1]
+        self.assertFalse(self.field.isValid())
+
+    def testWrongDimensionNumber(self):
+        self.field.dimensions.append(copy.deepcopy(self.field.dimensions[0]))
+        self.assertFalse(self.field.isValid())
+        self.field.dimensions = [self.field.dimensions[0]]
+        self.assertFalse(self.field.isValid())
+
+    def testWrongMask(self):
+        shape = list(self.field.data.shape)
+        self.field.mask = numpy.ones(shape)
+        self.assertTrue(self.field.isValid())
+        shape[0] = shape[0]+1
+        self.field.mask = numpy.ones(shape)
+        self.assertFalse(self.field.isValid())
+
+    def testWrongError(self):
+        shape = list(self.field.data.shape)
+        self.field.error = numpy.zeros(shape)
+        self.assertTrue(self.field.isValid())
+        shape[0] = shape[0]+1
+        self.field.error = numpy.ones(shape)
+        self.assertFalse(self.field.isValid())
+
+
 class SampleContainerTest(unittest.TestCase):
     def setUp(self):
         self.rows=100
@@ -388,13 +422,62 @@ class FieldContainerRescaling(unittest.TestCase):
             axisUnit   = field.dimensions[dim].unit
             self.assertEqual(axisUnit.unit.name(),'mum')
 
-if __name__ == "__main__":
-    import sys
-    if len(sys.argv) == 1:
-        unittest.main()
-    else:
-        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
-        unittest.TextTestRunner().run(suite)
+class FieldContainerSlicing1d(unittest.TestCase):
+    def setUp(self):
+        self.field1d = FieldContainer(numpy.linspace(0.1,1,10), longname="voltage", 
+                                      shortname="U", unit="1V")
+    def testSingleIndex(self):
+        slice = self.field1d[0]
+        afoot = FieldContainer(numpy.array(0.1), longname="voltage", 
+                                      shortname="U", unit="1V")
+        self.assertEqual(slice,afoot)
 
+    def testRegionIndex(self):
+        slice = self.field1d[1:4]
+        afoot = FieldContainer(numpy.linspace(0.2,0.4,3), longname="voltage", 
+                                      shortname="U", unit="1V")
+        afoot.dimensions[0].data = numpy.linspace(1,3,3)
+        self.assertEqual(slice,afoot)
+        slice = self.field1d[1:-1]
+        afoot = FieldContainer(numpy.linspace(0.2,0.9,8), longname="voltage", 
+                                      shortname="U", unit="1V")
+        afoot.dimensions[0].data = numpy.linspace(1,8,8)
+        self.assertEqual(slice,afoot)
+
+    def testCommaSeparated(self):
+        slice = self.field1d[[1,3,7],]
+        afoot = FieldContainer(numpy.array([0.2,0.4,0.8]), longname="voltage", 
+                               shortname="U", unit="1V")
+        afoot.dimensions[0].data = numpy.array([1,3,7])
+        self.assertEqual(slice,afoot)
+        slice = self.field1d[[[1,3,7]]]
+        self.assertEqual(slice,afoot)
+        
+
+class FieldContainerSlicing2d(unittest.TestCase):
+    def setUp(self):
+        l = numpy.linspace(0,0.9,10)
+        m = numpy.meshgrid(l, l*10)
+        self.field2d = FieldContainer(m[0]+m[1], longname="voltage", 
+                                      shortname="U", unit="1V")
+    def testSingleIndex(self):
+        slice = self.field2d[0]
+        afoot = FieldContainer(numpy.linspace(0,0.9,10), longname="voltage", 
+                                      shortname="U", unit="1V")
+        self.assertTrue(slice.isValid())
+        assertEqual(slice,afoot)
+
+
+if __name__ == "__main__":
+    suite = unittest.TestLoader().loadTestsFromTestCase(FieldContainerSlicing1d)
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(FieldContainerSlicing2d))
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(IsValidFieldContainer))
+    unittest.TextTestRunner().run(suite)
+#    import sys
+#    if len(sys.argv) == 1:
+#        unittest.main()
+#    else:
+#        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
+#        unittest.TextTestRunner().run(suite)
 
 
