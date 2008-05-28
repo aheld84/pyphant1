@@ -56,7 +56,7 @@ __id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 
-import scipy, copy, md5, threading, numpy
+import scipy, copy, md5, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse
 from Scientific.Physics.PhysicalQuantities import (isPhysicalQuantity, PhysicalQuantity,_prefixes)
 
@@ -67,6 +67,7 @@ PREFIXES = copy.deepcopy(PREFIXES_METER)
 map(lambda r: PREFIXES.remove(r),[('d',  1.e-1),('c',  1.e-2)])
 
 import logging
+_logger = logging.getLogger("pyphant")
 
 #Default variables of indices
 INDEX_NAMES=[u'i', u'j', u'k', u'l', u'm', u'n']
@@ -363,21 +364,20 @@ class FieldContainer(DataContainer):
         self.unit = newUnit/unitAmplitude
 
     def __eq__(self, other):
-        diagnosis = logging.getLogger('DataContainer')
         if type(self) != type(other):
-            diagnosis.debug('Cannot compare objects with different type (%s and %s).' % (type(self),type(other)))
+            _logger.debug('Cannot compare objects with different type (%s and %s).' % (type(self),type(other)))
             return False
         if not (self.typeString == other.typeString):
-            diagnosis.debug('The typeString is not identical.')
+            _logger.debug('The typeString is not identical.')
             return False
         if (self.mask==None) and (other.mask!=None):
-            diagnosis.debug('The mask of the first field container has not been set, while the mask of the second field container is set to %s.' % other.mask)
+            _logger.debug('The mask of the first field container has not been set, while the mask of the second field container is set to %s.' % other.mask)
             return False
         elif  self.mask!=None and (other.mask==None):
-            diagnosis.debug('The mask of the second field container has not been set, while the mask of the first field container is set to %s.' % self.mask)
+            _logger.debug('The mask of the second field container has not been set, while the mask of the first field container is set to %s.' % self.mask)
             return False
         if not (numpy.alltrue(self.mask==other.mask)):
-            diagnosis.debug('The masks are not identical: %s\n%s' % (self.mask,other.mask))
+            _logger.debug('The masks are not identical: %s\n%s' % (self.mask,other.mask))
             return False
         if self.mask!=None:
             data = self.data[numpy.logical_not(self.mask)]
@@ -398,37 +398,37 @@ class FieldContainer(DataContainer):
         if (isPhysicalQuantity(self.unit) or isPhysicalQuantity(other.unit)):
             try:
                 if not (self.unit.inBaseUnits().unit == other.unit.inBaseUnits().unit):
-                    diagnosis.debug('The units are different.')
+                    _logger.debug('The units are different.')
                     return False
             except AttributeError:
-                diagnosis.debug('Cannot compare unit with normed quantity: %s, %s' % (self.unit,other.unit))
+                _logger.debug('Cannot compare unit with normed quantity: %s, %s' % (self.unit,other.unit))
                 return False
             try:
                 scaledData = data*self.unit.value
                 scaledOtherData = otherData*other.unit.inUnitsOf(self.unit.unit).value
                 if not numpy.allclose(scaledData,scaledOtherData):
                     if numpy.sometrue(numpy.isnan(scaledData)):
-                        diagnosis.debug('The fields cannot be compared, because some elements of the first field are NaN and the mask has not been set.')
+                        _logger.debug('The fields cannot be compared, because some elements of the first field are NaN and the mask has not been set.')
                     if numpy.sometrue(numpy.isnan(scaledOtherData)):
-                        diagnosis.debug('The fields cannot be compared, because some elements of the second field are NaN and the mask has not been set.')
+                        _logger.debug('The fields cannot be compared, because some elements of the second field are NaN and the mask has not been set.')
                     else:
                         difference = numpy.abs(scaledData-scaledOtherData)
-                        diagnosis.debug('The scaled fields differ, data-otherData: %s\n%s\n%s' % (difference.max(),
+                        _logger.debug('The scaled fields differ, data-otherData: %s\n%s\n%s' % (difference.max(),
                                                                                        scaledData,
                                                                                        scaledOtherData))
                     return False
             except ValueError:
-                diagnosis.debug('Shape mismatch: %s != %s' % (self.data.shape,other.data.shape))
+                _logger.debug('Shape mismatch: %s != %s' % (self.data.shape,other.data.shape))
                 return False
             if error!=None:
                 scaledError = error*self.unit.value
                 if otherError!=None:
                     otherScaledError = otherError*other.unit.inUnitsOf(self.unit.unit).value
                 else:
-                    diagnosis.debug('The errors differ: The error of the second argument is none, while the error of the first argument is %s.' % error)
+                    _logger.debug('The errors differ: The error of the second argument is none, while the error of the first argument is %s.' % error)
                     return False
                 if not numpy.allclose(scaledError,otherScaledError):
-                    diagnosis.debug('The errors differ: %s\n%s' % (scaledError,otherScaledError))
+                    _logger.debug('The errors differ: %s\n%s' % (scaledError,otherScaledError))
                     return False
         else:
             if not data.dtype.char in ['S','U']:
@@ -436,28 +436,28 @@ class FieldContainer(DataContainer):
                     scaledData = data*self.unit
                     scaledOtherData = otherData*other.unit
                     if not numpy.allclose(scaledData,scaledOtherData):
-                        diagnosis.debug('The scaled fields differ: %s\n%s'%(scaledData,scaledOtherData))
+                        _logger.debug('The scaled fields differ: %s\n%s'%(scaledData,scaledOtherData))
                         return False
                 except ValueError:
-                    diagnosis.debug('Shape mismatch: %s != %s' % (self.data.shape,other.data.shape))
+                    _logger.debug('Shape mismatch: %s != %s' % (self.data.shape,other.data.shape))
                     return False
                 if error==None:
                     if not (otherError==None):
-                        diagnosis.debug('The errors differ: Error of first argument is None, but the error of the second argument is not None.')
+                        _logger.debug('The errors differ: Error of first argument is None, but the error of the second argument is not None.')
                         return False
                 else:
                     scaledError = error*self.unit
                     otherScaledError = otherError*other.unit
                     if not numpy.allclose(scaledError,
                                           otherScaledError):
-                        diagnosis.debug('The errors differ: %s\n%s' % (scaledError,otherScaledError))
+                        _logger.debug('The errors differ: %s\n%s' % (scaledError,otherScaledError))
                         return False
         if not self.attributes == other.attributes:
-            diagnosis.debug('The attribute dictionary differs.')
+            _logger.debug('The attribute dictionary differs.')
             return False
         for dimSelf,dimOther in zip(self.dimensions,other.dimensions):
             if dimSelf != dimOther:
-                diagnosis.debug('Different dimensions: %s, %s' % (dimSelf,dimOther))
+                _logger.debug('Different dimensions: %s, %s' % (dimSelf,dimOther))
                 return False
         return True
 
@@ -686,11 +686,10 @@ class SampleContainer(DataContainer):
     def numberOfColumns(self):
         return len(self.columns)
 
-import StringIO
 def assertEqual(con1,con2):
     diagnosis=StringIO.StringIO()
     testReport = logging.StreamHandler(diagnosis)
-    logger = logging.getLogger('DataContainer')
+    logger = logging.getLogger("pyphant")
     logger.addHandler(testReport)
     logger.setLevel(logging.DEBUG)
     if con1 == con2:
