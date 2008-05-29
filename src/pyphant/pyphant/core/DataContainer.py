@@ -210,7 +210,7 @@ class FieldContainer(DataContainer):
     u"""FieldContainer(data, unit=1, error=None,dimensions=None, longname=u"Sampled Field",
 \t\t\t  shortname=u"\\Psi",rescale=False)
 \t  Class describing sampled fields:
-\t  .data\t\t- Numpy.array representing the sampled field.
+\t  .data\t\t- Numpy.array representing the sampled field. 
 \t  .unit\t\t- PhysicalQuantity object denoting the unit of the sampled field.
 \t  .dimensions\t- List of FieldContainer instances
 \t\t\t  describing the dimensions of the sampled field.
@@ -225,6 +225,7 @@ class FieldContainer(DataContainer):
 \t\t\t  which is set by calling method .seal() and
 \t\t\t  indicates that the stored information are unchangable.
 \t  .label\t- Typical axis description composed from the meta information of the DataContainer.
+Concerning the ordering of data matrices and the dimension list consult http://wiki.pyphant.org/xwiki/bin/view/Main/Dimension+Handling+in+Pyphant.
 """
     typeString = u"field"
     def __init__(self, data, unit=1, error=None, mask=None,
