@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-
+#!Pyphant's ExtremumFinder worker
+#!-------------------------------
 # Copyright (c) 2007-2008, Rectorate of the University of Freiburg
 # All rights reserved.
 #
@@ -140,7 +141,7 @@ def findLocalExtrema(field, Nrows):
     x = field.dimensions[-1].data
     #Loop over all rows $N_{rows}$.
     for i in xrange(Nrows):
-        #If a $1\times N_{rows} matrix is supplied, save this row to vector $\vec{y}$.
+        #If a $1\times N_{rows}$ matrix is supplied, save this row to vector $\vec{y}$.
         #Otherwise set vector $\vec{y}$ to the i$^\text{th}$ row of matrix field.data
         #and handle vector of errors $\vec{\sigma}_y$ accordingly. It is None, if no error is given.
         sigmaY= field.error
@@ -162,9 +163,9 @@ def findLocalExtrema1D(y, sigmaY, x):
     DeltaY   = numpy.diff(y)
     #Test if the sign of successive elements of DeltaY change sign. These elements are candidates for the
     #estimation of local extrema. The result is a vector b_x0 of booleans with $\text{dim}\vec{x}_{0,\text{b}}=\text{dim}\vec{x}-2$.
-    #From b_x0[j]==True follows $x_{0,j}\in[x_{j+1},x{j+2}].
+    #From b_x0[j]==True follows $x_{0,j}\in[x_{j+1},x{j+2}]$.
     #Note, that b_x0[j]==b_x0[j+1]=True indicate a special case,
-    #which maps to one local extremum $x_{0,j}\in[x_{j+1},x{j+2}].
+    #which maps to one local extremum $x_{0,j}\in[x_{j+1},x_{j+2}]$.
     b_x0= numpy.sign(DeltaY[:-1])!=numpy.sign(DeltaY[1:])
     #Init list l_x0 for collecting the local extrema.
     l_x0 = []
@@ -174,6 +175,8 @@ def findLocalExtrema1D(y, sigmaY, x):
     l_curv_sign   = []
     #If one or more local extrema have been found, estimate its position, otherwise set its position to NaN.
     if numpy.sometrue(b_x0):
+        #Remove successive True values, which occur do to symmetrically boxed or exact local extrema.
+        b_x0[1:]=numpy.where(numpy.logical_and(b_x0[:-1],b_x0[1:]),False,b_x0[1:])
         #Compute vector index referencing the True elements of b_x0.
         index = numpy.extract(b_x0,numpy.arange(len(DeltaY)-1))
         skipOne = False
@@ -194,29 +197,56 @@ def findLocalExtrema1D(y, sigmaY, x):
         l_curv_sign.append(numpy.NaN)
     return l_x0, l_sigmaX0, l_curv_sign
 
+#$ \section{Function \lstinline!estimateExtremumPosition(y,x,sigmaY=None)!}
+#$ Estimate the extremum position from three sample points $(x_0,y_0)$,
+#$ $(x_1,y_1)$, and $(x_1,y_1)$ by a linear model. The sample points are provided as
+#$ vectors $\vec{x}=(x_0,x_1,x_2)$ and $\vec{y}=(y_0,y_1,y_2)$. The middle sample
+#$ point $(x_1,y1)$ separates two bins. For each bin the slope $y^\prime$ is calculated
+#$ as finite difference. These slopes are assumed to be located at the centre of each bin, such that
+#$ the slopes $\left((x_0+x_1)/2,(y_1-y_0)/(x_1-x_0)\right)$ and
+#$ $\left((x_1+x_2)/2,(y_2-y_1)/(x_2-x_1)\right)$ can be compiled to a linear equation, whose root is
+#$ an estimate for the position of the local extremum:
+#$ \begin{equation}\label{Eq:estimator}
+#$ \tilde{x}_0=\frac{1}{2}(x_0+x_1)-\frac{\frac{1}{2}(x_2-x_0)}{\frac{y_2-y_1}{x_2-x_1}-\frac{y_1-y_0}{x_1-x_0}}\frac{y_1-y_0}{x_1-x_0}
+#$ \end{equation} and its error
+#$ \begin{equation*}\sigma_{\tilde{x}_0}=R\cdot(\sigma_{y,0}|y_2-y_1|+\sigma_{y,1}|y_2-y_0|+\sigma_{y,3}|y_1-y_0|)\end{equation*} with
+#$ \begin{equation*}
+#$ R=\frac{1}{2}\left|\frac{(x_1-x_0)(x_2-x_0)(x_2-x_1)}{[y_0(x_2-x_1)+y_1(x_0-x_2)+y_2(x_1-x_0)]^2}\right|.
+#$ \end{equation*}
 def estimateExtremumPosition(y, x, sigmaY = None):
-    """Estimate the extremum position from three sample points $(x_0,y_0)$,
-    $(x_1,y_1)$, and $(x_1,y_1)$ by a linear model. The sample points are provided as
-    vectors $\vec{x}=(x_0,x_1,x_2)$ and $\vec{y}=(y_0,y_1,y_2)$. The middle sample
-    point $(x_1,y1)$ separates two bins. For each bin the slope $y^\prime$ is calculated
-    as finite difference. These slopes are assumed to be located at the centre of each bin, such that
-    the slopes $\left((x_0+x_1)/2,(y_1-y_0)/(x_1-x_0)\right)$ and
-    $\left((x_1+x_2)/2,(y_2-y_1)/(x_2-x_1)\right)$ can be compiled to a linear equation, whose root is
-    an estimate for the position of the local extremum.
+    """Estimate the extremum position from three sample points, whose x- and y-coordinates
+    are given as numpy arrays x and y. The middle sample
+    point separates two bins. For each bin a slope is calculated as finite difference.
+    Both slopes are assumed to be located at the centre of each bin, which leads
+    to a linear equation for the estimation of the position of the local extremum.
+    If an y-error is specified an estimation error is computed from error propagation.
     """
+    #Compute the width of left and right bin. The bin width has to be finite.
     deltaXleft = x[1]-x[0]
     deltaXright= x[2]-x[1]
-    deltaYleft = y[1]-y[0]
-    deltaYright= y[2]-y[1]
+    if deltaXleft == 0 or deltaXright == 0:
+        raise ValueError, "Both bins need to have a finite width."
+    #Compute the centres of left and right bin. The centre should not be identical.
     xCleft = 0.5*(x[0]+x[1])
     xCright= 0.5*(x[1]+x[2])
+    if xCleft == xCright:
+        raise ValueError, "The centres of the left and the right bin cannot be identical."
+    #Compute the difference of the sampled values.
+    deltaYleft = y[1]-y[0]
+    deltaYright= y[2]-y[1]
+    #If the difference is zero in both bins, a constant region has been detected and the
+    #algorithm should return NaN. If the difference of the right bin is greater than zero,
+    #a local minimum has been detected, if is smaller than zero a local maximum.
     if deltaYleft == 0.0:
-        if deltaYright > 0:
+        if deltaYright == 0.0: #constant region
+            return numpy.NaN,numpy.NaN,numpy.NaN    
+        elif deltaYright > 0:  #local minimum
             curv_sign = 1.0
-        else:
+        else:                  #local maximum
             curv_sign = -1.0
     else:
         curv_sign = -numpy.sign(deltaYleft)
+    # Estimate position of local extrema with Eq. $\text{(\ref{Eq:estimator})}$.
     x0 =xCleft-(xCright-xCleft)/(deltaYright/deltaXright-deltaYleft/deltaXleft)*deltaYleft/deltaXleft
     if sigmaY != None:
         scale = 0.5*deltaXleft*deltaXright*(x[2]-x[0])

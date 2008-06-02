@@ -316,6 +316,7 @@ class TestError(unittest.TestCase):
 class TestEstimateExtremumPosition(unittest.TestCase):
     def setUp(self):
         self.x = numpy.array([2,3,4],'f')
+        self.y = numpy.array([2,1,1.5],'f')
         self.error = numpy.array([0.0,0.0,0.0],'f')
         
     def testExactMinimum(self):
@@ -342,9 +343,28 @@ class TestEstimateExtremumPosition(unittest.TestCase):
         self.assertEqual(result,(2.5,numpy.NaN,-1.0))
 
     def testExactGeneric(self):
-        y = numpy.array([2,1,1.5],'f')
-        result =  EF.estimateExtremumPosition(y,self.x)
+        result =  EF.estimateExtremumPosition(self.y,self.x)
         self.assertEqual(result,(2.5+1/1.5,numpy.NaN,1.0))
 
+    def testEqualBinCentres(self):
+        """Erroneous sampling points leading to identical bin centres have to intercepted."""
+        x = numpy.array([2,3,2],'f')
+        self.assertRaises(ValueError,EF.estimateExtremumPosition,self.y,x)
+
+    def testFiniteBinWidth(self):
+        """Erroneous sampling points leading to zero bin width have to intercepted."""
+        x = numpy.array([2,2,2],'f')
+        self.assertRaises(ValueError,EF.estimateExtremumPosition,self.y,x)
+        x = numpy.array([2,2,3],'f')
+        self.assertRaises(ValueError,EF.estimateExtremumPosition,self.y,x)
+        x = numpy.array([2,3,3],'f')
+        self.assertRaises(ValueError,EF.estimateExtremumPosition,self.y,x)
+
+    def testConstantRegion(self):
+        """A constant region does not have any local extrema and NaN values should be returned."""
+        y = numpy.array([2,2,2],'f')
+        result =  EF.estimateExtremumPosition(y,self.x)
+        self.assertEqual(result,(numpy.NaN,numpy.NaN,numpy.NaN))
+        
 if __name__ == '__main__':
     unittest.main()
