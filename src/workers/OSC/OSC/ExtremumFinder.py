@@ -209,7 +209,9 @@ def findLocalExtrema1D(y, sigmaY, x):
 #$ \begin{equation}\label{Eq:estimator}
 #$ \tilde{x}_0=\frac{1}{2}(x_0+x_1)-\frac{\frac{1}{2}(x_2-x_0)}{\frac{y_2-y_1}{x_2-x_1}-\frac{y_1-y_0}{x_1-x_0}}\frac{y_1-y_0}{x_1-x_0}
 #$ \end{equation} and its error
-#$ \begin{equation*}\sigma_{\tilde{x}_0}=R\cdot(\sigma_{y,0}|y_2-y_1|+\sigma_{y,1}|y_2-y_0|+\sigma_{y,3}|y_1-y_0|)\end{equation*} with
+#$ \begin{equation}\label{Eq:uncertainty}
+#$ \sigma_{\tilde{x}_0}=R\cdot(\sigma_{y,0}|y_2-y_1|+\sigma_{y,1}|y_2-y_0|+\sigma_{y,3}|y_1-y_0|)
+#$ \end{equation} with
 #$ \begin{equation*}
 #$ R=\frac{1}{2}\left|\frac{(x_1-x_0)(x_2-x_0)(x_2-x_1)}{[y_0(x_2-x_1)+y_1(x_0-x_2)+y_2(x_1-x_0)]^2}\right|.
 #$ \end{equation*}
@@ -235,8 +237,8 @@ def estimateExtremumPosition(y, x, sigmaY = None):
     deltaYleft = y[1]-y[0]
     deltaYright= y[2]-y[1]
     #If the difference is zero in both bins, a constant region has been detected and the
-    #algorithm should return NaN. If the difference of the right bin is greater than zero,
-    #a local minimum has been detected, if is smaller than zero a local maximum.
+    #algorithm should return NaN. If the difference of the right bin is greater or lower
+    #than zero a local minimum or local maximum has been detected, respectively.
     if deltaYleft == 0.0:
         if deltaYright == 0.0: #constant region
             return numpy.NaN,numpy.NaN,numpy.NaN    
@@ -246,13 +248,14 @@ def estimateExtremumPosition(y, x, sigmaY = None):
             curv_sign = -1.0
     else:
         curv_sign = -numpy.sign(deltaYleft)
-    # Estimate position of local extrema with Eq. $\text{(\ref{Eq:estimator})}$.
+    # Estimate position of local extrema according to Eq. $\text{(\ref{Eq:estimator})}$.
     x0 =xCleft-(xCright-xCleft)/(deltaYright/deltaXright-deltaYleft/deltaXleft)*deltaYleft/deltaXleft
+    # If an y-error has been provided, compute the estimation error according to Eq. $\text{(\ref{Eq:uncertainty})}$.    
     if sigmaY != None:
-        scale = 0.5*deltaXleft*deltaXright*(x[2]-x[0])
-        scale/= (y[0]*deltaXright+y[1]*(x[0]-x[2])+y[2]*deltaXleft)**2
-        partError = scale * numpy.array([-deltaYright,y[2]-y[0],-deltaYleft])
-        sigmaX0 = numpy.dot(sigmaY,numpy.abs(partError))
+        numerator = 0.5*deltaXleft*deltaXright*(x[2]-x[0])
+        R = numerator / (y[0]*deltaXright+y[1]*(x[0]-x[2])+y[2]*deltaXleft)**2
+        partError = numpy.array([-deltaYright,y[2]-y[0],-deltaYleft])
+        sigmaX0 = R * numpy.dot(sigmaY,numpy.abs(partError))
     else:
         sigmaX0=numpy.NaN
     return x0,sigmaX0,curv_sign

@@ -237,7 +237,7 @@ class TestError(unittest.TestCase):
         expectedResult = DC.FieldContainer(numpy.array([0.0]),
                                            longname = 'position of the local minimum of parabel',
                                            shortname = 'x_0',
-                                           error = numpy.array([0.1])
+                                           error = numpy.array([0.05])
                                            )
         w = EF.ExtremumFinder(None)
         w.paramExtremum.value=u'minima'
@@ -257,7 +257,7 @@ class TestError(unittest.TestCase):
         expectedResult = DC.FieldContainer(numpy.array([0.0]),
                                            longname = 'position of the local minimum of parabel',
                                            shortname = 'x_0',
-                                           error = numpy.array([0.2])
+                                           error = numpy.array([0.1])
                                            )
         w = EF.ExtremumFinder(None)
         w.paramExtremum.value=u'minima'
@@ -317,34 +317,65 @@ class TestEstimateExtremumPosition(unittest.TestCase):
     def setUp(self):
         self.x = numpy.array([2,3,4],'f')
         self.y = numpy.array([2,1,1.5],'f')
-        self.error = numpy.array([0.0,0.0,0.0],'f')
+        self.zeros = numpy.zeros((3,),'f')
+        self.error = numpy.array([0.01,0.01,0.01],'f')
         
     def testExactMinimum(self):
         y = numpy.array([2,1,2],'f')
         result =  EF.estimateExtremumPosition(y,self.x)
         self.assertEqual(result,(3.0,numpy.NaN,1.0))
-        result =  EF.estimateExtremumPosition(y,self.x,
-                                              sigmaY=numpy.zeros((3,),'f'))
+        result =  EF.estimateExtremumPosition(y,self.x,sigmaY=self.zeros)
         self.assertEqual(result,(3.0,0.0,1.0))
+        result =  EF.estimateExtremumPosition(y,self.x,sigmaY=self.error)
+        numpy.testing.assert_almost_equal(numpy.array(result),
+                                          numpy.array((3.0,0.005,1.0)))
         
     def testExactMaximum(self):
         y = numpy.array([2,3,2],'f')
         result =  EF.estimateExtremumPosition(y,self.x)
         self.assertEqual(result,(3.0,numpy.NaN,-1.0))
+        result =  EF.estimateExtremumPosition(y,self.x,sigmaY=self.zeros)
+        self.assertEqual(result,(3.0,0.0,-1.0))
+        result =  EF.estimateExtremumPosition(y,self.x,sigmaY=self.error)
+        numpy.testing.assert_almost_equal(numpy.array(result),
+                                          numpy.array((3.0,0.005,-1.0)))
 
     def testSymmetricMinimum(self):
         y = numpy.array([2,2,3],'f')
         result =  EF.estimateExtremumPosition(y,self.x)
         self.assertEqual(result,(2.5,numpy.NaN,1.0))
+        result =  EF.estimateExtremumPosition(y,self.x,sigmaY=self.zeros)
+        self.assertEqual(result,(2.5,0.0,1.0))
+        result =  EF.estimateExtremumPosition(y,self.x,sigmaY=self.error)
+        numpy.testing.assert_almost_equal(numpy.array(result),
+                                          numpy.array((2.5,0.02,1.0)))
 
     def testSymmetricMaximum(self):
         y = numpy.array([2,2,1],'f')
         result =  EF.estimateExtremumPosition(y,self.x)
         self.assertEqual(result,(2.5,numpy.NaN,-1.0))
+        result =  EF.estimateExtremumPosition(y,self.x,sigmaY=self.zeros)
+        self.assertEqual(result,(2.5,0.0,-1.0))
+        result =  EF.estimateExtremumPosition(y,self.x,sigmaY=self.error)
+        numpy.testing.assert_almost_equal(numpy.array(result),
+                                          numpy.array((2.5,0.02,-1.0)))
 
     def testExactGeneric(self):
         result =  EF.estimateExtremumPosition(self.y,self.x)
         self.assertEqual(result,(2.5+1/1.5,numpy.NaN,1.0))
+        result =  EF.estimateExtremumPosition(self.y,self.x,sigmaY=self.zeros)
+        self.assertEqual(result,(2.5+1/1.5,0.0,1.0))
+        result =  EF.estimateExtremumPosition(self.y,self.x,sigmaY=self.error)
+        numpy.testing.assert_almost_equal(numpy.array(result),
+                                          numpy.array((2.5+1/1.5,0.02/1.5**2,1.0)))
+
+    def testConstantRegion(self):
+        """A constant region does not have any local extrema and NaN values should be returned."""
+        y = numpy.array([2,2,2],'f')
+        result =  EF.estimateExtremumPosition(y,self.x)
+        self.assertEqual(result,(numpy.NaN,numpy.NaN,numpy.NaN))
+        result =  EF.estimateExtremumPosition(y,self.x,sigmaY=self.zeros)
+        self.assertEqual(result,(numpy.NaN,numpy.NaN,numpy.NaN))
 
     def testEqualBinCentres(self):
         """Erroneous sampling points leading to identical bin centres have to intercepted."""
@@ -359,12 +390,6 @@ class TestEstimateExtremumPosition(unittest.TestCase):
         self.assertRaises(ValueError,EF.estimateExtremumPosition,self.y,x)
         x = numpy.array([2,3,3],'f')
         self.assertRaises(ValueError,EF.estimateExtremumPosition,self.y,x)
-
-    def testConstantRegion(self):
-        """A constant region does not have any local extrema and NaN values should be returned."""
-        y = numpy.array([2,2,2],'f')
-        result =  EF.estimateExtremumPosition(y,self.x)
-        self.assertEqual(result,(numpy.NaN,numpy.NaN,numpy.NaN))
         
 if __name__ == '__main__':
     unittest.main()
