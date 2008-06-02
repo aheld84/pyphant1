@@ -138,8 +138,6 @@ def findLocalExtrema(field, Nrows):
     #Because we are looking for local extrema of one-dimensional sampled
     #fields the last dimension is the sampled abscissa $\vec{x}$.
     x = field.dimensions[-1].data
-    #Compute the discretisation $\vec{\Delta}_x$ of the abscissa $\vec{x}$.
-    DeltaX   = numpy.diff(x)
     #Loop over all rows $N_{rows}$.
     for i in xrange(Nrows):
         #If a $1\times N_{rows} matrix is supplied, save this row to vector $\vec{y}$.
@@ -152,17 +150,19 @@ def findLocalExtrema(field, Nrows):
             y = field.data[i]
             if field.error != None:
                 sigmaY= field.error[i]
-        i, x0, l_sigmaX0, dyy = findLocalExtrema1D(i, y, sigmaY, x, DeltaX)
+        x0, l_sigmaX0, dyy = findLocalExtrema1D(y, sigmaY, x)
         ll_x0.append(numpy.array(x0))
         ll_sigmaX0.append(numpy.array(l_sigmaX0))
         ll_curv.append(numpy.array(dyy))
     return x0, ll_curv, ll_sigmaX0, ll_x0
 
-def findLocalExtrema1D(i, y, sigmaY, x, DeltaX):
+def findLocalExtrema1D(y, sigmaY, x):
     #Compute the centre $\vec{x}_c$ of each intervall, which is cornered by the sample points $\vec{x}$.
     #Note, that the number of intervalls $N_I$ is one less than the number $N_x=\text{dim}\vec{x}$ of
     #discretisation points. 
     xc  = 0.5*(x[:-1] + x[1:])
+    #Compute the discretisation $\vec{\Delta}_x$ of the abscissa $\vec{x}$.
+    DeltaX   = numpy.diff(x)
     #Compute differences $\vec{\Delta}_y$ of data vector $\vec{y}$.
     #The differencing reduces the dimensionalty of the vector by one: $\text{dim}\vec{\Delta}_y=\text{dim}\vec{x}-1$.
     DeltaY   = numpy.diff(y)
@@ -210,4 +210,4 @@ def findLocalExtrema1D(i, y, sigmaY, x, DeltaX):
         x0.append(numpy.NaN)
         l_sigmaX0.append(numpy.NaN)
         dyy.append(numpy.NaN)
-    return i, x0, l_sigmaX0, dyy
+    return x0, l_sigmaX0, dyy
