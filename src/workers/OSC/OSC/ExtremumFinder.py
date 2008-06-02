@@ -156,29 +156,30 @@ def findLocalExtrema(field, Nrows):
             y = field.data[i]
             if field.error != None:
                 sigmaY= field.error[i]
-        #compute first derivative
-        dy   = numpy.diff(y)
-        x0Pos= numpy.sign(dy[:-1])!=numpy.sign(dy[1:])
+        #Compute differences $\vec{\Delta}_y$ of data vector $\vec{y}$.
+        #The differencing reduces the dimensionalty of the vector by one: $\text{dim}\vec{\Delta}_y=\text{dim}\vec{x}-1$.
+        DeltaY   = numpy.diff(y)
+        x0Pos= numpy.sign(DeltaY[:-1])!=numpy.sign(DeltaY[1:])
         x0 = []
         #Init list $\sigma_{x_0}$ for the storage of estimation errors for locale extrema position $\vec{x}_0$
         l_sigmaX0 = []
         dyy   = []
         if numpy.sometrue(x0Pos):
-            index = numpy.extract(x0Pos,numpy.arange(len(dy)))
+            index = numpy.extract(x0Pos,numpy.arange(len(DeltaY)))
             skipOne = False
             for i in index:
                 if skipOne:
                     skipOne = False
                 else:
-                    dyy.append(-numpy.sign(dy[i]))
-                    if dy[i]==-dy[i+1]: #Exact minimum
+                    dyy.append(-numpy.sign(DeltaY[i]))
+                    if DeltaY[i]==-DeltaY[i+1]: #Exact minimum
                         x0.append(0.5*(xc[i]+xc[i+1]))
                         if field.error != None:
                             l_sigmaX0.append(sigmaY[i])
                         else:
                             l_sigmaX0.append(numpy.NaN)
                         skipOne = True
-                    elif dy[i+1]==0: # Symmetrically boxed Error
+                    elif DeltaY[i+1]==0: # Symmetrically boxed Error
                         x0.append(xc[i+1])
                         if field.error != None:
                             l_sigmaX0.append(sigmaY[i+1]+sigmaY[i+2])
@@ -186,12 +187,12 @@ def findLocalExtrema(field, Nrows):
                             l_sigmaX0.append(numpy.NaN)
                         skipOne = True
                     else:
-                        extr=xc[i]-(xc[i+1]-xc[i])/(dy[i+1]/DeltaX[i+1]-dy[i]/DeltaX[i])*dy[i]/DeltaX[i]
+                        extr=xc[i]-(xc[i+1]-xc[i])/(DeltaY[i+1]/DeltaX[i+1]-DeltaY[i]/DeltaX[i])*DeltaY[i]/DeltaX[i]
                         x0.append(extr)
                         if field.error != None:
                             scale = 0.5*DeltaX[i]*DeltaX[i+1]*(x[i+2]-x[i])
                             scale/= (y[i]*DeltaX[i+1]+y[i+1]*(x[i]-x[i+2])+y[i+2]*DeltaX[i])**2
-                            partError = scale * numpy.array([-dy[i+1],y[i+2]-y[i],-dy[i]])
+                            partError = scale * numpy.array([-DeltaY[i+1],y[i+2]-y[i],-DeltaY[i]])
                             l_sigmaX0.append(numpy.dot(sigmaY[i:i+3],numpy.abs(partError)))
                         else:
                             l_sigmaX0.append(numpy.NaN)
