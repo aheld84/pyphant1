@@ -12,4 +12,8 @@ build
 dist
 *.egg-info
 \#*\#
-
+*.aux
+*.log
+*.out
+*.bst
+*.bbl
