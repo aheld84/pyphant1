@@ -1,5 +1,6 @@
 *.py[co]
 *~
+DEBUG
 PKG-INFO
 SOURCES.txt
 dependency_links.txt
