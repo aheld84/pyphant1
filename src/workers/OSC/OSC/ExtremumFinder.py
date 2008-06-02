@@ -202,7 +202,7 @@ def estimateExtremumPosition(y, x, sigmaY = None):
     as finite difference. These slopes are assumed to be located at the centre of each bin, such that
     the slopes $\left((x_0+x_1)/2,(y_1-y_0)/(x_1-x_0)\right)$ and
     $\left((x_1+x_2)/2,(y_2-y_1)/(x_2-x_1)\right)$ can be compiled to a linear equation, whose root is
-    an estimate for position of the local extremum.
+    an estimate for the position of the local extremum.
     """
     deltaXleft = x[1]-x[0]
     deltaXright= x[2]-x[1]
@@ -217,27 +217,12 @@ def estimateExtremumPosition(y, x, sigmaY = None):
             curv_sign = -1.0
     else:
         curv_sign = -numpy.sign(deltaYleft)
-    if deltaYleft==-deltaYright: #Exact minimum
-        x0 = 0.5*(xCleft+xCright)
-        if sigmaY != None:
-            sigmaX0 = sigmaY[0]
-        else:
-            sigmaX0 = numpy.NaN
-        skipOne = True
-    elif deltaYright==0: # Symmetrically boxed Error
-        x0 = xCright
-        if sigmaY != None:
-            sigmaX0=sigmaY[1]+sigmaY[2]
-        else:
-            sigmaX0=numpy.NaN
-        skipOne = True
+    x0 =xCleft-(xCright-xCleft)/(deltaYright/deltaXright-deltaYleft/deltaXleft)*deltaYleft/deltaXleft
+    if sigmaY != None:
+        scale = 0.5*deltaXleft*deltaXright*(x[2]-x[0])
+        scale/= (y[0]*deltaXright+y[1]*(x[0]-x[2])+y[2]*deltaXleft)**2
+        partError = scale * numpy.array([-deltaYright,y[2]-y[0],-deltaYleft])
+        sigmaX0 = numpy.dot(sigmaY,numpy.abs(partError))
     else:
-        x0 =xCleft-(xCright-xCleft)/(deltaYright/deltaXright-deltaYleft/deltaXleft)*deltaYleft/deltaXleft
-        if sigmaY != None:
-            scale = 0.5*deltaXleft*deltaXright*(x[2]-x[0])
-            scale/= (y[0]*deltaXright+y[1]*(x[0]-x[2])+y[2]*deltaXleft)**2
-            partError = scale * numpy.array([-deltaYright,y[2]-y[0],-deltaYleft])
-            sigmaX0 = numpy.dot(sigmaY,numpy.abs(partError))
-        else:
-            sigmaX0 = numpy.NaN
+        sigmaX0=numpy.NaN
     return x0,sigmaX0,curv_sign

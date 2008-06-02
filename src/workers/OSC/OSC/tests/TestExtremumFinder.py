@@ -316,12 +316,16 @@ class TestError(unittest.TestCase):
 class TestEstimateExtremumPosition(unittest.TestCase):
     def setUp(self):
         self.x = numpy.array([2,3,4],'f')
+        self.error = numpy.array([0.0,0.0,0.0],'f')
         
     def testExactMinimum(self):
         y = numpy.array([2,1,2],'f')
         result =  EF.estimateExtremumPosition(y,self.x)
         self.assertEqual(result,(3.0,numpy.NaN,1.0))
-
+        result =  EF.estimateExtremumPosition(y,self.x,
+                                              sigmaY=numpy.zeros((3,),'f'))
+        self.assertEqual(result,(3.0,0.0,1.0))
+        
     def testExactMaximum(self):
         y = numpy.array([2,3,2],'f')
         result =  EF.estimateExtremumPosition(y,self.x)
