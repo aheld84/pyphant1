@@ -130,12 +130,14 @@ class ExtremumFinder(Worker.Worker):
         return roots
 
 def findLocalExtrema(field, Nrows):
-    x = field.dimensions[-1].data
-    dx   = numpy.diff(x)
-    dyx  = 0.5*(x[:-1] + x[1:])
     extremaPos = []
     extremaError = []
     extremaCurv = []
+    #Because we are looking for local extrema of one-dimensional sampled
+    #fields the last dimension is the sampled abscissa $\vec{x}$.
+    x = field.dimensions[-1].data
+    dx   = numpy.diff(x)
+    dyx  = 0.5*(x[:-1] + x[1:])
     for i in xrange(Nrows):
         if Nrows == 1:
             y = field.data
@@ -150,7 +152,8 @@ def findLocalExtrema(field, Nrows):
         dy   = numpy.diff(y)
         x0Pos= numpy.sign(dy[:-1])!=numpy.sign(dy[1:])
         x0 = []
-        DeltaX = []
+        #Init list $\sigma_{x_0}$ for the storage of estimation errors for locale extrema position $\vec{x}_0$
+        l_sigmaX0 = []
         dyy   = []
         if numpy.sometrue(x0Pos):
             index = numpy.extract(x0Pos,numpy.arange(len(dy)))
@@ -163,16 +166,16 @@ def findLocalExtrema(field, Nrows):
                     if dy[i]==-dy[i+1]: #Exact minimum
                         x0.append(0.5*(dyx[i]+dyx[i+1]))
                         if field.error != None:
-                            DeltaX.append(Dy[i])
+                            l_sigmaX0.append(Dy[i])
                         else:
-                            DeltaX.append(numpy.NaN)
+                            l_sigmaX0.append(numpy.NaN)
                         skipOne = True
                     elif dy[i+1]==0: # Symmetrically boxed Error
                         x0.append(dyx[i+1])
                         if field.error != None:
-                            DeltaX.append(Dy[i+1]+Dy[i+2])
+                            l_sigmaX0.append(Dy[i+1]+Dy[i+2])
                         else:
-                            DeltaX.append(numpy.NaN)
+                            l_sigmaX0.append(numpy.NaN)
                         skipOne = True
                     else:
                         extr=dyx[i]-(dyx[i+1]-dyx[i])/(dy[i+1]/dx[i+1]-dy[i]/dx[i])*dy[i]/dx[i]
@@ -181,14 +184,14 @@ def findLocalExtrema(field, Nrows):
                             scale = 0.5*dx[i]*dx[i+1]*(x[i+2]-x[i])
                             scale/= (y[i]*dx[i+1]+y[i+1]*(x[i]-x[i+2])+y[i+2]*dx[i])**2
                             partError = scale * numpy.array([-dy[i+1],y[i+2]-y[i],-dy[i]])
-                            DeltaX.append(numpy.dot(Dy[i:i+3],numpy.abs(partError)))
+                            l_sigmaX0.append(numpy.dot(Dy[i:i+3],numpy.abs(partError)))
                         else:
-                            DeltaX.append(numpy.NaN)
+                            l_sigmaX0.append(numpy.NaN)
         else:
             x0.append(numpy.NaN)
-            DeltaX.append(numpy.NaN)
+            l_sigmaX0.append(numpy.NaN)
             dyy.append(numpy.NaN)
         extremaPos.append(numpy.array(x0))
-        extremaError.append(numpy.array(DeltaX))
+        extremaError.append(numpy.array(l_sigmaX0))
         extremaCurv.append(numpy.array(dyy))
     return x0, extremaCurv, extremaError, extremaPos
