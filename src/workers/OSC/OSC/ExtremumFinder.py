@@ -136,7 +136,8 @@ def findLocalExtrema(field, Nrows):
     #Because we are looking for local extrema of one-dimensional sampled
     #fields the last dimension is the sampled abscissa $\vec{x}$.
     x = field.dimensions[-1].data
-    dx   = numpy.diff(x)
+    #Compute the discretisation $\vec{\Delta}_x$ of the abscissa $\vec{x}$.
+    DeltaX   = numpy.diff(x)
     dyx  = 0.5*(x[:-1] + x[1:])
     for i in xrange(Nrows):
         if Nrows == 1:
@@ -178,11 +179,11 @@ def findLocalExtrema(field, Nrows):
                             l_sigmaX0.append(numpy.NaN)
                         skipOne = True
                     else:
-                        extr=dyx[i]-(dyx[i+1]-dyx[i])/(dy[i+1]/dx[i+1]-dy[i]/dx[i])*dy[i]/dx[i]
+                        extr=dyx[i]-(dyx[i+1]-dyx[i])/(dy[i+1]/DeltaX[i+1]-dy[i]/DeltaX[i])*dy[i]/DeltaX[i]
                         x0.append(extr)
                         if field.error != None:
-                            scale = 0.5*dx[i]*dx[i+1]*(x[i+2]-x[i])
-                            scale/= (y[i]*dx[i+1]+y[i+1]*(x[i]-x[i+2])+y[i+2]*dx[i])**2
+                            scale = 0.5*DeltaX[i]*DeltaX[i+1]*(x[i+2]-x[i])
+                            scale/= (y[i]*DeltaX[i+1]+y[i+1]*(x[i]-x[i+2])+y[i+2]*DeltaX[i])**2
                             partError = scale * numpy.array([-dy[i+1],y[i+2]-y[i],-dy[i]])
                             l_sigmaX0.append(numpy.dot(Dy[i:i+3],numpy.abs(partError)))
                         else:
