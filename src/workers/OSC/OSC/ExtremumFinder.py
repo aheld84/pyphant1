@@ -29,7 +29,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""Pyphant module providing worker for finding the local extrema of 1D functions.
+u"""Pyphant module computing the local extrema of one-dimensional sampled fields. If a two-dimensional field is provided as input, the algorithm loops over the 0th dimension denoting the y-axis, which corresponds to an iteration over the rows of the data matrix.
 """
 
 __id__ = "$Id$"
@@ -57,18 +57,19 @@ class ExtremumFinder(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def locate(self, field, subscriber=0):
-        extremaPos = []
-        extremaError = []
-        extremaCurv = []
+        #Determine the number of rows $N_{rows}$ for which the local extrema have to be found.
+        if len(field.dimensions)==1:
+            Nrows = 1
+        else:
+            Nrows = len(field.dimensions[0].data)
         x = field.dimensions[-1].data
         dx   = numpy.diff(x)
         dyx  = 0.5*(x[:-1] + x[1:])
-        if len(field.dimensions)==1:
-            count = 1
-        else:
-            count = len(field.dimensions[0].data)
-        for i in xrange(count):
-            if count == 1:
+        extremaPos = []
+        extremaError = []
+        extremaCurv = []
+        for i in xrange(Nrows):
+            if Nrows == 1:
                 y = field.data
                 Dy= field.error
             else:
@@ -123,17 +124,17 @@ class ExtremumFinder(Worker.Worker):
             extremaError.append(numpy.array(DeltaX))
             extremaCurv.append(numpy.array(dyy))
         #Map roots and curvatures to arrays
-        if count == 1:
+        if Nrows == 1:
             X0 = numpy.array(x0)
             XCurv = numpy.array(extremaCurv[0])
             XError= numpy.array(extremaError[0])
         else:
             maxLen = max(map(len,extremaPos))
-            X0 = numpy.zeros((count,maxLen),'f')
+            X0 = numpy.zeros((Nrows,maxLen),'f')
             X0[:] = numpy.NaN
             XCurv = X0.copy()
             XError= X0.copy()
-            for i in xrange(count):
+            for i in xrange(Nrows):
                 numExt = len(extremaPos[i])
                 if numExt == 1:
                     X0[i,0]=extremaPos[i][0]
