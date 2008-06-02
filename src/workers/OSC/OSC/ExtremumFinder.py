@@ -62,67 +62,8 @@ class ExtremumFinder(Worker.Worker):
             Nrows = 1
         else:
             Nrows = len(field.dimensions[0].data)
-        x = field.dimensions[-1].data
-        dx   = numpy.diff(x)
-        dyx  = 0.5*(x[:-1] + x[1:])
-        extremaPos = []
-        extremaError = []
-        extremaCurv = []
-        for i in xrange(Nrows):
-            if Nrows == 1:
-                y = field.data
-                Dy= field.error
-            else:
-                y = field.data[i]
-                if field.error != None:
-                    Dy= field.error[i]
-                else:
-                    Dy= field.error
-            #compute first derivative
-            dy   = numpy.diff(y)
-            x0Pos= numpy.sign(dy[:-1])!=numpy.sign(dy[1:])
-            x0 = []
-            DeltaX = []
-            dyy   = []
-            if numpy.sometrue(x0Pos):
-                index = numpy.extract(x0Pos,numpy.arange(len(dy)))
-                skipOne = False
-                for i in index:
-                    if skipOne:
-                        skipOne = False
-                    else:
-                        dyy.append(-numpy.sign(dy[i]))
-                        if dy[i]==-dy[i+1]: #Exact minimum
-                            x0.append(0.5*(dyx[i]+dyx[i+1]))
-                            if field.error != None:
-                                DeltaX.append(Dy[i])
-                            else:
-                                DeltaX.append(numpy.NaN)
-                            skipOne = True
-                        elif dy[i+1]==0: # Symmetrically boxed Error
-                            x0.append(dyx[i+1])
-                            if field.error != None:
-                                DeltaX.append(Dy[i+1]+Dy[i+2])
-                            else:
-                                DeltaX.append(numpy.NaN)
-                            skipOne = True
-                        else:
-                            extr=dyx[i]-(dyx[i+1]-dyx[i])/(dy[i+1]/dx[i+1]-dy[i]/dx[i])*dy[i]/dx[i]
-                            x0.append(extr)
-                            if field.error != None:
-                                scale = 0.5*dx[i]*dx[i+1]*(x[i+2]-x[i])
-                                scale/= (y[i]*dx[i+1]+y[i+1]*(x[i]-x[i+2])+y[i+2]*dx[i])**2
-                                partError = scale * numpy.array([-dy[i+1],y[i+2]-y[i],-dy[i]])
-                                DeltaX.append(numpy.dot(Dy[i:i+3],numpy.abs(partError)))
-                            else:
-                                DeltaX.append(numpy.NaN)
-            else:
-                x0.append(numpy.NaN)
-                DeltaX.append(numpy.NaN)
-                dyy.append(numpy.NaN)
-            extremaPos.append(numpy.array(x0))
-            extremaError.append(numpy.array(DeltaX))
-            extremaCurv.append(numpy.array(dyy))
+        #Find local extrema $\vec{x}_0$
+        x0, extremaCurv, extremaError, extremaPos = findLocalExtrema(field, Nrows)
         #Map roots and curvatures to arrays
         if Nrows == 1:
             X0 = numpy.array(x0)
@@ -187,3 +128,67 @@ class ExtremumFinder(Worker.Worker):
             roots.dimensions[-1] = field.dimensions[0]
         roots.seal()
         return roots
+
+def findLocalExtrema(field, Nrows):
+    x = field.dimensions[-1].data
+    dx   = numpy.diff(x)
+    dyx  = 0.5*(x[:-1] + x[1:])
+    extremaPos = []
+    extremaError = []
+    extremaCurv = []
+    for i in xrange(Nrows):
+        if Nrows == 1:
+            y = field.data
+            Dy= field.error
+        else:
+            y = field.data[i]
+            if field.error != None:
+                Dy= field.error[i]
+            else:
+                Dy= field.error
+        #compute first derivative
+        dy   = numpy.diff(y)
+        x0Pos= numpy.sign(dy[:-1])!=numpy.sign(dy[1:])
+        x0 = []
+        DeltaX = []
+        dyy   = []
+        if numpy.sometrue(x0Pos):
+            index = numpy.extract(x0Pos,numpy.arange(len(dy)))
+            skipOne = False
+            for i in index:
+                if skipOne:
+                    skipOne = False
+                else:
+                    dyy.append(-numpy.sign(dy[i]))
+                    if dy[i]==-dy[i+1]: #Exact minimum
+                        x0.append(0.5*(dyx[i]+dyx[i+1]))
+                        if field.error != None:
+                            DeltaX.append(Dy[i])
+                        else:
+                            DeltaX.append(numpy.NaN)
+                        skipOne = True
+                    elif dy[i+1]==0: # Symmetrically boxed Error
+                        x0.append(dyx[i+1])
+                        if field.error != None:
+                            DeltaX.append(Dy[i+1]+Dy[i+2])
+                        else:
+                            DeltaX.append(numpy.NaN)
+                        skipOne = True
+                    else:
+                        extr=dyx[i]-(dyx[i+1]-dyx[i])/(dy[i+1]/dx[i+1]-dy[i]/dx[i])*dy[i]/dx[i]
+                        x0.append(extr)
+                        if field.error != None:
+                            scale = 0.5*dx[i]*dx[i+1]*(x[i+2]-x[i])
+                            scale/= (y[i]*dx[i+1]+y[i+1]*(x[i]-x[i+2])+y[i+2]*dx[i])**2
+                            partError = scale * numpy.array([-dy[i+1],y[i+2]-y[i],-dy[i]])
+                            DeltaX.append(numpy.dot(Dy[i:i+3],numpy.abs(partError)))
+                        else:
+                            DeltaX.append(numpy.NaN)
+        else:
+            x0.append(numpy.NaN)
+            DeltaX.append(numpy.NaN)
+            dyy.append(numpy.NaN)
+        extremaPos.append(numpy.array(x0))
+        extremaError.append(numpy.array(DeltaX))
+        extremaCurv.append(numpy.array(dyy))
+    return x0, extremaCurv, extremaError, extremaPos
