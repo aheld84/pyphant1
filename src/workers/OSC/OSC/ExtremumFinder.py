@@ -130,18 +130,21 @@ class ExtremumFinder(Worker.Worker):
         return roots
 
 def findLocalExtrema(field, Nrows):
-    extremaPos = []
-    extremaError = []
-    extremaCurv = []
+    #Init nested lists ll_x0, ll_sigmaX0 and ll_curv which are going to hold one list per
+    #analysed data row.
+    ll_x0 = []      #Nested list for $\vec{x}_{0,i}$ with $i=0,N_{rows}-1$
+    ll_sigmaX0 = [] #Nested list for $\sigma_{x_{0,i}}$ with $i=0,N_{rows}-1$
+    ll_curv = []    #Nested list indicating local maximum (-1) or local minimum (1)
     #Because we are looking for local extrema of one-dimensional sampled
     #fields the last dimension is the sampled abscissa $\vec{x}$.
     x = field.dimensions[-1].data
     #Compute the discretisation $\vec{\Delta}_x$ of the abscissa $\vec{x}$.
     DeltaX   = numpy.diff(x)
     #Compute the centre $\vec{x}_c$ of each intervall, which is cornered by the sample points $\vec{x}$.
-    #Note, that the number of intervalls $N_I$ is one less than the number $N_x=\text{dim}\vec{x}$ of discretisation points. 
-
+    #Note, that the number of intervalls $N_I$ is one less than the number $N_x=\text{dim}\vec{x}$ of
+    #discretisation points. 
     xc  = 0.5*(x[:-1] + x[1:])
+    #Loop over all rows $N_{rows}$.
     for i in xrange(Nrows):
         if Nrows == 1:
             y = field.data
@@ -195,7 +198,7 @@ def findLocalExtrema(field, Nrows):
             x0.append(numpy.NaN)
             l_sigmaX0.append(numpy.NaN)
             dyy.append(numpy.NaN)
-        extremaPos.append(numpy.array(x0))
-        extremaError.append(numpy.array(l_sigmaX0))
-        extremaCurv.append(numpy.array(dyy))
-    return x0, extremaCurv, extremaError, extremaPos
+        ll_x0.append(numpy.array(x0))
+        ll_sigmaX0.append(numpy.array(l_sigmaX0))
+        ll_curv.append(numpy.array(dyy))
+    return x0, ll_curv, ll_sigmaX0, ll_x0
