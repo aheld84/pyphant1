@@ -313,5 +313,34 @@ class TestError(unittest.TestCase):
         result = w.locate(inputField)
         DC.assertEqual(result,expectedResult)
 
+class TestEstimateExtremumPosition(unittest.TestCase):
+    def setUp(self):
+        self.x = numpy.array([2,3,4],'f')
+        
+    def testExactMinimum(self):
+        y = numpy.array([2,1,2],'f')
+        result =  EF.estimateExtremumPosition(y,self.x)
+        self.assertEqual(result,(3.0,numpy.NaN,1.0))
+
+    def testExactMaximum(self):
+        y = numpy.array([2,3,2],'f')
+        result =  EF.estimateExtremumPosition(y,self.x)
+        self.assertEqual(result,(3.0,numpy.NaN,-1.0))
+
+    def testSymmetricMinimum(self):
+        y = numpy.array([2,2,3],'f')
+        result =  EF.estimateExtremumPosition(y,self.x)
+        self.assertEqual(result,(2.5,numpy.NaN,1.0))
+
+    def testSymmetricMaximum(self):
+        y = numpy.array([2,2,1],'f')
+        result =  EF.estimateExtremumPosition(y,self.x)
+        self.assertEqual(result,(2.5,numpy.NaN,-1.0))
+
+    def testExactGeneric(self):
+        y = numpy.array([2,1,1.5],'f')
+        result =  EF.estimateExtremumPosition(y,self.x)
+        self.assertEqual(result,(2.5+1/1.5,numpy.NaN,1.0))
+
 if __name__ == '__main__':
     unittest.main()

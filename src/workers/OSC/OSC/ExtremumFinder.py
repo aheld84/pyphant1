@@ -157,12 +157,6 @@ def findLocalExtrema(field, Nrows):
     return x0, ll_curv, ll_sigmaX0, ll_x0
 
 def findLocalExtrema1D(y, sigmaY, x):
-    #Compute the centre $\vec{x}_c$ of each intervall, which is cornered by the sample points $\vec{x}$.
-    #Note, that the number of intervalls $N_I$ is one less than the number $N_x=\text{dim}\vec{x}$ of
-    #discretisation points. 
-    xc  = 0.5*(x[:-1] + x[1:])
-    #Compute the discretisation $\vec{\Delta}_x$ of the abscissa $\vec{x}$.
-    DeltaX   = numpy.diff(x)
     #Compute differences $\vec{\Delta}_y$ of data vector $\vec{y}$.
     #The differencing reduces the dimensionalty of the vector by one: $\text{dim}\vec{\Delta}_y=\text{dim}\vec{x}-1$.
     DeltaY   = numpy.diff(y)
@@ -172,44 +166,78 @@ def findLocalExtrema1D(y, sigmaY, x):
     #Note, that b_x0[j]==b_x0[j+1]=True indicate a special case,
     #which maps to one local extremum $x_{0,j}\in[x_{j+1},x{j+2}].
     b_x0= numpy.sign(DeltaY[:-1])!=numpy.sign(DeltaY[1:])
-    x0 = []
-    #Init list $\sigma_{x_0}$ for the storage of estimation errors for locale extrema position $\vec{x}_0$
+    #Init list l_x0 for collecting the local extrema.
+    l_x0 = []
+    #Init list l_sigmaX0 for collecting the estimation errors of locale extrema positions $\vec{x}_0$.
     l_sigmaX0 = []
-    dyy   = []
+    #Init list l_curv_sign for collecting the sign of the curvature at the position of the locale extrema.
+    l_curv_sign   = []
+    #If one or more local extrema have been found, estimate its position, otherwise set its position to NaN.
     if numpy.sometrue(b_x0):
-        index = numpy.extract(b_x0,numpy.arange(len(DeltaY)))
+        #Compute vector index referencing the True elements of b_x0.
+        index = numpy.extract(b_x0,numpy.arange(len(DeltaY)-1))
         skipOne = False
-        for i in index:
+        for j in index:
             if skipOne:
                 skipOne = False
             else:
-                dyy.append(-numpy.sign(DeltaY[i]))
-                if DeltaY[i]==-DeltaY[i+1]: #Exact minimum
-                    x0.append(0.5*(xc[i]+xc[i+1]))
-                    if sigmaY != None:
-                        l_sigmaX0.append(sigmaY[i])
-                    else:
-                        l_sigmaX0.append(numpy.NaN)
-                    skipOne = True
-                elif DeltaY[i+1]==0: # Symmetrically boxed Error
-                    x0.append(xc[i+1])
-                    if sigmaY != None:
-                        l_sigmaX0.append(sigmaY[i+1]+sigmaY[i+2])
-                    else:
-                        l_sigmaX0.append(numpy.NaN)
-                    skipOne = True
+                if sigmaY == None:
+                    x0,sigmaX0,curv_sign = estimateExtremumPosition(y[j:j+3],x[j:j+3])
                 else:
-                    extr=xc[i]-(xc[i+1]-xc[i])/(DeltaY[i+1]/DeltaX[i+1]-DeltaY[i]/DeltaX[i])*DeltaY[i]/DeltaX[i]
-                    x0.append(extr)
-                    if sigmaY != None:
-                        scale = 0.5*DeltaX[i]*DeltaX[i+1]*(x[i+2]-x[i])
-                        scale/= (y[i]*DeltaX[i+1]+y[i+1]*(x[i]-x[i+2])+y[i+2]*DeltaX[i])**2
-                        partError = scale * numpy.array([-DeltaY[i+1],y[i+2]-y[i],-DeltaY[i]])
-                        l_sigmaX0.append(numpy.dot(sigmaY[i:i+3],numpy.abs(partError)))
-                    else:
-                        l_sigmaX0.append(numpy.NaN)
-    else:
-        x0.append(numpy.NaN)
+                    x0,sigmaX0,curv_sign = estimateExtremumPosition(y[j:j+3],x[j:j+3], sigmaY=sigmaY[j:j+3])
+                l_x0.append(x0)
+                l_sigmaX0.append(sigmaX0)
+                l_curv_sign.append(curv_sign)
+    else: #No local extremum found.
+        l_x0.append(numpy.NaN)
         l_sigmaX0.append(numpy.NaN)
-        dyy.append(numpy.NaN)
-    return x0, l_sigmaX0, dyy
+        l_curv_sign.append(numpy.NaN)
+    return l_x0, l_sigmaX0, l_curv_sign
+
+def estimateExtremumPosition(y, x, sigmaY = None):
+    """Estimate the extremum position from three sample points $(x_0,y_0)$,
+    $(x_1,y_1)$, and $(x_1,y_1)$ by a linear model. The sample points are provided as
+    vectors $\vec{x}=(x_0,x_1,x_2)$ and $\vec{y}=(y_0,y_1,y_2)$. The middle sample
+    point $(x_1,y1)$ separates two bins. For each bin the slope $y^\prime$ is calculated
+    as finite difference. These slopes are assumed to be located at the centre of each bin, such that
+    the slopes $\left((x_0+x_1)/2,(y_1-y_0)/(x_1-x_0)\right)$ and
+    $\left((x_1+x_2)/2,(y_2-y_1)/(x_2-x_1)\right)$ can be compiled to a linear equation, whose root is
+    an estimate for position of the local extremum.
+    """
+    deltaXleft = x[1]-x[0]
+    deltaXright= x[2]-x[1]
+    deltaYleft = y[1]-y[0]
+    deltaYright= y[2]-y[1]
+    xCleft = 0.5*(x[0]+x[1])
+    xCright= 0.5*(x[1]+x[2])
+    if deltaYleft == 0.0:
+        if deltaYright > 0:
+            curv_sign = 1.0
+        else:
+            curv_sign = -1.0
+    else:
+        curv_sign = -numpy.sign(deltaYleft)
+    if deltaYleft==-deltaYright: #Exact minimum
+        x0 = 0.5*(xCleft+xCright)
+        if sigmaY != None:
+            sigmaX0 = sigmaY[0]
+        else:
+            sigmaX0 = numpy.NaN
+        skipOne = True
+    elif deltaYright==0: # Symmetrically boxed Error
+        x0 = xCright
+        if sigmaY != None:
+            sigmaX0=sigmaY[1]+sigmaY[2]
+        else:
+            sigmaX0=numpy.NaN
+        skipOne = True
+    else:
+        x0 =xCleft-(xCright-xCleft)/(deltaYright/deltaXright-deltaYleft/deltaXleft)*deltaYleft/deltaXleft
+        if sigmaY != None:
+            scale = 0.5*deltaXleft*deltaXright*(x[2]-x[0])
+            scale/= (y[0]*deltaXright+y[1]*(x[0]-x[2])+y[2]*deltaXleft)**2
+            partError = scale * numpy.array([-deltaYright,y[2]-y[0],-deltaYleft])
+            sigmaX0 = numpy.dot(sigmaY,numpy.abs(partError))
+        else:
+            sigmaX0 = numpy.NaN
+    return x0,sigmaX0,curv_sign
