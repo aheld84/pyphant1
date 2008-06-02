@@ -151,13 +151,13 @@ def findLocalExtrema(field, Nrows):
             y = field.data[i]
             if field.error != None:
                 sigmaY= field.error[i]
-        x0, l_sigmaX0, dyy = findLocalExtrema1D(y, sigmaY, x)
+        x0, l_sigmaX0, dyy = findLocalExtrema1D(y, x, sigmaY)
         ll_x0.append(numpy.array(x0))
         ll_sigmaX0.append(numpy.array(l_sigmaX0))
         ll_curv.append(numpy.array(dyy))
     return x0, ll_curv, ll_sigmaX0, ll_x0
 
-def findLocalExtrema1D(y, sigmaY, x):
+def findLocalExtrema1D(y, x, sigmaY=None):
     #Compute differences $\vec{\Delta}_y$ of data vector $\vec{y}$.
     #The differencing reduces the dimensionalty of the vector by one: $\text{dim}\vec{\Delta}_y=\text{dim}\vec{x}-1$.
     DeltaY   = numpy.diff(y)
