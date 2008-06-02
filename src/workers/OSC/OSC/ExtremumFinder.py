@@ -140,10 +140,6 @@ def findLocalExtrema(field, Nrows):
     x = field.dimensions[-1].data
     #Compute the discretisation $\vec{\Delta}_x$ of the abscissa $\vec{x}$.
     DeltaX   = numpy.diff(x)
-    #Compute the centre $\vec{x}_c$ of each intervall, which is cornered by the sample points $\vec{x}$.
-    #Note, that the number of intervalls $N_I$ is one less than the number $N_x=\text{dim}\vec{x}$ of
-    #discretisation points. 
-    xc  = 0.5*(x[:-1] + x[1:])
     #Loop over all rows $N_{rows}$.
     for i in xrange(Nrows):
         #If a $1\times N_{rows} matrix is supplied, save this row to vector $\vec{y}$.
@@ -156,51 +152,62 @@ def findLocalExtrema(field, Nrows):
             y = field.data[i]
             if field.error != None:
                 sigmaY= field.error[i]
-        #Compute differences $\vec{\Delta}_y$ of data vector $\vec{y}$.
-        #The differencing reduces the dimensionalty of the vector by one: $\text{dim}\vec{\Delta}_y=\text{dim}\vec{x}-1$.
-        DeltaY   = numpy.diff(y)
-        x0Pos= numpy.sign(DeltaY[:-1])!=numpy.sign(DeltaY[1:])
-        x0 = []
-        #Init list $\sigma_{x_0}$ for the storage of estimation errors for locale extrema position $\vec{x}_0$
-        l_sigmaX0 = []
-        dyy   = []
-        if numpy.sometrue(x0Pos):
-            index = numpy.extract(x0Pos,numpy.arange(len(DeltaY)))
-            skipOne = False
-            for i in index:
-                if skipOne:
-                    skipOne = False
-                else:
-                    dyy.append(-numpy.sign(DeltaY[i]))
-                    if DeltaY[i]==-DeltaY[i+1]: #Exact minimum
-                        x0.append(0.5*(xc[i]+xc[i+1]))
-                        if field.error != None:
-                            l_sigmaX0.append(sigmaY[i])
-                        else:
-                            l_sigmaX0.append(numpy.NaN)
-                        skipOne = True
-                    elif DeltaY[i+1]==0: # Symmetrically boxed Error
-                        x0.append(xc[i+1])
-                        if field.error != None:
-                            l_sigmaX0.append(sigmaY[i+1]+sigmaY[i+2])
-                        else:
-                            l_sigmaX0.append(numpy.NaN)
-                        skipOne = True
-                    else:
-                        extr=xc[i]-(xc[i+1]-xc[i])/(DeltaY[i+1]/DeltaX[i+1]-DeltaY[i]/DeltaX[i])*DeltaY[i]/DeltaX[i]
-                        x0.append(extr)
-                        if field.error != None:
-                            scale = 0.5*DeltaX[i]*DeltaX[i+1]*(x[i+2]-x[i])
-                            scale/= (y[i]*DeltaX[i+1]+y[i+1]*(x[i]-x[i+2])+y[i+2]*DeltaX[i])**2
-                            partError = scale * numpy.array([-DeltaY[i+1],y[i+2]-y[i],-DeltaY[i]])
-                            l_sigmaX0.append(numpy.dot(sigmaY[i:i+3],numpy.abs(partError)))
-                        else:
-                            l_sigmaX0.append(numpy.NaN)
-        else:
-            x0.append(numpy.NaN)
-            l_sigmaX0.append(numpy.NaN)
-            dyy.append(numpy.NaN)
+        i, x0, l_sigmaX0, dyy = findLocalExtrema1D(i, y, sigmaY, x, DeltaX)
         ll_x0.append(numpy.array(x0))
         ll_sigmaX0.append(numpy.array(l_sigmaX0))
         ll_curv.append(numpy.array(dyy))
     return x0, ll_curv, ll_sigmaX0, ll_x0
+
+def findLocalExtrema1D(i, y, sigmaY, x, DeltaX):
+    #Compute the centre $\vec{x}_c$ of each intervall, which is cornered by the sample points $\vec{x}$.
+    #Note, that the number of intervalls $N_I$ is one less than the number $N_x=\text{dim}\vec{x}$ of
+    #discretisation points. 
+    xc  = 0.5*(x[:-1] + x[1:])
+    #Compute differences $\vec{\Delta}_y$ of data vector $\vec{y}$.
+    #The differencing reduces the dimensionalty of the vector by one: $\text{dim}\vec{\Delta}_y=\text{dim}\vec{x}-1$.
+    DeltaY   = numpy.diff(y)
+    #Test if the sign of successive elements of DeltaY change sign. These elements are candidates for the
+    #estimation of local extrema. The result is a vector b_x0 of booleans with $\text{dim}\vec{x}_{0,\text{b}}=\text{dim}\vec{x}-2$.
+    #
+    x0Pos= numpy.sign(DeltaY[:-1])!=numpy.sign(DeltaY[1:])
+    x0 = []
+    #Init list $\sigma_{x_0}$ for the storage of estimation errors for locale extrema position $\vec{x}_0$
+    l_sigmaX0 = []
+    dyy   = []
+    if numpy.sometrue(x0Pos):
+        index = numpy.extract(x0Pos,numpy.arange(len(DeltaY)))
+        skipOne = False
+        for i in index:
+            if skipOne:
+                skipOne = False
+            else:
+                dyy.append(-numpy.sign(DeltaY[i]))
+                if DeltaY[i]==-DeltaY[i+1]: #Exact minimum
+                    x0.append(0.5*(xc[i]+xc[i+1]))
+                    if sigmaY != None:
+                        l_sigmaX0.append(sigmaY[i])
+                    else:
+                        l_sigmaX0.append(numpy.NaN)
+                    skipOne = True
+                elif DeltaY[i+1]==0: # Symmetrically boxed Error
+                    x0.append(xc[i+1])
+                    if sigmaY != None:
+                        l_sigmaX0.append(sigmaY[i+1]+sigmaY[i+2])
+                    else:
+                        l_sigmaX0.append(numpy.NaN)
+                    skipOne = True
+                else:
+                    extr=xc[i]-(xc[i+1]-xc[i])/(DeltaY[i+1]/DeltaX[i+1]-DeltaY[i]/DeltaX[i])*DeltaY[i]/DeltaX[i]
+                    x0.append(extr)
+                    if sigmaY != None:
+                        scale = 0.5*DeltaX[i]*DeltaX[i+1]*(x[i+2]-x[i])
+                        scale/= (y[i]*DeltaX[i+1]+y[i+1]*(x[i]-x[i+2])+y[i+2]*DeltaX[i])**2
+                        partError = scale * numpy.array([-DeltaY[i+1],y[i+2]-y[i],-DeltaY[i]])
+                        l_sigmaX0.append(numpy.dot(sigmaY[i:i+3],numpy.abs(partError)))
+                    else:
+                        l_sigmaX0.append(numpy.NaN)
+    else:
+        x0.append(numpy.NaN)
+        l_sigmaX0.append(numpy.NaN)
+        dyy.append(numpy.NaN)
+    return i, x0, l_sigmaX0, dyy
