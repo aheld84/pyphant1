@@ -146,15 +146,16 @@ def findLocalExtrema(field, Nrows):
     xc  = 0.5*(x[:-1] + x[1:])
     #Loop over all rows $N_{rows}$.
     for i in xrange(Nrows):
+        #If a $1\times N_{rows} matrix is supplied, save this row to vector $\vec{y}$.
+        #Otherwise set vector $\vec{y}$ to the i$^\text{th}$ row of matrix field.data
+        #and handle vector of errors $\vec{\sigma}_y$ accordingly. It is None, if no error is given.
+        sigmaY= field.error
         if Nrows == 1:
             y = field.data
-            Dy= field.error
         else:
             y = field.data[i]
             if field.error != None:
-                Dy= field.error[i]
-            else:
-                Dy= field.error
+                sigmaY= field.error[i]
         #compute first derivative
         dy   = numpy.diff(y)
         x0Pos= numpy.sign(dy[:-1])!=numpy.sign(dy[1:])
@@ -173,14 +174,14 @@ def findLocalExtrema(field, Nrows):
                     if dy[i]==-dy[i+1]: #Exact minimum
                         x0.append(0.5*(xc[i]+xc[i+1]))
                         if field.error != None:
-                            l_sigmaX0.append(Dy[i])
+                            l_sigmaX0.append(sigmaY[i])
                         else:
                             l_sigmaX0.append(numpy.NaN)
                         skipOne = True
                     elif dy[i+1]==0: # Symmetrically boxed Error
                         x0.append(xc[i+1])
                         if field.error != None:
-                            l_sigmaX0.append(Dy[i+1]+Dy[i+2])
+                            l_sigmaX0.append(sigmaY[i+1]+sigmaY[i+2])
                         else:
                             l_sigmaX0.append(numpy.NaN)
                         skipOne = True
@@ -191,7 +192,7 @@ def findLocalExtrema(field, Nrows):
                             scale = 0.5*DeltaX[i]*DeltaX[i+1]*(x[i+2]-x[i])
                             scale/= (y[i]*DeltaX[i+1]+y[i+1]*(x[i]-x[i+2])+y[i+2]*DeltaX[i])**2
                             partError = scale * numpy.array([-dy[i+1],y[i+2]-y[i],-dy[i]])
-                            l_sigmaX0.append(numpy.dot(Dy[i:i+3],numpy.abs(partError)))
+                            l_sigmaX0.append(numpy.dot(sigmaY[i:i+3],numpy.abs(partError)))
                         else:
                             l_sigmaX0.append(numpy.NaN)
         else:
