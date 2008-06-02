@@ -138,7 +138,10 @@ def findLocalExtrema(field, Nrows):
     x = field.dimensions[-1].data
     #Compute the discretisation $\vec{\Delta}_x$ of the abscissa $\vec{x}$.
     DeltaX   = numpy.diff(x)
-    dyx  = 0.5*(x[:-1] + x[1:])
+    #Compute the centre $\vec{x}_c$ of each intervall, which is cornered by the sample points $\vec{x}$.
+    #Note, that the number of intervalls $N_I$ is one less than the number $N_x=\text{dim}\vec{x}$ of discretisation points. 
+
+    xc  = 0.5*(x[:-1] + x[1:])
     for i in xrange(Nrows):
         if Nrows == 1:
             y = field.data
@@ -165,21 +168,21 @@ def findLocalExtrema(field, Nrows):
                 else:
                     dyy.append(-numpy.sign(dy[i]))
                     if dy[i]==-dy[i+1]: #Exact minimum
-                        x0.append(0.5*(dyx[i]+dyx[i+1]))
+                        x0.append(0.5*(xc[i]+xc[i+1]))
                         if field.error != None:
                             l_sigmaX0.append(Dy[i])
                         else:
                             l_sigmaX0.append(numpy.NaN)
                         skipOne = True
                     elif dy[i+1]==0: # Symmetrically boxed Error
-                        x0.append(dyx[i+1])
+                        x0.append(xc[i+1])
                         if field.error != None:
                             l_sigmaX0.append(Dy[i+1]+Dy[i+2])
                         else:
                             l_sigmaX0.append(numpy.NaN)
                         skipOne = True
                     else:
-                        extr=dyx[i]-(dyx[i+1]-dyx[i])/(dy[i+1]/DeltaX[i+1]-dy[i]/DeltaX[i])*dy[i]/DeltaX[i]
+                        extr=xc[i]-(xc[i+1]-xc[i])/(dy[i+1]/DeltaX[i+1]-dy[i]/DeltaX[i])*dy[i]/DeltaX[i]
                         x0.append(extr)
                         if field.error != None:
                             scale = 0.5*DeltaX[i]*DeltaX[i+1]*(x[i+2]-x[i])
