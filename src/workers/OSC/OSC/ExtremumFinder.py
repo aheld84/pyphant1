@@ -168,14 +168,16 @@ def findLocalExtrema1D(y, sigmaY, x):
     DeltaY   = numpy.diff(y)
     #Test if the sign of successive elements of DeltaY change sign. These elements are candidates for the
     #estimation of local extrema. The result is a vector b_x0 of booleans with $\text{dim}\vec{x}_{0,\text{b}}=\text{dim}\vec{x}-2$.
-    #
-    x0Pos= numpy.sign(DeltaY[:-1])!=numpy.sign(DeltaY[1:])
+    #From b_x0[j]==True follows $x_{0,j}\in[x_{j+1},x{j+2}].
+    #Note, that b_x0[j]==b_x0[j+1]=True indicate a special case,
+    #which maps to one local extremum $x_{0,j}\in[x_{j+1},x{j+2}].
+    b_x0= numpy.sign(DeltaY[:-1])!=numpy.sign(DeltaY[1:])
     x0 = []
     #Init list $\sigma_{x_0}$ for the storage of estimation errors for locale extrema position $\vec{x}_0$
     l_sigmaX0 = []
     dyy   = []
-    if numpy.sometrue(x0Pos):
-        index = numpy.extract(x0Pos,numpy.arange(len(DeltaY)))
+    if numpy.sometrue(b_x0):
+        index = numpy.extract(b_x0,numpy.arange(len(DeltaY)))
         skipOne = False
         for i in index:
             if skipOne:
