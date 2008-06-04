@@ -572,37 +572,45 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         except:
             args = [args]
         data = self.data[args]
+        attributes = copy.deepcopy(self.attributes)
+        mask = None
+        error = None
         dimensions = []
         for i,l in enumerate(data.shape[:len(args)]):
+            dim = self.dimensions[i]
             if l==1:
-                pass # treat as attribute
+                attributes[dim.longname] = (dim.shortname, dim.data[args[i]].squeeze()*dim.unit)
             else:
-                if isinstance(self.dimensions[i], IndexMarker):
-                    dimensions.append(self.dimensions[i])
+                if isinstance(dim, IndexMarker):
+                    dimensions.append(dim)
                 else:
-                    dimensions.append(self.dimensions[i][args[i]])
+                    dimensions.append(dim[args[i]])
         for i in xrange(len(args)-1,len(data.shape)-1):
             dimensions.append(copy.deepcopy(self.dimensions[i]))
-        data = data.squeeze()
-        if self.mask!=None:
-            mask = self.mask[args].squeeze()
+        if data.shape != (1,):
+            data = data.squeeze()
+            if self.mask!=None:
+                mask = self.mask[args].squeeze()
+            if self.error!=None:
+                error = self.error[args].squeeze()
         else:
-            mask = None
-        if self.error!=None:
-            error = self.error[args].squeeze()
-        else:
-            error = None
+            if self.mask!=None:
+                mask = self.mask[args]
+            if self.error!=None:
+                error = self.error[args]
         field = FieldContainer(data, dimensions=dimensions,
                                longname=self.longname,
                                shortname=self.shortname,
                                mask=mask,
                                error=error,
-                               unit=self.unit)
+                               unit=self.unit,
+                               attributes=attributes)
         return field
 
     def isValid(self):
-        if not ( len(self.dimensions)==1 
-                 and isinstance(self.dimensions[0], IndexMarker) ):
+        if (not (len(self.dimensions)==1 
+                 and isinstance(self.dimensions[0], IndexMarker))
+            and not (self.data.shape == (1,) and len(self.dimensions)==0)):
             dimshape = tuple([len(d.data) for d in self.dimensions])
             if self.data.shape!=dimshape:
                 _logger.debug("Shape of data %s and of dimensions %s do not match."%(self.data.shape, dimshape))

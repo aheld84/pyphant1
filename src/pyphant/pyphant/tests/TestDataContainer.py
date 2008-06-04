@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.5
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -428,9 +428,10 @@ class FieldContainerSlicing1d(unittest.TestCase):
                                       shortname="U", unit="1V")
     def testSingleIndex(self):
         slice = self.field1d[0]
-        afoot = FieldContainer(numpy.array(0.1), longname="voltage", 
-                                      shortname="U", unit="1V")
-        self.assertEqual(slice,afoot)
+        afoot = FieldContainer(numpy.array([0.1]), longname="afoot", 
+                               shortname="U", unit="1V", dimensions=[],
+                               attributes={u'Index':(u'i',0)})
+        assertEqual(slice,afoot)
 
     def testRegionIndex(self):
         slice = self.field1d[1:4]
@@ -460,12 +461,35 @@ class FieldContainerSlicing2d(unittest.TestCase):
         m = numpy.meshgrid(l, l*10)
         self.field2d = FieldContainer(m[0]+m[1], longname="voltage", 
                                       shortname="U", unit="1V")
+
     def testSingleIndex(self):
         slice = self.field2d[0]
         afoot = FieldContainer(numpy.linspace(0,0.9,10), longname="voltage", 
-                                      shortname="U", unit="1V")
+                               shortname="U", unit="1V",
+                               attributes={u'Index':(u'i',0)})
         self.assertTrue(slice.isValid())
-        assertEqual(slice,afoot)
+        self.assertEqual(slice,afoot)
+
+    def testRegionIndex(self):
+        slice = self.field2d[1:4]
+        afoot = FieldContainer(self.field2d.data[1:4], longname="afoot", 
+                               shortname="U", unit="1V")
+        afoot.dimensions[0].data = numpy.linspace(1,3,3)
+        self.assertEqual(slice,afoot)
+        slice = self.field2d[1:-1]
+        afoot = FieldContainer(self.field2d.data[1:-1], longname="voltage", 
+                               shortname="U", unit="1V")
+        afoot.dimensions[0].data = numpy.linspace(1,8,8)
+        self.assertEqual(slice,afoot)
+
+    def testCommaSeparated(self):
+        slice = self.field2d[[1,3,7],]
+        afoot = FieldContainer(self.field2d.data[[1,3,7],], longname="voltage", 
+                               shortname="U", unit="1V")
+        afoot.dimensions[0].data = numpy.array([1,3,7])
+        self.assertEqual(slice,afoot)
+        slice = self.field2d[[[1,3,7]]]
+        self.assertEqual(slice,afoot)
 
 
 if __name__ == "__main__":
