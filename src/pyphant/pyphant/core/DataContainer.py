@@ -242,7 +242,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             except:
                 self.unit = unit
         self.error = error
-        if dimensions:
+        if dimensions != None:
             self.dimensions = dimensions
         else:
             self.dimensions = [generateIndex(i,n) for i,n in enumerate(data.shape)]
@@ -253,10 +253,10 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         assert self.isValid()
 
     def _getLabel(self):
-        dependency = '(%s' % self.dimensions[0].shortname
-        for dim in range(1,len(self.dimensions)):
-            dependency += ',%s' % self.dimensions[dim].shortname
-        dependency += ')'
+        if len(self.dimensions)>0:
+            dependency = '(%s)' % ','.join( [dim.shortname for dim in self.dimensions] )
+        else:
+            dependency = ''
         label = u"%s $%s%s$ / %s" % (self.longname.title(), self.shortname, dependency, self.unit)
         try:
             if not isPhysicalQuantity(self.unit) and self.unit == 1:
@@ -549,16 +549,16 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         return NotImplemented
 
     def __str__(self):
-        dependency = ''
-        for dim in self.dimensions:
-            if type(dim) != type(IndexMarker()):
-                if dependency == '':
-                    dependency = 'depending on dimensions [%s' % dim
-                else:
-                    dependency += ',%s' % dim
-            dependency += ']'
-        report = "FieldContainer %s%s with field %s, error %s, mask %s %s." % (self.label,self.data.shape,
-                                                                              self.data,self.error,self.mask,dependency)
+        deps = [ dim for dim in self.dimensions if type(dim)!=type(IndexMarker()) ]
+        report  = "\nFieldContainer %s of shape %s with field\n%s\n"% (self.label,self.data.shape,self.data)
+        if self.error != None:
+            report += ", error\n%s\n" % self.error
+        if self.mask !=None:
+            report += ", mask\n%s\n" % self.mask
+        if len(deps)>0:
+            report += 'depending on dimensions %s\n' % deps
+        if len(self.attributes)>0:
+            report += 'and attributes\n%s\n' % self.attributes
         return report
 
     def __repr__(self):
