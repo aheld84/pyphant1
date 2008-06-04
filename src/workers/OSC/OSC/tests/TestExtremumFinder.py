@@ -38,10 +38,9 @@ __version__ = "$Revision$"
 # $Source$
 
 
-import sys,logging
+import sys
 import unittest
 sys.path.append("..")
-logging.basicConfig(level=logging.DEBUG)
 
 import pkg_resources
 
