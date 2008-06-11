@@ -102,6 +102,8 @@ class ImageLoaderWorker(Worker.Worker):
             FieldUnit = self.paramFieldUnit.value
         result = DataContainer.FieldContainer(data,
                                               FieldUnit,
+                                              longname="Image",
+                                              shortname="I",
                                               dimensions=[yAxis, xAxis])
         result.seal()
         return result
