@@ -218,25 +218,28 @@ def slice2ind(arg, dim):
                 li = PhysicalQuantity(float(sl[0]),hi.unit)
             try:
                 li, hi = [ i.inUnitsOf(unit.unit).value/unit.value for i in [li,hi] ]
-                print 1, li, hi
             except TypeError:
                 raise TypeError("IncompatibleUnits: Dimension %s: %s [%s] can not be sliced with \"%s\"." 
                                 % (dim.longname, dim.shortname, dim.unit, arg))
         except SyntaxError:
             li, hi = [ float(i)/unit for i in sl ]
-            print 3, li, hi
         f = dim.data
-        dma = numpy.diff(numpy.logical_and(f>=li, f<hi)).nonzero()
-        if len(dma[0])==0:
-            raise NotImplementedError("This slice needs interpolation, which is not implemented yet.")
-        if li <= f.min():
+        intervallElements = numpy.logical_and(f>=li, f<hi)
+        if numpy.alltrue(intervallElements):
             start = 0
-            end = dma[0][0]+1
-        elif hi >= f.max():
-            start = dma[0][0]+1
-            end = -1
+            end   = len(intervallElements)+1
         else:
-            start, end = dma[0]+1
+            dma = numpy.diff(intervallElements).nonzero()
+            if len(dma[0])==0:
+                raise NotImplementedError("This slice needs interpolation, which is not implemented yet.")
+            if li <= f.min():
+                start = 0
+                end = dma[0][0]+1
+            elif hi >= f.max():
+                start = dma[0][0]+1
+                end = -1
+            else:
+                start, end = dma[0]+1
         return slice(start, end)
     elif isinstance(arg, type(2)):
         return slice(arg, arg+1)

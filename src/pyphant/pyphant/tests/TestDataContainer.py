@@ -493,6 +493,26 @@ class FieldContainerSlicing1dDim(FieldContainerSlicing1d):
         afoot.dimensions[0] = self.xDim[1:-1]
         self.assertEqual(section,afoot)
 
+    def testCompleteRightOpenIntervall(self):
+        dim = self.xDim
+        intStart = dim.data.min()*dim.unit
+        intEnd   = dim.data.max()*dim.unit
+        unitname = dim.unit.unit.name()
+        section = self.field1d["%.4f%s:%.4f%s"%(intStart.value,unitname,intEnd.value,unitname)]
+        afoot = FieldContainer(numpy.linspace(0.1,0.9,9), longname="voltage", 
+                               shortname="U", unit="1V")
+        afoot.dimensions[0] = self.xDim[0:-1]
+        self.assertEqual(section,afoot)
+
+    def testCompleteIntervall(self):
+        dim = self.xDim
+        intStart = dim.data.min()*dim.unit
+        intEnd   = dim.data.max()*dim.unit*1.001
+        unitname = dim.unit.unit.name()
+        argument = "%.4f%s:%.4f%s"%(intStart.value,unitname,intEnd.value,unitname)
+        section = self.field1d[argument]
+        self.assertEqual(section,self.field1d)
+
     def testCommaSeparated(self):
         section = self.field1d[[1,3,7],]
         afoot = FieldContainer(numpy.array([0.2,0.4,0.8]), longname="voltage", 
