@@ -564,13 +564,49 @@ Concerning the ordering of data matrices and the dimension list consult http://w
     def __repr__(self):
         return self.__str__()
 
+    def slice2ind(self, arg, dim):
+        if isinstance(arg, type("")):
+            sl = [ "0"+a for a in arg.split(':')] #Hack for PhysicalQuantities, which does not recognize .6 as a number.
+            unit = dim.unit
+            try:
+                hi = PhysicalQuantity(sl[1])
+                try:
+                    li = PhysicalQuantity(sl[0])
+                except:
+                    li = PhysicalQuantity(float(sl[0]),hi.unit)
+                try:
+                    li, hi = [ i.inUnitsOf(unit.unit).value/unit.value for i in [li,hi] ]
+                except TypeError:
+                    raise TypeError("IncompatibleUnits: Dimension %s: %s [%s] can not be sliced with \"%s\"." 
+                                    % (dim.longname, dim.shortname, dim.unit, arg))
+            except SyntaxError:
+                li, hi = [ float(i)/unit for i in sl ]
+            f = dim.data
+            dma = numpy.diff(numpy.logical_and(f>=li, f<hi)).nonzero()
+            if len(dma[0])==0:
+                raise NotImplementedError("This slice needs interpolation, which is not implemented yet.")
+            if li <= f.min():
+                start = 0
+                end = dma[0][0]+1
+            elif hi >= f.max():
+                start = dma[0][0]+1
+                end = -1
+            else:
+                start, end = dma[0]+1
+            return slice(start, end)
+        elif isinstance(arg, type(2)):
+            return slice(arg, arg+1)
+        else:
+            return arg
+
     def __getitem__(self, args):
-        if isinstance(args, type(2)):
-            args = slice(args, args+1)
+        if isinstance(args, type("")):
+            args=[args]
         try:
             len(args)
         except:
             args = [args]
+        args = [ self.slice2ind(arg, self.dimensions[dim]) for dim, arg in enumerate(args) ]
         data = self.data[args]
         attributes = copy.deepcopy(self.attributes)
         mask = None
@@ -584,8 +620,8 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 if isinstance(dim, IndexMarker):
                     dimensions.append(dim)
                 else:
-                    dimensions.append(dim[args[i]])
-        for i in xrange(len(args)-1,len(data.shape)-1):
+                    dimensions.append(dim[args[i],])
+        for i in xrange(len(args),len(data.shape)):
             dimensions.append(copy.deepcopy(self.dimensions[i]))
         if data.shape != (1,):
             data = data.squeeze()
