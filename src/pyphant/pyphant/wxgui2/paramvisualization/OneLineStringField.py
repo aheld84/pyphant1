@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@ import wx
 
 class OLSF(wx.TextCtrl):
     def __init__(self, parent, param):
-        wx.TextCtrl.__init__(self, parent)
+        wx.TextCtrl.__init__(self, parent,size=(175,-1))
         self.SetValue(param.value)
 
     def getValue(self):
