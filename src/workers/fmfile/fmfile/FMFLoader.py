@@ -161,10 +161,12 @@ def readZipFile(filename, subscriber=1):
     #QUESTION: Can a field depend on a dependent field?
     for field,dependency in dependencies.iteritems():
         newField = DataContainer.FieldContainer(numpy.array(fieldData[field]),
-                                                dimensions=[independentFields[indepField] for indepField in dependency],
                                                 longname=field,
                                                 shortname=shortnames[field],
                                                 unit = units[field],rescale=True)
+        for dim,indepField in enumerate(dependency):
+            newField.dimensions[0]=independentFields[indepField]
+        assert newField.isValid()
         containers.append(newField)
     return DataContainer.SampleContainer(containers,attributes=commonAttr)
 

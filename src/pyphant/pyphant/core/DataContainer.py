@@ -654,7 +654,8 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             and not (self.data.shape == (1,) and len(self.dimensions)==0)):
             dimshape = tuple([len(d.data) for d in self.dimensions])
             if self.data.shape!=dimshape:
-                _logger.debug("Shape of data %s and of dimensions %s do not match."%(self.data.shape, dimshape))
+                _logger.debug("Shape of data %s and of dimensions %s do not match for field\n:%s" % 
+                              (self.data.shape, dimshape, self))
                 return False
             for d in self.dimensions:
                 if not d.isValid():
