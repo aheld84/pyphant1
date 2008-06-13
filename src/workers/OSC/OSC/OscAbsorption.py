@@ -54,7 +54,7 @@ def condense(I):
         if not numpy.allclose(dimData,I.dimensions[0].data[i]):
             isEquivalent = False
             break
-    dim = I.dimensions
+    dim = copy.deepcopy(I.dimensions)
     if isEquivalent:
         _logger.info('OscAbsorption: Abscissae of %s field is condensed to one-dimensional field.' % I.longname)
         dim[0] = DataContainer.FieldContainer(dimData,
