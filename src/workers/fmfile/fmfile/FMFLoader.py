@@ -164,8 +164,9 @@ def readZipFile(filename, subscriber=1):
                                                 longname=field,
                                                 shortname=shortnames[field],
                                                 unit = units[field],rescale=True)
-        for dim,indepField in enumerate(dependency):
-            newField.dimensions[0]=independentFields[indepField]
+        for i,indepField in enumerate(dependency):
+            dim = len(newField.dimensions)-i-1
+            newField.dimensions[dim]=independentFields[indepField]
         assert newField.isValid()
         containers.append(newField)
     return DataContainer.SampleContainer(containers,attributes=commonAttr)

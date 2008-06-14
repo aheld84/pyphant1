@@ -652,15 +652,21 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         if (not (len(self.dimensions)==1 
                  and isinstance(self.dimensions[0], IndexMarker))
             and not (self.data.shape == (1,) and len(self.dimensions)==0)):
-            dimshape = tuple([len(d.data) for d in self.dimensions])
-            if self.data.shape!=dimshape:
-                _logger.debug("Shape of data %s and of dimensions %s do not match for field\n:%s" % 
-                              (self.data.shape, dimshape, self))
-                return False
-            for d in self.dimensions:
-                if not d.isValid():
-                    _logger.debug("Invalid dimension %s."%d.longname)
-                    return False
+            if len(self.dimensions)==len(self.data.shape):
+                for i,d in enumerate(self.dimensions):
+                    if len(d.data.shape)==1:
+                        if not d.data.shape[0]==self.data.shape[i]:
+                            _logger.debug("Shape of data %s and of 1D-dimension %s do not match."%(self.data.shape, d.data.shape))
+                            return False
+                    elif not d.data.shape==self.data.shape:
+                        _logger.debug("Shape of data %s and of &iD-dimension %s do not match."%(self.data.shape,len(d.data.shape),d.data.shape))
+                        return False
+                    if not d.isValid():
+                        _logger.debug("Invalid dimension %s."%d.longname)
+                        return False
+            else:
+                _logger.debug("Number of dimensions of FieldContainer %s should be %i, but is %i!"%(self.longname,len(self.data.shape),len(self.dimensions)))
+                return False                                                                                            
         if (self.mask!=None) and (self.data.shape!=self.mask.shape):
             _logger.debug("Shape of data %s and of mask %s do not match."%(self.data.shape, self.mask.shape))
             return False

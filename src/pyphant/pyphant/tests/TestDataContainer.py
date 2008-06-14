@@ -277,6 +277,14 @@ class IsValidFieldContainer(unittest.TestCase):
         self.field.error = numpy.ones(shape)
         self.assertFalse(self.field.isValid())
 
+    def testDimension0HasSameShapeAsField(self):
+        self.field.dimensions[0] = copy.deepcopy(self.field)
+        self.assertTrue(self.field.isValid())
+
+    def testDimension1HasSameShapeAsField(self):
+        self.field.dimensions[1] = copy.deepcopy(self.field)
+        self.assertTrue(self.field.isValid())
+        
 
 class SampleContainerTest(unittest.TestCase):
     def setUp(self):
