@@ -128,24 +128,6 @@ def parseId(id):
     resUri = urlparse.urlsplit(id)
     return resUri[2].split('/')[-1].split('.') #(hash, uriType)
 
-def condense(I):
-    count = I.dimensions[0].data.shape[0] # of columns
-    dimData = I.dimensions[0].data[0] # First row
-    isEquivalent = True
-    for i in xrange(1,count):
-        if not numpy.allclose(dimData,I.dimensions[0].data[i]):
-            isEquivalent = False
-            break
-    dim = copy.deepcopy(I.dimensions)
-    if isEquivalent:
-        _logger.info('DataContainer: Abscissae of %s field is condensed to one-dimensional field.' % I.longname)
-        dim[0] = DataContainer.FieldContainer(dimData,
-                                            longname=I.dimensions[0].longname,
-                                            shortname=I.dimensions[0].shortname,
-                                            unit=I.dimensions[0].unit)
-    else:
-        _logger.info('DataContainer: Abscissae of %s field is hold as two-dimensional field.' % I.longname)
-    return dim
 
 class DataContainer(object):
     u"""DataContainer \t- A Pyphant base class for self-explanatory scientific data
@@ -266,7 +248,7 @@ def slice2ind(arg, dim):
 
 class FieldContainer(DataContainer):
     u"""FieldContainer(data, unit=1, error=None,dimensions=None, longname=u"Sampled Field",
-\t\t\t  shortname=u"\\Psi",rescale=False)
+\t\t\t  shortname=u"\\Psi",rescale=False,condenseDim=False)
 \t  Class describing sampled fields:
 \t  .data\t\t- Numpy.array representing the sampled field. 
 \t  .unit\t\t- PhysicalQuantity object denoting the unit of the sampled field.
@@ -288,7 +270,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
     typeString = u"field"
     def __init__(self, data, unit=1, error=None, mask=None,
                  dimensions=None, longname=u"Sampled Field",
-                 shortname=u"\\Psi", attributes=None, rescale=False):
+                 shortname=u"\\Psi", attributes=None, rescale=False,condenseDim=False):
         DataContainer.__init__(self, longname, shortname, attributes)
         self.data = data
         self.mask = mask
@@ -308,6 +290,8 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             self.rescale()
             for dim in self.dimensions:
                 dim.rescale()
+        if condenseDim:
+            self.condenseDim()
         assert self.isValid()
 
     def _getLabel(self):
@@ -692,6 +676,34 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             _logger.debug("Shape of data %s and of error %s do not match."%(self.data.shape, self.error.shape))
             return False
         return True
+
+    def condenseDim(self):
+        """Check if the data matrix of a dimensional FieldContainer consists of a repeated vector
+        and condense this dimensional field to the vector."""
+        for dim,dimField in enumerate(self.dimensions):
+            if not isinstance(dimField, IndexMarker):
+                if len(dimField.data.shape) > 2:
+                    raise NotImplementedError, "Method condenseDim only supports the condensation of 2D dimensional fields."
+                for axis,count in enumerate(dimField.data.shape):
+                    if count==self.data.shape[axis]:
+                        isEquivalent = True
+                        if axis==0:
+                            getSlice = lambda row: dimField.data[row]
+                        else:
+                            getSlice = lambda column: dimField.data[:,column]
+                        dimData = getSlice(0)
+                        for i in xrange(1,count):
+                            if not numpy.allclose(dimData,getSlice(i)):
+                                isEquivalent = False
+                                break
+                        if isEquivalent:
+                            _logger.info('DataContainer: Abscissae of %s field is condensed to one-dimensional field.' % self.longname)
+                            self.dimensions[dim] = FieldContainer(dimData,
+                                                                longname=dimField.longname,
+                                                                shortname=dimField.shortname,
+                                                                unit=dimField.unit)
+                        else:
+                            _logger.info('DataContainer: Abscissae of %s field is hold as two-dimensional field.' % self.longname)
 
     maskedData = property( lambda self: numpy.ma.array(self.data, mask=self.mask) )
     maskedError = property( lambda self: numpy.ma.array(self.error, mask=self.mask) )

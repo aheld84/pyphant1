@@ -45,7 +45,9 @@ pkg_resources.require("Pyphant")
 import scipy
 import copy
 from Scientific.Physics.PhysicalQuantities import PhysicalQuantity
-from pyphant.core.DataContainer import (INDEX, generateIndex, FieldContainer, SampleContainer,DataContainer,assertEqual)
+from pyphant.core.DataContainer import (INDEX, generateIndex,
+                                        FieldContainer,SampleContainer,DataContainer,
+                                        assertEqual)
 import numpy.testing as nt
 import numpy
 
@@ -120,6 +122,13 @@ class FieldContainerTestCase(unittest.TestCase):
             pass
         else:
             self.fail("Modification of sealed FieldContainer was not prohibited.")
+        try:
+            field.dimensions[0]=copy.deepcopy(field)
+        except TypeError, e:
+            pass
+        else:
+            self.fail("Modification of sealed FieldContainer's dimension was not prohibited.")
+
 
     def testDeepcopy(self):
         field = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
@@ -242,7 +251,6 @@ class FieldContainerTestCase(unittest.TestCase):
         nt.assert_array_almost_equal( sumField.data, field1.data/2000-field2.data )
         self.assertEqual(sumField.unit, PhysicalQuantity('2 m'))
         self.assertEqual(sumField.shortname, u"%s - %s" % (self.shortname, self.shortname))
-
 
 class IsValidFieldContainer(unittest.TestCase):
     def setUp(self):
@@ -680,19 +688,82 @@ class FieldContainerSlicing2dDim(FieldContainerSlicing2d):
         afoot.dimensions[1] = self.xDim[3:7]
         self.assertEqual(section,afoot)
 
+class FieldContainerCondenseDim(unittest.TestCase):
+    def setUp(self):
+        self.x = numpy.linspace(0,0.9,10)
+        self.y = numpy.linspace(0,1.0,11)
+        self.m = numpy.meshgrid(self.x, self.x*5)
+        self.M = numpy.meshgrid(self.x, self.y*5)
+        self.field2d = FieldContainer(self.m[0]+self.m[1],
+
+                                      dimensions=[FieldContainer(self.x),
+                                                  FieldContainer(5*self.x)],
+                                      longname="voltage", 
+                                      shortname="U", unit="1V")
+        self.field2dAsym = FieldContainer(self.M[0]+self.M[1],
+                                          dimensions=[FieldContainer(5*self.y),
+                                                      FieldContainer(self.x)],
+                                          longname="voltage", 
+                                          shortname="U", unit="1V")
+
+    def testDoNothing(self):
+        self.field2d.dimensions[0] = copy.deepcopy(self.field2d)
+        oldField = copy.deepcopy(self.field2d)
+        self.field2d.condenseDim()
+        assertEqual(oldField,self.field2d)
+
+    def testDoCondenseFirstAbscissae(self):
+        afoot = copy.deepcopy(self.field2d)
+        self.field2d.dimensions[0].data = copy.deepcopy(self.m[0])
+        self.field2d.condenseDim()
+        assertEqual(self.field2d,afoot)
+
+    def testDoCondenseFirstAbscissae2(self):
+        afoot = copy.deepcopy(self.field2d)
+        afoot.dimensions[0].data = self.m[1][:,0]
+        afoot.isValid()
+        self.field2d.dimensions[0].data = copy.deepcopy(self.m[1])
+        self.field2d.condenseDim()
+        assertEqual(self.field2d,afoot)
+
+    def testDoCondenseSecondAbscissae(self):
+        afoot = copy.deepcopy(self.field2d)
+        self.field2d.dimensions[1].data = copy.deepcopy(self.m[1])
+        self.field2d.condenseDim()
+        assertEqual(self.field2d,afoot)
+
+    def testDoNotCondenseSealedAbscissae(self):
+        "Modification of sealed FieldContainer's dimension was not prohibited."
+        self.field2d.dimensions[0].data = self.m[0]
+        self.field2d.seal()
+        self.assertRaises(TypeError, self.field2d.condenseDim)
+
+    def testNotImplementedError(self):
+        self.field2d.dimensions[0].data = numpy.zeros((10,10,10))
+        self.assertRaises(NotImplementedError,self.field2d.condenseDim)
+
+    def testDoCondenseFirstAbscissaeAsym(self):
+        afoot = copy.deepcopy(self.field2dAsym)
+        self.field2dAsym.dimensions[0].data = copy.deepcopy(self.M[1])
+        self.field2dAsym.isValid()
+        self.field2dAsym.condenseDim()
+        assertEqual(self.field2dAsym,afoot)
+
+    def testDoCondenseSecondAbscissaeAsym(self):
+        afoot = copy.deepcopy(self.field2dAsym)
+        self.field2dAsym.dimensions[1].data = copy.deepcopy(self.M[0])
+        self.field2dAsym.isValid()
+        self.field2dAsym.condenseDim()
+        assertEqual(self.field2dAsym,afoot)
 
 if __name__ == "__main__":
-    suite = unittest.TestLoader().loadTestsFromTestCase(FieldContainerSlicing1d)
-    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(FieldContainerSlicing1dDim))
-    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(FieldContainerSlicing2d))
-    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(FieldContainerSlicing2dDim))
-    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(IsValidFieldContainer))
-    unittest.TextTestRunner().run(suite)
-#    import sys
-#    if len(sys.argv) == 1:
-#        unittest.main()
-#    else:
-#        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
-#        unittest.TextTestRunner().run(suite)
+    #suite = unittest.TestLoader().loadTestsFromTestCase(FieldContainerSlicing1d)
+    #suite.addTest(unittest.TestLoader().loadTestsFromTestCase(FieldContainerSlicing1dDim))
+    import sys
+    if len(sys.argv) == 1:
+        unittest.main()
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
+        unittest.TextTestRunner().run(suite)
 
 

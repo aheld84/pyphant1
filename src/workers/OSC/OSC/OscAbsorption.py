@@ -93,11 +93,11 @@ class OscAbsorptionCalculator(Worker.Worker):
         if self.paramClipping.value==1:
             A[A>1] = 1
             A[A<0] = 0
-        dim = DataContainer.condense(I)
         Abso = DataContainer.FieldContainer(A,
                                             longname=u'absorption',
                                             shortname=ur'\tilde{A}')
-        Abso.dimensions[-1] = dim[-1]
+        Abso.dimensions[-1] = I.dimensions[-1]
+        Abso.condenseDim()
         Abso.seal()
         return Abso
 
