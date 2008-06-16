@@ -128,6 +128,22 @@ def parseId(id):
     resUri = urlparse.urlsplit(id)
     return resUri[2].split('/')[-1].split('.') #(hash, uriType)
 
+class dimensionList(list):
+    write = True
+    def __setitem__(self,i,y):
+        if self.write:
+            super(dimensionList,self).__setitem__(i,y)
+        else:
+            raise TypeError, 'Sealed list of dimensions cannot be modified.'
+
+    def __delitem__(self,i):
+        if self.write:
+            super(dimensionList,self).__delitem__(i,y)
+        else:
+            raise TypeError, 'Sealed list of dimensions cannot be modified.'
+
+    def seal(self):
+        self.write = False
 
 class DataContainer(object):
     u"""DataContainer \t- A Pyphant base class for self-explanatory scientific data
@@ -283,9 +299,9 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 self.unit = unit
         self.error = error
         if dimensions != None:
-            self.dimensions = dimensions
+            self.dimensions = dimensionList(dimensions)
         else:
-            self.dimensions = [generateIndex(i,n) for i,n in enumerate(data.shape)]
+            self.dimensions = dimensionList([generateIndex(i,n) for i,n in enumerate(data.shape)])
         if rescale:
             self.rescale()
             for dim in self.dimensions:
@@ -357,6 +373,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         if self.error!=None:
             self.error.setflags(write=False)
         if not id:
+            self.dimensions.write = False
             for dim in self.dimensions:
                 dim.seal()
         super(FieldContainer, self).seal(id)
