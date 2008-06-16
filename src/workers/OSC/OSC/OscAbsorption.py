@@ -45,26 +45,6 @@ import scipy.interpolate
 from Scientific.Physics import PhysicalQuantities
 import logging, copy, math
 
-def condense(I):
-    _logger = logging.getLogger("pyphant")
-    count = I.dimensions[0].data.shape[0] # of columns
-    dimData = I.dimensions[0].data[0] # First row
-    isEquivalent = True
-    for i in xrange(1,count):
-        if not numpy.allclose(dimData,I.dimensions[0].data[i]):
-            isEquivalent = False
-            break
-    dim = copy.deepcopy(I.dimensions)
-    if isEquivalent:
-        _logger.info('OscAbsorption: Abscissae of %s field is condensed to one-dimensional field.' % I.longname)
-        dim[0] = DataContainer.FieldContainer(dimData,
-                                            longname=I.dimensions[0].longname,
-                                            shortname=I.dimensions[0].shortname,
-                                            unit=I.dimensions[0].unit)
-    else:
-        _logger.info('OscAbsorption: Abscissae of %s field is hold as two-dimensional field.' % I.longname)
-    return dim
-
 def grid2Index(field, extension=0):
     _logger = logging.getLogger("pyphant")
     f = numpy.unique(field)
@@ -113,7 +93,7 @@ class OscAbsorptionCalculator(Worker.Worker):
         if self.paramClipping.value==1:
             A[A>1] = 1
             A[A<0] = 0
-        dim = condense(I)
+        dim = DataContainer.condense(I)
         Abso = DataContainer.FieldContainer(A,
                                             longname=u'absorption',
                                             shortname=ur'\tilde{A}')

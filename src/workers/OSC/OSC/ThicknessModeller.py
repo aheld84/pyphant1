@@ -68,7 +68,7 @@ class ThicknessModeller(Worker.Worker):
                                               longname=A.longname,
                                               shortname=A.shortname,
                                               attributes=attr,
-                                              dimensions=[height, OSC.OscAbsorption.condense(A)[0]])
+                                              dimensions=[height, DataContainer.condense(A)[0]])
         #result.dimensions = OSC.OscAbsorption.condense(result)
         result.seal()
         return result

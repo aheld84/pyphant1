@@ -128,6 +128,24 @@ def parseId(id):
     resUri = urlparse.urlsplit(id)
     return resUri[2].split('/')[-1].split('.') #(hash, uriType)
 
+def condense(I):
+    count = I.dimensions[0].data.shape[0] # of columns
+    dimData = I.dimensions[0].data[0] # First row
+    isEquivalent = True
+    for i in xrange(1,count):
+        if not numpy.allclose(dimData,I.dimensions[0].data[i]):
+            isEquivalent = False
+            break
+    dim = copy.deepcopy(I.dimensions)
+    if isEquivalent:
+        _logger.info('DataContainer: Abscissae of %s field is condensed to one-dimensional field.' % I.longname)
+        dim[0] = DataContainer.FieldContainer(dimData,
+                                            longname=I.dimensions[0].longname,
+                                            shortname=I.dimensions[0].shortname,
+                                            unit=I.dimensions[0].unit)
+    else:
+        _logger.info('DataContainer: Abscissae of %s field is hold as two-dimensional field.' % I.longname)
+    return dim
 
 class DataContainer(object):
     u"""DataContainer \t- A Pyphant base class for self-explanatory scientific data
