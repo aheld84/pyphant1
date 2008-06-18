@@ -86,6 +86,7 @@ class Slicing(Worker.Worker):
                   for i in range(len(field.dimensions))]
         for dim, arg in enumerate(params):
             if arg.startswith('#'):
+                step = None
                 if arg == '#:':
                     start = 0
                     end = len(field.dimensions[dim].data)
@@ -96,8 +97,17 @@ class Slicing(Worker.Worker):
                     start = long(arg[1:-1])
                     end = len(field.dimensions[dim].data)
                 else:
-                    start,end = map(long,arg[1:].split(':'))
-                params[dim]=slice(start,end)
+                    ind = map(long,arg[1:].split(':'))
+                    start = ind[0]
+                    if len(ind) == 1:
+                        end = ind[0]+1
+                    elif len(ind) >= 2:
+                        end = ind[1]
+                    if len(ind) == 3:
+                        step = ind[2]
+                    if len(ind) > 3:
+                        raise ValueError("Illegal slice with more than two colons.")
+                params[dim]=slice(start, end, step)
             else:
                 params[dim]=DataContainer.slice2ind(arg, field.dimensions[dim])
         result = copy.deepcopy(field[params])
