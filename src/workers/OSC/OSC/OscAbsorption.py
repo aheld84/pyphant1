@@ -101,26 +101,6 @@ class OscAbsorptionCalculator(Worker.Worker):
         return Abso
 
 
-class ArrayDiff(Worker.Worker):
-    API = 2
-    VERSION = 1
-    REVISION = "$Revision$"[11:-1]
-    name="Array Diff"
-    _params = [("absolute", u"Return absolute of difference: ", [u"Yes", u"No"], None)]
-    _sockets = [ ("ar1", Connectors.TYPE_ARRAY),
-                 ("ar2", Connectors.TYPE_ARRAY)]
-
-    @Worker.plug(Connectors.TYPE_ARRAY)
-    def diffArrays(self, ar1, ar2, subscriber=0):
-        result = ar1 - ar2
-        if self.paramAbsolute.value==u"Yes":
-            result.data = numpy.abs(result.data)
-        result.seal()
-        return result
-
-
-
-
 class ColumnExtractor(Worker.Worker):
     API = 2
     VERSION = 1
