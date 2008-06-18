@@ -301,7 +301,8 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         if dimensions != None:
             self.dimensions = dimensionList(dimensions)
         else:
-            self.dimensions = dimensionList([generateIndex(i,n) for i,n in enumerate(data.shape)])
+            N = len(data.shape)-1
+            self.dimensions = dimensionList([generateIndex(N-i,n) for i,n in enumerate(data.shape)])
         if rescale:
             self.rescale()
             for dim in self.dimensions:
@@ -310,7 +311,9 @@ Concerning the ordering of data matrices and the dimension list consult http://w
 
     def _getLabel(self):
         if len(self.dimensions)>0:
-            dependency = '(%s)' % ','.join( [dim.shortname for dim in self.dimensions] )
+            shortnames = [dim.shortname for dim in self.dimensions]
+            shortnames.reverse()
+            dependency = '(%s)' % ','.join(shortnames)
         else:
             dependency = ''
         label = u"%s $%s%s$ / %s" % (self.longname.title(), self.shortname, dependency, self.unit)

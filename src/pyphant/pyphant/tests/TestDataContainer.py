@@ -593,7 +593,7 @@ class FieldContainerSlicing2d(unittest.TestCase):
         section = self.field2d[0]
         afoot = FieldContainer(numpy.linspace(0,0.9,10), longname="voltage", 
                                shortname="U", unit="1V",
-                               attributes={u'Index':(u'i',0)})
+                               attributes={u'Index':(u'j',0)})
         self.assertTrue(section.isValid())
         self.assertEqual(section,afoot)
 
@@ -690,14 +690,14 @@ class FieldContainerSlicing2dDim(FieldContainerSlicing2d):
 
 
 if __name__ == "__main__":
-    suite = unittest.TestLoader().loadTestsFromTestCase(IsValidFieldContainer)
-    unittest.TextTestRunner().run(suite)
+    #suite = unittest.TestLoader().loadTestsFromTestCase(IsValidFieldContainer)
+    #unittest.TextTestRunner().run(suite)
     #suite.addTest(unittest.TestLoader().loadTestsFromTestCase(FieldContainerSlicing1dDim))
-    #import sys
-    #if len(sys.argv) == 1:
-    #    unittest.main()
-    #else:
-    #    suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
-    #    unittest.TextTestRunner().run(suite)
+    import sys
+    if len(sys.argv) == 1:
+        unittest.main()
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
+        unittest.TextTestRunner().run(suite)
 
 
