@@ -138,6 +138,12 @@ def unpackAndCollateFields(variableAttr, data):
                 shortnames[field.longname]=field.shortname
     return fieldData, dependencies, units, shortnames
 
+def checkAndCondense(data):
+    reference = data[0]
+    for element in data[1:]:
+        assert numpy.allclose(reference, element)
+    return reference
+
 def readZipFile(filename, subscriber=1):
     data = loadDataFromZip(filename, subscriber)
     commonAttr, variableAttr = collectAttributes(data)
@@ -154,7 +160,8 @@ def readZipFile(filename, subscriber=1):
     #Build independent fields
     independentFields = {}
     for indepField in independentFieldsNames:
-        independentFields[indepField] = DataContainer.FieldContainer(numpy.array(fieldData[indepField]),
+        indepData = checkAndCondense(fieldData[indepField])
+        independentFields[indepField] = DataContainer.FieldContainer(numpy.array(indepData),
                                                                      longname=indepField,shortname=shortnames[indepField],
                                                                      unit = units[indepField],rescale=True)
     #Build dependent fields

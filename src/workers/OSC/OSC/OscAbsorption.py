@@ -97,7 +97,6 @@ class OscAbsorptionCalculator(Worker.Worker):
                                             longname=u'absorption',
                                             shortname=ur'\tilde{A}')
         Abso.dimensions[-1] = I.dimensions[-1]
-        Abso.condenseDim()
         Abso.seal()
         return Abso
 

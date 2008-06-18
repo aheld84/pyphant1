@@ -68,9 +68,7 @@ class ThicknessModeller(Worker.Worker):
                                               longname=A.longname,
                                               shortname=A.shortname,
                                               attributes=attr,
-                                              #dimensions=[height, DataContainer.condense(A)[0]])
-                                              dimensions=[height, A],
-                                              condenseDim = True)
+                                              dimensions=[height, A.dimensions[-1]])
         result.seal()
         return result
 

@@ -93,7 +93,9 @@ class TestOscAbsorptionCalculator(unittest.TestCase):
         self.sampleC = DC.SampleContainer([self.I,self.I0,self.Id])
 
     def testCalculation(self):
-        """Tests the correct calculation of absorption without clipping. It is assumed, that the dark reference intensity is equal to zero, while white reference intensity is equal to one."""
+        """Tests the correct calculation of absorption without clipping. 
+        It is assumed, that the dark reference intensity is equal to zero, 
+        while white reference intensity is equal to one."""
         worker = OA.OscAbsorptionCalculator()
         worker.paramClipping.value = 0
         self.sampleC.seal()
@@ -107,7 +109,9 @@ class TestOscAbsorptionCalculator(unittest.TestCase):
         self.assertEqual(result,expectedResult)
 
     def testCalculationWithClipping(self):
-        """Tests the correct calculation of absorption with clipping. It is assumed, that dark reference intensity is equal to zero, while white reference intensity is equal to one."""
+        """Tests the correct calculation of absorption with clipping. 
+        It is assumed, that dark reference intensity is equal to zero, 
+        while white reference intensity is equal to one."""
         worker = OA.OscAbsorptionCalculator()
         self.sampleC.seal()
         result = worker.calcAbsorption(self.sampleC)
