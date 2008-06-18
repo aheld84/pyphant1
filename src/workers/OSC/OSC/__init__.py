@@ -38,13 +38,11 @@ __version__ = "$Revision$"
 # $Source$
 
 workers=[ "OscAbsorption",
-          "RegionOfInterest",
           "ErrorEstimator",
           "Smoother",
           "OscCurrent",
           "OscVisualisers",
           "ThicknessModeller",
-          #"EstimateThickness",
           "Slicing",
           "ExtremumFinder",
           "ComputeFunctional",
