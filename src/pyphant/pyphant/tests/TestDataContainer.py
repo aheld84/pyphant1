@@ -287,11 +287,11 @@ class IsValidFieldContainer(unittest.TestCase):
 
     def testDimension0HasSameShapeAsField(self):
         self.field.dimensions[0] = copy.deepcopy(self.field)
-        self.assertTrue(self.field.isValid())
+        self.assertFalse(self.field.isValid())
 
     def testDimension1HasSameShapeAsField(self):
         self.field.dimensions[1] = copy.deepcopy(self.field)
-        self.assertTrue(self.field.isValid())
+        self.assertFalse(self.field.isValid())
         
 
 class SampleContainerTest(unittest.TestCase):
@@ -757,13 +757,14 @@ class FieldContainerCondenseDim(unittest.TestCase):
         assertEqual(self.field2dAsym,afoot)
 
 if __name__ == "__main__":
-    #suite = unittest.TestLoader().loadTestsFromTestCase(FieldContainerSlicing1d)
+    suite = unittest.TestLoader().loadTestsFromTestCase(IsValidFieldContainer)
+    unittest.TextTestRunner().run(suite)
     #suite.addTest(unittest.TestLoader().loadTestsFromTestCase(FieldContainerSlicing1dDim))
-    import sys
-    if len(sys.argv) == 1:
-        unittest.main()
-    else:
-        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
-        unittest.TextTestRunner().run(suite)
+    #import sys
+    #if len(sys.argv) == 1:
+    #    unittest.main()
+    #else:
+    #    suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
+    #    unittest.TextTestRunner().run(suite)
 
 

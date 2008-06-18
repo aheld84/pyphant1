@@ -668,27 +668,29 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         return field
 
     def isValid(self):
+        # Valid dimensions?
         if (not (len(self.dimensions)==1 
-                 and isinstance(self.dimensions[0], IndexMarker))
-            and not (self.data.shape == (1,) and len(self.dimensions)==0)):
-            if len(self.dimensions)==len(self.data.shape):
-                for i,d in enumerate(self.dimensions):
-                    if len(d.data.shape)==1:
-                        if not d.data.shape[0]==self.data.shape[i]:
-                            _logger.debug("Shape of data %s and of 1D-dimension %s do not match."%(self.data.shape, d.data.shape))
-                            return False
-                    elif not d.data.shape==self.data.shape:
-                        _logger.debug("Shape of data %s and of &iD-dimension %s do not match."%(self.data.shape,len(d.data.shape),d.data.shape))
-                        return False
-                    if not d.isValid():
-                        _logger.debug("Invalid dimension %s."%d.longname)
-                        return False
-            else:
-                _logger.debug("Number of dimensions of FieldContainer %s should be %i, but is %i!"%(self.longname,len(self.data.shape),len(self.dimensions)))
-                return False                                                                                            
+                 and isinstance(self.dimensions[0], IndexMarker)) #IndexMarkers are valid and...
+            and not (self.data.shape == (1,) and len(self.dimensions)==0)): #...so are zero dim fields.
+            dimshape = []
+            for d in self.dimensions:
+                if len(d.data.shape)>1:
+                    _logger.debug("Dimension %s is not 1-d." % d.longname)
+                    return False
+                dimshape.append(d.data.shape[0])
+            if self.data.shape!=tuple(dimshape):
+                _logger.debug("Shape of data %s and of dimensions %s do not match for field\n:%s" % 
+                              (self.data.shape, dimshape, self))
+                return False
+            for d in self.dimensions:
+                if not d.isValid():
+                    _logger.debug("Invalid dimension %s."%d.longname)
+                    return False
+        # Valid mask?
         if (self.mask!=None) and (self.data.shape!=self.mask.shape):
             _logger.debug("Shape of data %s and of mask %s do not match."%(self.data.shape, self.mask.shape))
             return False
+        # Valid error?
         if (self.error!=None) and (self.data.shape!=self.error.shape):
             _logger.debug("Shape of data %s and of error %s do not match."%(self.data.shape, self.error.shape))
             return False
