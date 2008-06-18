@@ -54,12 +54,19 @@ class Slicing(Worker.Worker):
     _sockets = [("field", Connectors.TYPE_IMAGE)]
     _params = []
 
+    def __init__(self, parent=None, annotations={}):
+        super(Slicing, self).__init__(parent, annotations)
+        self.oldField = None
+
     def refreshParams(self,subscriber=None,field=None):
         if self.socketField.isFull() or field != None:
             try:
                 templ = self.socketField.getResult( subscriber )
             except:
                 templ = field
+            if templ == self.oldField:
+                return
+            self.oldField = templ
             self._params = []
             for i,dim in enumerate(templ.dimensions):
                 if PhysicalQuantities.isPhysicalQuantity(dim.unit):
