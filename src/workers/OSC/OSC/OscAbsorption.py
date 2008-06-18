@@ -100,27 +100,6 @@ class OscAbsorptionCalculator(Worker.Worker):
         Abso.seal()
         return Abso
 
-class OscAbsorptionExtractor(Worker.Worker):
-    API = 2
-    VERSION = 1
-    REVISION = "$Revision$"[11:-1]
-    name = "Single Spectrum Viewer"
-
-    _sockets = [("osc", Connectors.TYPE_ARRAY)]
-    _params = [("index", "Index", 1, None)]
-
-    @Worker.plug(Connectors.TYPE_ARRAY)
-    def extractSpec(self, osc, subscriber=0):
-        a = osc[u'Absorption']
-        l = osc[u'Wellenlänge[nm]']
-        lam = DataContainer.FieldContainer(l.data[self.paramIndex.value-1], l.unit,
-                                           l.error,l.dimensions, l.longname, u"\lambda")
-        Abso = DataContainer.FieldContainer(a.data[self.paramIndex.value-1], a.unit,
-                                            a.error,[lam],
-                                            osc.longname+u", Abs Pixel %i"%self.paramIndex.value,
-                                            u"A")
-        Abso.seal()
-        return Abso
 
 class ArrayDiff(Worker.Worker):
     API = 2
