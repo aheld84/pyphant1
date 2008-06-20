@@ -98,12 +98,12 @@ IINT    : '0' ('x' | 'X') ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' )+ //hex
         | '1'..'9' DIGITS* //decimal
         ;
 // $ANTLR src "FMFpython.g" 91
-fragment        
+fragment
 ESC     : '\\' .;
 
 
 // $ANTLR src "FMFpython.g" 95
-GERMANDATE 
+GERMANDATE
         : DIGIT? DIGIT '.' DIGIT? DIGIT '.' (DIGIT DIGIT)? DIGIT DIGIT;
 // $ANTLR src "FMFpython.g" 97
 ISODATE : DIGIT DIGIT DIGIT DIGIT MINUS DIGIT DIGIT MINUS DIGIT DIGIT;
@@ -130,7 +130,7 @@ WORD    : RWORD
         ;
 
 // $ANTLR src "FMFpython.g" 115
-PUNCTUATION 
+PUNCTUATION
         : '.' | ',' | ';';
 
 // $ANTLR src "FMFpython.g" 118

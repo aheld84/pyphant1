@@ -1,4 +1,4 @@
-# $ANTLR 3.0.1 FMFpython.g 2008-04-03 08:14:07
+# $ANTLR 3.0.1 FMFpython.g 2008-06-20 16:54:28
 
 from antlr3 import *
 from antlr3.compat import set, frozenset
@@ -128,7 +128,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:7:7: 'reference'
             self.match("reference")
             if self.failed:
-                return
+                return 
 
 
 
@@ -152,7 +152,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:8:7: 'data definitions'
             self.match("data definitions")
             if self.failed:
-                return
+                return 
 
 
 
@@ -176,7 +176,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:9:7: 'data'
             self.match("data")
             if self.failed:
-                return
+                return 
 
 
 
@@ -200,7 +200,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:10:7: ','
             self.match(u',')
             if self.failed:
-                return
+                return 
 
 
 
@@ -243,13 +243,13 @@ class FMFpythonLexer(Lexer):
                         # FMFpython.g:32:18: '\\r'
                         self.match(u'\r')
                         if self.failed:
-                            return
+                            return 
 
 
 
                     self.match(u'\n')
                     if self.failed:
-                        return
+                        return 
 
 
                 else:
@@ -258,7 +258,7 @@ class FMFpythonLexer(Lexer):
 
                     if self.backtracking > 0:
                         self.failed = True
-                        return
+                        return 
 
                     eee = EarlyExitException(2, self.input)
                     raise eee
@@ -305,7 +305,7 @@ class FMFpythonLexer(Lexer):
                     else:
                         if self.backtracking > 0:
                             self.failed = True
-                            return
+                            return 
 
                         mse = MismatchedSetException(None, self.input)
                         self.recover(mse)
@@ -320,7 +320,7 @@ class FMFpythonLexer(Lexer):
 
                     if self.backtracking > 0:
                         self.failed = True
-                        return
+                        return 
 
                     eee = EarlyExitException(3, self.input)
                     raise eee
@@ -358,7 +358,7 @@ class FMFpythonLexer(Lexer):
             else:
                 if self.backtracking > 0:
                     self.failed = True
-                    return
+                    return 
 
                 mse = MismatchedSetException(None, self.input)
                 self.recover(mse)
@@ -382,7 +382,7 @@ class FMFpythonLexer(Lexer):
                     # FMFpython.g:34:29: .
                     self.matchAny()
                     if self.failed:
-                        return
+                        return 
 
 
                 else:
@@ -391,7 +391,7 @@ class FMFpythonLexer(Lexer):
 
             self.mNEWLINE()
             if self.failed:
-                return
+                return 
             if self.backtracking == 0:
                 self.channel=HIDDEN;
 
@@ -417,7 +417,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:36:17: '['
             self.match(u'[')
             if self.failed:
-                return
+                return 
 
 
 
@@ -440,7 +440,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:37:17: ']'
             self.match(u']')
             if self.failed:
-                return
+                return 
 
 
 
@@ -463,7 +463,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:38:17: '('
             self.match(u'(')
             if self.failed:
-                return
+                return 
 
 
 
@@ -486,7 +486,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:39:17: ')'
             self.match(u')')
             if self.failed:
-                return
+                return 
 
 
 
@@ -509,7 +509,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:40:17: '*'
             self.match(u'*')
             if self.failed:
-                return
+                return 
 
 
 
@@ -532,7 +532,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:41:17: ':'
             self.match(u':')
             if self.failed:
-                return
+                return 
 
 
 
@@ -555,7 +555,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:42:17: '='
             self.match(u'=')
             if self.failed:
-                return
+                return 
 
 
 
@@ -576,7 +576,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:44:17: '+'
             self.match(u'+')
             if self.failed:
-                return
+                return 
 
 
 
@@ -599,7 +599,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:45:17: ( NPLUS DIGIT )=> PLUS
             self.mPLUS()
             if self.failed:
-                return
+                return 
 
 
 
@@ -620,7 +620,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:47:17: '-'
             self.match(u'-')
             if self.failed:
-                return
+                return 
 
 
 
@@ -643,7 +643,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:48:17: ( NMINUS DIGIT )=> MINUS
             self.mMINUS()
             if self.failed:
-                return
+                return 
 
 
 
@@ -664,7 +664,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:51:17: '{'
             self.match(u'{')
             if self.failed:
-                return
+                return 
 
 
 
@@ -685,7 +685,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:53:17: '}'
             self.match(u'}')
             if self.failed:
-                return
+                return 
 
 
 
@@ -706,7 +706,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:56:17: '_'
             self.match(u'_')
             if self.failed:
-                return
+                return 
 
 
 
@@ -727,7 +727,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:58:17: '^'
             self.match(u'^')
             if self.failed:
-                return
+                return 
 
 
 
@@ -748,7 +748,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:60:17: '/'
             self.match(u'/')
             if self.failed:
-                return
+                return 
 
 
 
@@ -769,7 +769,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:62:17: '$'
             self.match(u'$')
             if self.failed:
-                return
+                return 
 
 
 
@@ -790,7 +790,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:65:17: '%'
             self.match(u'%')
             if self.failed:
-                return
+                return 
 
 
 
@@ -811,7 +811,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:67:17: '<'
             self.match(u'<')
             if self.failed:
-                return
+                return 
 
 
 
@@ -832,7 +832,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:70:17: '>'
             self.match(u'>')
             if self.failed:
-                return
+                return 
 
 
 
@@ -858,7 +858,7 @@ class FMFpythonLexer(Lexer):
             else:
                 if self.backtracking > 0:
                     self.failed = True
-                    return
+                    return 
 
                 mse = MismatchedSetException(None, self.input)
                 self.recover(mse)
@@ -897,7 +897,7 @@ class FMFpythonLexer(Lexer):
                     # FMFpython.g:74:11: DIGIT
                     self.mDIGIT()
                     if self.failed:
-                        return
+                        return 
 
 
                 else:
@@ -906,7 +906,7 @@ class FMFpythonLexer(Lexer):
 
                     if self.backtracking > 0:
                         self.failed = True
-                        return
+                        return 
 
                     eee = EarlyExitException(5, self.input)
                     raise eee
@@ -939,7 +939,7 @@ class FMFpythonLexer(Lexer):
             else:
                 if self.backtracking > 0:
                     self.failed = True
-                    return
+                    return 
 
                 mse = MismatchedSetException(None, self.input)
                 self.recover(mse)
@@ -969,10 +969,10 @@ class FMFpythonLexer(Lexer):
                 # FMFpython.g:78:13: '.' DIGITS ( EXPONENT )?
                 self.match(u'.')
                 if self.failed:
-                    return
+                    return 
                 self.mDIGITS()
                 if self.failed:
-                    return
+                    return 
                 # FMFpython.g:78:24: ( EXPONENT )?
                 alt6 = 2
                 LA6_0 = self.input.LA(1)
@@ -983,7 +983,7 @@ class FMFpythonLexer(Lexer):
                     # FMFpython.g:78:24: EXPONENT
                     self.mEXPONENT()
                     if self.failed:
-                        return
+                        return 
 
 
 
@@ -993,10 +993,10 @@ class FMFpythonLexer(Lexer):
                 # FMFpython.g:79:13: ( DIGITS '.' ~ DIGIT )=> DIGITS '.' ( EXPONENT )?
                 self.mDIGITS()
                 if self.failed:
-                    return
+                    return 
                 self.match(u'.')
                 if self.failed:
-                    return
+                    return 
                 # FMFpython.g:79:46: ( EXPONENT )?
                 alt7 = 2
                 LA7_0 = self.input.LA(1)
@@ -1007,7 +1007,7 @@ class FMFpythonLexer(Lexer):
                     # FMFpython.g:79:46: EXPONENT
                     self.mEXPONENT()
                     if self.failed:
-                        return
+                        return 
 
 
 
@@ -1017,13 +1017,13 @@ class FMFpythonLexer(Lexer):
                 # FMFpython.g:80:13: ( DIGITS '.' DIGITS ~ '.' )=> DIGITS '.' DIGITS ( EXPONENT )?
                 self.mDIGITS()
                 if self.failed:
-                    return
+                    return 
                 self.match(u'.')
                 if self.failed:
-                    return
+                    return 
                 self.mDIGITS()
                 if self.failed:
-                    return
+                    return 
                 # FMFpython.g:80:59: ( EXPONENT )?
                 alt8 = 2
                 LA8_0 = self.input.LA(1)
@@ -1034,7 +1034,7 @@ class FMFpythonLexer(Lexer):
                     # FMFpython.g:80:59: EXPONENT
                     self.mEXPONENT()
                     if self.failed:
-                        return
+                        return 
 
 
 
@@ -1062,7 +1062,7 @@ class FMFpythonLexer(Lexer):
             else:
                 if self.backtracking > 0:
                     self.failed = True
-                    return
+                    return 
 
                 mse = MismatchedSetException(None, self.input)
                 self.recover(mse)
@@ -1084,7 +1084,7 @@ class FMFpythonLexer(Lexer):
                 else:
                     if self.backtracking > 0:
                         self.failed = True
-                        return
+                        return 
 
                     mse = MismatchedSetException(None, self.input)
                     self.recover(mse)
@@ -1096,7 +1096,7 @@ class FMFpythonLexer(Lexer):
 
             self.mDIGITS()
             if self.failed:
-                return
+                return 
 
 
 
@@ -1129,7 +1129,7 @@ class FMFpythonLexer(Lexer):
             else:
                 if self.backtracking > 0:
                     self.failed = True
-                    return
+                    return 
 
                 nvae = NoViableAltException("86:1: fragment IINT : ( '0' ( 'x' | 'X' ) ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' )+ | '0' ( DIGITS )* | '1' .. '9' ( DIGITS )* );", 14, 0, self.input)
 
@@ -1139,7 +1139,7 @@ class FMFpythonLexer(Lexer):
                 # FMFpython.g:87:11: '0' ( 'x' | 'X' ) ( '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' )+
                 self.match(u'0')
                 if self.failed:
-                    return
+                    return 
                 if self.input.LA(1) == u'X' or self.input.LA(1) == u'x':
                     self.input.consume();
                     self.failed = False
@@ -1147,7 +1147,7 @@ class FMFpythonLexer(Lexer):
                 else:
                     if self.backtracking > 0:
                         self.failed = True
-                        return
+                        return 
 
                     mse = MismatchedSetException(None, self.input)
                     self.recover(mse)
@@ -1173,7 +1173,7 @@ class FMFpythonLexer(Lexer):
                         else:
                             if self.backtracking > 0:
                                 self.failed = True
-                                return
+                                return 
 
                             mse = MismatchedSetException(None, self.input)
                             self.recover(mse)
@@ -1188,7 +1188,7 @@ class FMFpythonLexer(Lexer):
 
                         if self.backtracking > 0:
                             self.failed = True
-                            return
+                            return 
 
                         eee = EarlyExitException(11, self.input)
                         raise eee
@@ -1202,7 +1202,7 @@ class FMFpythonLexer(Lexer):
                 # FMFpython.g:88:11: '0' ( DIGITS )*
                 self.match(u'0')
                 if self.failed:
-                    return
+                    return 
                 # FMFpython.g:88:15: ( DIGITS )*
                 while True: #loop12
                     alt12 = 2
@@ -1216,7 +1216,7 @@ class FMFpythonLexer(Lexer):
                         # FMFpython.g:88:15: DIGITS
                         self.mDIGITS()
                         if self.failed:
-                            return
+                            return 
 
 
                     else:
@@ -1229,7 +1229,7 @@ class FMFpythonLexer(Lexer):
                 # FMFpython.g:89:11: '1' .. '9' ( DIGITS )*
                 self.matchRange(u'1', u'9')
                 if self.failed:
-                    return
+                    return 
                 # FMFpython.g:89:20: ( DIGITS )*
                 while True: #loop13
                     alt13 = 2
@@ -1243,7 +1243,7 @@ class FMFpythonLexer(Lexer):
                         # FMFpython.g:89:20: DIGITS
                         self.mDIGITS()
                         if self.failed:
-                            return
+                            return 
 
 
                     else:
@@ -1269,10 +1269,10 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:92:11: '\\\\' .
             self.match(u'\\')
             if self.failed:
-                return
+                return 
             self.matchAny()
             if self.failed:
-                return
+                return 
 
 
 
@@ -1306,16 +1306,16 @@ class FMFpythonLexer(Lexer):
                 # FMFpython.g:96:11: DIGIT
                 self.mDIGIT()
                 if self.failed:
-                    return
+                    return 
 
 
 
             self.mDIGIT()
             if self.failed:
-                return
+                return 
             self.match(u'.')
             if self.failed:
-                return
+                return 
             # FMFpython.g:96:28: ( DIGIT )?
             alt16 = 2
             LA16_0 = self.input.LA(1)
@@ -1329,16 +1329,16 @@ class FMFpythonLexer(Lexer):
                 # FMFpython.g:96:28: DIGIT
                 self.mDIGIT()
                 if self.failed:
-                    return
+                    return 
 
 
 
             self.mDIGIT()
             if self.failed:
-                return
+                return 
             self.match(u'.')
             if self.failed:
-                return
+                return 
             # FMFpython.g:96:45: ( DIGIT DIGIT )?
             alt17 = 2
             LA17_0 = self.input.LA(1)
@@ -1355,19 +1355,19 @@ class FMFpythonLexer(Lexer):
                 # FMFpython.g:96:46: DIGIT DIGIT
                 self.mDIGIT()
                 if self.failed:
-                    return
+                    return 
                 self.mDIGIT()
                 if self.failed:
-                    return
+                    return 
 
 
 
             self.mDIGIT()
             if self.failed:
-                return
+                return 
             self.mDIGIT()
             if self.failed:
-                return
+                return 
 
 
 
@@ -1390,34 +1390,34 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:97:11: DIGIT DIGIT DIGIT DIGIT MINUS DIGIT DIGIT MINUS DIGIT DIGIT
             self.mDIGIT()
             if self.failed:
-                return
+                return 
             self.mDIGIT()
             if self.failed:
-                return
+                return 
             self.mDIGIT()
             if self.failed:
-                return
+                return 
             self.mDIGIT()
             if self.failed:
-                return
+                return 
             self.mMINUS()
             if self.failed:
-                return
+                return 
             self.mDIGIT()
             if self.failed:
-                return
+                return 
             self.mDIGIT()
             if self.failed:
-                return
+                return 
             self.mMINUS()
             if self.failed:
-                return
+                return 
             self.mDIGIT()
             if self.failed:
-                return
+                return 
             self.mDIGIT()
             if self.failed:
-                return
+                return 
 
 
 
@@ -1440,7 +1440,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:99:11: ( FFLOAT ~ ( 'j' | 'J' | 'i' | 'I' ) )=> FFLOAT
             self.mFFLOAT()
             if self.failed:
-                return
+                return 
 
 
 
@@ -1463,7 +1463,7 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:101:11: ( IINT ~ ( 'j' | 'J' | 'i' | 'I' ) )=> IINT
             self.mIINT()
             if self.failed:
-                return
+                return 
 
 
 
@@ -1489,7 +1489,7 @@ class FMFpythonLexer(Lexer):
                 # FMFpython.g:103:13: IINT ( 'j' | 'J' | 'i' | 'I' )
                 self.mIINT()
                 if self.failed:
-                    return
+                    return 
                 if (u'I' <= self.input.LA(1) <= u'J') or (u'i' <= self.input.LA(1) <= u'j'):
                     self.input.consume();
                     self.failed = False
@@ -1497,7 +1497,7 @@ class FMFpythonLexer(Lexer):
                 else:
                     if self.backtracking > 0:
                         self.failed = True
-                        return
+                        return 
 
                     mse = MismatchedSetException(None, self.input)
                     self.recover(mse)
@@ -1510,7 +1510,7 @@ class FMFpythonLexer(Lexer):
                 # FMFpython.g:104:13: FFLOAT ( 'j' | 'J' | 'i' | 'I' )
                 self.mFFLOAT()
                 if self.failed:
-                    return
+                    return 
                 if (u'I' <= self.input.LA(1) <= u'J') or (u'i' <= self.input.LA(1) <= u'j'):
                     self.input.consume();
                     self.failed = False
@@ -1518,7 +1518,7 @@ class FMFpythonLexer(Lexer):
                 else:
                     if self.backtracking > 0:
                         self.failed = True
-                        return
+                        return 
 
                     mse = MismatchedSetException(None, self.input)
                     self.recover(mse)
@@ -1549,7 +1549,7 @@ class FMFpythonLexer(Lexer):
             else:
                 if self.backtracking > 0:
                     self.failed = True
-                    return
+                    return 
 
                 mse = MismatchedSetException(None, self.input)
                 self.recover(mse)
@@ -1581,56 +1581,56 @@ class FMFpythonLexer(Lexer):
                     # FMFpython.g:108:29: '\\\\'
                     self.match(u'\\')
                     if self.failed:
-                        return
+                        return 
 
 
                 elif alt19 == 2:
                     # FMFpython.g:108:36: LETTERS
                     self.mLETTERS()
                     if self.failed:
-                        return
+                        return 
 
 
                 elif alt19 == 3:
                     # FMFpython.g:108:46: DIGITS
                     self.mDIGITS()
                     if self.failed:
-                        return
+                        return 
 
 
                 elif alt19 == 4:
                     # FMFpython.g:108:55: UNDERSCORE
                     self.mUNDERSCORE()
                     if self.failed:
-                        return
+                        return 
 
 
                 elif alt19 == 5:
                     # FMFpython.g:108:68: HAT
                     self.mHAT()
                     if self.failed:
-                        return
+                        return 
 
 
                 elif alt19 == 6:
                     # FMFpython.g:108:74: LCURLY
                     self.mLCURLY()
                     if self.failed:
-                        return
+                        return 
 
 
                 elif alt19 == 7:
                     # FMFpython.g:108:83: RCURLY
                     self.mRCURLY()
                     if self.failed:
-                        return
+                        return 
 
 
                 elif alt19 == 8:
                     # FMFpython.g:108:92: MINUS
                     self.mMINUS()
                     if self.failed:
-                        return
+                        return 
 
 
                 else:
@@ -1666,7 +1666,7 @@ class FMFpythonLexer(Lexer):
             else:
                 if self.backtracking > 0:
                     self.failed = True
-                    return
+                    return 
 
                 nvae = NoViableAltException("111:1: WORD : ( RWORD | LESSTHAN RWORD GREATERTHAN );", 20, 0, self.input)
 
@@ -1676,20 +1676,20 @@ class FMFpythonLexer(Lexer):
                 # FMFpython.g:111:11: RWORD
                 self.mRWORD()
                 if self.failed:
-                    return
+                    return 
 
 
             elif alt20 == 2:
                 # FMFpython.g:112:11: LESSTHAN RWORD GREATERTHAN
                 self.mLESSTHAN()
                 if self.failed:
-                    return
+                    return 
                 self.mRWORD()
                 if self.failed:
-                    return
+                    return 
                 self.mGREATERTHAN()
                 if self.failed:
-                    return
+                    return 
 
 
 
@@ -1716,7 +1716,7 @@ class FMFpythonLexer(Lexer):
             else:
                 if self.backtracking > 0:
                     self.failed = True
-                    return
+                    return 
 
                 mse = MismatchedSetException(None, self.input)
                 self.recover(mse)
@@ -1752,7 +1752,7 @@ class FMFpythonLexer(Lexer):
             else:
                 if self.backtracking > 0:
                     self.failed = True
-                    return
+                    return 
 
                 nvae = NoViableAltException("118:1: LITERAL : ( '\"' ( ESC | ~ ( '\\\\' | '\\n' | '\"' ) )* '\"' | '\\'' ( ESC | ~ ( '\\\\' | '\\n' | '\\'' ) )* '\\'' );", 23, 0, self.input)
 
@@ -1762,7 +1762,7 @@ class FMFpythonLexer(Lexer):
                 # FMFpython.g:118:11: '\"' ( ESC | ~ ( '\\\\' | '\\n' | '\"' ) )* '\"'
                 self.match(u'"')
                 if self.failed:
-                    return
+                    return 
                 # FMFpython.g:118:15: ( ESC | ~ ( '\\\\' | '\\n' | '\"' ) )*
                 while True: #loop21
                     alt21 = 3
@@ -1778,7 +1778,7 @@ class FMFpythonLexer(Lexer):
                         # FMFpython.g:118:16: ESC
                         self.mESC()
                         if self.failed:
-                            return
+                            return 
 
 
                     elif alt21 == 2:
@@ -1790,7 +1790,7 @@ class FMFpythonLexer(Lexer):
                         else:
                             if self.backtracking > 0:
                                 self.failed = True
-                                return
+                                return 
 
                             mse = MismatchedSetException(None, self.input)
                             self.recover(mse)
@@ -1805,14 +1805,14 @@ class FMFpythonLexer(Lexer):
 
                 self.match(u'"')
                 if self.failed:
-                    return
+                    return 
 
 
             elif alt23 == 2:
                 # FMFpython.g:119:11: '\\'' ( ESC | ~ ( '\\\\' | '\\n' | '\\'' ) )* '\\''
                 self.match(u'\'')
                 if self.failed:
-                    return
+                    return 
                 # FMFpython.g:119:16: ( ESC | ~ ( '\\\\' | '\\n' | '\\'' ) )*
                 while True: #loop22
                     alt22 = 3
@@ -1828,7 +1828,7 @@ class FMFpythonLexer(Lexer):
                         # FMFpython.g:119:17: ESC
                         self.mESC()
                         if self.failed:
-                            return
+                            return 
 
 
                     elif alt22 == 2:
@@ -1840,7 +1840,7 @@ class FMFpythonLexer(Lexer):
                         else:
                             if self.backtracking > 0:
                                 self.failed = True
-                                return
+                                return 
 
                             mse = MismatchedSetException(None, self.input)
                             self.recover(mse)
@@ -1855,7 +1855,7 @@ class FMFpythonLexer(Lexer):
 
                 self.match(u'\'')
                 if self.failed:
-                    return
+                    return 
 
 
 
@@ -1875,168 +1875,168 @@ class FMFpythonLexer(Lexer):
             # FMFpython.g:1:10: T64
             self.mT64()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 2:
             # FMFpython.g:1:14: T65
             self.mT65()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 3:
             # FMFpython.g:1:18: T66
             self.mT66()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 4:
             # FMFpython.g:1:22: T67
             self.mT67()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 5:
             # FMFpython.g:1:26: NEWLINE
             self.mNEWLINE()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 6:
             # FMFpython.g:1:34: WS
             self.mWS()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 7:
             # FMFpython.g:1:37: COMMENT
             self.mCOMMENT()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 8:
             # FMFpython.g:1:45: LBRACK
             self.mLBRACK()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 9:
             # FMFpython.g:1:52: RBRACK
             self.mRBRACK()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 10:
             # FMFpython.g:1:59: LPAREN
             self.mLPAREN()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 11:
             # FMFpython.g:1:66: RPAREN
             self.mRPAREN()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 12:
             # FMFpython.g:1:73: ASTERISK
             self.mASTERISK()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 13:
             # FMFpython.g:1:82: COLON
             self.mCOLON()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 14:
             # FMFpython.g:1:88: EQUALS
             self.mEQUALS()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 15:
             # FMFpython.g:1:95: NPLUS
             self.mNPLUS()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 16:
             # FMFpython.g:1:101: NMINUS
             self.mNMINUS()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 17:
             # FMFpython.g:1:108: GERMANDATE
             self.mGERMANDATE()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 18:
             # FMFpython.g:1:119: ISODATE
             self.mISODATE()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 19:
             # FMFpython.g:1:127: FLOAT
             self.mFLOAT()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 20:
             # FMFpython.g:1:133: INT
             self.mINT()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 21:
             # FMFpython.g:1:137: IMAG
             self.mIMAG()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 22:
             # FMFpython.g:1:142: WORD
             self.mWORD()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 23:
             # FMFpython.g:1:147: PUNCTUATION
             self.mPUNCTUATION()
             if self.failed:
-                return
+                return 
 
 
         elif alt24 == 24:
             # FMFpython.g:1:159: LITERAL
             self.mLITERAL()
             if self.failed:
-                return
+                return 
 
 
 
@@ -2049,10 +2049,10 @@ class FMFpythonLexer(Lexer):
         # FMFpython.g:79:14: DIGITS '.' ~ DIGIT
         self.mDIGITS()
         if self.failed:
-            return
+            return 
         self.match(u'.')
         if self.failed:
-            return
+            return 
         if (u'\u0000' <= self.input.LA(1) <= u'$') or (u'&' <= self.input.LA(1) <= u'\uFFFE'):
             self.input.consume();
             self.failed = False
@@ -2060,7 +2060,7 @@ class FMFpythonLexer(Lexer):
         else:
             if self.backtracking > 0:
                 self.failed = True
-                return
+                return 
 
             mse = MismatchedSetException(None, self.input)
             self.recover(mse)
@@ -2079,13 +2079,13 @@ class FMFpythonLexer(Lexer):
         # FMFpython.g:80:14: DIGITS '.' DIGITS ~ '.'
         self.mDIGITS()
         if self.failed:
-            return
+            return 
         self.match(u'.')
         if self.failed:
-            return
+            return 
         self.mDIGITS()
         if self.failed:
-            return
+            return 
         if (u'\u0000' <= self.input.LA(1) <= u'-') or (u'/' <= self.input.LA(1) <= u'\uFFFE'):
             self.input.consume();
             self.failed = False
@@ -2093,7 +2093,7 @@ class FMFpythonLexer(Lexer):
         else:
             if self.backtracking > 0:
                 self.failed = True
-                return
+                return 
 
             mse = MismatchedSetException(None, self.input)
             self.recover(mse)
@@ -2154,7 +2154,7 @@ class FMFpythonLexer(Lexer):
         u"\3\uffff\1\0\3\uffff"
         )
 
-
+            
     DFA9_transition = [
         DFA.unpack(u"\1\1\1\uffff\12\2"),
         DFA.unpack(u""),
@@ -2178,10 +2178,10 @@ class FMFpythonLexer(Lexer):
 
             _s = s
 
-            if s == 0:
+            if s == 0: 
                 LA9_3 = input.LA(1)
 
-
+                 
                 index9_3 = input.index()
                 input.rewind()
                 s = -1
@@ -2194,7 +2194,7 @@ class FMFpythonLexer(Lexer):
                 else:
                     s = 5
 
-
+                 
                 input.seek(index9_3)
                 if s >= 0:
                     return s
@@ -2231,7 +2231,7 @@ class FMFpythonLexer(Lexer):
         u"\7\uffff"
         )
 
-
+            
     DFA18_transition = [
         DFA.unpack(u"\1\3\1\uffff\1\1\11\2"),
         DFA.unpack(u"\1\3\1\uffff\12\5\17\uffff\2\4\15\uffff\1\4\20\uffff"
@@ -2286,7 +2286,7 @@ class FMFpythonLexer(Lexer):
         u"\104\uffff"
         )
 
-
+            
     DFA24_transition = [
         DFA.unpack(u"\1\5\1\4\2\uffff\1\4\22\uffff\1\5\1\uffff\1\25\1\24"
         u"\3\uffff\1\25\1\11\1\12\1\13\1\16\1\3\1\17\1\21\1\uffff\1\20\11"
@@ -2374,5 +2374,5 @@ class FMFpythonLexer(Lexer):
     # class definition for DFA #24
 
     DFA24 = DFA
-
+ 
 

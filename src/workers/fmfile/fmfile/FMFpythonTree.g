@@ -79,7 +79,7 @@ $v = datetime.time(int(h.getText()), int(m.getText()), sec, msec)
     ;
 
 quantity returns [v]
-    : ^(QUANTITY ^(NUMBER number) {$v = $number.v} ^(UNIT (unit {$v = PQ.PhysicalQuantity($v, $unit.v.encode("utf-8"))})?)) 
+    : ^(QUANTITY ^(NUMBER number) {$v = $number.v} ^(UNIT (unit {$v = PQ.PhysicalQuantity($v, $unit.v.replace('^','**').encode("utf-8"))})?)) 
     ;
 
 number returns [v]

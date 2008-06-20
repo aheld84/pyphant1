@@ -291,6 +291,10 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         self.data = data
         self.mask = mask
         try:
+            if isinstance(unit, (str, unicode)):
+                unit = unit.replace('^', '**')
+            if isinstance(unit, unicode):
+                unit = unit.encode('utf-8')
             self.unit = PhysicalQuantity(unit)
         except:
             try:

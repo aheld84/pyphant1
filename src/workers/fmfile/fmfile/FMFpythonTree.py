@@ -1,9 +1,9 @@
-# $ANTLR 3.0.1 FMFpythonTree.g 2008-04-03 08:14:09
+# $ANTLR 3.0.1 FMFpythonTree.g 2008-06-20 17:00:41
 
 from antlr3 import *
 from antlr3.tree import *
 from antlr3.compat import set, frozenset
-
+         
 import pkg_resources
 pkg_resources.require("Pyphant")
 from pyphant.core import DataContainer as DC
@@ -80,16 +80,16 @@ IMAG=59
 
 # token names
 tokenNames = [
-    "<invalid>", "<EOR>", "<DOWN>", "<UP>",
-    "CONFIG", "HEADER", "COMMON_SECTION", "DATADEF_SECTION", "DATA_SECTION",
-    "BODY", "ITEM", "DATASET", "KEY", "DATETIME", "DATE", "TIME", "NUMBER",
-    "VARIABLE", "IDENTIFIER", "QUANTITY", "UNIT", "STRING", "COLSPEC", "LONGNAME",
-    "DEPS", "NEWLINE", "WS", "COMMENT", "LBRACK", "RBRACK", "LPAREN", "RPAREN",
-    "ASTERISK", "COLON", "EQUALS", "PLUS", "NPLUS", "DIGIT", "MINUS", "NMINUS",
-    "LCURLY", "RCURLY", "UNDERSCORE", "HAT", "DIV", "DOLLAR", "PERCENTAGE",
-    "LESSTHAN", "GREATERTHAN", "DIGITS", "LETTERS", "EXPONENT", "FFLOAT",
-    "IINT", "ESC", "GERMANDATE", "ISODATE", "FLOAT", "INT", "IMAG", "RWORD",
-    "WORD", "PUNCTUATION", "LITERAL", "'reference'", "'data definitions'",
+    "<invalid>", "<EOR>", "<DOWN>", "<UP>", 
+    "CONFIG", "HEADER", "COMMON_SECTION", "DATADEF_SECTION", "DATA_SECTION", 
+    "BODY", "ITEM", "DATASET", "KEY", "DATETIME", "DATE", "TIME", "NUMBER", 
+    "VARIABLE", "IDENTIFIER", "QUANTITY", "UNIT", "STRING", "COLSPEC", "LONGNAME", 
+    "DEPS", "NEWLINE", "WS", "COMMENT", "LBRACK", "RBRACK", "LPAREN", "RPAREN", 
+    "ASTERISK", "COLON", "EQUALS", "PLUS", "NPLUS", "DIGIT", "MINUS", "NMINUS", 
+    "LCURLY", "RCURLY", "UNDERSCORE", "HAT", "DIV", "DOLLAR", "PERCENTAGE", 
+    "LESSTHAN", "GREATERTHAN", "DIGITS", "LETTERS", "EXPONENT", "FFLOAT", 
+    "IINT", "ESC", "GERMANDATE", "ISODATE", "FLOAT", "INT", "IMAG", "RWORD", 
+    "WORD", "PUNCTUATION", "LITERAL", "'reference'", "'data definitions'", 
     "'data'", "','"
 ]
 
@@ -105,7 +105,7 @@ class FMFpythonTree(TreeParser):
 
 
 
-
+                
 
 
 
@@ -129,7 +129,7 @@ class FMFpythonTree(TreeParser):
                 if self.failed:
                     return sampleContainer
                 if self.backtracking == 0:
-                    sampleContainer = DC.SampleContainer(config1.fields, attributes=config1.attributes)
+                    sampleContainer = DC.SampleContainer(config1.fields, attributes=config1.attributes) 
 
 
 
@@ -168,7 +168,7 @@ class FMFpythonTree(TreeParser):
         dataSection3 = None
 
 
-
+               
         retval.attributes = {}
 
         try:
@@ -224,7 +224,7 @@ class FMFpythonTree(TreeParser):
                 if self.failed:
                     return retval
                 if self.backtracking == 0:
-                    retval.fields = dataSection3
+                    retval.fields = dataSection3 
 
 
 
@@ -252,38 +252,38 @@ class FMFpythonTree(TreeParser):
                 # FMFpythonTree.g:29:7: ^( COMMON_SECTION ^( HEADER ASTERISK 'reference' ) ^( BODY ( commonitem[atts] )+ ) )
                 self.match(self.input, COMMON_SECTION, self.FOLLOW_COMMON_SECTION_in_referenceSection129)
                 if self.failed:
-                    return
+                    return 
 
                 self.match(self.input, DOWN, None)
                 if self.failed:
-                    return
+                    return 
                 self.match(self.input, HEADER, self.FOLLOW_HEADER_in_referenceSection132)
                 if self.failed:
-                    return
+                    return 
 
                 self.match(self.input, DOWN, None)
                 if self.failed:
-                    return
+                    return 
                 self.match(self.input, ASTERISK, self.FOLLOW_ASTERISK_in_referenceSection134)
                 if self.failed:
-                    return
+                    return 
                 self.match(self.input, 64, self.FOLLOW_64_in_referenceSection136)
                 if self.failed:
-                    return
+                    return 
 
                 self.match(self.input, UP, None)
                 if self.failed:
-                    return
+                    return 
                 if self.backtracking == 0:
                     atts = attributes.setdefault(u'*reference', {})
 
                 self.match(self.input, BODY, self.FOLLOW_BODY_in_referenceSection150)
                 if self.failed:
-                    return
+                    return 
 
                 self.match(self.input, DOWN, None)
                 if self.failed:
-                    return
+                    return 
                 # FMFpythonTree.g:30:16: ( commonitem[atts] )+
                 cnt2 = 0
                 while True: #loop2
@@ -300,7 +300,7 @@ class FMFpythonTree(TreeParser):
                         self.commonitem(atts)
                         self.following.pop()
                         if self.failed:
-                            return
+                            return 
 
 
                     else:
@@ -309,7 +309,7 @@ class FMFpythonTree(TreeParser):
 
                         if self.backtracking > 0:
                             self.failed = True
-                            return
+                            return 
 
                         eee = EarlyExitException(2, self.input)
                         raise eee
@@ -320,11 +320,11 @@ class FMFpythonTree(TreeParser):
 
                 self.match(self.input, UP, None)
                 if self.failed:
-                    return
+                    return 
 
                 self.match(self.input, UP, None)
                 if self.failed:
-                    return
+                    return 
 
 
 
@@ -336,7 +336,7 @@ class FMFpythonTree(TreeParser):
 
             pass
 
-        return
+        return 
 
     # $ANTLR end referenceSection
 
@@ -354,28 +354,28 @@ class FMFpythonTree(TreeParser):
                 # FMFpythonTree.g:34:7: ^( COMMON_SECTION ^( HEADER headername ) ^( BODY ( commonitem[atts] )+ ) )
                 self.match(self.input, COMMON_SECTION, self.FOLLOW_COMMON_SECTION_in_commonSection178)
                 if self.failed:
-                    return
+                    return 
 
                 self.match(self.input, DOWN, None)
                 if self.failed:
-                    return
+                    return 
                 self.match(self.input, HEADER, self.FOLLOW_HEADER_in_commonSection181)
                 if self.failed:
-                    return
+                    return 
 
                 if self.input.LA(1) == DOWN:
                     self.match(self.input, DOWN, None)
                     if self.failed:
-                        return
+                        return 
                     self.following.append(self.FOLLOW_headername_in_commonSection183)
                     headername4 = self.headername()
                     self.following.pop()
                     if self.failed:
-                        return
+                        return 
 
                     self.match(self.input, UP, None)
                     if self.failed:
-                        return
+                        return 
 
                 if self.backtracking == 0:
                     atts = attributes.setdefault(self.input.getTokenStream().toString(
@@ -385,11 +385,11 @@ class FMFpythonTree(TreeParser):
 
                 self.match(self.input, BODY, self.FOLLOW_BODY_in_commonSection197)
                 if self.failed:
-                    return
+                    return 
 
                 self.match(self.input, DOWN, None)
                 if self.failed:
-                    return
+                    return 
                 # FMFpythonTree.g:35:16: ( commonitem[atts] )+
                 cnt3 = 0
                 while True: #loop3
@@ -406,7 +406,7 @@ class FMFpythonTree(TreeParser):
                         self.commonitem(atts)
                         self.following.pop()
                         if self.failed:
-                            return
+                            return 
 
 
                     else:
@@ -415,7 +415,7 @@ class FMFpythonTree(TreeParser):
 
                         if self.backtracking > 0:
                             self.failed = True
-                            return
+                            return 
 
                         eee = EarlyExitException(3, self.input)
                         raise eee
@@ -426,11 +426,11 @@ class FMFpythonTree(TreeParser):
 
                 self.match(self.input, UP, None)
                 if self.failed:
-                    return
+                    return 
 
                 self.match(self.input, UP, None)
                 if self.failed:
-                    return
+                    return 
 
 
 
@@ -442,7 +442,7 @@ class FMFpythonTree(TreeParser):
 
             pass
 
-        return
+        return 
 
     # $ANTLR end commonSection
 
@@ -518,18 +518,18 @@ class FMFpythonTree(TreeParser):
                 # FMFpythonTree.g:41:7: ^( ITEM ^( KEY (key+= . )+ ) value )
                 self.match(self.input, ITEM, self.FOLLOW_ITEM_in_commonitem233)
                 if self.failed:
-                    return
+                    return 
 
                 self.match(self.input, DOWN, None)
                 if self.failed:
-                    return
+                    return 
                 self.match(self.input, KEY, self.FOLLOW_KEY_in_commonitem236)
                 if self.failed:
-                    return
+                    return 
 
                 self.match(self.input, DOWN, None)
                 if self.failed:
-                    return
+                    return 
                 # FMFpythonTree.g:41:20: (key+= . )+
                 cnt5 = 0
                 while True: #loop5
@@ -545,7 +545,7 @@ class FMFpythonTree(TreeParser):
                         key = self.input.LT(1)
                         self.matchAny(self.input)
                         if self.failed:
-                            return
+                            return 
                         if list_key is None:
                             list_key = []
                         list_key.append(key)
@@ -558,7 +558,7 @@ class FMFpythonTree(TreeParser):
 
                         if self.backtracking > 0:
                             self.failed = True
-                            return
+                            return 
 
                         eee = EarlyExitException(5, self.input)
                         raise eee
@@ -569,7 +569,7 @@ class FMFpythonTree(TreeParser):
 
                 self.match(self.input, UP, None)
                 if self.failed:
-                    return
+                    return 
                 if self.backtracking == 0:
                     k = " ".join([k.getText() for k in list_key])
 
@@ -577,11 +577,11 @@ class FMFpythonTree(TreeParser):
                 value5 = self.value()
                 self.following.pop()
                 if self.failed:
-                    return
+                    return 
 
                 self.match(self.input, UP, None)
                 if self.failed:
-                    return
+                    return 
                 if self.backtracking == 0:
                     attributes[k] = value5
 
@@ -596,7 +596,7 @@ class FMFpythonTree(TreeParser):
 
             pass
 
-        return
+        return 
 
     # $ANTLR end commonitem
 
@@ -954,7 +954,7 @@ class FMFpythonTree(TreeParser):
                     if self.failed:
                         return v
                     if self.backtracking == 0:
-
+                                          
                         try:
                             v = datetime.datetime.strptime(GERMANDATE13.getText(), "%d.%m.%Y")
                         except:
@@ -1031,7 +1031,7 @@ class FMFpythonTree(TreeParser):
 
 
                 if self.backtracking == 0:
-
+                                                              
                     s = [int("0"+p) for p in s.getText().split('.')]
                     sec = s[0]
                     if len(s)==1:
@@ -1120,7 +1120,7 @@ class FMFpythonTree(TreeParser):
                         if self.failed:
                             return v
                         if self.backtracking == 0:
-                            v = PQ.PhysicalQuantity(v, unit16.encode("utf-8"))
+                            v = PQ.PhysicalQuantity(v, unit16.replace('^','**').encode("utf-8"))
 
 
 
@@ -1197,7 +1197,7 @@ class FMFpythonTree(TreeParser):
                 if self.failed:
                     return v
                 if self.backtracking == 0:
-                    v = absnumber17.v
+                    v = absnumber17.v 
 
 
 
@@ -1304,7 +1304,7 @@ class FMFpythonTree(TreeParser):
                     if self.failed:
                         return retval
                     if self.backtracking == 0:
-                        retval.v = complex(self.input.toString(retval.start, self.input.LT(-1)))
+                        retval.v = complex(self.input.toString(retval.start, self.input.LT(-1))) 
 
 
 
@@ -1334,7 +1334,7 @@ class FMFpythonTree(TreeParser):
                     if self.failed:
                         return retval
                     if self.backtracking == 0:
-                        retval.v = complex(self.input.toString(retval.start, self.input.LT(-1)))
+                        retval.v = complex(self.input.toString(retval.start, self.input.LT(-1))) 
 
 
 
@@ -1344,7 +1344,7 @@ class FMFpythonTree(TreeParser):
                     if self.failed:
                         return retval
                     if self.backtracking == 0:
-                        retval.v = float(self.input.toString(retval.start, self.input.LT(-1)))
+                        retval.v = float(self.input.toString(retval.start, self.input.LT(-1))) 
 
 
 
@@ -1354,7 +1354,7 @@ class FMFpythonTree(TreeParser):
                     if self.failed:
                         return retval
                     if self.backtracking == 0:
-                        retval.v = int(self.input.toString(retval.start, self.input.LT(-1)))
+                        retval.v = int(self.input.toString(retval.start, self.input.LT(-1))) 
 
 
 
@@ -1364,7 +1364,7 @@ class FMFpythonTree(TreeParser):
                     if self.failed:
                         return retval
                     if self.backtracking == 0:
-                        retval.v = complex(self.input.toString(retval.start, self.input.LT(-1)))
+                        retval.v = complex(self.input.toString(retval.start, self.input.LT(-1))) 
 
 
 
@@ -1390,7 +1390,7 @@ class FMFpythonTree(TreeParser):
         colitem18 = None
 
 
-
+               
         coldefs = []
 
         try:
@@ -1561,7 +1561,7 @@ class FMFpythonTree(TreeParser):
                 if self.failed:
                     return coldef
                 if self.backtracking == 0:
-                    coldef = [longname] + colspec19
+                    coldef = [longname] + colspec19 
 
 
 
@@ -1671,7 +1671,7 @@ class FMFpythonTree(TreeParser):
                         return v
 
                 if self.backtracking == 0:
-
+                                                                                
                     rdeps = []
                     try:
                         if deps20:
@@ -1839,7 +1839,7 @@ class FMFpythonTree(TreeParser):
         identifier23 = None
 
 
-
+               
         v = []
 
         try:
@@ -1864,7 +1864,7 @@ class FMFpythonTree(TreeParser):
                         if self.failed:
                             return v
                         if self.backtracking == 0:
-
+                                               
                             text = self.input.getTokenStream().toString(
                                 self.input.getTreeAdaptor().getTokenStartIndex(identifier23.start),
                                 self.input.getTreeAdaptor().getTokenStopIndex(identifier23.start)
@@ -1912,7 +1912,7 @@ class FMFpythonTree(TreeParser):
 
         fieldContainers = None
 
-
+               
         fields = []
         fieldContainers = []
         for i in xrange(0, len(coldefs)):
@@ -1989,10 +1989,10 @@ class FMFpythonTree(TreeParser):
 
 
                 if self.backtracking == 0:
-
+                            
                     fieldDict = {}
                     for col, data in zip(coldefs, fields):
-                        fieldDict[col[1]]=DC.FieldContainer(numpy.array(data), col[3], longname=col[0], shortname=col[1])
+                            fieldDict[col[1]]=DC.FieldContainer(numpy.array(data), col[3], longname=col[0], shortname=col[1])
                     for col in coldefs:
                         if len(col[2])>0:
                             fieldDict[col[1]].dimensions = [ fieldDict[key] for key in col[2] ]
@@ -2019,7 +2019,7 @@ class FMFpythonTree(TreeParser):
         cell24 = None
 
 
-
+               
         i = 0
 
         try:
@@ -2028,12 +2028,12 @@ class FMFpythonTree(TreeParser):
                 # FMFpythonTree.g:180:7: ^( DATASET ( cell )* )
                 self.match(self.input, DATASET, self.FOLLOW_DATASET_in_dataitem961)
                 if self.failed:
-                    return
+                    return 
 
                 if self.input.LA(1) == DOWN:
                     self.match(self.input, DOWN, None)
                     if self.failed:
-                        return
+                        return 
                     # FMFpythonTree.g:180:17: ( cell )*
                     while True: #loop21
                         alt21 = 2
@@ -2049,12 +2049,12 @@ class FMFpythonTree(TreeParser):
                             cell24 = self.cell()
                             self.following.pop()
                             if self.failed:
-                                return
+                                return 
                             if self.backtracking == 0:
-
+                                         
                                 fields[i].append(cell24)
                                 i += 1
-
+                                        
 
 
 
@@ -2065,7 +2065,7 @@ class FMFpythonTree(TreeParser):
 
                     self.match(self.input, UP, None)
                     if self.failed:
-                        return
+                        return 
 
 
 
@@ -2078,7 +2078,7 @@ class FMFpythonTree(TreeParser):
 
             pass
 
-        return
+        return 
 
     # $ANTLR end dataitem
 
@@ -2093,7 +2093,7 @@ class FMFpythonTree(TreeParser):
         number25 = None
 
 
-
+               
         v=u""
 
         try:
@@ -2201,7 +2201,7 @@ class FMFpythonTree(TreeParser):
     # $ANTLR end cell
 
 
-
+ 
 
     FOLLOW_config_in_dataContainer56 = frozenset([1])
     FOLLOW_CONFIG_in_config85 = frozenset([2])
