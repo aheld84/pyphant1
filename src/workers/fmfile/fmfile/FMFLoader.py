@@ -183,14 +183,11 @@ def readDataFile(filename):
     dat = filehandle.read()
     filehandle.close()
     rawContainer = readSingleFile(dat,filename)
-    dependencies = {}
+    independendFields = []
     for field in rawContainer.columns:
         if field.dimensions != DataContainer.INDEX:
-            dependencies[field.longname]=field.dimensions[0].longname
-    newContainer = []
-    for field in rawContainer.columns:
-        if not field.longname in dependencies.values():
-            newContainer.append(field)
+            independendFields += [d.longname for d in field.dimensions]
+    newContainer = [ field for field in rawContainer.columns if not field.longname in independendFields ]
     newSample = DataContainer.SampleContainer(newContainer,
                                               longname=rawContainer.longname,
                                               shortname=rawContainer.shortname,
