@@ -299,19 +299,26 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 self.unit = unit
         self.error = error
         if dimensions != None:
-            self.dimensions = dimensionList(dimensions)
+            self.dimensions = dimensions
         else:
             N = len(data.shape)-1
-            self.dimensions = dimensionList([generateIndex(N-i,n) for i,n in enumerate(data.shape)])
+            self.dimensions = [generateIndex(N-i,n) for i,n in enumerate(data.shape)]
         if rescale:
             self.rescale()
-            for dim in self.dimensions:
+            for dim in self._dimensions:
                 dim.rescale()
         assert self.isValid()
 
+    def _set_dimensions(self,dimensions):
+        self._dimensions = dimensionList(dimensions)
+
+    def _get_dimensions(self):
+        return self._dimensions
+    dimensions = property(_get_dimensions,_set_dimensions)
+    
     def _getLabel(self):
-        if len(self.dimensions)>0:
-            shortnames = [dim.shortname for dim in self.dimensions]
+        if len(self._dimensions)>0:
+            shortnames = [dim.shortname for dim in self._dimensions]
             shortnames.reverse()
             dependency = '(%s)' % ','.join(shortnames)
         else:
@@ -346,7 +353,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         error=copy.deepcopy(self.error, memo)
         if error!=None:
             error.setflags(write=True)
-        dimensions=copy.deepcopy(self.dimensions, memo)
+        dimensions=copy.deepcopy(self._dimensions, memo)
         res = FieldContainer(data, self.unit, error, mask, dimensions,
                              self.longname, self.shortname)
         self.lock.release()
@@ -363,7 +370,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         m.update(str(self.attributes))
         m.update(self.longname.encode('utf-8'))
         m.update(self.shortname.encode('utf-8'))
-        [m.update(dim.hash) for dim in self.dimensions]
+        [m.update(dim.hash) for dim in self._dimensions]
         return enc(m.hexdigest())
 
     def seal(self, id=None):
@@ -374,8 +381,8 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         if self.error!=None:
             self.error.setflags(write=False)
         if not id:
-            self.dimensions.write = False
-            for dim in self.dimensions:
+            self._dimensions.write = False
+            for dim in self._dimensions:
                 dim.seal()
         super(FieldContainer, self).seal(id)
         self.lock.release()
@@ -521,7 +528,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         if not self.attributes == other.attributes:
             _logger.debug('The attribute dictionary differs.')
             return False
-        for dimSelf,dimOther in zip(self.dimensions,other.dimensions):
+        for dimSelf,dimOther in zip(self._dimensions,other.dimensions):
             if dimSelf != dimOther:
                 _logger.debug('Different dimensions: %s, %s' % (dimSelf,dimOther))
                 return False
@@ -536,10 +543,10 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 return NotImplemented
             else:
                 error = None
-            if len(self.dimensions) != len(other.dimensions):
+            if len(self._dimensions) != len(other.dimensions):
                 return NotImplemented
-            for i in xrange(len(self.dimensions)):
-                if not self.dimensions[i] == other.dimensions[i]:
+            for i in xrange(len(self._dimensions)):
+                if not self._dimensions[i] == other.dimensions[i]:
                     return NotImplemented
             if isPhysicalQuantity(self.unit):
                 if not isPhysicalQuantity(other.unit):
@@ -566,7 +573,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             longname = u"Sum of %s and %s." % (self.longname, other.longname)
             shortname = u"%s + %s" % (self.shortname, other.shortname)
             return FieldContainer(data, unit, error, mask,
-                                  copy.deepcopy(self.dimensions),
+                                  copy.deepcopy(self._dimensions),
                                   longname, shortname)
         return NotImplemented
 
@@ -576,10 +583,10 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 return NotImplemented
             else:
                 error = None
-            if len(self.dimensions) != len(other.dimensions):
+            if len(self._dimensions) != len(other.dimensions):
                 return NotImplemented
-            for i in xrange(len(self.dimensions)):
-                if not self.dimensions[i] == other.dimensions[i]:
+            for i in xrange(len(self._dimensions)):
+                if not self._dimensions[i] == other.dimensions[i]:
                     return NotImplemented
             if isPhysicalQuantity(self.unit):
                 if not self.unit.isCompatible(other.unit.unit):
@@ -604,12 +611,12 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             longname = u"Difference of %s and %s." % (self.longname, other.longname)
             shortname = u"%s - %s" % (self.shortname, other.shortname)
             return FieldContainer(data, unit, error, mask,
-                                  copy.deepcopy(self.dimensions),
+                                  copy.deepcopy(self._dimensions),
                                   longname, shortname)
         return NotImplemented
 
     def __str__(self):
-        deps = [ dim for dim in self.dimensions if type(dim)!=type(IndexMarker()) ]
+        deps = [ dim for dim in self._dimensions if type(dim)!=type(IndexMarker()) ]
         report  = "\nFieldContainer %s of shape %s with field\n%s\n"% (self.label,self.data.shape,self.data)
         if self.error != None:
             report += ", error\n%s\n" % self.error
@@ -631,14 +638,14 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             len(args)
         except:
             args = [args]
-        args = [ slice2ind(arg, self.dimensions[dim]) for dim, arg in enumerate(args) ]
+        args = [ slice2ind(arg, self._dimensions[dim]) for dim, arg in enumerate(args) ]
         data = self.data[args]
         attributes = copy.deepcopy(self.attributes)
         mask = None
         error = None
         dimensions = []
         for i,l in enumerate(data.shape[:len(args)]):
-            dim = self.dimensions[i]
+            dim = self._dimensions[i]
             if l==1:
                 attributes[dim.longname] = (dim.shortname, dim.data[args[i]].squeeze()*dim.unit)
             else:
@@ -647,7 +654,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 else:
                     dimensions.append(dim[args[i],])
         for i in xrange(len(args),len(data.shape)):
-            dimensions.append(copy.deepcopy(self.dimensions[i]))
+            dimensions.append(copy.deepcopy(self._dimensions[i]))
         if data.shape != (1,):
             data = data.squeeze()
             if self.mask!=None:
@@ -670,11 +677,11 @@ Concerning the ordering of data matrices and the dimension list consult http://w
 
     def isValid(self):
         # Valid dimensions?
-        if (not (len(self.dimensions)==1 
-                 and isinstance(self.dimensions[0], IndexMarker)) #IndexMarkers are valid and...
-            and not (self.data.shape == (1,) and len(self.dimensions)==0)): #...so are zero dim fields.
+        if (not (len(self._dimensions)==1 
+                 and isinstance(self._dimensions[0], IndexMarker)) #IndexMarkers are valid and...
+            and not (self.data.shape == (1,) and len(self._dimensions)==0)): #...so are zero dim fields.
             dimshape = []
-            for d in self.dimensions:
+            for d in self._dimensions:
                 if len(d.data.shape)>1:
                     _logger.debug("Dimension %s is not 1-d." % d.longname)
                     return False
@@ -683,7 +690,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 _logger.debug("Shape of data %s and of dimensions %s do not match for field\n:%s" % 
                               (self.data.shape, dimshape, self))
                 return False
-            for d in self.dimensions:
+            for d in self._dimensions:
                 if not d.isValid():
                     _logger.debug("Invalid dimension %s."%d.longname)
                     return False
