@@ -329,7 +329,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 label = u"%s $%s%s$ / a.u." % (self.longname.title(),self.shortname,dependency)
         except:
             pass #just a ScientificPython bug
-        return label.replace('mu',u'\\textmu{}').replace('1.0 ',r'')
+        return label.replace('1.0 ',r'')#.replace('mu',u'\\textmu{}')
     label=property(_getLabel)
 
     def _getShortLabel(self):
@@ -340,7 +340,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 label = u"%s $%s$ / a.u." % (self.longname.title(),self.shortname)
         else:
             label =  u"%s $%s$ / %s" % (self.longname.title(), self.shortname, self.unit)
-        return label.replace('mu',u'\\textmu{}').replace('1.0 ',r'')
+        return label.replace('1.0 ',r'')#.replace('mu',u'\\textmu{}')
     shortlabel=property(_getShortLabel)
 
     def __deepcopy__(self, memo):

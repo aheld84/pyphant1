@@ -47,7 +47,7 @@ class F(pylab.Formatter):
         self.container=container
     def __call__(self, x, pos=None):
         try:
-            return str(x*self.container.unit).replace('mu',r'\textmu{}')
+            return str(x*self.container.unit)#.replace('mu',r'\textmu{}')
         except IndexError, error:
             return str(x)
 
