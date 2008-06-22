@@ -178,16 +178,35 @@ def readZipFile(filename, subscriber=1):
         containers.append(newField)
     return DataContainer.SampleContainer(containers,attributes=commonAttr)
 
+def reshapeField(field):
+    dimData = [numpy.unique(d.data) for d in field.dimensions]
+    fieldData = numpy.ones([len(d) for d in dimData])*numpy.nan
+    data = numpy.vstack([field.data]+[d.data for d in field.dimensions]).transpose()
+    for row in data:
+        fieldData[[numpy.argwhere(dimData[i]==v) for i,v in enumerate(row[1:])]] = row[0]
+    newDims = [ DataContainer.FieldContainer(dimData[i],
+                                             f.unit,
+                                             longname=f.longname,
+                                             shortname=f.shortname,
+                                             attributes=f.attributes)
+                for i, f in enumerate(field.dimensions) ]
+    newField = DataContainer.FieldContainer(fieldData,
+                                            field.unit,
+                                            mask=numpy.isnan(fieldData),
+                                            dimensions=newDims,
+                                            longname=field.longname,
+                                            shortname=field.shortname,
+                                            attributes=field.attributes)
+    return newField
+
 def readDataFile(filename):
     filehandle = open(filename,'r')
     dat = filehandle.read()
     filehandle.close()
     rawContainer = readSingleFile(dat,filename)
-    independendFields = []
-    for field in rawContainer.columns:
-        if field.dimensions != DataContainer.INDEX:
-            independendFields += [d.longname for d in field.dimensions]
-    newContainer = [ field for field in rawContainer.columns if not field.longname in independendFields ]
+    newContainer = [ reshapeField(field)
+                     for field in rawContainer.columns
+                     if not field.isIndependent() ]
     newSample = DataContainer.SampleContainer(newContainer,
                                               longname=rawContainer.longname,
                                               shortname=rawContainer.shortname,
