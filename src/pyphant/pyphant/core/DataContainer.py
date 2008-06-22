@@ -101,7 +101,7 @@ class IndexMarker(object):
 
     def __ne__(self,other):
         return not self.__eq__(other)
-    
+
     def isValid(self):
         return True
 
@@ -221,7 +221,7 @@ class DataContainer(object):
                                                     self.hash,
                                                     self.typeString)
 
-    
+
 def slice2ind(arg, dim):
     if isinstance(arg, type("")):
         sl = [ "0"+a for a in arg.split(':')] #Hack for PhysicalQuantities, which does not recognize .6 as a number.
@@ -235,7 +235,7 @@ def slice2ind(arg, dim):
             try:
                 li, hi = [ i.inUnitsOf(unit.unit).value/unit.value for i in [li,hi] ]
             except TypeError:
-                raise TypeError("IncompatibleUnits: Dimension %s: %s [%s] can not be sliced with \"%s\"." 
+                raise TypeError("IncompatibleUnits: Dimension %s: %s [%s] can not be sliced with \"%s\"."
                                 % (dim.longname, dim.shortname, dim.unit, arg))
         except SyntaxError:
             li, hi = [ float(i)/unit for i in sl ]
@@ -266,7 +266,7 @@ class FieldContainer(DataContainer):
     u"""FieldContainer(data, unit=1, error=None,dimensions=None, longname=u"Sampled Field",
 \t\t\t  shortname=u"\\Psi",rescale=False)
 \t  Class describing sampled fields:
-\t  .data\t\t- Numpy.array representing the sampled field. 
+\t  .data\t\t- Numpy.array representing the sampled field.
 \t  .unit\t\t- PhysicalQuantity object denoting the unit of the sampled field.
 \t  .dimensions\t- List of FieldContainer instances
 \t\t\t  describing the dimensions of the sampled field.
@@ -319,7 +319,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
     def _get_dimensions(self):
         return self._dimensions
     dimensions = property(_get_dimensions,_set_dimensions)
-    
+
     def _getLabel(self):
         if len(self._dimensions)>0:
             shortnames = [dim.shortname for dim in self._dimensions]
@@ -378,18 +378,18 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         return enc(m.hexdigest())
 
     def seal(self, id=None):
-        self.lock.acquire()
-        self.data.setflags(write=False)
-        if self.mask!=None:
-            self.mask.setflags(write=False)
-        if self.error!=None:
-            self.error.setflags(write=False)
-        if not id:
-            self._dimensions.write = False
-            for dim in self._dimensions:
-                dim.seal()
-        super(FieldContainer, self).seal(id)
-        self.lock.release()
+        with self.lock:
+            assert self.isValid()
+            self.data.setflags(write=False)
+            if self.mask!=None:
+                self.mask.setflags(write=False)
+            if self.error!=None:
+                self.error.setflags(write=False)
+            if not id:
+                self._dimensions.write = False
+                for dim in self._dimensions:
+                    dim.seal()
+            super(FieldContainer, self).seal(id)
 
     def inUnitsOf(self, other):
         if not isPhysicalQuantity(self.unit):
@@ -634,7 +634,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
 
     def __repr__(self):
         return self.__str__()
-    
+
     def __getitem__(self, args):
         if isinstance(args, type("")):
             args=[args]
@@ -681,7 +681,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
 
     def isValid(self):
         # Valid dimensions?
-        if (not (len(self._dimensions)==1 
+        if (not (len(self._dimensions)==1
                  and isinstance(self._dimensions[0], IndexMarker)) #IndexMarkers are valid and...
             and not (self.data.shape == (1,) and len(self._dimensions)==0)): #...so are zero dim fields.
             dimshape = []
@@ -691,7 +691,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                     return False
                 dimshape.append(d.data.shape[0])
             if self.data.shape!=tuple(dimshape):
-                _logger.debug("Shape of data %s and of dimensions %s do not match for field\n:%s" % 
+                _logger.debug("Shape of data %s and of dimensions %s do not match for field\n:%s" %
                               (self.data.shape, dimshape, self))
                 return False
             for d in self._dimensions:
@@ -706,6 +706,15 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         if (self.error!=None) and (self.data.shape!=self.error.shape):
             _logger.debug("Shape of data %s and of error %s do not match."%(self.data.shape, self.error.shape))
             return False
+        return True
+
+    def isIndex(self):
+        return self.dimensions==INDEX
+
+    def isIndependent(self):
+        for d in self.dimensions:
+            if not d.isIndex():
+                return False
         return True
 
     maskedData = property( lambda self: numpy.ma.array(self.data, mask=self.mask) )
