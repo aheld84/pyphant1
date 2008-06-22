@@ -79,12 +79,12 @@ class Slicing(Worker.Worker):
                     unitname = ''
                 param    = ('dim%i'%i,
                             "%s %s (index #0:%i):" % (dim.longname,dim.shortname,len(dim.data)),
-                             "%.4f%s:%.4f%s"%(intStart,unitname,intEnd,unitname),
+                             "%.4f %s:%.4f %s"%(intStart,unitname,intEnd,unitname),
                              None)
                 self._params.append(param)
             self._params.reverse()
             self.initParams(self._params)
-        
+
     @Worker.plug(Connectors.TYPE_IMAGE)
     def extract(self, field, subscriber=0):
         if not hasattr(self,'paramDim0'):

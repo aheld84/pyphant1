@@ -137,7 +137,7 @@ class ColumnExtractor(Worker.Worker):
                                                    dimensions = [dim],
                                                    longname=col.longname,
                                                    shortname=col.shortname)
-            result.seal()
+        result.seal()
         return result
 
 class IndexDict(object):
