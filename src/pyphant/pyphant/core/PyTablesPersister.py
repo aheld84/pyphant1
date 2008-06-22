@@ -213,9 +213,6 @@ def instantiateWorker( parent, workerGroup ):
     module = workerGroup._v_attrs.module
     exec "import "+module
     worker = eval(module+"."+workerGroup._v_attrs.clazz+"(parent, annotations)")
-    for paramName in workerGroup.parameters._v_attrs._v_attrnamesuser:
-        param = getattr(workerGroup.parameters._v_attrs, paramName)
-        worker.getParam(paramName).value=param
     return worker
 
 def loadRecipeFromHDF5File( filename ):
@@ -227,6 +224,13 @@ def loadRecipeFromHDF5File( filename ):
     restoreResultsToWorkers(recipeGroup, workers, h5)
     h5.close()
     return recipe
+
+def restoreParamsToWorkers(recipeGroup, workers):
+    for workerGroup in recipeGroup:
+        for paramName in workerGroup.parameters._v_attrs._v_attrnamesuser:
+            param = getattr(workerGroup.parameters._v_attrs, paramName)
+            workers[workerGroup._v_name].getParam(paramName).value=param
+
 
 def createWorkerGraph(recipeGroup, workers, recipe):
     for workerGroup in recipeGroup:
