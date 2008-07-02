@@ -99,7 +99,7 @@ class Slicing(Worker.Worker):
                     end = len(field.dimensions[dim].data)
                 elif arg[1]==':':
                     start = 0
-                    end   = long(arg[2:])
+                    end   = long(arg[2:])+1
                 elif arg[-1]==':':
                     start = long(arg[1:-1])
                     end = len(field.dimensions[dim].data)
@@ -109,14 +109,15 @@ class Slicing(Worker.Worker):
                     if len(ind) == 1:
                         end = ind[0]+1
                     elif len(ind) >= 2:
-                        end = ind[1]
+                        end = ind[1]+1
                     if len(ind) == 3:
                         step = ind[2]
                     if len(ind) > 3:
                         raise ValueError("Illegal slice with more than two colons.")
                 params[dim]=slice(start, end, step)
             else:
-                params[dim]=DataContainer.slice2ind(arg, field.dimensions[dim])
+                s = DataContainer.slice2ind(arg, field.dimensions[dim])
+                params[dim] = slice(s.start, min(s.stop+1,len(field.dimensions[dim].data)), s.step)
         result = copy.deepcopy(field[params])
         result.seal()
         return result
