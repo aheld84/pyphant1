@@ -578,7 +578,7 @@ class FieldContainerSlicing1dDim(FieldContainerSlicing1d):
 
     def testRegionIndexUnitRightBoundary(self):
         f = self.field1d.dimensions[0]
-        mask = slice(3, -1)
+        mask = slice(3, None)
         afoot = FieldContainer(self.field1d.data[mask],
                                dimensions=[f[mask]],
                                longname="voltage",

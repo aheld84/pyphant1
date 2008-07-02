@@ -251,9 +251,12 @@ def slice2ind(arg, dim):
             if li <= f.min():
                 start = 0
                 end = dma[0][0]+1
-            elif hi >= f.max():
+            elif hi > f.max():
                 start = dma[0][0]+1
-                end = -1
+                end = len(intervallElements)+1
+            elif hi == f.max():
+                start = dma[0][0]+1
+                end = len(intervallElements)
             else:
                 start, end = dma[0]+1
         return slice(start, end)
