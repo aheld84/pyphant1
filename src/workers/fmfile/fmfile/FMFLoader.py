@@ -119,10 +119,7 @@ def unpackAndCollateFields(variableAttr, data):
         sample = data[filename]
         for field in sample.columns:
             if field.longname in fieldData:
-                try:
-                    conversionFactor = field.unit.inUnitsOf(units[field.longname].unit) / units[field.longname].value
-                except AttributeError:
-                    conversionFactor = normation(field.unit) / units[field.longname]
+                conversionFactor = normation(field.unit) / units[field.longname]
                 fieldData[field.longname].append(field.data * conversionFactor)
                 dimensionNames = [dim.longname for dim in field.dimensions
                                   if dim.longname!=u'Index']
@@ -141,7 +138,7 @@ def unpackAndCollateFields(variableAttr, data):
 def checkAndCondense(data):
     reference = data[0]
     for element in data[1:]:
-        assert numpy.allclose(reference, element)
+        numpy.testing.assert_array_almost_equal(reference, element)
     return reference
 
 def readZipFile(filename, subscriber=1):
