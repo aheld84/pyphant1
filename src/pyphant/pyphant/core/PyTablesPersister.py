@@ -221,7 +221,7 @@ def restoreParamsToWorkers(recipeGroup, workers):
         worker.refreshParams()
         for paramName in workerGroup.parameters._v_attrs._v_attrnamesuser:
             param = getattr(workerGroup.parameters._v_attrs, paramName)
-            worker.getParam(paramName).value=param
+            worker.getParam(paramName).overrideValue(param)
 
 def loadRecipeFromHDF5File( filename ):
     h5 = tables.openFile(filename, 'r')

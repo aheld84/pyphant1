@@ -50,16 +50,13 @@ class ParamFactory(object):
 
 
 class Param(Connectors.Socket):
-    def getValue(self):
-        return self._value
-
     def __getValue(self):
         if self.isFull():
             return self.getResult()
         else:
-            return self.getValue()
+            return self._value
 
-    def setValue(self, value):
+    def overrideValue(self, value):
         self._value=value
 
     def __setValue(self, value):
@@ -67,7 +64,7 @@ class Param(Connectors.Socket):
         if oldValue==value: return
 #        if self._validator: ##reintroduce with appropriate subtype validator lookup
 #            self._validator(oldValue, value)
-        self.setValue(value)
+        self._value = value
         self.invalidate()
 
     value=property(__getValue, __setValue)
