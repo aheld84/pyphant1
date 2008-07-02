@@ -66,7 +66,14 @@ class EstimateParameter(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def compute(self, model, experimental, subscriber=1):
         minima = experimental.inUnitsOf(model.dimensions[0]).data.transpose()
-        parameter = [ self.calculateThickness( filter(lambda c: not numpy.isnan(c), row), model) for row in minima]
+        parameter = []
+        inc = 100.0/float(len(minima))
+        acc = inc
+        subscriber %= acc
+        for row in minima:
+            parameter.append(self.calculateThickness( filter(lambda c: not numpy.isnan(c), row), model))
+            acc += inc
+            subscriber %= acc
         result = DataContainer.FieldContainer(numpy.array(parameter),
                                               longname = model.dimensions[-1].longname,
                                               shortname = model.dimensions[-1].shortname,
