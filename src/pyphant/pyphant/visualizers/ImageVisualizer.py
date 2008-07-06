@@ -41,6 +41,7 @@ import pylab, scipy, numpy
 from pyphant.core.Connectors import TYPE_IMAGE
 from pyphant.wxgui2.DataVisReg import DataVisReg
 from Scientific.Physics.PhysicalQuantities import isPhysicalQuantity
+from matplotlib.image import NonUniformImage
 
 class F(pylab.Formatter):
     def __init__(self, container, *args, **kwargs):
@@ -99,12 +100,21 @@ class ImageVisualizer(object):
         xmax=scipy.amax(self.fieldContainer.dimensions[-1].data)
         ymin=scipy.amin(self.fieldContainer.dimensions[-2].data)
         ymax=scipy.amax(self.fieldContainer.dimensions[-2].data)
-        pylab.imshow(self.fieldContainer.maskedData, extent=(xmin, xmax, ymin, ymax), origin='lower', interpolation='nearest',aspect='auto')
+        #Support for images with non uniform axes adapted from python-matplotlib-doc/examples/pcolor_nonuniform.py
+        ax = self.figure.add_subplot(111)
+        im = NonUniformImage(ax, extent=(xmin,xmax,ymin,ymax))
+        im.set_data(self.fieldContainer.dimensions[-1].data,
+                    self.fieldContainer.dimensions[-2].data,
+                    self.fieldContainer.data)
+        ax.images.append(im)
+        ax.set_xlim(xmin,xmax)
+        ax.set_ylim(ymin,ymax)
+
         pylab.xlabel(self.fieldContainer.dimensions[-1].shortlabel)
         pylab.ylabel(self.fieldContainer.dimensions[-2].shortlabel)
         pylab.title(self.fieldContainer.label)
-        ax=pylab.gca()
-        pylab.colorbar(format=F(self.fieldContainer))
+        #ax=pylab.gca()
+        pylab.colorbar(im,format=F(self.fieldContainer),ax=ax)
         if self.show:
             pylab.ion()
             pylab.show()
