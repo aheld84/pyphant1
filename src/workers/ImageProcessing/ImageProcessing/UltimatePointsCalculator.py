@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -96,7 +96,7 @@ class UltimatePointsCalculator(Worker.Worker):
 ##                                                                        +image.dimensions[1].unit**2),
 ##                                        longname=u"Distance to background",
 ##                                        shortname=u"d")
-        z=DataContainer.FieldContainer(ultimatePoints[:,2], image.dimensions[0].unit,
+        z=DataContainer.FieldContainer(ultimatePoints[:,2], image.unit,
                                        longname=u"Distance to background",
                                        shortname=u"d")
         x.seal()
