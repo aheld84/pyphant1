@@ -49,49 +49,66 @@ class Chart(object):
     name='General chart'
     def __init__(self, dataContainer,show=True):
         self.dataContainer = dataContainer
-        self.mins = []
+        self.data = []
         self.prepare()
-        self.draw()
+        for d in self.data:
+            self.draw(**d)
         if show:
             self.finalize()
 
-    def draw(self):
+    def draw(self, **kwargs):
         pass
 
     def prepare(self):
         pylab.ioff()
         self.figure = pylab.figure()
-        if len(self.dataContainer.data.shape)==1:
-            self.data = self.dataContainer.data[numpy.newaxis,:]
-            if self.dataContainer.error != None:
-                self.error = self.dataContainer.error[numpy.newaxis,:]
-            else:
-                self.error = None
-            if self.dataContainer.mask != None:
-                self.mask = self.dataContainer.mask[numpy.newaxis,:]
-                self.maskedData = numpy.ma.array(self.data, mask=self.mask)
-            else:
-                self.mask = None
-                self.maskedData = numpy.ma.array(self.data)
+        if isinstance(self.dataContainer.data[0], DataContainer.FieldContainer):
+            ref = self.dataContainer.data[0]
+            self.addDataContainer(ref)
+            for fc in self.dataContainer.data[1:]:
+                fc = fc.inUnitsOf(ref)
+                fc.dimensions[-1] = fc.dimensions[-1].inUnitsOf(ref.dimensions[-1])
+                self.addDataContainer(fc)
+            pylab.xlabel(self.dataContainer.data[0].dimensions[-1].shortlabel)
+            pylab.ylabel(self.dataContainer.data[0].label)
         else:
-            self.data = self.dataContainer.data
-            self.error = self.dataContainer.error
-            self.mask = self.dataContainer.mask
-            if self.mask != None:
-                self.maskedData = numpy.ma.array(self.data, mask=self.mask)
-            else:
-                self.maskedData = numpy.ma.array(self.data)
-        self.abscissa = self.dataContainer.dimensions[-1].data
-        pylab.xlabel(self.dataContainer.dimensions[-1].shortlabel)
-        pylab.ylabel(self.dataContainer.label)
+            self.addDataContainer(self.dataContainer)
+            pylab.xlabel(self.dataContainer.dimensions[-1].shortlabel)
+            pylab.ylabel(self.dataContainer.label)
         try:
             pylab.title(self.dataContainer.attributes['title'])
         except KeyError,TypeError:
             pass
-        self.xmin=numpy.nanmin(self.abscissa)
-        self.xmax=numpy.nanmax(self.abscissa)
-        self.ymin=numpy.nanmin(self.data)
-        self.ymax=numpy.nanmax(self.data)
+        self.xmin = min([numpy.nanmin(d['abscissa']) for d in self.data])
+        self.xmax = max([numpy.nanmax(d['abscissa']) for d in self.data])
+        self.ymin = min([numpy.nanmin(d['data']) for d in self.data])
+        self.ymax = max([numpy.nanmax(d['data']) for d in self.data])
+
+    def addDataContainer(self, dataContainer):
+        dataDict = {}
+        if len(dataContainer.data.shape)==1:
+            dataDict['data'] = dataContainer.data[numpy.newaxis,:]
+            if dataContainer.error != None:
+                dataDict['error'] = dataContainer.error[numpy.newaxis,:]
+            else:
+                dataDict['error'] = None
+            if dataContainer.mask != None:
+                dataDict['mask'] = dataContainer.mask[numpy.newaxis,:]
+                dataDict['maskedData'] = numpy.ma.array(dataDict['data'], mask=dataDict['mask'])
+            else:
+                dataDict['mask'] = None
+                dataDict['maskedData'] = numpy.ma.array(dataDict['data'])
+        else:
+            dataDict['data'] = dataContainer.data
+            dataDict['error'] = dataContainer.error
+            dataDict['mask'] = dataContainer.mask
+            if dataDict['mask'] != None:
+                dataDict['maskedData'] = numpy.ma.array(dataDict['data'], mask=dataDict['mask'])
+            else:
+                dataDict['maskedData'] = numpy.ma.array(dataDict['data'])
+        dataDict['abscissa'] = dataContainer.dimensions[-1].data
+        self.data.append(dataDict)
+
 
     def finalize(self):
         pylab.ion()
@@ -100,16 +117,16 @@ class Chart(object):
 
 class BarChart(Chart):
     name = u"Bar chart"
-    def draw(self):
-        width = numpy.min(numpy.diff(self.abscissa))
-        if self.error == None:
-            for ordinate in self.maskedData:
-                pylab.bar(self.abscissa, ordinate, capsize=0,
+    def draw(self, abscissa, data, maskedData, error, **kwargs):
+        width = numpy.min(numpy.diff(abscissa))
+        if error == None:
+            for ordinate in maskedData:
+                pylab.bar(abscissa, ordinate, capsize=0,
                           width=width)
         else:
-            for i in xrange(self.data.shape[0]):
-                line = pylab.bar(self.abscissa, self.maskedData[i],
-                                 yerr=self.error[i],
+            for i in xrange(data.shape[0]):
+                line = pylab.bar(abscissa, maskedData[i],
+                                 yerr=error[i],
                                  width=width)
         xextent = (self.xmax-self.xmin)*0.03
         pylab.axis([self.xmin-xextent, self.xmax+width+xextent, 0, self.ymax*1.03])
@@ -118,21 +135,19 @@ class BarChart(Chart):
 class LineChart(Chart):
     name = u"Line chart"
     linestyle = '-'
-    def draw(self):
-        if self.error == None:
-            for ordinate in self.maskedData:
-                pylab.plot(self.abscissa, ordinate, self.linestyle)
+    def draw(self, abscissa, data, maskedData, error, **kwargs):
+        if error == None:
+            for ordinate in maskedData:
+                pylab.plot(abscissa, ordinate, self.linestyle)
         else:
-            for i in xrange(self.data.shape[0]):
-                line = pylab.plot(self.abscissa, self.maskedData[i], self.linestyle)
+            for i in xrange(data.shape[0]):
+                line = pylab.plot(abscissa, maskedData[i], self.linestyle)
                 color = [l._color for l in line]
                 for direction in [-1.,1.]:
-                    ordinate = self.maskedData[i] + direction*self.error[i]
-                    line = pylab.plot(self.abscissa, ordinate, linestyle=':')
+                    ordinate = maskedData[i] + direction*error[i]
+                    line = pylab.plot(abscissa, ordinate, linestyle=':')
                     for j in xrange(len(color)):
                         line[j]._color = color[j]
-        for i in xrange(len(self.mins)):
-            pylab.axvline(self.mins[i])
         pylab.axis([self.xmin, self.xmax, self.ymin, self.ymax])
 
 class ScatterPlot(LineChart):
