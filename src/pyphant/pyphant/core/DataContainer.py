@@ -77,13 +77,15 @@ enc=lambda s: unicode(s, "utf-8")
 
 #Set USER variable used for the emd5 tag
 pltform=platform.system()
-if pltform=='Linux':
+if pltform=='Linux' or pltform=='Darwin':
     USER=enc(os.environ['LOGNAME'])
 elif pltform=='Windows':
     try:
         USER=enc(os.environ['USERNAME'])
     except:
         USER=u"Unidentified User"
+else:
+    raise NotImplementedError, "Unsupported Platform %s" %pltform
 
 
 class IndexMarker(object):

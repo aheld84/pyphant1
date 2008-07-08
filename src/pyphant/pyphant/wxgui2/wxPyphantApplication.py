@@ -147,12 +147,12 @@ class wxPyphantFrame(wx.Frame):
 
     def onOpenCompositeWorker(self, event):
         if not self._wxPyphantApp.pathToRecipe:
-            if pltform == 'Linux':
+            if pltform == 'Linux' or pltform == 'Darwin':
                 osMessage = "Choose an existing recipe or cancel to create a new recipe"
             elif pltform=='Windows':
                 osMessage = "Choose existing recipe to open or name a new recipe to create"
             else:
-                raise OSError, "Operating System not supported!"
+                raise OSError, "Operating System %s not supported!" % pltform
             wc = "Pyphant Recipe(*.h5)|*.h5"
             dlg = wx.FileDialog( self, message=osMessage, defaultDir=os.getcwd(),
                                  defaultFile="", wildcard=wc, style=wx.OPEN)
