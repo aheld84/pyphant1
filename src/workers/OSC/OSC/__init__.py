@@ -37,15 +37,18 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-workers=[ "OscAbsorption",
-          "ErrorEstimator",
-          "Smoother",
-          "OscCurrent",
-          "OscVisualisers",
-          "ThicknessModeller",
-          "Slicing",
-          "ExtremumFinder",
-          "ComputeFunctional",
-          "EstimateParameter",
-          "AddColumn"]
+workers=[ 
+    "AddColumn",
+    "CompareFields",
+    "ComputeFunctional",
+    "ErrorEstimator",
+    "EstimateParameter",
+    "ExtremumFinder",
+    "OscAbsorption",
+    "OscCurrent",
+    "OscVisualisers",
+    "Slicing",
+    "Smoother",
+    "ThicknessModeller",
+    ]
 

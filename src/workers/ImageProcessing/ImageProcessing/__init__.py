@@ -40,17 +40,19 @@ __version__ = "$Revision$"
 BACKGROUND_COLOR=255
 FEATURE_COLOR=0
 
-workers=[ "ApplyMask",
-          "DiffWorker",
-          "DistanceMapper",
-          "EdgeFillWorker",
-          "EdgeTouchingFeatureRemover",
-          "ImageLoaderWorker",
-	  "InvertWorker",
-          "Medianiser",
-          "SkeletonizeFeature",
-          "ThresholdingWorker",
-          "UltimatePointsCalculator"]
+workers=[ 
+    "ApplyMask",
+    "DiffWorker",
+    "DistanceMapper",
+    "EdgeFillWorker",
+    "EdgeTouchingFeatureRemover",
+    "ImageLoaderWorker",
+    "InvertWorker",
+    "Medianiser",
+    "SkeletonizeFeature",
+    "ThresholdingWorker",
+    "UltimatePointsCalculator",
+    ]
 
 def isFeature(point):
     if point == FEATURE_COLOR:
