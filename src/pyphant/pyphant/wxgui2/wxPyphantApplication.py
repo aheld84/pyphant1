@@ -100,6 +100,7 @@ class wxPyphantFrame(wx.Frame):
     ID_WINDOW_RIGHT=102
     ID_WINDOW_BOTTOM=103
     ID_CLOSE_COMPOSITE_WORKER = wx.NewId()
+    ID_UPDATE_PYPHANT = wx.NewId()
 
     def __init__(self, _wxPyphantApp):
         wx.Frame.__init__(self, None, -1, "wxPyphant %s" % __version__, size=(640,480))
@@ -200,6 +201,9 @@ class wxPyphantFrame(wx.Frame):
         self._closeCompositeWorker = wx.Menu()
         self._closeCompositeWorker.Append(self.ID_CLOSE_COMPOSITE_WORKER, "&Close Composite Worker")
         self._menuBar.Append( self._closeCompositeWorker, "&Close Composite Worker")
+        self._updateMenu = wx.Menu()
+        self._updateMenu.Append( self.ID_UPDATE_PYPHANT, "Update &Pyphant" )
+        self._menuBar.Append(self._updateMenu, "&Update")
         self.SetMenuBar( self._menuBar )
         self._menuBar.EnableTop(1, False)
         #self.Bind(wx.EVT_MENU, self.onCreateNew, id=wx.ID_NEW)
@@ -208,7 +212,12 @@ class wxPyphantFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.onClose)
         self.Bind(wx.EVT_MENU, self.onQuit, id=wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.onCloseCompositeWorker, id=self.ID_CLOSE_COMPOSITE_WORKER)
+        self.Bind(wx.EVT_MENU, self.onUpdatePyphant, id=self.ID_UPDATE_PYPHANT)
 
+    def onUpdatePyphant(self, event):
+        import pyphant.core.UpdateManager
+        pyphant.core.UpdateManager.updatePackage('Pyphant')
+    
     def onQuit(self,event):
         self.Close()
 
