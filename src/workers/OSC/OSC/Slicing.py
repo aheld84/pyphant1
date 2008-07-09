@@ -78,7 +78,7 @@ class Slicing(Worker.Worker):
                     intEnd   = dim.data.max()*dim.unit
                     unitname = ''
                 param    = ('dim%i'%i,
-                            "%s %s (index #0:%i):" % (dim.longname,dim.shortname,len(dim.data)),
+                            "%s %s (index #0:%i):" % (dim.longname,dim.shortname,len(dim.data)-1),
                              "%.4f %s:%.4f %s"%(intStart,unitname,intEnd,unitname),
                              None)
                 self._params.append(param)
