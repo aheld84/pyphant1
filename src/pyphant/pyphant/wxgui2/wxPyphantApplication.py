@@ -37,7 +37,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-import os, os.path
+import os, os.path, pkg_resources
 HOMEDIR = os.path.expanduser(u'~')
 import logging
 if HOMEDIR==u'~':
@@ -201,9 +201,8 @@ class wxPyphantFrame(wx.Frame):
         self._closeCompositeWorker = wx.Menu()
         self._closeCompositeWorker.Append(self.ID_CLOSE_COMPOSITE_WORKER, "&Close Composite Worker")
         self._menuBar.Append( self._closeCompositeWorker, "&Close Composite Worker")
-        self._updateMenu = wx.Menu()
-        self._updateMenu.Append( self.ID_UPDATE_PYPHANT, "Update &Pyphant" )
-        self._menuBar.Append(self._updateMenu, "&Update")
+        self._updateMenu = self.createUpdateMenu()
+        self._menuBar.Append( self._updateMenu, "&Update")
         self.SetMenuBar( self._menuBar )
         self._menuBar.EnableTop(1, False)
         #self.Bind(wx.EVT_MENU, self.onCreateNew, id=wx.ID_NEW)
@@ -212,11 +211,24 @@ class wxPyphantFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.onClose)
         self.Bind(wx.EVT_MENU, self.onQuit, id=wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.onCloseCompositeWorker, id=self.ID_CLOSE_COMPOSITE_WORKER)
+
+    def createUpdateMenu(self):
+        updateMenu = wx.Menu()
+        updateMenu.Append( self.ID_UPDATE_PYPHANT, "Update &Pyphant" )
         self.Bind(wx.EVT_MENU, self.onUpdatePyphant, id=self.ID_UPDATE_PYPHANT)
+        self.updateIds = { self.ID_UPDATE_PYPHANT : 'Pyphant' }
+        for toolbox in pkg_resources.iter_entry_points("pyphant.workers"):
+            dist = toolbox.dist
+            nId = wx.NewId()
+            self.updateIds[nId] = dist.project_name
+            updateMenu.Append( nId, "Update %s %s" % (dist.project_name, dist.version) )
+            self.Bind(wx.EVT_MENU, self.onUpdatePyphant, id=nId)
+        return updateMenu
+
 
     def onUpdatePyphant(self, event):
         import pyphant.core.UpdateManager
-        pyphant.core.UpdateManager.updatePackage('Pyphant')
+        pyphant.core.UpdateManager.updatePackage(self.updateIds[event.Id])
     
     def onQuit(self,event):
         self.Close()
