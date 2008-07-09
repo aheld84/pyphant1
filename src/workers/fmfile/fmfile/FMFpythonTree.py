@@ -5,7 +5,7 @@ from antlr3.tree import *
 from antlr3.compat import set, frozenset
          
 import pkg_resources
-pkg_resources.require("Pyphant")
+pkg_resources.require("pyphant")
 from pyphant.core import DataContainer as DC
 import numpy, datetime, math
 import Scientific.Physics.PhysicalQuantities as PQ

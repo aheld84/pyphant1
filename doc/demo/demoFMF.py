@@ -44,7 +44,7 @@ sys.path.append("..")
 
 import pkg_resources
 
-pkg_resources.require("Pyphant")
+pkg_resources.require("pyphant")
 
 from fmfile import FMFLoader
 import pyphant.visualizers.Chart as cv

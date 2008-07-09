@@ -43,7 +43,7 @@ sys.path.append("..")
 
 import pkg_resources
 
-pkg_resources.require("Pyphant")
+pkg_resources.require("pyphant")
 
 import Statistics.Histogram as S
 from pyphant.visualizers.ImageVisualizer import ImageVisualizer
