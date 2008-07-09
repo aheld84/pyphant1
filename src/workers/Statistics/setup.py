@@ -19,7 +19,7 @@ VERSION = '0.1'
 import setuptools
 
 setuptools.setup(
-    name = "Pyphant Statistics",
+    name = "pyphant_statistics",
     version = VERSION,
     author = __author__,
     description = __doc__,

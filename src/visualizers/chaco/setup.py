@@ -17,7 +17,7 @@ VERSION = '0.1'
 from setuptools import setup, find_packages
 
 setup(
-    name = "Pyphant Chaco Visualizer",
+    name = "pyphant_chaco_visualizer",
     version = VERSION,
     author = __author__,
     description = __doc__,

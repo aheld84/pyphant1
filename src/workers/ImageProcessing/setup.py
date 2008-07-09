@@ -19,7 +19,7 @@ VERSION = '0.1'
 import setuptools
 
 setuptools.setup(
-    name = "Pyphant ImageProcessing",
+    name = "pyphant_image_processing",
     version = VERSION,
     author = __author__,
     description = __doc__,
