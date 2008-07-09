@@ -47,8 +47,8 @@ ei = pkg_resources.load_entry_point('setuptools',
                                     'easy_install')
 
 def updatePackage(package):
-    stdout = StringIO()
-    stderr = StringIO()
+    stdout = StringIO.StringIO()
+    stderr = StringIO.StringIO()
     sys.stdout = stdout
     sys.stderr = stderr
     ei(['-U', '-f http://pyphant.sourceforge.net/nightly-builds', package])
