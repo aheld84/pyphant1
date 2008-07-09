@@ -39,10 +39,21 @@ __version__ = "$Revision$"
 
 import pkg_resources
 pkg_resources.require('setuptools')
+import StringIO, sys
+import logging
 
 ei = pkg_resources.load_entry_point('setuptools', 
                                     'console_scripts', 
                                     'easy_install')
 
 def updatePackage(package):
+    stdout = StringIO()
+    stderr = StringIO()
+    sys.stdout = stdout
+    sys.stderr = stderr
     ei(['-U', '-f http://pyphant.sourceforge.net/nightly-builds', package])
+    log = logging.getLogger("pyphant")
+    log.info(stdout.getValue)
+    stdout.close()
+    log.warn(stderr.getValue)
+    stderr.close()
