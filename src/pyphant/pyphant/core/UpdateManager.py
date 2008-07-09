@@ -53,7 +53,7 @@ def updatePackage(package):
     sys.stderr = stderr
     ei(['-U', '-f http://pyphant.sourceforge.net/nightly-builds', package])
     log = logging.getLogger("pyphant")
-    log.info(stdout.getValue)
+    log.info(stdout.getvalue())
     stdout.close()
-    log.warn(stderr.getValue)
+    log.warn(stderr.getvalue())
     stderr.close()
