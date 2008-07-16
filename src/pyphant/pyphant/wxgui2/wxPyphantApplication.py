@@ -216,12 +216,12 @@ class wxPyphantFrame(wx.Frame):
         updateMenu = wx.Menu()
         updateMenu.Append( self.ID_UPDATE_PYPHANT, "Update &Pyphant" )
         self.Bind(wx.EVT_MENU, self.onUpdatePyphant, id=self.ID_UPDATE_PYPHANT)
-        self.updateIds = { self.ID_UPDATE_PYPHANT : 'Pyphant' }
+        self.updateIds = { self.ID_UPDATE_PYPHANT : 'pyphant' }
         for toolbox in pkg_resources.iter_entry_points("pyphant.workers"):
             dist = toolbox.dist
             nId = wx.NewId()
-            self.updateIds[nId] = dist.project_name
-            updateMenu.Append( nId, "Update %s %s" % (dist.project_name, dist.version) )
+            self.updateIds[nId] = dist.key
+            updateMenu.Append( nId, "Update %s (%s)" % (dist.project_name, dist.version) )
             self.Bind(wx.EVT_MENU, self.onUpdatePyphant, id=nId)
         return updateMenu
 
