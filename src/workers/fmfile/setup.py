@@ -16,7 +16,7 @@ VERSION = '0.1'
 import setuptools
 
 setuptools.setup(
-    name = "pyphant_fmf",
+    name = "Pyphant FMF",
     version = VERSION,
     author = __author__,
     description = __doc__,

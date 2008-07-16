@@ -9,7 +9,7 @@ VERSION = '0.5'
 
 from setuptools import setup, find_packages
 
-setup( name='pyphant',
+setup( name='Pyphant',
        version = VERSION,
        description='Workflow modelling app',
        author='Klaus Zimmermann, Andreas W. Liehr',
