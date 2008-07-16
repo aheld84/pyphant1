@@ -43,7 +43,7 @@ sys.path.append("..")
 
 import pkg_resources
 
-pkg_resources.require("pyphant")
+pkg_resources.require("Pyphant")
 
 import ImageProcessing as I
 import ImageProcessing.ApplyMask as IM

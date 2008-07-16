@@ -41,7 +41,7 @@ sys.path.append("..")
 
 import pkg_resources
 
-pkg_resources.require("pyphant")
+pkg_resources.require("Pyphant")
 
 import numpy
 import pylab

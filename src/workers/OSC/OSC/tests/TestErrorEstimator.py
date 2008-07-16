@@ -42,8 +42,8 @@ import sys
 import unittest
 import pkg_resources
 
-pkg_resources.require("pyphant")
-pkg_resources.require("pyphant_osc")
+pkg_resources.require("Pyphant")
+pkg_resources.require("Pyphant_OSC")
 
 import numpy
 import OSC.ErrorEstimator as OE

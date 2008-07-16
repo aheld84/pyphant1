@@ -41,7 +41,7 @@ __version__ = "$Revision$"
 # $Source$
 
 import pkg_resources
-pkg_resources.require("pyphant")
+pkg_resources.require("Pyphant")
 import pyphant.core.PyTablesPersister
 import logging
 logging.basicConfig(level=logging.INFO)

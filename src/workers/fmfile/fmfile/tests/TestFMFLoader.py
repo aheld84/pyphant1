@@ -33,7 +33,7 @@
 # $Source$
 
 import pkg_resources
-pkg_resources.require('pyphant_fmf')
+pkg_resources.require('Pyphant_FMF')
 
 import unittest, numpy
 from fmfile import FMFLoader 
