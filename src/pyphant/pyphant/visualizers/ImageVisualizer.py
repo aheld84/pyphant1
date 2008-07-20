@@ -41,7 +41,7 @@ import pylab, scipy, numpy
 from pyphant.core.Connectors import TYPE_IMAGE
 from pyphant.wxgui2.DataVisReg import DataVisReg
 from Scientific.Physics.PhysicalQuantities import isPhysicalQuantity
-from matplotlib.image import NonUniformImage
+from NonUniformImage import NonUniformImage
 
 class F(pylab.Formatter):
     def __init__(self, container, *args, **kwargs):
@@ -105,7 +105,7 @@ class ImageVisualizer(object):
         im = NonUniformImage(ax, extent=(xmin,xmax,ymin,ymax))
         im.set_data(self.fieldContainer.dimensions[-1].data,
                     self.fieldContainer.dimensions[-2].data,
-                    self.fieldContainer.data)
+                    self.fieldContainer.maskedData)
         ax.images.append(im)
         ax.set_xlim(xmin,xmax)
         ax.set_ylim(ymin,ymax)
