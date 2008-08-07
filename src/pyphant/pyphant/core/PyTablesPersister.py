@@ -190,6 +190,9 @@ def saveField(h5, resultGroup, result):
     if result.error != None:
         h5.createArray(resultGroup, "error", result.error,
                        (u"Error of "+result.longname).encode("utf-8"))
+    if result.mask != None:
+        h5.createArray(resultGroup, "mask", result.mask,
+                       (u"Mask of "+result.longname).encode("utf-8"))
     h5.setNodeAttr(resultGroup, "unit", repr(result.unit).encode("utf-8"))
     if result.dimensions!=DataContainer.INDEX:
         idLen=max([len(dim.id.encode("utf-8")) for dim in result.dimensions])
@@ -284,6 +287,10 @@ def loadField(h5, resNode):
         error = scipy.array(resNode.error.read())
     except tables.NoSuchNodeError, e:
         error = None
+    try:
+        mask = scipy.array(resNode.mask.read())
+    except tables.NoSuchNodeError, e:
+        mask = None
     unit = eval(unicode(h5.getNodeAttr(resNode, "unit"), 'utf-8'))
     try:
         dimTable = resNode.dimensions
@@ -291,7 +298,7 @@ def loadField(h5, resNode):
                       for row in dimTable.iterrows()]
     except tables.NoSuchNodeError, e:
         dimensions = DataContainer.INDEX
-    result = DataContainer.FieldContainer(data, unit, error, None,
+    result = DataContainer.FieldContainer(data, unit, error, mask,
                                           dimensions, longname, shortname,
                                           attributes)
     result.seal(resNode._v_title)
