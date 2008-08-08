@@ -37,6 +37,13 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
+import pkg_resources
+try:
+    pkg_resources.require('matplotlib>=0.98.1')
+    MPL_LT_0_98_1 = False
+except:
+    MPL_LT_0_98_1 = True
+
 import pylab, scipy, numpy
 from pyphant.core.Connectors import TYPE_IMAGE
 from pyphant.wxgui2.DataVisReg import DataVisReg
@@ -104,7 +111,7 @@ class ImageVisualizer(object):
         ymax=scipy.amax(y)
         #Support for images with non uniform axes adapted from python-matplotlib-doc/examples/pcolor_nonuniform.py
         ax = self.figure.add_subplot(111)
-        if self.fieldContainer.isLinearlyDiscretised():
+        if MPL_LT_0_98_1 or self.fieldContainer.isLinearlyDiscretised():
             pylab.imshow(self.fieldContainer.maskedData, extent=(xmin, xmax, ymin, ymax), origin='lower', interpolation='nearest',aspect='auto')
             pylab.colorbar(format=F(self.fieldContainer), ax=ax)
         else:
