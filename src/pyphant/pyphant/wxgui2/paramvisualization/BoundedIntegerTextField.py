@@ -48,7 +48,7 @@ class BoundedIntegerTextField(wx.lib.masked.NumCtrl):
         if min or max: limited=True
         else: limited=False
         wx.lib.masked.NumCtrl.__init__(self, parent, min=min, max=max, allowNegative=allowNegative, limited=limited)
-        self.SetValue(param.value)
+        self.SetValue(int(param.value))
 
     def getValue(self):
         if self.IsValid():
