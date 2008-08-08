@@ -599,6 +599,13 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 return False
         return True
 
+    def isLinearlyDiscretised(self):
+        for dim in self.dimensions:
+            d = numpy.diff(dim.data)
+            if not numpy.alltrue(numpy.logical_not(d-d[0])):
+                return False
+        return True
+
     maskedData = property( lambda self: numpy.ma.array(self.data, mask=self.mask) )
     maskedError = property( lambda self: numpy.ma.array(self.error, mask=self.mask) )
 
