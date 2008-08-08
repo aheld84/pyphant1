@@ -219,13 +219,13 @@ def loadFMFFromFile(filename, subscriber=0):
 
 def readSingleFile(b, pixelName):
     _logger.info(u"Parsing file %s." % pixelName)
+    localVar = {}
     if b[0] == ';':
         items =  [var.strip().split(':') for var in b.split('-*-')[1].split(';')]
-        var = {}
         for key,value in items:
-            var[key]=value
-    var.update({'fmf-version':'1.0','coding':'cp1252'})
-    d = unicode(b, var['coding'])
+            localVar[key]=value
+    localVar.update({'fmf-version':'1.0','coding':'cp1252'})
+    d = unicode(b, localVar['coding'])
     dataExpr = re.compile(ur"^(\[\*data(?::([^\]]*))?\]\r?\n)([^[]*)", re.M | re.S)
     preParsedData = {}
     def preParseData(match):
