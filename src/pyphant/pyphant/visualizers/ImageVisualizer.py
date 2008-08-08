@@ -96,25 +96,28 @@ class ImageVisualizer(object):
         pylab.ioff()
         self.figure = pylab.figure()
         self.figure.canvas.mpl_connect('motion_notify_event', self.dataPrinter)
-        xmin=scipy.amin(self.fieldContainer.dimensions[-1].data)
-        xmax=scipy.amax(self.fieldContainer.dimensions[-1].data)
-        ymin=scipy.amin(self.fieldContainer.dimensions[-2].data)
-        ymax=scipy.amax(self.fieldContainer.dimensions[-2].data)
+        x = self.fieldContainer.dimensions[-1].data
+        y = self.fieldContainer.dimensions[-2].data
+        xmin=scipy.amin(x)
+        xmax=scipy.amax(x)
+        ymin=scipy.amin(y)
+        ymax=scipy.amax(y)
         #Support for images with non uniform axes adapted from python-matplotlib-doc/examples/pcolor_nonuniform.py
         ax = self.figure.add_subplot(111)
-        im = NonUniformImage(ax, extent=(xmin,xmax,ymin,ymax))
-        im.set_data(self.fieldContainer.dimensions[-1].data,
-                    self.fieldContainer.dimensions[-2].data,
-                    self.fieldContainer.maskedData)
-        ax.images.append(im)
-        ax.set_xlim(xmin,xmax)
-        ax.set_ylim(ymin,ymax)
-
+        if self.fieldContainer.isLinearlyDiscretised():
+            pylab.imshow(self.fieldContainer.maskedData, extent=(xmin, xmax, ymin, ymax), origin='lower', interpolation='nearest',aspect='auto')
+            pylab.colorbar(format=F(self.fieldContainer), ax=ax)
+        else:
+            im = NonUniformImage(ax, extent=(xmin,xmax,ymin,ymax))
+            im.set_data(x, y, self.fieldContainer.maskedData)
+            ax.images.append(im)
+            ax.set_xlim(xmin,xmax)
+            ax.set_ylim(ymin,ymax)
+            pylab.colorbar(im,format=F(self.fieldContainer), ax=ax)
         pylab.xlabel(self.fieldContainer.dimensions[-1].shortlabel)
         pylab.ylabel(self.fieldContainer.dimensions[-2].shortlabel)
         pylab.title(self.fieldContainer.label)
         #ax=pylab.gca()
-        pylab.colorbar(im,format=F(self.fieldContainer),ax=ax)
         if self.show:
             pylab.ion()
             pylab.show()
