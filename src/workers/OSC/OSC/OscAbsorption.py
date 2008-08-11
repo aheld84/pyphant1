@@ -159,7 +159,7 @@ class OscMapper(Worker.Worker):
     _sockets = [("osc", Connectors.TYPE_ARRAY)]
     _params = [("xAxis", u"x-Axis", [u"horizontal_table_position"], None),
                ("yAxis", u"y-Axis", [u"vertical_table_position"], None),
-               ("field", u"Field", [u"estimated thickness"], None),
+               ("field", u"Field", [u"thickness"], None),
                ("extentX", u"Extension of x-axis [%%]", 10, None),
                ("extentY", u"Extension of y-axis [%%]", 10, None)]
 
