@@ -44,6 +44,7 @@ workers=[
     "ErrorEstimator",
     "EstimateParameter",
     "ExtremumFinder",
+    "MRA",
     "OscAbsorption",
     "OscCurrent",
     "OscVisualisers",
