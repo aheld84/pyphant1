@@ -64,53 +64,17 @@ class MRA(Worker.Worker):
         kernel = ive(numpy.arange(-n, n), sigma)
         return convolve(field.data, kernel, mode='same')
         
-    def findMinima(self, field, lastExtrema=None, origExtremaPos=None):
-        minima = numpy.logical_and(field[:-2] > field[1:-1],
-                                   field[2:]  > field[1:-1]).astype(int)
-        maxima = numpy.logical_and(field[:-2] < field[1:-1],
-                                   field[2:]  < field[1:-1]).astype(int)*-1
-        extrema = minima + maxima
+    def findMinima(self, fieldData, lastExtrema=None):
+        minima_c = numpy.logical_and(fieldData[:-2] > fieldData[1:-1],
+                                   fieldData[2:]  > fieldData[1:-1])
+        minima = minima_c.nonzero()[0]
         if lastExtrema==None:
-            return extrema, extrema.nonzero()[0].tolist()
-        lei = lastExtrema.nonzero()[0].tolist()
-        ei = extrema.nonzero()[0]
-        if len(lei) == len(ei):
-            return extrema, origExtremaPos
-        if extrema[-1]!=0:
-            extrema[ei[-1]]=0
-            ei = ei[:-1]
-        if extrema[0]!=0:
-            extrema[ei[0]]=0
-            ei = ei[1:]
-        if lastExtrema[lei[0]] != extrema[ei[0]]:
-            lastExtrema[lei[0]] = 0
-            del lei[0]
-            del origExtremaPos[0]
-        if lastExtrema[lei[-1]] != extrema[ei[-1]]:
-            lastExtrema[lei[-1]] = 0
-            del lei[-1]
-            del origExtremaPos[-1]
-        #l = 75
-        #r = 100
-        #print lastExtrema[l:r]
-        #print extrema[l:r]
-        n = len(lei)-1
-        i = 1
-        while i < n:
-            rightDistance = lei[i+1]-lei[i]
-            newDistance   = numpy.abs((ei-lei[i])).min()
-            if newDistance > rightDistance or (rightDistance==1 and newDistance>0): # extremum was annihilated.
-                lastExtrema[lei[i]] = 0
-                lastExtrema[lei[i+1]] = 0
-                del lei[i+1]
-                del lei[i]
-                del origExtremaPos[i+1]
-                del origExtremaPos[i]
-                n = n-2
-            else:
-                i = i+1
-        assert len(lastExtrema.nonzero()[0]) == len(extrema.nonzero()[0])
-        return (extrema, origExtremaPos)
+            return minima
+        trackedMinima = []
+        for lastMinimum in lastExtrema:
+            distance = (minima-lastMinimum)**2
+            trackedMinima.append(distance.argmin())
+        return minima[trackedMinima]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def mra(self, field, subscriber=0):
@@ -122,14 +86,16 @@ class MRA(Worker.Worker):
         d = scipy.diff(dim.data)
         assert numpy.allclose(d.min(), d.max())
         n = scale/d[0]*dim.unit
-        mrr = [self.convolve(field, sigma) for sigma in range(1, int(n))+[n]]
+        mrr = [self.convolve(field, sigma) for sigma in
+               numpy.linspace(1, n,100).tolist()]
         lastMinima = None
         origExtremaPos = None
-        for row in mrr:
-            newMinima, newOrigExtremaPos = self.findMinima(row, lastMinima, origExtremaPos)
+        for row in mrr.__reversed__():
+            newMinima = self.findMinima(row, lastMinima)
             lastMinima = newMinima
-            origExtremaPos = newOrigExtremaPos
-        roots = DataContainer.FieldContainer(dim.data[origExtremaPos],
+            print dim.data[numpy.array(newMinima)]
+            #origExtremaPos = newOrigExtremaPos
+        roots = DataContainer.FieldContainer(dim.data[numpy.array(newMinima)],
                                              unit = dim.unit,
                                              longname="%s of the local %s of %s" % (dim.longname,"minima",field.longname),
                                              shortname="%s_0" % dim.shortname)
@@ -165,7 +131,7 @@ def main():
     data = DataContainer.FieldContainer(z, dimensions=[DataContainer.FieldContainer(x)])
     #c = mra.convolve(data, 10)
     #pylab.plot(x, c)
-    mra.paramScale.value = "1"
+    mra.paramScale.value = "2"
     mrr, roots = mra.mra(data)
     pylab.plot(x, mrr[-1])
     for c in mrr:
