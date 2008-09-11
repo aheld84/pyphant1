@@ -85,19 +85,17 @@ class MRA(Worker.Worker):
             scale = float(self.paramScale.value)
         d = scipy.diff(dim.data)
         assert numpy.allclose(d.min(), d.max())
-        n = scale/d[0]*dim.unit
+        n = scale/(d[0]*dim.unit)
         mrr = [self.convolve(field, sigma) for sigma in
                numpy.linspace(1, n,10).tolist()]
-        print len(field.data),len(mrr[0])
         mrr.insert(0,field.data)
-        lastMinima = None
-        origExtremaPos = None
-        for row in mrr.__reversed__():
-            newMinima = self.findMinima(row, lastMinima)
-            lastMinima = newMinima
-            print dim.data[numpy.array(newMinima)+1],len(newMinima)
-            #origExtremaPos = newOrigExtremaPos
-        roots = DataContainer.FieldContainer(dim.data[numpy.array(newMinima)+1],
+        firstMinima = lastMinima = self.findMinima(mrr[-1], None)
+        for row in reversed(mrr[:-1]):
+            lastMinima = self.findMinima(row, lastMinima)
+        pos = dim.data[numpy.array(lastMinima)+1]
+        error = numpy.abs(pos - dim.data[numpy.array(firstMinima)+1])
+        roots = DataContainer.FieldContainer(pos,
+                                             error = error,
                                              unit = dim.unit,
                                              longname="%s of the local %s of %s" % (dim.longname,"minima",field.longname),
                                              shortname="%s_0" % dim.shortname)
@@ -111,10 +109,8 @@ def main():
     x = numpy.linspace(-2, 2, N)
     y = x**4-3*x**2+x
     z = y + scipy.random.randn(N)*0.5
-    data = DataContainer.FieldContainer(z, dimensions=[DataContainer.FieldContainer(x)])
-    #c = mra.convolve(data, 10)
-    #pylab.plot(x, c)
-    mra.paramScale.value = "1.0"
+    data = DataContainer.FieldContainer(z, dimensions=[DataContainer.FieldContainer(x, unit='1m')])
+    mra.paramScale.value = "1.0m"
     mrr, roots = mra.mra(data)
     pylab.plot(x, mrr[-1])
     for c in mrr:
@@ -123,8 +119,8 @@ def main():
         pylab.plot(x, z)
     mrr.append(y)
     pylab.vlines(roots.data, -4, 4)
-    #pylab.matshow(numpy.array(mrr))
-    #pylab.vlines(roots.data, 0, len(mrr)-1)
+    pylab.vlines(roots.data+roots.error, -4, 4, linestyle='dashed')
+    pylab.vlines(roots.data-roots.error, -4, 4, linestyle='dashed')
     pylab.show()
 
 if __name__ == '__main__':
