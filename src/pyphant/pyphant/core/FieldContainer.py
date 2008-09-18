@@ -322,7 +322,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         self.data *= unitAmplitude/oldFieldAmplitude
         self.unit = newUnit/unitAmplitude
 
-    def __eq__(self, other):
+    def __eq__(self, other, rtol=1e-5, atol=1e-8):
         if type(self) != type(other):
             _logger.debug('Cannot compare objects with different type (%s and %s).' % (type(self),type(other)))
             return False
@@ -365,7 +365,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             try:
                 scaledData = data*self.unit.value
                 scaledOtherData = otherData*other.unit.inUnitsOf(self.unit.unit).value
-                if not numpy.allclose(scaledData,scaledOtherData):
+                if not numpy.allclose(scaledData,scaledOtherData,rtol,atol):
                     if numpy.sometrue(numpy.isnan(scaledData)):
                         _logger.debug('The fields cannot be compared, because some elements of the first field are NaN and the mask has not been set.')
                     if numpy.sometrue(numpy.isnan(scaledOtherData)):
@@ -386,7 +386,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 else:
                     _logger.debug('The errors differ: The error of the second argument is none, while the error of the first argument is %s.' % error)
                     return False
-                if not numpy.allclose(scaledError,otherScaledError):
+                if not numpy.allclose(scaledError,otherScaledError,rtol,atol):
                     _logger.debug('The errors differ: %s\n%s' % (scaledError,otherScaledError))
                     return False
         else:
@@ -394,7 +394,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 try:
                     scaledData = data*self.unit
                     scaledOtherData = otherData*other.unit
-                    if not numpy.allclose(scaledData,scaledOtherData):
+                    if not numpy.allclose(scaledData,scaledOtherData,rtol,atol):
                         _logger.debug('The scaled fields differ: %s\n%s'%(scaledData,scaledOtherData))
                         return False
                 except ValueError:
@@ -407,8 +407,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 else:
                     scaledError = error*self.unit
                     otherScaledError = otherError*other.unit
-                    if not numpy.allclose(scaledError,
-                                          otherScaledError):
+                    if not numpy.allclose(scaledError,otherScaledError,rtol,atol):
                         _logger.debug('The errors differ: %s\n%s' % (scaledError,otherScaledError))
                         return False
         if not self.attributes == other.attributes:

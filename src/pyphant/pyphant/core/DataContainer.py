@@ -265,13 +265,13 @@ class SampleContainer(DataContainer):
     def numberOfColumns(self):
         return len(self.columns)
 
-def assertEqual(con1,con2):
+def assertEqual(con1,con2,rtol=1e-5,atol=1e-8):
     diagnosis=StringIO.StringIO()
     testReport = logging.StreamHandler(diagnosis)
     logger = logging.getLogger("pyphant")
     logger.addHandler(testReport)
     logger.setLevel(logging.DEBUG)
-    if con1 == con2:
+    if con1.__eq__(con2,rtol,atol):
         return True
     else:
         raise AssertionError, diagnosis.getvalue()
