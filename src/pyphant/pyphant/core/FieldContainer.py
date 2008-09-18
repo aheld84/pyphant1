@@ -521,7 +521,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         if isinstance(args, type("")):
             args=[args]
         if isinstance(args, type(1)):
-            if args>len(self.data):
+            if args>=len(self.data):
                 raise IndexError, 'index out of bound'
         try:
             len(args)
