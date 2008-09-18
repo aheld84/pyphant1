@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2007-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2008, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ __version__ = "$Revision$"
 # $Source$
 
 
-import sys
+import sys,copy
 import unittest
 sys.path.append("..")
 
@@ -88,5 +88,62 @@ class TestMRA(unittest.TestCase):
         #Testing
         numpy.testing.assert_array_almost_equal(result.data,expectedResult.data,4)
         
+class TestExtremumFinderTable(unittest.TestCase):
+    """Sets up a mirror symmetric bistable potential with a continuous
+    distretisation and computes its local extrema and the respective
+    curvatures."""
+    def setUp(self):
+        self.n = 1000
+        self.m = 10
+        self.kappa1=0.0
+        self.errLevelPos = 2
+        self.errLevelCurv= 5
+        self.test = DC.assertEqual
+
+    def prepareDimensions(self):
+        X,LAMB = scipy.meshgrid(numpy.linspace(-1.5,1.5,self.n),
+                                numpy.linspace(-1.0,1.0,self.m))
+        self.lambDim = LAMB[:,0]
+        self.xDim = X
+
+    def testRoots(self):
+        """Test the correct computation of all local extrema for a bistable potential."""
+        #Prepare dimensions
+        self.prepareDimensions()
+        lambField = DC.FieldContainer(self.lambDim,
+                                      unit = '1 V / m**3',
+                                      longname='parameter',
+                                      shortname='\lambda')
+        xField = DC.FieldContainer(self.xDim[0],
+                                   unit = '1 m',
+                                   longname = 'position',
+                                   shortname = 'x')
+        #Prepare potential
+        V = []
+        for i in xrange(len(lambField.data)):
+            u = xField.data
+            V.append(-lambField.data[i]/2* u**2 + u**4/4-u*self.kappa1)
+        self.V = DC.FieldContainer(numpy.array(V),unit='1 V',dimensions=[lambField,xField],
+                                   longname = 'electric potential',
+                                   shortname=r'\varphi')
+        #Predict result
+        x0,curv,mask = fixedPoints(lambField.data,kappa1=self.kappa1)
+        x0 = numpy.where(curv>0, x0, numpy.NaN)
+        data = x0[:,::2]
+        dims = [lambField, DC.generateIndex(0,2)]
+        expectedResult = DC.FieldContainer(data,
+                                           unit = xField.unit,
+                                           mask = numpy.isnan(data),
+                                           dimensions = dims,
+                                           longname = 'position of the local extrema of electric potential',
+                                           shortname = 'x_0')
+        #Configure worker
+        w = MRA.MRA(None)
+        w.paramScale.value = "1.0m"
+        #Retrieve result from worker
+        result = copy.deepcopy(w.mra(self.V))
+        result.error=None
+        self.test(result,expectedResult,1e-2,1e-2)
+
 if __name__ == '__main__':
     unittest.main()

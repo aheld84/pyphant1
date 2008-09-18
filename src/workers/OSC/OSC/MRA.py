@@ -49,10 +49,17 @@ from scipy.special import ive
 from scipy.signal import convolve
 
 def findMinima(fieldData, lastExtrema=None):
-    minima_c = numpy.logical_and(fieldData[:-2] > fieldData[1:-1],
-                                 fieldData[2:]  > fieldData[1:-1])
-    minima = minima_c.nonzero()[0]
-    if lastExtrema==None or len(lastExtrema)==len(minima):
+    leftGreater = fieldData[:-2] > fieldData[1:-1]
+    leftEqual = fieldData[:-2] == fieldData[1:-1]
+    rightGreater = fieldData[2:] > fieldData[1:-1]
+    rightEqual = fieldData[2:] == fieldData[1:-1]
+
+    minima_c = numpy.logical_and(leftGreater, rightGreater)
+    minima_le = numpy.logical_and(leftGreater, rightEqual)
+    minima_re = numpy.logical_and(rightGreater, leftEqual)
+    minima_e = numpy.logical_and(minima_le[:-1], minima_re[1:])
+    minima = numpy.logical_or(minima_c[1:], minima_e).nonzero()[0]
+    if lastExtrema==None or len(minima)==0 or len(lastExtrema)==len(minima):
         return minima
     trackedMinima = []
     for lastMinimum in lastExtrema:
@@ -64,21 +71,37 @@ def convolveMRA(field, sigma):
     if sigma==0:
         return field.data
     n = int(len(field.dimensions[-1].data)/2)
-    print 1
     kernel = ive(numpy.arange(-n, n), sigma)
-    print 2, field.data.shape, kernel.shape
     return convolve(field.data, kernel, mode='same')
 
+#def mra1d(dim, field, n):
+#    mrr = [convolveMRA(field, sigma) for sigma in
+#           numpy.linspace(1, n,10).tolist()]
+#    mrr.insert(0,field.data)
+#    firstMinima = lastMinima = findMinima(mrr[-1], None)
+#    for row in reversed(mrr[:-1]):
+#        lastMinima = findMinima(row, lastMinima)
+#    pos = dim.data[numpy.array(lastMinima)+1]
+#    error = numpy.abs(pos - dim.data[numpy.array(firstMinima)+1])
+#    return pos, error
+
 def mra1d(dim, field, n):
-    mrr = [convolveMRA(field, sigma) for sigma in
-           numpy.linspace(1, n,10).tolist()]
-    mrr.insert(0,field.data)
-    firstMinima = lastMinima = findMinima(mrr[-1], None)
-    for row in reversed(mrr[:-1]):
-        lastMinima = findMinima(row, lastMinima)
+    sigmaSpace = numpy.linspace(n, 1, 10)
+    convolvedField = convolveMRA(field, sigmaSpace[0])
+    firstMinima = lastMinima = findMinima(convolvedField, None)
+    if len(firstMinima)==0:
+        raise RuntimeError("No Minima found at sigma level %s"%sigmaSpace[0])
+    for sigma in sigmaSpace[1:]:
+        convolvedField = convolveMRA(field, sigma)
+        lastMinima = findMinima(convolvedField, lastMinima)
+        if len(lastMinima)==0:
+            import pylab
+            pylab.plot(convolvedField)
+            pylab.show()
     pos = dim.data[numpy.array(lastMinima)+1]
     error = numpy.abs(pos - dim.data[numpy.array(firstMinima)+1])
     return pos, error
+    
 
 class MRA(Worker.Worker):
     API = 2
@@ -100,13 +123,22 @@ class MRA(Worker.Worker):
         numpy.testing.assert_array_almost_equal(d.min(), d.max(),4)
         n = scale/(d[0]*dim.unit)
         if len(field.data.shape)>1:
-            pos_error = numpy.array([mra1d(dim, field1d, n) for field1d in field])
-            pos, error = numpy.squeeze(numpy.hsplit(pos_error, 2))
+            p_e = [mra1d(dim, field1d, n) for field1d in field]
+            n = max(map(lambda (p,e): len(p), p_e))
+            m = len(p_e)
+            pos = numpy.ones((m,n),'float')*numpy.NaN
+            error = pos.copy()
+            for i in xrange(m):
+                for j in xrange(len(p_e[i][0])):
+                    pos[i,j] = p_e[i][0][j]
+                    error[i,j] = p_e[i][1][j]
         else:
             pos, error = mra1d(dim, field, n)
+        print dim.unit
         roots = DataContainer.FieldContainer(pos,
                                              error = error,
                                              unit = dim.unit,
+                                             mask = numpy.isnan(pos),
                                              longname="%s of the local %s of %s" % (dim.longname,"minima",field.longname),
                                              shortname="%s_0" % dim.shortname)
         roots.seal()
