@@ -48,6 +48,38 @@ import logging, copy, math
 from scipy.special import ive
 from scipy.signal import convolve
 
+def findMinima(fieldData, lastExtrema=None):
+    minima_c = numpy.logical_and(fieldData[:-2] > fieldData[1:-1],
+                                 fieldData[2:]  > fieldData[1:-1])
+    minima = minima_c.nonzero()[0]
+    if lastExtrema==None or len(lastExtrema)==len(minima):
+        return minima
+    trackedMinima = []
+    for lastMinimum in lastExtrema:
+        distance = (minima-lastMinimum)**2
+        trackedMinima.append(distance.argmin())
+    return minima[trackedMinima]
+
+def convolveMRA(field, sigma):
+    if sigma==0:
+        return field.data
+    n = int(len(field.dimensions[-1].data)/2)
+    print 1
+    kernel = ive(numpy.arange(-n, n), sigma)
+    print 2, field.data.shape, kernel.shape
+    return convolve(field.data, kernel, mode='same')
+
+def mra1d(dim, field, n):
+    mrr = [convolveMRA(field, sigma) for sigma in
+           numpy.linspace(1, n,10).tolist()]
+    mrr.insert(0,field.data)
+    firstMinima = lastMinima = findMinima(mrr[-1], None)
+    for row in reversed(mrr[:-1]):
+        lastMinima = findMinima(row, lastMinima)
+    pos = dim.data[numpy.array(lastMinima)+1]
+    error = numpy.abs(pos - dim.data[numpy.array(firstMinima)+1])
+    return pos, error
+
 class MRA(Worker.Worker):
     API = 2
     VERSION = 1
@@ -57,50 +89,28 @@ class MRA(Worker.Worker):
     _sockets = [("field", Connectors.TYPE_IMAGE)]
     _params = [("scale", u"Scale", "50 nm", None)]
 
-    def convolve(self, field, sigma):
-        if sigma==0:
-            return field.data
-        n = int(len(field.dimensions[-1].data)/2)
-        kernel = ive(numpy.arange(-n, n), sigma)
-        return convolve(field.data, kernel, mode='same')
-        
-    def findMinima(self, fieldData, lastExtrema=None):
-        minima_c = numpy.logical_and(fieldData[:-2] > fieldData[1:-1],
-                                   fieldData[2:]  > fieldData[1:-1])
-        minima = minima_c.nonzero()[0]
-        if lastExtrema==None or len(lastExtrema)==len(minima):
-            return minima
-        trackedMinima = []
-        for lastMinimum in lastExtrema:
-            distance = (minima-lastMinimum)**2
-            trackedMinima.append(distance.argmin())
-        return minima[trackedMinima]
-
     @Worker.plug(Connectors.TYPE_IMAGE)
     def mra(self, field, subscriber=0):
         dim = field.dimensions[-1]
         try:
-            scale = PhysicalQuantities.PhysicalQuantity(self.paramScale.value)
+            scale = PhysicalQuantities.PhysicalQuantity(self.paramScale.value.encode('utf-8'))
         except:
             scale = float(self.paramScale.value)
         d = scipy.diff(dim.data)
-        assert numpy.allclose(d.min(), d.max())
+        numpy.testing.assert_array_almost_equal(d.min(), d.max(),4)
         n = scale/(d[0]*dim.unit)
-        mrr = [self.convolve(field, sigma) for sigma in
-               numpy.linspace(1, n,10).tolist()]
-        mrr.insert(0,field.data)
-        firstMinima = lastMinima = self.findMinima(mrr[-1], None)
-        for row in reversed(mrr[:-1]):
-            lastMinima = self.findMinima(row, lastMinima)
-        pos = dim.data[numpy.array(lastMinima)+1]
-        error = numpy.abs(pos - dim.data[numpy.array(firstMinima)+1])
+        if len(field.data.shape)>1:
+            pos_error = numpy.array([mra1d(dim, field1d, n) for field1d in field])
+            pos, error = numpy.squeeze(numpy.hsplit(pos_error, 2))
+        else:
+            pos, error = mra1d(dim, field, n)
         roots = DataContainer.FieldContainer(pos,
                                              error = error,
                                              unit = dim.unit,
                                              longname="%s of the local %s of %s" % (dim.longname,"minima",field.longname),
                                              shortname="%s_0" % dim.shortname)
         roots.seal()
-        return mrr, roots
+        return roots
 
 def main():
     import pylab
@@ -111,13 +121,8 @@ def main():
     z = y + scipy.random.randn(N)*0.5
     data = DataContainer.FieldContainer(z, dimensions=[DataContainer.FieldContainer(x, unit='1m')])
     mra.paramScale.value = "1.0m"
-    mrr, roots = mra.mra(data)
-    pylab.plot(x, mrr[-1])
-    for c in mrr:
-        pylab.plot(x, c)
-        pylab.plot(x, y)
-        pylab.plot(x, z)
-    mrr.append(y)
+    roots = mra.mra(data)
+    pylab.plot(x,y,x,z)
     pylab.vlines(roots.data, -4, 4)
     pylab.vlines(roots.data+roots.error, -4, 4, linestyle='dashed')
     pylab.vlines(roots.data-roots.error, -4, 4, linestyle='dashed')
