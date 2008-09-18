@@ -94,10 +94,13 @@ def fixedPoints(lambdaVec,kappa1=0.0):
             x0.append(u0Sorted)
             mask.append(numpy.array(map(lambda x: not x,[True,True,True])))
             slope.append(numpy.array(map(computeSlope,u0Sorted)))
-    return x0,slope,mask
+    return tuple(map(numpy.vstack, [x0,slope,mask]))
+    #return x0,slope,mask
 
 class TestExtremumFinder(unittest.TestCase):
-    """Sets up a mirror symmetric bistable potential with a continuous distretisation and computes its local extrema and the respective curvatures."""
+    """Sets up a mirror symmetric bistable potential with a continuous
+    distretisation and computes its local extrema and the respective
+    curvatures."""
     def setUp(self):
         self.n = 1000
         self.u = numpy.linspace(-1.5,1.5,self.n)
@@ -197,9 +200,9 @@ class TestExtremumFinderTable(unittest.TestCase):
                                    shortname=r'\varphi')
         #Predict result
         x0,curv,mask = fixedPoints(lambField.data,kappa1=self.kappa1)
-        error = 1.0/numpy.array(curv).transpose()
+        error = 1.0/curv.transpose()
         error[:] =numpy.nan
-        data = numpy.array(x0).transpose()
+        data = x0.transpose()
         expectedResult = DC.FieldContainer(data,
                                            unit = xField.unit,
                                            mask = numpy.isnan(data),
@@ -214,7 +217,11 @@ class TestExtremumFinderTable(unittest.TestCase):
         self.test(result,expectedResult)
 
 class TestExtremumFinderTableFail(TestExtremumFinderTable):
-    """Sets up a mirror symmetric bistable potential with a continuous distretisation, computes its local extrema and the respective curvatures. This test succeeds, if the deviation between expected and computed result due to the insufficient spatial resolution is detected."""
+    """Sets up a mirror symmetric bistable potential with a continuous
+    discretisation, computes its local extrema and the respective
+    curvatures. This test succeeds, if the deviation between expected
+    and computed result due to the insufficient spatial resolution is
+    detected."""
     def setUp(self):
         self.n = 1000
         self.m = 10
