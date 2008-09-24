@@ -121,9 +121,15 @@ class MRA(Worker.Worker):
             scale = float(self.paramScale.value)
         d = scipy.diff(dim.data)
         numpy.testing.assert_array_almost_equal(d.min(), d.max(),4)
-        n = scale/(d[0]*dim.unit)
+        sigmaMax = scale/(d[0]*dim.unit)
         if len(field.data.shape)>1:
-            p_e = [mra1d(dim, field1d, n) for field1d in field]
+            p_e = []
+            inc = 100./len(field.data)
+            acc = 0.
+            for field1d in field:
+                p_e.append(mra1d(dim, field1d, sigmaMax))
+                acc += inc
+                subscriber %= acc
             n = max(map(lambda (p,e): len(p), p_e))
             m = len(p_e)
             pos = numpy.ones((m,n),'float')*numpy.NaN
@@ -132,13 +138,17 @@ class MRA(Worker.Worker):
                 for j in xrange(len(p_e[i][0])):
                     pos[i,j] = p_e[i][0][j]
                     error[i,j] = p_e[i][1][j]
+            dims = [DataContainer.generateIndex(0,n), field.dimensions[0]]
         else:
-            pos, error = mra1d(dim, field, n)
-        print dim.unit
-        roots = DataContainer.FieldContainer(pos,
-                                             error = error,
+            pos, error = mra1d(dim, field, sigmaMax)
+            n = len(pos)
+            dims = [DataContainer.generateIndex(0,n)]
+            subscriber %= 100.
+        roots = DataContainer.FieldContainer(pos.transpose(),
+                                             error = error.transpose(),
                                              unit = dim.unit,
-                                             mask = numpy.isnan(pos),
+                                             dimensions = dims,
+                                             mask = numpy.isnan(pos).transpose(),
                                              longname="%s of the local %s of %s" % (dim.longname,"minima",field.longname),
                                              shortname="%s_0" % dim.shortname)
         roots.seal()

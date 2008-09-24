@@ -130,10 +130,10 @@ class TestExtremumFinderTable(unittest.TestCase):
         x0,curv,mask = fixedPoints(lambField.data,kappa1=self.kappa1)
         x0 = numpy.where(curv>0, x0, numpy.NaN)
         data = x0[:,::2]
-        dims = [lambField, DC.generateIndex(0,2)]
-        expectedResult = DC.FieldContainer(data,
+        dims = [DC.generateIndex(0,2),lambField]
+        expectedResult = DC.FieldContainer(data.transpose(),
                                            unit = xField.unit,
-                                           mask = numpy.isnan(data),
+                                           mask = numpy.isnan(data).transpose(),
                                            dimensions = dims,
                                            longname = 'position of the local extrema of electric potential',
                                            shortname = 'x_0')
