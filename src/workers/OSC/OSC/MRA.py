@@ -110,7 +110,7 @@ class MRA(Worker.Worker):
     name = "Multi Resolution Analyser"
 
     _sockets = [("field", Connectors.TYPE_IMAGE)]
-    _params = [("scale", u"Scale", "50 nm", None)]
+    _params = [("scale", u"Scale", "200 nm", None)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def mra(self, field, subscriber=0):

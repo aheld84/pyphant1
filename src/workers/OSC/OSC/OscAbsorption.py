@@ -195,7 +195,7 @@ class OscMapper(Worker.Worker):
                 if h[i]>0:
                     mask[yi, xi] = False
         result = DataContainer.FieldContainer( img, fCon.unit, mask=mask, dimensions=[yDim, xDim],
-                                               longname=u'Map of %s for %s'%(fCon.longname, osc.longname), shortname=fCon.shortname)
+                                               longname=u'Map of %s'%fCon.longname, shortname=fCon.shortname)
         return result
 
     @Worker.plug(Connectors.TYPE_IMAGE)
