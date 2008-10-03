@@ -38,18 +38,20 @@ __version__ = "$Revision$"
 # $Source$
 
 import os, os.path, pkg_resources
-HOMEDIR = os.path.expanduser(u'~')
+LOGDIR = os.path.expanduser(u'~')
 import logging
-if HOMEDIR==u'~':
-    logging.basicConfig(level=logging.DEBUG)
-else:
-    logging.basicConfig(level=logging.DEBUG,
-                        filename=os.path.join(HOMEDIR, u'pyphant.log'),
-                        filemode='w',
-                        format="%(asctime)s - %(levelname)s:%(name)s:%(thread)d:%(module)s.%(funcName)s(l %(lineno)d):%(message)s")
-    console = logging.StreamHandler()
-    console.setLevel(logging.WARNING)
-    logging.getLogger('').addHandler(console)
+if LOGDIR==u'~':
+    LOGDIR = os.getcwdu()
+#    logging.basicConfig(level=logging.DEBUG)
+#else:
+logging.basicConfig(level=logging.DEBUG,
+                    filename=os.path.join(LOGDIR, u'pyphant.log'),
+                    filemode='w',
+                    format="%(asctime)s - %(levelname)s:%(name)s:%(thread)d:%(module)s.%(funcName)s(l %(lineno)d):%(message)s")
+console = logging.StreamHandler()
+console.setLevel(logging.WARNING)
+logging.getLogger('').addHandler(console)
+
 import sys
 def excepthook(type,value,traceback):
     log = logging.getLogger('pyphant')
@@ -117,15 +119,10 @@ class wxPyphantFrame(wx.Frame):
                                     id2=self.ID_WINDOW_BOTTOM)
         self.Bind(wx.EVT_SIZE, self.onSize)
         self.compositeWorkerStack=[]
-        if HOMEDIR==u'~':
-            wx.MessageBox("Could not determine home directory.\n"
-                          "Logging will go to the console.",
-                          "Logging info")
-        else:
-            wx.MessageBox("Located home directory at %s.\n"
-                          "Logging will go to %s/pyphant.log." %
-                          (HOMEDIR,HOMEDIR),
-                          "Logging info")
+        wx.MessageBox("Located log directory at %s.\n"
+                      "Logging will go to %s/pyphant.log." %
+                      (LOGDIR,LOGDIR),
+                      "Logging info")
 
     def _initSash(self):
         self._workerRepository = wx.SashLayoutWindow(self,
