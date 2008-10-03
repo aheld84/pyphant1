@@ -117,6 +117,15 @@ class wxPyphantFrame(wx.Frame):
                                     id2=self.ID_WINDOW_BOTTOM)
         self.Bind(wx.EVT_SIZE, self.onSize)
         self.compositeWorkerStack=[]
+        if HOMEDIR==u'~':
+            wx.MessageBox("Could not determine home directory.\n"
+                          "Logging will go to the console.",
+                          "Logging info")
+        else:
+            wx.MessageBox("Located home directory at %s.\n"
+                          "Logging will go to %s/pyphant.log." %
+                          (HOMEDIR,HOMEDIR),
+                          "Logging info")
 
     def _initSash(self):
         self._workerRepository = wx.SashLayoutWindow(self,
