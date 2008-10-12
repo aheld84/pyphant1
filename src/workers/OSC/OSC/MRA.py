@@ -85,12 +85,18 @@ def convolveMRA(field, sigma):
 #    error = numpy.abs(pos - dim.data[numpy.array(firstMinima)+1])
 #    return pos, error
 
+class MraError(RuntimeError):
+    def __init__(self, msg, convolvedField):
+        RuntimeError.__init__(self, msg)
+        self.convolvedField = convolvedField
+
 def mra1d(dim, field, n):
     sigmaSpace = numpy.linspace(n, 1, 10)
     convolvedField = convolveMRA(field, sigmaSpace[0])
     firstMinima = lastMinima = findMinima(convolvedField, None)
     if len(firstMinima)==0:
-        raise RuntimeError("No Minima found at sigma level %s"%sigmaSpace[0])
+        raise MraError("No Minima found at sigma level %s"%sigmaSpace[0],
+                       convolvedField)
     for sigma in sigmaSpace[1:]:
         convolvedField = convolveMRA(field, sigma)
         lastMinima = findMinima(convolvedField, lastMinima)
@@ -127,7 +133,10 @@ class MRA(Worker.Worker):
             inc = 100./len(field.data)
             acc = 0.
             for field1d in field:
-                p_e.append(mra1d(dim, field1d, sigmaMax))
+                try:
+                    p_e.append(mra1d(dim, field1d, sigmaMax))
+                except MraError:
+                    p_e.append(([],[]))
                 acc += inc
                 subscriber %= acc
             n = max(map(lambda (p,e): len(p), p_e))

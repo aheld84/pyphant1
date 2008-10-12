@@ -57,6 +57,8 @@ class EstimateParameter(Worker.Worker):
                ("extentY", u"Extension of y-axis [%%]", 10, None)]
 
     def calculateThickness(self, row, model):
+        if len(row)==0:
+            return numpy.nan
         data = model.data.transpose()
         def calc(row, col):
             return sum([col[numpy.argmin((model.dimensions[0].data-c)**2)] for c in row])
