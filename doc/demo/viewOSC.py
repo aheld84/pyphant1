@@ -156,11 +156,32 @@ pyphant.core.PyTablesPersister.saveRecipeToHDF5File(recipe, pathToRecipe)
 import pylab
 pylab.hold = True
 inches_per_pt = 1.0/72.27
-golden_mean = (5.0**0.5-1)/2.0
-figwidth=341 * inches_per_pt
-figheight = figwidth * golden_mean
+golden_mean = (5.0**0.5+1)/2.0
+figwidth=246. * inches_per_pt
+figheight = (figwidth / golden_mean)
 
+if options.postscript:
+    left = 0.2
+    bottom = 0.25
+    right = 0.95
+    top = 0.90
+    params = {'font.size':10,
+              'axes.labelsize':10,
+              'axes.titlesize':10,
+              'text.fontsize':10,
+              'xtick.labelsize':10,
+              'ytick.labelsize':10,
+              'text.usetex':True,
+              'backend':'ps',
+              'figure.figsize': [figwidth/(right-left),figheight/(top-bottom)]
+              }
+    pylab.rcParams.update(params)
+    pylab.figure(1)
+    pylab.clf()
+    pylab.axes([left,bottom,right-left,top-bottom])
+    
 if theme == visualizationThemes[0]:
+
     
     pylab.plot(noisyAbsorption.dimensions[1].inUnitsOf(simulation.dimensions[1]).data,
                noisyAbsorption.data[curvNo,:],label="$%s$"%noisyAbsorption.shortname)
@@ -177,13 +198,8 @@ elif theme == visualizationThemes[1]:
     pylab.title(result)
     pylab.xlabel(simulation.dimensions[1].label)
     pylab.ylabel(simulation.label)
-
+    
 if options.postscript:
-    params = {'text.usetex':True,
-              'axes.labelsize':30,
-              'backend':'eps',
-              'figure.figsize': [figwidth,figheight]}
-    pylab.rcParams.update(params)
     from os.path import basename
     pylab.savefig('%s-%s-n%s.eps' % (basename(pathToRecipe)[:-3],theme,curvNo))
 else:
