@@ -91,6 +91,12 @@ parser.add_option("-f", "--frequency-range", dest="freqRange", type="str",
 		  help="Frequency range to use for data slicing.", metavar="FREQRANGE", default=None)
 parser.add_option("-s", "--scale", dest="scale", type="str",
 		  help="Scale parameter", metavar="SCALE", default=None)
+visualizationThemes = ("compareAbsorption","noisyAbsorption")
+parser.add_option("-v", "--visualize", dest="theme", type="choice",choices = visualizationThemes,
+                  help="Choose visualization theme from %s" % str(visualizationThemes),
+                  metavar="THEME", default=visualizationThemes[0])
+parser.add_option("-p", "--postscript", dest="postscript", action="store_true",
+                  help="Write diagram to encapsulated postscript file.")
 
 (options, args) = parser.parse_args()
 
@@ -101,7 +107,7 @@ else:
     curvNo = options.curvNo
     freqRange = options.freqRange
     scale = options.scale
-
+    theme = options.theme
 #Load recipe from hdf file
 recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File(pathToRecipe)
 
@@ -149,16 +155,37 @@ pyphant.core.PyTablesPersister.saveRecipeToHDF5File(recipe, pathToRecipe)
 #Visualize Result
 import pylab
 pylab.hold = True
-pylab.plot(noisyAbsorption.dimensions[1].inUnitsOf(simulation.dimensions[1]).data,
-           noisyAbsorption.data[curvNo,:],label="$%s$"%noisyAbsorption.shortname)
-pylab.plot(simulation.dimensions[1].data,
-           absorption,label="$%s$"%simulation.shortname)
-pylab.vlines(minimaPos.data[:,curvNo],0.1,1.0,
-             label ="$%s$"%minimaPos.shortname)
-#pylab.legend()
-pylab.title(result)
-pylab.xlabel(simulation.dimensions[1].label)
-pylab.show()
+inches_per_pt = 1.0/72.27
+golden_mean = (5.0**0.5-1)/2.0
+figwidth=341 * inches_per_pt
+figheight = figwidth * golden_mean
 
+if theme == visualizationThemes[0]:
+    
+    pylab.plot(noisyAbsorption.dimensions[1].inUnitsOf(simulation.dimensions[1]).data,
+               noisyAbsorption.data[curvNo,:],label="$%s$"%noisyAbsorption.shortname)
+    pylab.plot(simulation.dimensions[1].data,
+               absorption,label="$%s$"%simulation.shortname)
+    pylab.vlines(minimaPos.data[:,curvNo],0.1,1.0,
+                 label ="$%s$"%minimaPos.shortname)
+    pylab.title(result)
+    pylab.xlabel(simulation.dimensions[1].label)
 
+elif theme == visualizationThemes[1]:
+    pylab.plot(noisyAbsorption.dimensions[1].inUnitsOf(simulation.dimensions[1]).data,
+               noisyAbsorption.data[curvNo,:],label="$%s$"%noisyAbsorption.shortname)
+    pylab.title(result)
+    pylab.xlabel(simulation.dimensions[1].label)
+    pylab.ylabel(simulation.label)
+
+if options.postscript:
+    params = {'text.usetex':True,
+              'axes.labelsize':30,
+              'backend':'eps',
+              'figure.figsize': [figwidth,figheight]}
+    pylab.rcParams.update(params)
+    from os.path import basename
+    pylab.savefig('%s-%s-n%s.eps' % (basename(pathToRecipe)[:-3],theme,curvNo))
+else:
+    pylab.show()
 
