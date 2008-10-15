@@ -35,6 +35,7 @@ __author__ = "$Author: liehr $"
 __version__ = "$Revision: 29 $"
 
 import threading
+from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 
 class TextSubscriber(object):
     def __init__(self, plugName):
@@ -86,7 +87,8 @@ from optparse import OptionParser
 
 visualizationThemes = ("compareAbsorption",
                        "noisyAbsorption",
-                       "thicknessMap")
+                       "thicknessMap",
+                       "functional")
 
 parser = OptionParser(usage="usage: %prog [options] path2recipe")
 
@@ -133,8 +135,11 @@ if scale != None:
 
 if theme == visualizationThemes[2]:
     worker = recipe.getWorkers("Osc Mapper")[0]
-    worker.plugMapHeights.invalidate()
     oscMap = worker.plugMapHeights.getResult()
+
+if theme == visualizationThemes[3]:
+    worker = recipe.getWorkers("Compute Functional")[0]
+    functional = worker.plugCompute.getResult()
     
 #Get EstimatedWidth
 worker = recipe.getWorkers("Add Column")[0]
@@ -210,10 +215,18 @@ elif theme == visualizationThemes[1]:
     pylab.ylabel(simulation.label)
 
 elif theme == visualizationThemes[2]:
-    from pyphant.visualizers.ImageVisualizer import ImageVisualizer
     visualizer = ImageVisualizer(oscMap)
     pylab.plot([xPos.data[curvNo]],[yPos.data[curvNo]],'xk',scalex=False,scaley=False)
 
+elif theme == visualizationThemes[3]:
+    visualizer = ImageVisualizer(functional)
+    ordinate = functional.dimensions[1].data
+    pylab.hlines(minimaPos.data[:,curvNo],ordinate.min(),ordinate.max(),
+                 label ="$%s$"%minimaPos.shortname)
+    abscissae = functional.dimensions[0].data
+    pylab.vlines(thickness.data[curvNo],abscissae.min(),abscissae.max(),
+                 label ="$%s$"%minimaPos.shortname)
+    
         
 if options.postscript:
     from os.path import basename
