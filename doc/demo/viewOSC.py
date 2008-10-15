@@ -88,7 +88,8 @@ from optparse import OptionParser
 visualizationThemes = ("compareAbsorption",
                        "noisyAbsorption",
                        "thicknessMap",
-                       "functional")
+                       "functional",
+                       "simulation")
 
 parser = OptionParser(usage="usage: %prog [options] path2recipe")
 
@@ -104,6 +105,8 @@ parser.add_option("-v", "--visualize", dest="theme", type="choice",choices = vis
                   metavar="THEME", default=visualizationThemes[0])
 parser.add_option("-p", "--postscript", dest="postscript", action="store_true",
                   help="Write diagram to encapsulated postscript file.")
+parser.add_option("-I", "--noIndicators", dest="noIndicators", action="store_true",
+                  help="Don't show indicators like position, local minima, or estimated thickness.")
 
 (options, args) = parser.parse_args()
 
@@ -115,6 +118,7 @@ else:
     freqRange = options.freqRange
     scale = options.scale
     theme = options.theme
+    noIndicators = options.noIndicators
 #Load recipe from hdf file
 recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File(pathToRecipe)
 
@@ -140,7 +144,11 @@ if theme == visualizationThemes[2]:
 if theme == visualizationThemes[3]:
     worker = recipe.getWorkers("Compute Functional")[0]
     functional = worker.plugCompute.getResult()
-    
+
+if theme == visualizationThemes[4]:
+    worker = recipe.getWorkers("Coat Thickness Model")[0]
+    simulation = worker.plugCalcAbsorption.getResult()
+
 #Get EstimatedWidth
 worker = recipe.getWorkers("Add Column")[0]
 table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
@@ -200,16 +208,18 @@ if theme == visualizationThemes[0]:
                noisyAbsorption.data[curvNo,:],label="$%s$"%noisyAbsorption.shortname)
     pylab.plot(simulation.dimensions[1].data,
                absorption,label="$%s$"%simulation.shortname)
-    pylab.vlines(minimaPos.data[:,curvNo],0.1,1.0,
-                 label ="$%s$"%minimaPos.shortname)
+    if not noIndicators:
+        pylab.vlines(minimaPos.data[:,curvNo],0.1,1.0,
+                     label ="$%s$"%minimaPos.shortname)
     pylab.title(result)
     pylab.xlabel(simulation.dimensions[1].label)
 
 elif theme == visualizationThemes[1]:
     pylab.plot(noisyAbsorption.dimensions[1].inUnitsOf(simulation.dimensions[1]).data,
                noisyAbsorption.data[curvNo,:],label="$%s$"%noisyAbsorption.shortname)
-    pylab.vlines(minimaPos.data[:,curvNo],0.1,1.0,
-                 label ="$%s$"%minimaPos.shortname)
+    if not noIndicators:
+        pylab.vlines(minimaPos.data[:,curvNo],0.1,1.0,
+                     label ="$%s$"%minimaPos.shortname)
     pylab.title(result)
     pylab.xlabel(simulation.dimensions[1].label)
     pylab.ylabel(simulation.label)
@@ -220,13 +230,23 @@ elif theme == visualizationThemes[2]:
 
 elif theme == visualizationThemes[3]:
     visualizer = ImageVisualizer(functional)
-    ordinate = functional.dimensions[1].data
-    pylab.hlines(minimaPos.data[:,curvNo],ordinate.min(),ordinate.max(),
-                 label ="$%s$"%minimaPos.shortname)
-    abscissae = functional.dimensions[0].data
-    pylab.vlines(thickness.data[curvNo],abscissae.min(),abscissae.max(),
-                 label ="$%s$"%minimaPos.shortname)
+    if not noIndicators:
+        ordinate = functional.dimensions[1].data
+        pylab.hlines(minimaPos.data[:,curvNo],ordinate.min(),ordinate.max(),
+                     label ="$%s$"%minimaPos.shortname)
+        abscissae = functional.dimensions[0].data
+        pylab.vlines(thickness.data[curvNo],abscissae.min(),abscissae.max(),
+                     label ="$%s$"%minimaPos.shortname)
     
+elif theme == visualizationThemes[4]:
+    visualizer = ImageVisualizer(simulation)
+    ordinate = simulation.dimensions[1].data
+    if not noIndicators:
+        pylab.hlines(thickness.data[curvNo],ordinate.min(),ordinate.max(),
+                     label ="$%s$"%minimaPos.shortname)
+        abscissae = simulation.dimensions[0].data
+        pylab.vlines(minimaPos.data[:,curvNo],abscissae.min(),abscissae.max(),
+                     label ="$%s$"%minimaPos.shortname)
         
 if options.postscript:
     from os.path import basename
