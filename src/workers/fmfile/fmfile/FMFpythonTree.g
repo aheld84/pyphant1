@@ -83,7 +83,7 @@ quantity returns [v]
     ;
 
 number returns [v]
-    : (PLUS|MINUS)? absnumber { $v = $absnumber.v }
+    : { sign = 1 } (NPLUS|NMINUS { sign = -1 })? absnumber { $v = sign*$absnumber.v }
     ;
     
 fragment
@@ -91,8 +91,8 @@ absnumber returns [v]
 options {
     backtrack=true;
 }
-        : FLOAT (PLUS|MINUS) IMAG { $v = complex($text) }
-        | INT (PLUS|MINUS) IMAG { $v = complex($text) }
+        : FLOAT (NPLUS|NMINUS) IMAG { $v = complex($text) }
+        | INT (NPLUS|NMINUS) IMAG { $v = complex($text) }
         | FLOAT {$v = float($text) }
         | INT { $v = int($text) }
         | IMAG {$v = complex($text) }

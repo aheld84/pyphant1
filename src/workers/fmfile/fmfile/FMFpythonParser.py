@@ -1,4 +1,4 @@
-# $ANTLR 3.0.1 FMFpython.g 2008-10-15 15:51:02
+# $ANTLR 3.0.1 FMFpython.g 2008-10-15 18:08:06
 
 from antlr3 import *
 from antlr3.compat import set, frozenset
@@ -674,7 +674,7 @@ class FMFpythonParser(Parser):
                     alt4 = 2
                     LA4_0 = self.input.LA(1)
 
-                    if (LA4_0 == PLUS or LA4_0 == MINUS or (FLOAT <= LA4_0 <= IMAG) or LA4_0 == WORD or LA4_0 == LITERAL) :
+                    if (LA4_0 == NPLUS or LA4_0 == NMINUS or (FLOAT <= LA4_0 <= IMAG) or LA4_0 == WORD or LA4_0 == LITERAL) :
                         alt4 = 1
 
 
@@ -1175,7 +1175,7 @@ class FMFpythonParser(Parser):
                     alt7 = 2
                     LA7_0 = self.input.LA(1)
 
-                    if (LA7_0 == PLUS or LA7_0 == MINUS or (FLOAT <= LA7_0 <= IMAG) or LA7_0 == WORD or LA7_0 == LITERAL) :
+                    if (LA7_0 == NPLUS or LA7_0 == NMINUS or (FLOAT <= LA7_0 <= IMAG) or LA7_0 == WORD or LA7_0 == LITERAL) :
                         alt7 = 1
 
 
@@ -1415,7 +1415,7 @@ class FMFpythonParser(Parser):
                 # FMFpython.g:152:9: ( number -> ^( NUMBER number ) | WORD -> ^( STRING WORD ) | LITERAL -> ^( STRING LITERAL ) )
                 alt8 = 3
                 LA8 = self.input.LA(1)
-                if LA8 == PLUS or LA8 == MINUS or LA8 == FLOAT or LA8 == INT or LA8 == IMAG:
+                if LA8 == NPLUS or LA8 == NMINUS or LA8 == FLOAT or LA8 == INT or LA8 == IMAG:
                     alt8 = 1
                 elif LA8 == WORD:
                     alt8 = 2
@@ -2005,7 +2005,7 @@ class FMFpythonParser(Parser):
                 # FMFpython.g:168:9: ( number -> ^( NUMBER number ) | identifier EQUALS quantity -> ^( VARIABLE ^( IDENTIFIER identifier ) quantity ) | datetime -> datetime | catchall -> ^( STRING catchall ) )
                 alt13 = 4
                 LA13 = self.input.LA(1)
-                if LA13 == PLUS or LA13 == MINUS:
+                if LA13 == NPLUS or LA13 == NMINUS:
                     LA13 = self.input.LA(2)
                     if LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == PLUS or LA13 == NPLUS or LA13 == DIGIT or LA13 == MINUS or LA13 == NMINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == GERMANDATE or LA13 == ISODATE or LA13 == RWORD or LA13 == WORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
                         alt13 = 4
@@ -2119,9 +2119,9 @@ class FMFpythonParser(Parser):
 
                     if (LA13_5 == EQUALS) :
                         LA13 = self.input.LA(3)
-                        if LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == NPLUS or LA13 == DIGIT or LA13 == NMINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == GERMANDATE or LA13 == ISODATE or LA13 == RWORD or LA13 == WORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
+                        if LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == PLUS or LA13 == DIGIT or LA13 == MINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == GERMANDATE or LA13 == ISODATE or LA13 == RWORD or LA13 == WORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
                             alt13 = 4
-                        elif LA13 == PLUS or LA13 == MINUS:
+                        elif LA13 == NPLUS or LA13 == NMINUS:
                             LA13 = self.input.LA(4)
                             if LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == PLUS or LA13 == NPLUS or LA13 == DIGIT or LA13 == MINUS or LA13 == NMINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == GERMANDATE or LA13 == ISODATE or LA13 == RWORD or LA13 == WORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
                                 alt13 = 4
@@ -2266,7 +2266,7 @@ class FMFpythonParser(Parser):
 
                         raise nvae
 
-                elif LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == NPLUS or LA13 == DIGIT or LA13 == NMINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == RWORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
+                elif LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == PLUS or LA13 == DIGIT or LA13 == MINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == RWORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
                     alt13 = 4
                 else:
                     if self.backtracking > 0:
@@ -2912,7 +2912,7 @@ class FMFpythonParser(Parser):
 
 
     # $ANTLR start number
-    # FMFpython.g:192:1: number : ( PLUS | MINUS )? absnumber ;
+    # FMFpython.g:192:1: number : ( NPLUS | NMINUS )? absnumber ;
     def number(self, ):
 
         retval = self.number_return()
@@ -2928,20 +2928,20 @@ class FMFpythonParser(Parser):
 
         try:
             try:
-                # FMFpython.g:192:9: ( ( PLUS | MINUS )? absnumber )
-                # FMFpython.g:192:11: ( PLUS | MINUS )? absnumber
+                # FMFpython.g:192:9: ( ( NPLUS | NMINUS )? absnumber )
+                # FMFpython.g:192:11: ( NPLUS | NMINUS )? absnumber
                 root_0 = self.adaptor.nil()
 
-                # FMFpython.g:192:11: ( PLUS | MINUS )?
+                # FMFpython.g:192:11: ( NPLUS | NMINUS )?
                 alt17 = 2
                 LA17_0 = self.input.LA(1)
 
-                if (LA17_0 == PLUS or LA17_0 == MINUS) :
+                if (LA17_0 == NPLUS or LA17_0 == NMINUS) :
                     alt17 = 1
                 if alt17 == 1:
                     # FMFpython.g:
                     set71 = self.input.LT(1)
-                    if self.input.LA(1) == PLUS or self.input.LA(1) == MINUS:
+                    if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
                         self.input.consume();
                         if self.backtracking == 0:
                             self.adaptor.addChild(root_0, self.adaptor.createWithPayload(set71))
@@ -3000,7 +3000,7 @@ class FMFpythonParser(Parser):
 
 
     # $ANTLR start absnumber
-    # FMFpython.g:194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );
+    # FMFpython.g:194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );
     def absnumber(self, ):
 
         retval = self.absnumber_return()
@@ -3030,13 +3030,13 @@ class FMFpythonParser(Parser):
 
         try:
             try:
-                # FMFpython.g:199:9: ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG )
+                # FMFpython.g:199:9: ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG )
                 alt18 = 5
                 LA18 = self.input.LA(1)
                 if LA18 == FLOAT:
                     LA18_1 = self.input.LA(2)
 
-                    if (LA18_1 == PLUS or LA18_1 == MINUS) :
+                    if (LA18_1 == NPLUS or LA18_1 == NMINUS) :
                         LA18_4 = self.input.LA(3)
 
                         if (LA18_4 == IMAG) :
@@ -3051,7 +3051,7 @@ class FMFpythonParser(Parser):
                                     self.failed = True
                                     return retval
 
-                                nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 8, self.input)
+                                nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 8, self.input)
 
                                 raise nvae
 
@@ -3062,7 +3062,7 @@ class FMFpythonParser(Parser):
                                 self.failed = True
                                 return retval
 
-                            nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 4, self.input)
+                            nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 4, self.input)
 
                             raise nvae
 
@@ -3073,14 +3073,14 @@ class FMFpythonParser(Parser):
                             self.failed = True
                             return retval
 
-                        nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 1, self.input)
+                        nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 1, self.input)
 
                         raise nvae
 
                 elif LA18 == INT:
                     LA18_2 = self.input.LA(2)
 
-                    if (LA18_2 == PLUS or LA18_2 == MINUS) :
+                    if (LA18_2 == NPLUS or LA18_2 == NMINUS) :
                         LA18_6 = self.input.LA(3)
 
                         if (LA18_6 == IMAG) :
@@ -3095,7 +3095,7 @@ class FMFpythonParser(Parser):
                                     self.failed = True
                                     return retval
 
-                                nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 9, self.input)
+                                nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 9, self.input)
 
                                 raise nvae
 
@@ -3106,7 +3106,7 @@ class FMFpythonParser(Parser):
                                 self.failed = True
                                 return retval
 
-                            nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 6, self.input)
+                            nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 6, self.input)
 
                             raise nvae
 
@@ -3117,7 +3117,7 @@ class FMFpythonParser(Parser):
                             self.failed = True
                             return retval
 
-                        nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 2, self.input)
+                        nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 2, self.input)
 
                         raise nvae
 
@@ -3128,12 +3128,12 @@ class FMFpythonParser(Parser):
                         self.failed = True
                         return retval
 
-                    nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 0, self.input)
+                    nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 0, self.input)
 
                     raise nvae
 
                 if alt18 == 1:
-                    # FMFpython.g:199:11: FLOAT ( PLUS | MINUS ) IMAG
+                    # FMFpython.g:199:11: FLOAT ( NPLUS | NMINUS ) IMAG
                     root_0 = self.adaptor.nil()
 
                     FLOAT73 = self.input.LT(1)
@@ -3145,7 +3145,7 @@ class FMFpythonParser(Parser):
                     self.adaptor.addChild(root_0, FLOAT73_tree)
 
                     set74 = self.input.LT(1)
-                    if self.input.LA(1) == PLUS or self.input.LA(1) == MINUS:
+                    if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
                         self.input.consume();
                         if self.backtracking == 0:
                             self.adaptor.addChild(root_0, self.adaptor.createWithPayload(set74))
@@ -3175,7 +3175,7 @@ class FMFpythonParser(Parser):
 
 
                 elif alt18 == 2:
-                    # FMFpython.g:200:11: INT ( PLUS | MINUS ) IMAG
+                    # FMFpython.g:200:11: INT ( NPLUS | NMINUS ) IMAG
                     root_0 = self.adaptor.nil()
 
                     INT76 = self.input.LT(1)
@@ -3187,7 +3187,7 @@ class FMFpythonParser(Parser):
                     self.adaptor.addChild(root_0, INT76_tree)
 
                     set77 = self.input.LT(1)
-                    if self.input.LA(1) == PLUS or self.input.LA(1) == MINUS:
+                    if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
                         self.input.consume();
                         if self.backtracking == 0:
                             self.adaptor.addChild(root_0, self.adaptor.createWithPayload(set77))
@@ -3556,12 +3556,12 @@ class FMFpythonParser(Parser):
 
     # $ANTLR start synpred4
     def synpred4_fragment(self, ):
-        # FMFpython.g:199:11: ( FLOAT ( PLUS | MINUS ) IMAG )
-        # FMFpython.g:199:11: FLOAT ( PLUS | MINUS ) IMAG
+        # FMFpython.g:199:11: ( FLOAT ( NPLUS | NMINUS ) IMAG )
+        # FMFpython.g:199:11: FLOAT ( NPLUS | NMINUS ) IMAG
         self.match(self.input, FLOAT, self.FOLLOW_FLOAT_in_synpred42158)
         if self.failed:
             return 
-        if self.input.LA(1) == PLUS or self.input.LA(1) == MINUS:
+        if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
             self.input.consume();
             self.errorRecovery = False
             self.failed = False
@@ -3589,12 +3589,12 @@ class FMFpythonParser(Parser):
 
     # $ANTLR start synpred5
     def synpred5_fragment(self, ):
-        # FMFpython.g:200:11: ( INT ( PLUS | MINUS ) IMAG )
-        # FMFpython.g:200:11: INT ( PLUS | MINUS ) IMAG
+        # FMFpython.g:200:11: ( INT ( NPLUS | NMINUS ) IMAG )
+        # FMFpython.g:200:11: INT ( NPLUS | NMINUS ) IMAG
         self.match(self.input, INT, self.FOLLOW_INT_in_synpred52178)
         if self.failed:
             return 
-        if self.input.LA(1) == PLUS or self.input.LA(1) == MINUS:
+        if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
             self.input.consume();
             self.errorRecovery = False
             self.failed = False
@@ -3740,8 +3740,8 @@ class FMFpythonParser(Parser):
     FOLLOW_ASTERISK_in_dataSection1430 = frozenset([66])
     FOLLOW_66_in_dataSection1432 = frozenset([29])
     FOLLOW_RBRACK_in_dataSection1434 = frozenset([25])
-    FOLLOW_NEWLINE_in_dataSection1436 = frozenset([1, 35, 38, 57, 58, 59, 61, 63])
-    FOLLOW_dataitem_in_dataSection1438 = frozenset([1, 35, 38, 57, 58, 59, 61, 63])
+    FOLLOW_NEWLINE_in_dataSection1436 = frozenset([1, 36, 39, 57, 58, 59, 61, 63])
+    FOLLOW_dataitem_in_dataSection1438 = frozenset([1, 36, 39, 57, 58, 59, 61, 63])
     FOLLOW_LBRACK_in_commonSection1484 = frozenset([4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67])
     FOLLOW_headername_in_commonSection1486 = frozenset([29])
     FOLLOW_RBRACK_in_commonSection1488 = frozenset([25])
@@ -3752,7 +3752,7 @@ class FMFpythonParser(Parser):
     FOLLOW_COLON_in_colitem1550 = frozenset([61])
     FOLLOW_colspec_in_colitem1552 = frozenset([25])
     FOLLOW_NEWLINE_in_colitem1554 = frozenset([1])
-    FOLLOW_cell_in_dataitem1583 = frozenset([25, 35, 38, 57, 58, 59, 61, 63])
+    FOLLOW_cell_in_dataitem1583 = frozenset([25, 36, 39, 57, 58, 59, 61, 63])
     FOLLOW_NEWLINE_in_dataitem1586 = frozenset([1])
     FOLLOW_key_in_commonitem1610 = frozenset([33])
     FOLLOW_COLON_in_commonitem1612 = frozenset([4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67])
@@ -3774,7 +3774,7 @@ class FMFpythonParser(Parser):
     FOLLOW_set_in_key1804 = frozenset([1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67])
     FOLLOW_number_in_value1852 = frozenset([1])
     FOLLOW_identifier_in_value1898 = frozenset([34])
-    FOLLOW_EQUALS_in_value1900 = frozenset([35, 38, 57, 58, 59])
+    FOLLOW_EQUALS_in_value1900 = frozenset([36, 39, 57, 58, 59])
     FOLLOW_quantity_in_value1902 = frozenset([1])
     FOLLOW_datetime_in_value1934 = frozenset([1])
     FOLLOW_catchall_in_value1974 = frozenset([1])
@@ -3790,10 +3790,10 @@ class FMFpythonParser(Parser):
     FOLLOW_FLOAT_in_time2109 = frozenset([1])
     FOLLOW_set_in_number2120 = frozenset([57, 58, 59])
     FOLLOW_absnumber_in_number2127 = frozenset([1])
-    FOLLOW_FLOAT_in_absnumber2158 = frozenset([35, 38])
+    FOLLOW_FLOAT_in_absnumber2158 = frozenset([36, 39])
     FOLLOW_set_in_absnumber2160 = frozenset([59])
     FOLLOW_IMAG_in_absnumber2166 = frozenset([1])
-    FOLLOW_INT_in_absnumber2178 = frozenset([35, 38])
+    FOLLOW_INT_in_absnumber2178 = frozenset([36, 39])
     FOLLOW_set_in_absnumber2180 = frozenset([59])
     FOLLOW_IMAG_in_absnumber2186 = frozenset([1])
     FOLLOW_FLOAT_in_absnumber2198 = frozenset([1])
@@ -3806,13 +3806,13 @@ class FMFpythonParser(Parser):
     FOLLOW_WORD_in_unit2289 = frozenset([1, 32, 44])
     FOLLOW_number_in_synpred11852 = frozenset([1])
     FOLLOW_identifier_in_synpred21898 = frozenset([34])
-    FOLLOW_EQUALS_in_synpred21900 = frozenset([35, 38, 57, 58, 59])
+    FOLLOW_EQUALS_in_synpred21900 = frozenset([36, 39, 57, 58, 59])
     FOLLOW_quantity_in_synpred21902 = frozenset([1])
     FOLLOW_datetime_in_synpred31934 = frozenset([1])
-    FOLLOW_FLOAT_in_synpred42158 = frozenset([35, 38])
+    FOLLOW_FLOAT_in_synpred42158 = frozenset([36, 39])
     FOLLOW_set_in_synpred42160 = frozenset([59])
     FOLLOW_IMAG_in_synpred42166 = frozenset([1])
-    FOLLOW_INT_in_synpred52178 = frozenset([35, 38])
+    FOLLOW_INT_in_synpred52178 = frozenset([36, 39])
     FOLLOW_set_in_synpred52180 = frozenset([59])
     FOLLOW_IMAG_in_synpred52186 = frozenset([1])
     FOLLOW_FLOAT_in_synpred62198 = frozenset([1])

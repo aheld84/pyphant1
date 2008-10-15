@@ -1,4 +1,4 @@
-# $ANTLR 3.0.1 FMFpythonTree.g 2008-10-15 15:51:03
+# $ANTLR 3.0.1 FMFpythonTree.g 2008-10-15 18:08:07
 
 from antlr3 import *
 from antlr3.tree import *
@@ -1151,7 +1151,7 @@ class FMFpythonTree(TreeParser):
 
 
     # $ANTLR start number
-    # FMFpythonTree.g:85:1: number returns [v] : ( PLUS | MINUS )? absnumber ;
+    # FMFpythonTree.g:85:1: number returns [v] : ( NPLUS | NMINUS )? absnumber ;
     def number(self, ):
 
         v = None
@@ -1161,43 +1161,44 @@ class FMFpythonTree(TreeParser):
 
         try:
             try:
-                # FMFpythonTree.g:86:5: ( ( PLUS | MINUS )? absnumber )
-                # FMFpythonTree.g:86:7: ( PLUS | MINUS )? absnumber
-                # FMFpythonTree.g:86:7: ( PLUS | MINUS )?
-                alt12 = 2
+                # FMFpythonTree.g:86:5: ( ( NPLUS | NMINUS )? absnumber )
+                # FMFpythonTree.g:86:7: ( NPLUS | NMINUS )? absnumber
+                if self.backtracking == 0:
+                    sign = 1 
+
+                # FMFpythonTree.g:86:20: ( NPLUS | NMINUS )?
+                alt12 = 3
                 LA12_0 = self.input.LA(1)
 
-                if (LA12_0 == PLUS or LA12_0 == MINUS) :
+                if (LA12_0 == NPLUS) :
                     alt12 = 1
+                elif (LA12_0 == NMINUS) :
+                    alt12 = 2
                 if alt12 == 1:
-                    # FMFpythonTree.g:
-                    if self.input.LA(1) == PLUS or self.input.LA(1) == MINUS:
-                        self.input.consume();
-                        self.errorRecovery = False
-                        self.failed = False
+                    # FMFpythonTree.g:86:21: NPLUS
+                    self.match(self.input, NPLUS, self.FOLLOW_NPLUS_in_number542)
+                    if self.failed:
+                        return v
 
-                    else:
-                        if self.backtracking > 0:
-                            self.failed = True
-                            return v
 
-                        mse = MismatchedSetException(None, self.input)
-                        self.recoverFromMismatchedSet(
-                            self.input, mse, self.FOLLOW_set_in_number539
-                            )
-                        raise mse
+                elif alt12 == 2:
+                    # FMFpythonTree.g:86:27: NMINUS
+                    self.match(self.input, NMINUS, self.FOLLOW_NMINUS_in_number544)
+                    if self.failed:
+                        return v
+                    if self.backtracking == 0:
+                        sign = -1 
 
 
 
 
-
-                self.following.append(self.FOLLOW_absnumber_in_number546)
+                self.following.append(self.FOLLOW_absnumber_in_number550)
                 absnumber17 = self.absnumber()
                 self.following.pop()
                 if self.failed:
                     return v
                 if self.backtracking == 0:
-                    v = absnumber17.v 
+                    v = sign*absnumber17.v 
 
 
 
@@ -1224,7 +1225,7 @@ class FMFpythonTree(TreeParser):
 
 
     # $ANTLR start absnumber
-    # FMFpythonTree.g:89:1: fragment absnumber returns [v] options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );
+    # FMFpythonTree.g:89:1: fragment absnumber returns [v] options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );
     def absnumber(self, ):
 
         retval = self.absnumber_return()
@@ -1232,13 +1233,13 @@ class FMFpythonTree(TreeParser):
 
         try:
             try:
-                # FMFpythonTree.g:94:9: ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG )
+                # FMFpythonTree.g:94:9: ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG )
                 alt13 = 5
                 LA13 = self.input.LA(1)
                 if LA13 == FLOAT:
                     LA13_1 = self.input.LA(2)
 
-                    if (LA13_1 == PLUS or LA13_1 == MINUS) :
+                    if (LA13_1 == NPLUS or LA13_1 == NMINUS) :
                         alt13 = 1
                     elif (LA13_1 == 3) :
                         alt13 = 3
@@ -1247,14 +1248,14 @@ class FMFpythonTree(TreeParser):
                             self.failed = True
                             return retval
 
-                        nvae = NoViableAltException("89:1: fragment absnumber returns [v] options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 13, 1, self.input)
+                        nvae = NoViableAltException("89:1: fragment absnumber returns [v] options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 13, 1, self.input)
 
                         raise nvae
 
                 elif LA13 == INT:
                     LA13_2 = self.input.LA(2)
 
-                    if (LA13_2 == PLUS or LA13_2 == MINUS) :
+                    if (LA13_2 == NPLUS or LA13_2 == NMINUS) :
                         alt13 = 2
                     elif (LA13_2 == 3) :
                         alt13 = 4
@@ -1263,7 +1264,7 @@ class FMFpythonTree(TreeParser):
                             self.failed = True
                             return retval
 
-                        nvae = NoViableAltException("89:1: fragment absnumber returns [v] options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 13, 2, self.input)
+                        nvae = NoViableAltException("89:1: fragment absnumber returns [v] options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 13, 2, self.input)
 
                         raise nvae
 
@@ -1274,16 +1275,16 @@ class FMFpythonTree(TreeParser):
                         self.failed = True
                         return retval
 
-                    nvae = NoViableAltException("89:1: fragment absnumber returns [v] options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 13, 0, self.input)
+                    nvae = NoViableAltException("89:1: fragment absnumber returns [v] options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 13, 0, self.input)
 
                     raise nvae
 
                 if alt13 == 1:
-                    # FMFpythonTree.g:94:11: FLOAT ( PLUS | MINUS ) IMAG
-                    self.match(self.input, FLOAT, self.FOLLOW_FLOAT_in_absnumber592)
+                    # FMFpythonTree.g:94:11: FLOAT ( NPLUS | NMINUS ) IMAG
+                    self.match(self.input, FLOAT, self.FOLLOW_FLOAT_in_absnumber596)
                     if self.failed:
                         return retval
-                    if self.input.LA(1) == PLUS or self.input.LA(1) == MINUS:
+                    if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
                         self.input.consume();
                         self.errorRecovery = False
                         self.failed = False
@@ -1295,12 +1296,12 @@ class FMFpythonTree(TreeParser):
 
                         mse = MismatchedSetException(None, self.input)
                         self.recoverFromMismatchedSet(
-                            self.input, mse, self.FOLLOW_set_in_absnumber594
+                            self.input, mse, self.FOLLOW_set_in_absnumber598
                             )
                         raise mse
 
 
-                    self.match(self.input, IMAG, self.FOLLOW_IMAG_in_absnumber600)
+                    self.match(self.input, IMAG, self.FOLLOW_IMAG_in_absnumber604)
                     if self.failed:
                         return retval
                     if self.backtracking == 0:
@@ -1309,11 +1310,11 @@ class FMFpythonTree(TreeParser):
 
 
                 elif alt13 == 2:
-                    # FMFpythonTree.g:95:11: INT ( PLUS | MINUS ) IMAG
-                    self.match(self.input, INT, self.FOLLOW_INT_in_absnumber614)
+                    # FMFpythonTree.g:95:11: INT ( NPLUS | NMINUS ) IMAG
+                    self.match(self.input, INT, self.FOLLOW_INT_in_absnumber618)
                     if self.failed:
                         return retval
-                    if self.input.LA(1) == PLUS or self.input.LA(1) == MINUS:
+                    if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
                         self.input.consume();
                         self.errorRecovery = False
                         self.failed = False
@@ -1325,12 +1326,12 @@ class FMFpythonTree(TreeParser):
 
                         mse = MismatchedSetException(None, self.input)
                         self.recoverFromMismatchedSet(
-                            self.input, mse, self.FOLLOW_set_in_absnumber616
+                            self.input, mse, self.FOLLOW_set_in_absnumber620
                             )
                         raise mse
 
 
-                    self.match(self.input, IMAG, self.FOLLOW_IMAG_in_absnumber622)
+                    self.match(self.input, IMAG, self.FOLLOW_IMAG_in_absnumber626)
                     if self.failed:
                         return retval
                     if self.backtracking == 0:
@@ -1340,7 +1341,7 @@ class FMFpythonTree(TreeParser):
 
                 elif alt13 == 3:
                     # FMFpythonTree.g:96:11: FLOAT
-                    self.match(self.input, FLOAT, self.FOLLOW_FLOAT_in_absnumber636)
+                    self.match(self.input, FLOAT, self.FOLLOW_FLOAT_in_absnumber640)
                     if self.failed:
                         return retval
                     if self.backtracking == 0:
@@ -1350,7 +1351,7 @@ class FMFpythonTree(TreeParser):
 
                 elif alt13 == 4:
                     # FMFpythonTree.g:97:11: INT
-                    self.match(self.input, INT, self.FOLLOW_INT_in_absnumber650)
+                    self.match(self.input, INT, self.FOLLOW_INT_in_absnumber654)
                     if self.failed:
                         return retval
                     if self.backtracking == 0:
@@ -1360,7 +1361,7 @@ class FMFpythonTree(TreeParser):
 
                 elif alt13 == 5:
                     # FMFpythonTree.g:98:11: IMAG
-                    self.match(self.input, IMAG, self.FOLLOW_IMAG_in_absnumber664)
+                    self.match(self.input, IMAG, self.FOLLOW_IMAG_in_absnumber668)
                     if self.failed:
                         return retval
                     if self.backtracking == 0:
@@ -1397,31 +1398,31 @@ class FMFpythonTree(TreeParser):
             try:
                 # FMFpythonTree.g:105:5: ( ^( DATADEF_SECTION ^( HEADER ASTERISK 'data definitions' ) ^( BODY ( colitem )+ ) ) )
                 # FMFpythonTree.g:105:7: ^( DATADEF_SECTION ^( HEADER ASTERISK 'data definitions' ) ^( BODY ( colitem )+ ) )
-                self.match(self.input, DATADEF_SECTION, self.FOLLOW_DATADEF_SECTION_in_datadefSection698)
+                self.match(self.input, DATADEF_SECTION, self.FOLLOW_DATADEF_SECTION_in_datadefSection702)
                 if self.failed:
                     return coldefs
 
                 self.match(self.input, DOWN, None)
                 if self.failed:
                     return coldefs
-                self.match(self.input, HEADER, self.FOLLOW_HEADER_in_datadefSection701)
+                self.match(self.input, HEADER, self.FOLLOW_HEADER_in_datadefSection705)
                 if self.failed:
                     return coldefs
 
                 self.match(self.input, DOWN, None)
                 if self.failed:
                     return coldefs
-                self.match(self.input, ASTERISK, self.FOLLOW_ASTERISK_in_datadefSection703)
+                self.match(self.input, ASTERISK, self.FOLLOW_ASTERISK_in_datadefSection707)
                 if self.failed:
                     return coldefs
-                self.match(self.input, 65, self.FOLLOW_65_in_datadefSection705)
+                self.match(self.input, 65, self.FOLLOW_65_in_datadefSection709)
                 if self.failed:
                     return coldefs
 
                 self.match(self.input, UP, None)
                 if self.failed:
                     return coldefs
-                self.match(self.input, BODY, self.FOLLOW_BODY_in_datadefSection709)
+                self.match(self.input, BODY, self.FOLLOW_BODY_in_datadefSection713)
                 if self.failed:
                     return coldefs
 
@@ -1440,7 +1441,7 @@ class FMFpythonTree(TreeParser):
 
                     if alt14 == 1:
                         # FMFpythonTree.g:105:71: colitem
-                        self.following.append(self.FOLLOW_colitem_in_datadefSection712)
+                        self.following.append(self.FOLLOW_colitem_in_datadefSection716)
                         colitem18 = self.colitem()
                         self.following.pop()
                         if self.failed:
@@ -1502,14 +1503,14 @@ class FMFpythonTree(TreeParser):
             try:
                 # FMFpythonTree.g:109:5: ( ^( COLSPEC ^( LONGNAME key= . (key= . )* ) colspec ) )
                 # FMFpythonTree.g:109:7: ^( COLSPEC ^( LONGNAME key= . (key= . )* ) colspec )
-                self.match(self.input, COLSPEC, self.FOLLOW_COLSPEC_in_colitem740)
+                self.match(self.input, COLSPEC, self.FOLLOW_COLSPEC_in_colitem744)
                 if self.failed:
                     return coldef
 
                 self.match(self.input, DOWN, None)
                 if self.failed:
                     return coldef
-                self.match(self.input, LONGNAME, self.FOLLOW_LONGNAME_in_colitem743)
+                self.match(self.input, LONGNAME, self.FOLLOW_LONGNAME_in_colitem747)
                 if self.failed:
                     return coldef
 
@@ -1551,7 +1552,7 @@ class FMFpythonTree(TreeParser):
                 self.match(self.input, UP, None)
                 if self.failed:
                     return coldef
-                self.following.append(self.FOLLOW_colspec_in_colitem761)
+                self.following.append(self.FOLLOW_colspec_in_colitem765)
                 colspec19 = self.colspec()
                 self.following.pop()
                 if self.failed:
@@ -1596,14 +1597,14 @@ class FMFpythonTree(TreeParser):
             try:
                 # FMFpythonTree.g:113:5: ( ^( IDENTIFIER identifier ) ^( DEPS ( deps )? ) ^( UNIT ( unit )? ) )
                 # FMFpythonTree.g:113:7: ^( IDENTIFIER identifier ) ^( DEPS ( deps )? ) ^( UNIT ( unit )? )
-                self.match(self.input, IDENTIFIER, self.FOLLOW_IDENTIFIER_in_colspec786)
+                self.match(self.input, IDENTIFIER, self.FOLLOW_IDENTIFIER_in_colspec790)
                 if self.failed:
                     return v
 
                 self.match(self.input, DOWN, None)
                 if self.failed:
                     return v
-                self.following.append(self.FOLLOW_identifier_in_colspec788)
+                self.following.append(self.FOLLOW_identifier_in_colspec792)
                 identifier22 = self.identifier()
                 self.following.pop()
                 if self.failed:
@@ -1612,7 +1613,7 @@ class FMFpythonTree(TreeParser):
                 self.match(self.input, UP, None)
                 if self.failed:
                     return v
-                self.match(self.input, DEPS, self.FOLLOW_DEPS_in_colspec792)
+                self.match(self.input, DEPS, self.FOLLOW_DEPS_in_colspec796)
                 if self.failed:
                     return v
 
@@ -1628,7 +1629,7 @@ class FMFpythonTree(TreeParser):
                         alt16 = 1
                     if alt16 == 1:
                         # FMFpythonTree.g:113:39: deps
-                        self.following.append(self.FOLLOW_deps_in_colspec794)
+                        self.following.append(self.FOLLOW_deps_in_colspec798)
                         deps20 = self.deps()
                         self.following.pop()
                         if self.failed:
@@ -1641,7 +1642,7 @@ class FMFpythonTree(TreeParser):
                     if self.failed:
                         return v
 
-                self.match(self.input, UNIT, self.FOLLOW_UNIT_in_colspec799)
+                self.match(self.input, UNIT, self.FOLLOW_UNIT_in_colspec803)
                 if self.failed:
                     return v
 
@@ -1657,7 +1658,7 @@ class FMFpythonTree(TreeParser):
                         alt17 = 1
                     if alt17 == 1:
                         # FMFpythonTree.g:113:53: unit
-                        self.following.append(self.FOLLOW_unit_in_colspec801)
+                        self.following.append(self.FOLLOW_unit_in_colspec805)
                         unit21 = self.unit()
                         self.following.pop()
                         if self.failed:
@@ -1720,7 +1721,7 @@ class FMFpythonTree(TreeParser):
                 # FMFpythonTree.g:131:5: (un+= WORD (un+= ( ASTERISK | DIV ) un+= WORD )* )
                 # FMFpythonTree.g:131:7: un+= WORD (un+= ( ASTERISK | DIV ) un+= WORD )*
                 un = self.input.LT(1)
-                self.match(self.input, WORD, self.FOLLOW_WORD_in_unit828)
+                self.match(self.input, WORD, self.FOLLOW_WORD_in_unit832)
                 if self.failed:
                     return v
                 if list_un is None:
@@ -1751,7 +1752,7 @@ class FMFpythonTree(TreeParser):
 
                             mse = MismatchedSetException(None, self.input)
                             self.recoverFromMismatchedSet(
-                                self.input, mse, self.FOLLOW_set_in_unit833
+                                self.input, mse, self.FOLLOW_set_in_unit837
                                 )
                             raise mse
 
@@ -1761,7 +1762,7 @@ class FMFpythonTree(TreeParser):
                         list_un.append(un)
 
                         un = self.input.LT(1)
-                        self.match(self.input, WORD, self.FOLLOW_WORD_in_unit841)
+                        self.match(self.input, WORD, self.FOLLOW_WORD_in_unit845)
                         if self.failed:
                             return v
                         if list_un is None:
@@ -1811,7 +1812,7 @@ class FMFpythonTree(TreeParser):
             try:
                 # FMFpythonTree.g:135:11: ( WORD )
                 # FMFpythonTree.g:135:13: WORD
-                self.match(self.input, WORD, self.FOLLOW_WORD_in_identifier858)
+                self.match(self.input, WORD, self.FOLLOW_WORD_in_identifier862)
                 if self.failed:
                     return retval
 
@@ -1858,7 +1859,7 @@ class FMFpythonTree(TreeParser):
 
                     if alt19 == 1:
                         # FMFpythonTree.g:148:8: identifier
-                        self.following.append(self.FOLLOW_identifier_in_deps882)
+                        self.following.append(self.FOLLOW_identifier_in_deps886)
                         identifier23 = self.identifier()
                         self.following.pop()
                         if self.failed:
@@ -1922,31 +1923,31 @@ class FMFpythonTree(TreeParser):
             try:
                 # FMFpythonTree.g:173:5: ( ^( DATA_SECTION ^( HEADER ASTERISK 'data' ) ^( BODY ( dataitem[fields] )* ) ) )
                 # FMFpythonTree.g:173:7: ^( DATA_SECTION ^( HEADER ASTERISK 'data' ) ^( BODY ( dataitem[fields] )* ) )
-                self.match(self.input, DATA_SECTION, self.FOLLOW_DATA_SECTION_in_dataSection919)
+                self.match(self.input, DATA_SECTION, self.FOLLOW_DATA_SECTION_in_dataSection923)
                 if self.failed:
                     return fieldContainers
 
                 self.match(self.input, DOWN, None)
                 if self.failed:
                     return fieldContainers
-                self.match(self.input, HEADER, self.FOLLOW_HEADER_in_dataSection922)
+                self.match(self.input, HEADER, self.FOLLOW_HEADER_in_dataSection926)
                 if self.failed:
                     return fieldContainers
 
                 self.match(self.input, DOWN, None)
                 if self.failed:
                     return fieldContainers
-                self.match(self.input, ASTERISK, self.FOLLOW_ASTERISK_in_dataSection924)
+                self.match(self.input, ASTERISK, self.FOLLOW_ASTERISK_in_dataSection928)
                 if self.failed:
                     return fieldContainers
-                self.match(self.input, 66, self.FOLLOW_66_in_dataSection926)
+                self.match(self.input, 66, self.FOLLOW_66_in_dataSection930)
                 if self.failed:
                     return fieldContainers
 
                 self.match(self.input, UP, None)
                 if self.failed:
                     return fieldContainers
-                self.match(self.input, BODY, self.FOLLOW_BODY_in_dataSection930)
+                self.match(self.input, BODY, self.FOLLOW_BODY_in_dataSection934)
                 if self.failed:
                     return fieldContainers
 
@@ -1965,7 +1966,7 @@ class FMFpythonTree(TreeParser):
 
                         if alt20 == 1:
                             # FMFpythonTree.g:173:55: dataitem[fields]
-                            self.following.append(self.FOLLOW_dataitem_in_dataSection932)
+                            self.following.append(self.FOLLOW_dataitem_in_dataSection936)
                             self.dataitem(fields)
                             self.following.pop()
                             if self.failed:
@@ -2026,7 +2027,7 @@ class FMFpythonTree(TreeParser):
             try:
                 # FMFpythonTree.g:180:5: ( ^( DATASET ( cell )* ) )
                 # FMFpythonTree.g:180:7: ^( DATASET ( cell )* )
-                self.match(self.input, DATASET, self.FOLLOW_DATASET_in_dataitem961)
+                self.match(self.input, DATASET, self.FOLLOW_DATASET_in_dataitem965)
                 if self.failed:
                     return 
 
@@ -2045,7 +2046,7 @@ class FMFpythonTree(TreeParser):
 
                         if alt21 == 1:
                             # FMFpythonTree.g:180:18: cell
-                            self.following.append(self.FOLLOW_cell_in_dataitem964)
+                            self.following.append(self.FOLLOW_cell_in_dataitem968)
                             cell24 = self.cell()
                             self.following.pop()
                             if self.failed:
@@ -2117,14 +2118,14 @@ class FMFpythonTree(TreeParser):
 
                 if alt23 == 1:
                     # FMFpythonTree.g:191:7: ^( NUMBER number )
-                    self.match(self.input, NUMBER, self.FOLLOW_NUMBER_in_cell1005)
+                    self.match(self.input, NUMBER, self.FOLLOW_NUMBER_in_cell1009)
                     if self.failed:
                         return v
 
                     self.match(self.input, DOWN, None)
                     if self.failed:
                         return v
-                    self.following.append(self.FOLLOW_number_in_cell1007)
+                    self.following.append(self.FOLLOW_number_in_cell1011)
                     number25 = self.number()
                     self.following.pop()
                     if self.failed:
@@ -2140,7 +2141,7 @@ class FMFpythonTree(TreeParser):
 
                 elif alt23 == 2:
                     # FMFpythonTree.g:192:7: ^( STRING (string= . )+ )
-                    self.match(self.input, STRING, self.FOLLOW_STRING_in_cell1019)
+                    self.match(self.input, STRING, self.FOLLOW_STRING_in_cell1023)
                     if self.failed:
                         return v
 
@@ -2250,46 +2251,47 @@ class FMFpythonTree(TreeParser):
     FOLLOW_number_in_quantity502 = frozenset([3])
     FOLLOW_UNIT_in_quantity508 = frozenset([2])
     FOLLOW_unit_in_quantity511 = frozenset([3])
-    FOLLOW_set_in_number539 = frozenset([57, 58, 59])
-    FOLLOW_absnumber_in_number546 = frozenset([1])
-    FOLLOW_FLOAT_in_absnumber592 = frozenset([35, 38])
-    FOLLOW_set_in_absnumber594 = frozenset([59])
-    FOLLOW_IMAG_in_absnumber600 = frozenset([1])
-    FOLLOW_INT_in_absnumber614 = frozenset([35, 38])
-    FOLLOW_set_in_absnumber616 = frozenset([59])
-    FOLLOW_IMAG_in_absnumber622 = frozenset([1])
-    FOLLOW_FLOAT_in_absnumber636 = frozenset([1])
-    FOLLOW_INT_in_absnumber650 = frozenset([1])
-    FOLLOW_IMAG_in_absnumber664 = frozenset([1])
-    FOLLOW_DATADEF_SECTION_in_datadefSection698 = frozenset([2])
-    FOLLOW_HEADER_in_datadefSection701 = frozenset([2])
-    FOLLOW_ASTERISK_in_datadefSection703 = frozenset([65])
-    FOLLOW_65_in_datadefSection705 = frozenset([3])
-    FOLLOW_BODY_in_datadefSection709 = frozenset([2])
-    FOLLOW_colitem_in_datadefSection712 = frozenset([3, 22])
-    FOLLOW_COLSPEC_in_colitem740 = frozenset([2])
-    FOLLOW_LONGNAME_in_colitem743 = frozenset([2])
-    FOLLOW_colspec_in_colitem761 = frozenset([3])
-    FOLLOW_IDENTIFIER_in_colspec786 = frozenset([2])
-    FOLLOW_identifier_in_colspec788 = frozenset([3])
-    FOLLOW_DEPS_in_colspec792 = frozenset([2])
-    FOLLOW_deps_in_colspec794 = frozenset([3])
-    FOLLOW_UNIT_in_colspec799 = frozenset([2])
-    FOLLOW_unit_in_colspec801 = frozenset([3])
-    FOLLOW_WORD_in_unit828 = frozenset([1, 32, 44])
-    FOLLOW_set_in_unit833 = frozenset([61])
-    FOLLOW_WORD_in_unit841 = frozenset([1, 32, 44])
-    FOLLOW_WORD_in_identifier858 = frozenset([1])
-    FOLLOW_identifier_in_deps882 = frozenset([1, 61])
-    FOLLOW_DATA_SECTION_in_dataSection919 = frozenset([2])
-    FOLLOW_HEADER_in_dataSection922 = frozenset([2])
-    FOLLOW_ASTERISK_in_dataSection924 = frozenset([66])
-    FOLLOW_66_in_dataSection926 = frozenset([3])
-    FOLLOW_BODY_in_dataSection930 = frozenset([2])
-    FOLLOW_dataitem_in_dataSection932 = frozenset([3, 11])
-    FOLLOW_DATASET_in_dataitem961 = frozenset([2])
-    FOLLOW_cell_in_dataitem964 = frozenset([3, 16, 21])
-    FOLLOW_NUMBER_in_cell1005 = frozenset([2])
-    FOLLOW_number_in_cell1007 = frozenset([3])
-    FOLLOW_STRING_in_cell1019 = frozenset([2])
+    FOLLOW_NPLUS_in_number542 = frozenset([57, 58, 59])
+    FOLLOW_NMINUS_in_number544 = frozenset([57, 58, 59])
+    FOLLOW_absnumber_in_number550 = frozenset([1])
+    FOLLOW_FLOAT_in_absnumber596 = frozenset([36, 39])
+    FOLLOW_set_in_absnumber598 = frozenset([59])
+    FOLLOW_IMAG_in_absnumber604 = frozenset([1])
+    FOLLOW_INT_in_absnumber618 = frozenset([36, 39])
+    FOLLOW_set_in_absnumber620 = frozenset([59])
+    FOLLOW_IMAG_in_absnumber626 = frozenset([1])
+    FOLLOW_FLOAT_in_absnumber640 = frozenset([1])
+    FOLLOW_INT_in_absnumber654 = frozenset([1])
+    FOLLOW_IMAG_in_absnumber668 = frozenset([1])
+    FOLLOW_DATADEF_SECTION_in_datadefSection702 = frozenset([2])
+    FOLLOW_HEADER_in_datadefSection705 = frozenset([2])
+    FOLLOW_ASTERISK_in_datadefSection707 = frozenset([65])
+    FOLLOW_65_in_datadefSection709 = frozenset([3])
+    FOLLOW_BODY_in_datadefSection713 = frozenset([2])
+    FOLLOW_colitem_in_datadefSection716 = frozenset([3, 22])
+    FOLLOW_COLSPEC_in_colitem744 = frozenset([2])
+    FOLLOW_LONGNAME_in_colitem747 = frozenset([2])
+    FOLLOW_colspec_in_colitem765 = frozenset([3])
+    FOLLOW_IDENTIFIER_in_colspec790 = frozenset([2])
+    FOLLOW_identifier_in_colspec792 = frozenset([3])
+    FOLLOW_DEPS_in_colspec796 = frozenset([2])
+    FOLLOW_deps_in_colspec798 = frozenset([3])
+    FOLLOW_UNIT_in_colspec803 = frozenset([2])
+    FOLLOW_unit_in_colspec805 = frozenset([3])
+    FOLLOW_WORD_in_unit832 = frozenset([1, 32, 44])
+    FOLLOW_set_in_unit837 = frozenset([61])
+    FOLLOW_WORD_in_unit845 = frozenset([1, 32, 44])
+    FOLLOW_WORD_in_identifier862 = frozenset([1])
+    FOLLOW_identifier_in_deps886 = frozenset([1, 61])
+    FOLLOW_DATA_SECTION_in_dataSection923 = frozenset([2])
+    FOLLOW_HEADER_in_dataSection926 = frozenset([2])
+    FOLLOW_ASTERISK_in_dataSection928 = frozenset([66])
+    FOLLOW_66_in_dataSection930 = frozenset([3])
+    FOLLOW_BODY_in_dataSection934 = frozenset([2])
+    FOLLOW_dataitem_in_dataSection936 = frozenset([3, 11])
+    FOLLOW_DATASET_in_dataitem965 = frozenset([2])
+    FOLLOW_cell_in_dataitem968 = frozenset([3, 16, 21])
+    FOLLOW_NUMBER_in_cell1009 = frozenset([2])
+    FOLLOW_number_in_cell1011 = frozenset([3])
+    FOLLOW_STRING_in_cell1023 = frozenset([2])
 
