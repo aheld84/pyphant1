@@ -81,7 +81,12 @@ class TextSubscriber(object):
 
 
 import pyphant.core.PyTablesPersister
+visualizer = None 
 from optparse import OptionParser
+
+visualizationThemes = ("compareAbsorption",
+                       "noisyAbsorption",
+                       "thicknessMap")
 
 parser = OptionParser(usage="usage: %prog [options] path2recipe")
 
@@ -91,7 +96,7 @@ parser.add_option("-f", "--frequency-range", dest="freqRange", type="str",
 		  help="Frequency range to use for data slicing.", metavar="FREQRANGE", default=None)
 parser.add_option("-s", "--scale", dest="scale", type="str",
 		  help="Scale parameter", metavar="SCALE", default=None)
-visualizationThemes = ("compareAbsorption","noisyAbsorption")
+
 parser.add_option("-v", "--visualize", dest="theme", type="choice",choices = visualizationThemes,
                   help="Choose visualization theme from %s" % str(visualizationThemes),
                   metavar="THEME", default=visualizationThemes[0])
@@ -114,9 +119,9 @@ recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File(pathToRecipe)
 #Get Absorption
 worker = recipe.getWorkers("Slicing")[0]
 if freqRange != None:
-	print freqRange, worker.paramDim1.value
-	worker.paramDim1.value=freqRange
-noisyAbsorption = worker.plugExtract.getResult()
+    print freqRange, worker.paramDim1.value
+    worker.paramDim1.value=freqRange
+    noisyAbsorption = worker.plugExtract.getResult()
 
 #Get Simulation
 worker = recipe.getWorkers("Coat Thickness Model")[0]
@@ -126,6 +131,11 @@ if scale != None:
 	worker = recipe.getWorkers("Multi Resolution Analyser")[0]
 	worker.paramScale.value=scale
 
+if theme == visualizationThemes[2]:
+    worker = recipe.getWorkers("Osc Mapper")[0]
+    worker.plugMapHeights.invalidate()
+    oscMap = worker.plugMapHeights.getResult()
+    
 #Get EstimatedWidth
 worker = recipe.getWorkers("Add Column")[0]
 table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
@@ -181,8 +191,6 @@ if options.postscript:
     pylab.axes([left,bottom,right-left,top-bottom])
     
 if theme == visualizationThemes[0]:
-
-    
     pylab.plot(noisyAbsorption.dimensions[1].inUnitsOf(simulation.dimensions[1]).data,
                noisyAbsorption.data[curvNo,:],label="$%s$"%noisyAbsorption.shortname)
     pylab.plot(simulation.dimensions[1].data,
@@ -195,13 +203,25 @@ if theme == visualizationThemes[0]:
 elif theme == visualizationThemes[1]:
     pylab.plot(noisyAbsorption.dimensions[1].inUnitsOf(simulation.dimensions[1]).data,
                noisyAbsorption.data[curvNo,:],label="$%s$"%noisyAbsorption.shortname)
+    pylab.vlines(minimaPos.data[:,curvNo],0.1,1.0,
+                 label ="$%s$"%minimaPos.shortname)
     pylab.title(result)
     pylab.xlabel(simulation.dimensions[1].label)
     pylab.ylabel(simulation.label)
-    
+
+elif theme == visualizationThemes[2]:
+    from pyphant.visualizers.ImageVisualizer import ImageVisualizer
+    visualizer = ImageVisualizer(oscMap)
+    pylab.plot([xPos.data[curvNo]],[yPos.data[curvNo]],'xk',scalex=False,scaley=False)
+
+        
 if options.postscript:
     from os.path import basename
-    pylab.savefig('%s-%s-n%s.eps' % (basename(pathToRecipe)[:-3],theme,curvNo))
+    filename = '%s-%s-n%s.eps' % (basename(pathToRecipe)[:-3],theme,curvNo)
+    if visualizer:
+        visualizer.figure.savefig(filename)
+    else:
+        pylab.savefig(filename)
 else:
     pylab.show()
 

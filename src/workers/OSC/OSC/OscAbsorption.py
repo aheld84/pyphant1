@@ -179,9 +179,9 @@ class OscMapper(Worker.Worker):
         yOff, yStep, yInd = grid2Index(yf, self.paramExtentY.value)
         xMax = xInd.maxV
         yMax = yInd.maxV
-        xDim = DataContainer.FieldContainer( numpy.linspace(xInd.minV,xInd.maxV,xInd.stepCount), xCon.unit,
+        xDim = DataContainer.FieldContainer( numpy.linspace(xInd.minV,xInd.maxV,xInd.stepCount)-0.5*xStep, xCon.unit,
                                              longname = xCon.longname, shortname = xCon.shortname )
-        yDim = DataContainer.FieldContainer( numpy.linspace(yInd.minV,yInd.maxV,yInd.stepCount), yCon.unit,
+        yDim = DataContainer.FieldContainer( numpy.linspace(yInd.minV,yInd.maxV,yInd.stepCount)-0.5*yStep, yCon.unit,
                                              longname = yCon.longname, shortname = yCon.shortname )
         img = numpy.ones((yInd.stepCount, xInd.stepCount), dtype='float')*numpy.NaN
         mask = numpy.ones((yInd.stepCount, xInd.stepCount), dtype='bool')
