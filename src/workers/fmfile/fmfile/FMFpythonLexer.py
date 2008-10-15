@@ -1,4 +1,4 @@
-# $ANTLR 3.0.1 FMFpython.g 2008-06-20 16:54:28
+# $ANTLR 3.0.1 FMFpython.g 2008-10-15 15:51:03
 
 from antlr3 import *
 from antlr3.compat import set, frozenset
@@ -8,72 +8,72 @@ from antlr3.compat import set, frozenset
 HIDDEN = BaseRecognizer.HIDDEN
 
 # token types
-PUNCTUATION=62
-DOLLAR=45
-EXPONENT=51
-LBRACK=28
-RWORD=60
-ESC=54
-DIGITS=49
-DATA_SECTION=8
-EQUALS=34
+LESSTHAN=47
+MINUS=38
+DATASET=11
+NUMBER=16
+IINT=53
 FLOAT=57
-EOF=-1
-ASTERISK=32
+GERMANDATE=55
+COLSPEC=22
+PUNCTUATION=62
+LETTERS=50
+NEWLINE=25
+T64=64
+GREATERTHAN=48
+RCURLY=41
+LCURLY=40
+LITERAL=63
+DATADEF_SECTION=7
+INT=58
+DATETIME=13
+DATE=14
+DATA_SECTION=8
+RPAREN=31
+COMMON_SECTION=6
 LPAREN=30
 QUANTITY=19
-DATASET=11
+PLUS=35
+DIGIT=37
+BODY=9
+RWORD=60
+DEPS=24
+DIGITS=49
+NMINUS=39
+WS=26
+NPLUS=36
+STRING=21
+CONFIG=4
+T66=66
+DOLLAR=45
+COMMENT=27
+ISODATE=56
+ESC=54
+T65=65
+ITEM=10
+UNIT=20
+LBRACK=28
 LONGNAME=23
+EQUALS=34
+IMAG=59
+TIME=15
 WORD=61
 HAT=43
-TIME=15
-T64=64
-RPAREN=31
-T65=65
-T66=66
-T67=67
-COMMON_SECTION=6
-IDENTIFIER=18
-DEPS=24
-PLUS=35
-BODY=9
-DIGIT=37
-HEADER=5
-COMMENT=27
-GREATERTHAN=48
-RBRACK=29
-LESSTHAN=47
-ITEM=10
-ISODATE=56
+EXPONENT=51
 KEY=12
-DATETIME=13
-NUMBER=16
-LITERAL=63
-LCURLY=40
-UNDERSCORE=42
-INT=58
-MINUS=38
-LETTERS=50
-Tokens=68
-PERCENTAGE=46
-IINT=53
-GERMANDATE=55
-COLON=33
-NMINUS=39
-CONFIG=4
-UNIT=20
-WS=26
-NEWLINE=25
 VARIABLE=17
-NPLUS=36
+EOF=-1
+T67=67
 FFLOAT=52
-RCURLY=41
-DATADEF_SECTION=7
-COLSPEC=22
+ASTERISK=32
+Tokens=68
+RBRACK=29
+COLON=33
 DIV=44
-DATE=14
-STRING=21
-IMAG=59
+IDENTIFIER=18
+HEADER=5
+PERCENTAGE=46
+UNDERSCORE=42
 
 class FMFpythonLexer(Lexer):
 
@@ -2106,20 +2106,20 @@ class FMFpythonLexer(Lexer):
 
 
 
-    def synpred3(self):
+    def synpred4(self):
         self.backtracking += 1
         start = self.input.mark()
-        self.synpred3_fragment()
+        self.synpred4_fragment()
         success = not self.failed
         self.input.rewind(start)
         self.backtracking -= 1
         self.failed = False
         return success
 
-    def synpred4(self):
+    def synpred3(self):
         self.backtracking += 1
         start = self.input.mark()
-        self.synpred4_fragment()
+        self.synpred3_fragment()
         success = not self.failed
         self.input.rewind(start)
         self.backtracking -= 1
@@ -2131,7 +2131,7 @@ class FMFpythonLexer(Lexer):
     # lookup tables for DFA #9
 
     DFA9_eot = DFA.unpack(
-        u"\3\uffff\1\5\3\uffff"
+        u"\3\uffff\1\6\3\uffff"
         )
 
     DFA9_eof = DFA.unpack(
@@ -2147,7 +2147,7 @@ class FMFpythonLexer(Lexer):
         )
 
     DFA9_accept = DFA.unpack(
-        u"\1\uffff\1\1\2\uffff\2\2\1\3"
+        u"\1\uffff\1\1\2\uffff\1\3\2\2"
         )
 
     DFA9_special = DFA.unpack(
@@ -2159,7 +2159,7 @@ class FMFpythonLexer(Lexer):
         DFA.unpack(u"\1\1\1\uffff\12\2"),
         DFA.unpack(u""),
         DFA.unpack(u"\1\3\1\uffff\12\2"),
-        DFA.unpack(u"\12\6\13\uffff\1\4\37\uffff\1\4"),
+        DFA.unpack(u"\12\4\13\uffff\1\5\37\uffff\1\5"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"")
@@ -2185,14 +2185,14 @@ class FMFpythonLexer(Lexer):
                 index9_3 = input.index()
                 input.rewind()
                 s = -1
-                if (LA9_3 == u'E' or LA9_3 == u'e') and (self.synpred3()):
+                if ((u'0' <= LA9_3 <= u'9')) and (self.synpred4()):
                     s = 4
 
-                elif ((u'0' <= LA9_3 <= u'9')) and (self.synpred4()):
-                    s = 6
+                elif (LA9_3 == u'E' or LA9_3 == u'e') and (self.synpred3()):
+                    s = 5
 
                 else:
-                    s = 5
+                    s = 6
 
                  
                 input.seek(index9_3)
@@ -2251,7 +2251,7 @@ class FMFpythonLexer(Lexer):
     DFA24_eot = DFA.unpack(
         u"\1\uffff\2\23\3\uffff\1\31\11\uffff\1\33\1\31\1\33\3\uffff\2\23"
         u"\4\uffff\1\46\1\33\1\uffff\1\46\1\33\2\23\1\33\1\46\2\uffff\1\33"
-        u"\1\uffff\1\33\1\23\1\70\1\uffff\1\46\2\uffff\2\46\1\33\1\uffff"
+        u"\1\uffff\1\33\1\23\1\70\2\uffff\1\46\1\uffff\1\46\1\33\1\46\1\uffff"
         u"\1\46\1\33\1\23\3\uffff\2\46\1\33\1\uffff\1\33\3\23\1\103\1\uffff"
         )
 
@@ -2262,23 +2262,23 @@ class FMFpythonLexer(Lexer):
     DFA24_min = DFA.unpack(
         u"\1\11\1\145\1\141\3\uffff\1\0\11\uffff\1\56\1\60\1\56\3\uffff\1"
         u"\146\1\164\2\uffff\1\60\1\uffff\1\60\1\56\1\uffff\1\60\1\56\1\145"
-        u"\1\141\1\60\1\56\1\53\1\uffff\1\56\1\53\1\56\1\162\1\40\1\53\1"
-        u"\56\1\uffff\3\60\1\55\2\60\1\55\1\145\2\uffff\3\60\1\56\1\uffff"
+        u"\1\141\1\60\1\56\1\53\1\uffff\1\56\1\53\1\56\1\162\1\40\1\uffff"
+        u"\1\53\1\56\2\60\1\55\3\60\1\55\1\145\2\uffff\3\60\1\56\1\uffff"
         u"\1\56\1\156\1\143\1\145\1\55\1\uffff"
         )
 
     DFA24_max = DFA.unpack(
         u"\1\172\1\145\1\141\3\uffff\1\ufffe\11\uffff\1\170\1\71\1\152\3"
         u"\uffff\1\146\1\164\2\uffff\1\146\1\uffff\2\152\1\uffff\2\152\1"
-        u"\145\1\141\2\152\1\71\1\uffff\1\152\1\71\1\152\1\162\1\175\1\71"
-        u"\1\152\1\uffff\1\71\3\152\1\71\2\152\1\145\2\uffff\1\71\3\152\1"
-        u"\uffff\1\152\1\156\1\143\1\145\1\175\1\uffff"
+        u"\145\1\141\2\152\1\71\1\uffff\1\152\1\71\1\152\1\162\1\175\1\uffff"
+        u"\1\71\1\152\1\71\3\152\1\71\2\152\1\145\2\uffff\1\71\3\152\1\uffff"
+        u"\1\152\1\156\1\143\1\145\1\175\1\uffff"
         )
 
     DFA24_accept = DFA.unpack(
         u"\3\uffff\1\4\1\5\1\6\1\uffff\1\10\1\11\1\12\1\13\1\14\1\15\1\16"
         u"\1\17\1\20\3\uffff\1\26\1\7\1\30\2\uffff\1\4\1\27\1\uffff\1\24"
-        u"\2\uffff\1\25\7\uffff\1\23\7\uffff\1\21\10\uffff\1\2\1\3\4\uffff"
+        u"\2\uffff\1\25\7\uffff\1\23\5\uffff\1\21\12\uffff\1\2\1\3\4\uffff"
         u"\1\22\5\uffff\1\1"
         )
 
@@ -2331,38 +2331,38 @@ class FMFpythonLexer(Lexer):
         DFA.unpack(u"\1\53"),
         DFA.unpack(u"\12\43\7\uffff\6\43\2\uffff\2\36\26\uffff\6\43\2\uffff"
         u"\2\36"),
-        DFA.unpack(u"\1\56\1\uffff\12\55\13\uffff\1\54\3\uffff\2\36\32\uffff"
-        u"\1\54\3\uffff\2\36"),
+        DFA.unpack(u"\1\54\1\uffff\12\56\13\uffff\1\55\3\uffff\2\36\32\uffff"
+        u"\1\55\3\uffff\2\36"),
         DFA.unpack(u"\1\57\1\uffff\1\57\2\uffff\12\60"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\61\1\uffff\12\62\17\uffff\2\36\36\uffff\2\36"),
+        DFA.unpack(u"\1\62\1\uffff\12\61\17\uffff\2\36\36\uffff\2\36"),
         DFA.unpack(u"\1\63\1\uffff\1\63\2\uffff\12\64"),
-        DFA.unpack(u"\1\61\1\uffff\12\65\17\uffff\2\36\36\uffff\2\36"),
+        DFA.unpack(u"\1\62\1\uffff\12\65\17\uffff\2\36\36\uffff\2\36"),
         DFA.unpack(u"\1\66"),
         DFA.unpack(u"\1\67\14\uffff\1\23\2\uffff\12\23\7\uffff\32\23\1\uffff"
         u"\1\23\1\uffff\2\23\1\uffff\33\23\1\uffff\1\23"),
-        DFA.unpack(u"\1\71\1\uffff\1\71\2\uffff\12\72"),
-        DFA.unpack(u"\1\56\1\uffff\12\73\13\uffff\1\54\3\uffff\2\36\32\uffff"
-        u"\1\54\3\uffff\2\36"),
         DFA.unpack(u""),
+        DFA.unpack(u"\1\71\1\uffff\1\71\2\uffff\12\72"),
+        DFA.unpack(u"\1\54\1\uffff\12\73\13\uffff\1\55\3\uffff\2\36\32\uffff"
+        u"\1\55\3\uffff\2\36"),
         DFA.unpack(u"\12\60"),
         DFA.unpack(u"\12\60\17\uffff\2\36\36\uffff\2\36"),
+        DFA.unpack(u"\1\75\1\62\1\uffff\12\74\17\uffff\2\36\36\uffff\2\36"),
         DFA.unpack(u"\12\73\13\uffff\1\45\3\uffff\2\36\32\uffff\1\45\3\uffff"
         u"\2\36"),
-        DFA.unpack(u"\1\75\1\61\1\uffff\12\74\17\uffff\2\36\36\uffff\2\36"),
         DFA.unpack(u"\12\64"),
         DFA.unpack(u"\12\64\17\uffff\2\36\36\uffff\2\36"),
-        DFA.unpack(u"\1\75\1\61\1\uffff\12\76\17\uffff\2\36\36\uffff\2\36"),
+        DFA.unpack(u"\1\75\1\62\1\uffff\12\76\17\uffff\2\36\36\uffff\2\36"),
         DFA.unpack(u"\1\77"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\12\72"),
         DFA.unpack(u"\12\72\17\uffff\2\36\36\uffff\2\36"),
-        DFA.unpack(u"\12\73\13\uffff\1\54\3\uffff\2\36\32\uffff\1\54\3\uffff"
+        DFA.unpack(u"\12\73\13\uffff\1\55\3\uffff\2\36\32\uffff\1\55\3\uffff"
         u"\2\36"),
-        DFA.unpack(u"\1\61\1\uffff\12\74\17\uffff\2\36\36\uffff\2\36"),
+        DFA.unpack(u"\1\62\1\uffff\12\74\17\uffff\2\36\36\uffff\2\36"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\61\1\uffff\12\76\17\uffff\2\36\36\uffff\2\36"),
+        DFA.unpack(u"\1\62\1\uffff\12\76\17\uffff\2\36\36\uffff\2\36"),
         DFA.unpack(u"\1\100"),
         DFA.unpack(u"\1\101"),
         DFA.unpack(u"\1\102"),

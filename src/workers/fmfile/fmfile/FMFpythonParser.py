@@ -1,4 +1,4 @@
-# $ANTLR 3.0.1 FMFpython.g 2008-06-20 16:54:27
+# $ANTLR 3.0.1 FMFpython.g 2008-10-15 15:51:02
 
 from antlr3 import *
 from antlr3.compat import set, frozenset
@@ -11,67 +11,67 @@ from antlr3.tree import *
 HIDDEN = BaseRecognizer.HIDDEN
 
 # token types
-PUNCTUATION=62
-DOLLAR=45
-EXPONENT=51
-LBRACK=28
-RWORD=60
-ESC=54
-DIGITS=49
-DATA_SECTION=8
-FLOAT=57
-EQUALS=34
-EOF=-1
-LPAREN=30
-ASTERISK=32
-QUANTITY=19
+LESSTHAN=47
+MINUS=38
 DATASET=11
-WORD=61
-LONGNAME=23
-HAT=43
-TIME=15
+IINT=53
+NUMBER=16
+FLOAT=57
+GERMANDATE=55
+COLSPEC=22
+PUNCTUATION=62
+LETTERS=50
+NEWLINE=25
+GREATERTHAN=48
+RCURLY=41
+LCURLY=40
+LITERAL=63
+DATADEF_SECTION=7
+INT=58
+DATETIME=13
+DATE=14
+DATA_SECTION=8
 RPAREN=31
 COMMON_SECTION=6
-IDENTIFIER=18
-DEPS=24
+LPAREN=30
+QUANTITY=19
 PLUS=35
-BODY=9
 DIGIT=37
-HEADER=5
-COMMENT=27
-GREATERTHAN=48
-RBRACK=29
-LESSTHAN=47
-ITEM=10
-ISODATE=56
-KEY=12
-DATETIME=13
-NUMBER=16
-LITERAL=63
-LCURLY=40
-UNDERSCORE=42
-INT=58
-LETTERS=50
-MINUS=38
-PERCENTAGE=46
-IINT=53
-GERMANDATE=55
-COLON=33
+BODY=9
+RWORD=60
+DEPS=24
+DIGITS=49
 NMINUS=39
-CONFIG=4
-UNIT=20
 WS=26
-VARIABLE=17
-NEWLINE=25
-FFLOAT=52
 NPLUS=36
-RCURLY=41
-DATADEF_SECTION=7
-DIV=44
-COLSPEC=22
-DATE=14
 STRING=21
+CONFIG=4
+DOLLAR=45
+COMMENT=27
+ISODATE=56
+ESC=54
+ITEM=10
+UNIT=20
+LBRACK=28
+LONGNAME=23
 IMAG=59
+EQUALS=34
+TIME=15
+WORD=61
+HAT=43
+EXPONENT=51
+VARIABLE=17
+KEY=12
+EOF=-1
+FFLOAT=52
+ASTERISK=32
+RBRACK=29
+COLON=33
+DIV=44
+IDENTIFIER=18
+PERCENTAGE=46
+HEADER=5
+UNDERSCORE=42
 
 # token names
 tokenNames = [
@@ -132,8 +132,8 @@ class FMFpythonParser(Parser):
         dataSection4 = None
 
 
-        stream_commonSection = RewriteRuleSubtreeStream(self.adaptor, "rule commonSection")
         stream_datadefSection = RewriteRuleSubtreeStream(self.adaptor, "rule datadefSection")
+        stream_commonSection = RewriteRuleSubtreeStream(self.adaptor, "rule commonSection")
         stream_referenceSection = RewriteRuleSubtreeStream(self.adaptor, "rule referenceSection")
         stream_dataSection = RewriteRuleSubtreeStream(self.adaptor, "rule dataSection")
         try:
@@ -191,7 +191,7 @@ class FMFpythonParser(Parser):
                 if self.backtracking == 0:
                     stream_dataSection.add(dataSection4.tree)
                 # AST Rewrite
-                # elements: commonSection, datadefSection, referenceSection, dataSection
+                # elements: datadefSection, commonSection, dataSection, referenceSection
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -277,11 +277,11 @@ class FMFpythonParser(Parser):
         string_literal7_tree = None
         RBRACK8_tree = None
         NEWLINE9_tree = None
+        stream_ASTERISK = RewriteRuleTokenStream(self.adaptor, "token ASTERISK")
         stream_RBRACK = RewriteRuleTokenStream(self.adaptor, "token RBRACK")
+        stream_64 = RewriteRuleTokenStream(self.adaptor, "token 64")
         stream_LBRACK = RewriteRuleTokenStream(self.adaptor, "token LBRACK")
         stream_NEWLINE = RewriteRuleTokenStream(self.adaptor, "token NEWLINE")
-        stream_64 = RewriteRuleTokenStream(self.adaptor, "token 64")
-        stream_ASTERISK = RewriteRuleTokenStream(self.adaptor, "token ASTERISK")
         stream_commonitem = RewriteRuleSubtreeStream(self.adaptor, "rule commonitem")
         try:
             try:
@@ -353,7 +353,7 @@ class FMFpythonParser(Parser):
 
 
                 # AST Rewrite
-                # elements: commonitem, 64, ASTERISK
+                # elements: commonitem, ASTERISK, 64
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -453,11 +453,11 @@ class FMFpythonParser(Parser):
         string_literal13_tree = None
         RBRACK14_tree = None
         NEWLINE15_tree = None
+        stream_65 = RewriteRuleTokenStream(self.adaptor, "token 65")
+        stream_ASTERISK = RewriteRuleTokenStream(self.adaptor, "token ASTERISK")
         stream_RBRACK = RewriteRuleTokenStream(self.adaptor, "token RBRACK")
         stream_LBRACK = RewriteRuleTokenStream(self.adaptor, "token LBRACK")
         stream_NEWLINE = RewriteRuleTokenStream(self.adaptor, "token NEWLINE")
-        stream_65 = RewriteRuleTokenStream(self.adaptor, "token 65")
-        stream_ASTERISK = RewriteRuleTokenStream(self.adaptor, "token ASTERISK")
         stream_colitem = RewriteRuleSubtreeStream(self.adaptor, "rule colitem")
         try:
             try:
@@ -529,7 +529,7 @@ class FMFpythonParser(Parser):
 
 
                 # AST Rewrite
-                # elements: ASTERISK, colitem, 65
+                # elements: ASTERISK, 65, colitem
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -629,11 +629,11 @@ class FMFpythonParser(Parser):
         string_literal19_tree = None
         RBRACK20_tree = None
         NEWLINE21_tree = None
+        stream_ASTERISK = RewriteRuleTokenStream(self.adaptor, "token ASTERISK")
         stream_RBRACK = RewriteRuleTokenStream(self.adaptor, "token RBRACK")
         stream_66 = RewriteRuleTokenStream(self.adaptor, "token 66")
         stream_LBRACK = RewriteRuleTokenStream(self.adaptor, "token LBRACK")
         stream_NEWLINE = RewriteRuleTokenStream(self.adaptor, "token NEWLINE")
-        stream_ASTERISK = RewriteRuleTokenStream(self.adaptor, "token ASTERISK")
         stream_dataitem = RewriteRuleSubtreeStream(self.adaptor, "rule dataitem")
         try:
             try:
@@ -674,7 +674,7 @@ class FMFpythonParser(Parser):
                     alt4 = 2
                     LA4_0 = self.input.LA(1)
 
-                    if (LA4_0 == NPLUS or LA4_0 == NMINUS or (FLOAT <= LA4_0 <= IMAG) or LA4_0 == WORD or LA4_0 == LITERAL) :
+                    if (LA4_0 == PLUS or LA4_0 == MINUS or (FLOAT <= LA4_0 <= IMAG) or LA4_0 == WORD or LA4_0 == LITERAL) :
                         alt4 = 1
 
 
@@ -694,7 +694,7 @@ class FMFpythonParser(Parser):
 
 
                 # AST Rewrite
-                # elements: 66, ASTERISK, dataitem
+                # elements: 66, dataitem, ASTERISK
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -792,8 +792,8 @@ class FMFpythonParser(Parser):
         stream_RBRACK = RewriteRuleTokenStream(self.adaptor, "token RBRACK")
         stream_LBRACK = RewriteRuleTokenStream(self.adaptor, "token LBRACK")
         stream_NEWLINE = RewriteRuleTokenStream(self.adaptor, "token NEWLINE")
-        stream_headername = RewriteRuleSubtreeStream(self.adaptor, "rule headername")
         stream_commonitem = RewriteRuleSubtreeStream(self.adaptor, "rule commonitem")
+        stream_headername = RewriteRuleSubtreeStream(self.adaptor, "rule headername")
         try:
             try:
                 # FMFpython.g:140:9: ( LBRACK headername RBRACK NEWLINE ( commonitem )+ -> ^( COMMON_SECTION ^( HEADER headername ) ^( BODY ( commonitem )+ ) ) )
@@ -859,7 +859,7 @@ class FMFpythonParser(Parser):
 
 
                 # AST Rewrite
-                # elements: commonitem, headername
+                # elements: headername, commonitem
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1086,7 +1086,7 @@ class FMFpythonParser(Parser):
                 if self.backtracking == 0:
                     stream_NEWLINE.add(NEWLINE33)
                 # AST Rewrite
-                # elements: key, colspec
+                # elements: colspec, key
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1175,7 +1175,7 @@ class FMFpythonParser(Parser):
                     alt7 = 2
                     LA7_0 = self.input.LA(1)
 
-                    if (LA7_0 == NPLUS or LA7_0 == NMINUS or (FLOAT <= LA7_0 <= IMAG) or LA7_0 == WORD or LA7_0 == LITERAL) :
+                    if (LA7_0 == PLUS or LA7_0 == MINUS or (FLOAT <= LA7_0 <= IMAG) or LA7_0 == WORD or LA7_0 == LITERAL) :
                         alt7 = 1
 
 
@@ -1295,8 +1295,8 @@ class FMFpythonParser(Parser):
         NEWLINE39_tree = None
         stream_COLON = RewriteRuleTokenStream(self.adaptor, "token COLON")
         stream_NEWLINE = RewriteRuleTokenStream(self.adaptor, "token NEWLINE")
-        stream_value = RewriteRuleSubtreeStream(self.adaptor, "rule value")
         stream_key = RewriteRuleSubtreeStream(self.adaptor, "rule key")
+        stream_value = RewriteRuleSubtreeStream(self.adaptor, "rule value")
         try:
             try:
                 # FMFpython.g:150:9: ( key COLON value NEWLINE -> ^( ITEM ^( KEY key ) value ) )
@@ -1407,15 +1407,15 @@ class FMFpythonParser(Parser):
 
         WORD41_tree = None
         LITERAL42_tree = None
-        stream_WORD = RewriteRuleTokenStream(self.adaptor, "token WORD")
         stream_LITERAL = RewriteRuleTokenStream(self.adaptor, "token LITERAL")
+        stream_WORD = RewriteRuleTokenStream(self.adaptor, "token WORD")
         stream_number = RewriteRuleSubtreeStream(self.adaptor, "rule number")
         try:
             try:
                 # FMFpython.g:152:9: ( number -> ^( NUMBER number ) | WORD -> ^( STRING WORD ) | LITERAL -> ^( STRING LITERAL ) )
                 alt8 = 3
                 LA8 = self.input.LA(1)
-                if LA8 == NPLUS or LA8 == NMINUS or LA8 == FLOAT or LA8 == INT or LA8 == IMAG:
+                if LA8 == PLUS or LA8 == MINUS or LA8 == FLOAT or LA8 == INT or LA8 == IMAG:
                     alt8 = 1
                 elif LA8 == WORD:
                     alt8 = 2
@@ -1594,8 +1594,8 @@ class FMFpythonParser(Parser):
         stream_RBRACK = RewriteRuleTokenStream(self.adaptor, "token RBRACK")
         stream_LBRACK = RewriteRuleTokenStream(self.adaptor, "token LBRACK")
         stream_unit = RewriteRuleSubtreeStream(self.adaptor, "rule unit")
-        stream_deps = RewriteRuleSubtreeStream(self.adaptor, "rule deps")
         stream_identifier = RewriteRuleSubtreeStream(self.adaptor, "rule identifier")
+        stream_deps = RewriteRuleSubtreeStream(self.adaptor, "rule deps")
         try:
             try:
                 # FMFpython.g:157:9: ( identifier ( deps )? ( LBRACK unit RBRACK )? -> ^( IDENTIFIER identifier ) ^( DEPS ( deps )? ) ^( UNIT ( unit )? ) )
@@ -1656,7 +1656,7 @@ class FMFpythonParser(Parser):
 
 
                 # AST Rewrite
-                # elements: unit, deps, identifier
+                # elements: identifier, deps, unit
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1756,9 +1756,9 @@ class FMFpythonParser(Parser):
         LPAREN48_tree = None
         char_literal50_tree = None
         RPAREN52_tree = None
-        stream_67 = RewriteRuleTokenStream(self.adaptor, "token 67")
         stream_RPAREN = RewriteRuleTokenStream(self.adaptor, "token RPAREN")
         stream_LPAREN = RewriteRuleTokenStream(self.adaptor, "token LPAREN")
+        stream_67 = RewriteRuleTokenStream(self.adaptor, "token 67")
         stream_identifier = RewriteRuleSubtreeStream(self.adaptor, "rule identifier")
         try:
             try:
@@ -1992,11 +1992,11 @@ class FMFpythonParser(Parser):
 
         EQUALS57_tree = None
         stream_EQUALS = RewriteRuleTokenStream(self.adaptor, "token EQUALS")
+        stream_datetime = RewriteRuleSubtreeStream(self.adaptor, "rule datetime")
+        stream_identifier = RewriteRuleSubtreeStream(self.adaptor, "rule identifier")
         stream_catchall = RewriteRuleSubtreeStream(self.adaptor, "rule catchall")
         stream_quantity = RewriteRuleSubtreeStream(self.adaptor, "rule quantity")
         stream_number = RewriteRuleSubtreeStream(self.adaptor, "rule number")
-        stream_datetime = RewriteRuleSubtreeStream(self.adaptor, "rule datetime")
-        stream_identifier = RewriteRuleSubtreeStream(self.adaptor, "rule identifier")
         try:
             try:
                 if self.backtracking > 0 and self.alreadyParsedRule(self.input, 14):
@@ -2005,9 +2005,11 @@ class FMFpythonParser(Parser):
                 # FMFpython.g:168:9: ( number -> ^( NUMBER number ) | identifier EQUALS quantity -> ^( VARIABLE ^( IDENTIFIER identifier ) quantity ) | datetime -> datetime | catchall -> ^( STRING catchall ) )
                 alt13 = 4
                 LA13 = self.input.LA(1)
-                if LA13 == NPLUS or LA13 == NMINUS:
+                if LA13 == PLUS or LA13 == MINUS:
                     LA13 = self.input.LA(2)
-                    if LA13 == FLOAT:
+                    if LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == PLUS or LA13 == NPLUS or LA13 == DIGIT or LA13 == MINUS or LA13 == NMINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == GERMANDATE or LA13 == ISODATE or LA13 == RWORD or LA13 == WORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
+                        alt13 = 4
+                    elif LA13 == FLOAT:
                         LA13_2 = self.input.LA(3)
 
                         if (self.synpred1()) :
@@ -2055,8 +2057,6 @@ class FMFpythonParser(Parser):
 
                             raise nvae
 
-                    elif LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == PLUS or LA13 == NPLUS or LA13 == DIGIT or LA13 == MINUS or LA13 == NMINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == GERMANDATE or LA13 == ISODATE or LA13 == RWORD or LA13 == WORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
-                        alt13 = 4
                     else:
                         if self.backtracking > 0:
                             self.failed = True
@@ -2117,29 +2117,15 @@ class FMFpythonParser(Parser):
                 elif LA13 == WORD:
                     LA13_5 = self.input.LA(2)
 
-                    if ((CONFIG <= LA13_5 <= COLON) or (PLUS <= LA13_5 <= 67)) :
-                        alt13 = 4
-                    elif (LA13_5 == EQUALS) :
+                    if (LA13_5 == EQUALS) :
                         LA13 = self.input.LA(3)
-                        if LA13 == NPLUS or LA13 == NMINUS:
+                        if LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == NPLUS or LA13 == DIGIT or LA13 == NMINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == GERMANDATE or LA13 == ISODATE or LA13 == RWORD or LA13 == WORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
+                            alt13 = 4
+                        elif LA13 == PLUS or LA13 == MINUS:
                             LA13 = self.input.LA(4)
-                            if LA13 == FLOAT:
-                                LA13_12 = self.input.LA(5)
-
-                                if (self.synpred2()) :
-                                    alt13 = 2
-                                elif (True) :
-                                    alt13 = 4
-                                else:
-                                    if self.backtracking > 0:
-                                        self.failed = True
-                                        return retval
-
-                                    nvae = NoViableAltException("163:1: value options {backtrack=true; memoize=true; } : ( number -> ^( NUMBER number ) | identifier EQUALS quantity -> ^( VARIABLE ^( IDENTIFIER identifier ) quantity ) | datetime -> datetime | catchall -> ^( STRING catchall ) );", 13, 12, self.input)
-
-                                    raise nvae
-
-                            elif LA13 == INT:
+                            if LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == PLUS or LA13 == NPLUS or LA13 == DIGIT or LA13 == MINUS or LA13 == NMINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == GERMANDATE or LA13 == ISODATE or LA13 == RWORD or LA13 == WORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
+                                alt13 = 4
+                            elif LA13 == FLOAT:
                                 LA13_13 = self.input.LA(5)
 
                                 if (self.synpred2()) :
@@ -2155,7 +2141,7 @@ class FMFpythonParser(Parser):
 
                                     raise nvae
 
-                            elif LA13 == IMAG:
+                            elif LA13 == INT:
                                 LA13_14 = self.input.LA(5)
 
                                 if (self.synpred2()) :
@@ -2171,24 +2157,22 @@ class FMFpythonParser(Parser):
 
                                     raise nvae
 
-                            elif LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == PLUS or LA13 == NPLUS or LA13 == DIGIT or LA13 == MINUS or LA13 == NMINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == GERMANDATE or LA13 == ISODATE or LA13 == RWORD or LA13 == WORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
-                                alt13 = 4
-                            else:
-                                if self.backtracking > 0:
-                                    self.failed = True
-                                    return retval
+                            elif LA13 == IMAG:
+                                LA13_15 = self.input.LA(5)
 
-                                nvae = NoViableAltException("163:1: value options {backtrack=true; memoize=true; } : ( number -> ^( NUMBER number ) | identifier EQUALS quantity -> ^( VARIABLE ^( IDENTIFIER identifier ) quantity ) | datetime -> datetime | catchall -> ^( STRING catchall ) );", 13, 11, self.input)
+                                if (self.synpred2()) :
+                                    alt13 = 2
+                                elif (True) :
+                                    alt13 = 4
+                                else:
+                                    if self.backtracking > 0:
+                                        self.failed = True
+                                        return retval
 
-                                raise nvae
+                                    nvae = NoViableAltException("163:1: value options {backtrack=true; memoize=true; } : ( number -> ^( NUMBER number ) | identifier EQUALS quantity -> ^( VARIABLE ^( IDENTIFIER identifier ) quantity ) | datetime -> datetime | catchall -> ^( STRING catchall ) );", 13, 15, self.input)
 
-                        elif LA13 == FLOAT:
-                            LA13_12 = self.input.LA(4)
+                                    raise nvae
 
-                            if (self.synpred2()) :
-                                alt13 = 2
-                            elif (True) :
-                                alt13 = 4
                             else:
                                 if self.backtracking > 0:
                                     self.failed = True
@@ -2198,7 +2182,7 @@ class FMFpythonParser(Parser):
 
                                 raise nvae
 
-                        elif LA13 == INT:
+                        elif LA13 == FLOAT:
                             LA13_13 = self.input.LA(4)
 
                             if (self.synpred2()) :
@@ -2214,7 +2198,7 @@ class FMFpythonParser(Parser):
 
                                 raise nvae
 
-                        elif LA13 == IMAG:
+                        elif LA13 == INT:
                             LA13_14 = self.input.LA(4)
 
                             if (self.synpred2()) :
@@ -2230,17 +2214,33 @@ class FMFpythonParser(Parser):
 
                                 raise nvae
 
-                        elif LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == PLUS or LA13 == DIGIT or LA13 == MINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == GERMANDATE or LA13 == ISODATE or LA13 == RWORD or LA13 == WORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
-                            alt13 = 4
+                        elif LA13 == IMAG:
+                            LA13_15 = self.input.LA(4)
+
+                            if (self.synpred2()) :
+                                alt13 = 2
+                            elif (True) :
+                                alt13 = 4
+                            else:
+                                if self.backtracking > 0:
+                                    self.failed = True
+                                    return retval
+
+                                nvae = NoViableAltException("163:1: value options {backtrack=true; memoize=true; } : ( number -> ^( NUMBER number ) | identifier EQUALS quantity -> ^( VARIABLE ^( IDENTIFIER identifier ) quantity ) | datetime -> datetime | catchall -> ^( STRING catchall ) );", 13, 15, self.input)
+
+                                raise nvae
+
                         else:
                             if self.backtracking > 0:
                                 self.failed = True
                                 return retval
 
-                            nvae = NoViableAltException("163:1: value options {backtrack=true; memoize=true; } : ( number -> ^( NUMBER number ) | identifier EQUALS quantity -> ^( VARIABLE ^( IDENTIFIER identifier ) quantity ) | datetime -> datetime | catchall -> ^( STRING catchall ) );", 13, 9, self.input)
+                            nvae = NoViableAltException("163:1: value options {backtrack=true; memoize=true; } : ( number -> ^( NUMBER number ) | identifier EQUALS quantity -> ^( VARIABLE ^( IDENTIFIER identifier ) quantity ) | datetime -> datetime | catchall -> ^( STRING catchall ) );", 13, 10, self.input)
 
                             raise nvae
 
+                    elif ((CONFIG <= LA13_5 <= COLON) or (PLUS <= LA13_5 <= 67)) :
+                        alt13 = 4
                     else:
                         if self.backtracking > 0:
                             self.failed = True
@@ -2266,7 +2266,7 @@ class FMFpythonParser(Parser):
 
                         raise nvae
 
-                elif LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == PLUS or LA13 == DIGIT or LA13 == MINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == RWORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
+                elif LA13 == CONFIG or LA13 == HEADER or LA13 == COMMON_SECTION or LA13 == DATADEF_SECTION or LA13 == DATA_SECTION or LA13 == BODY or LA13 == ITEM or LA13 == DATASET or LA13 == KEY or LA13 == DATETIME or LA13 == DATE or LA13 == TIME or LA13 == NUMBER or LA13 == VARIABLE or LA13 == IDENTIFIER or LA13 == QUANTITY or LA13 == UNIT or LA13 == STRING or LA13 == COLSPEC or LA13 == LONGNAME or LA13 == DEPS or LA13 == NEWLINE or LA13 == WS or LA13 == COMMENT or LA13 == LBRACK or LA13 == RBRACK or LA13 == LPAREN or LA13 == RPAREN or LA13 == ASTERISK or LA13 == COLON or LA13 == EQUALS or LA13 == NPLUS or LA13 == DIGIT or LA13 == NMINUS or LA13 == LCURLY or LA13 == RCURLY or LA13 == UNDERSCORE or LA13 == HAT or LA13 == DIV or LA13 == DOLLAR or LA13 == PERCENTAGE or LA13 == LESSTHAN or LA13 == GREATERTHAN or LA13 == DIGITS or LA13 == LETTERS or LA13 == EXPONENT or LA13 == FFLOAT or LA13 == IINT or LA13 == ESC or LA13 == RWORD or LA13 == PUNCTUATION or LA13 == LITERAL or LA13 == 64 or LA13 == 65 or LA13 == 66 or LA13 == 67:
                     alt13 = 4
                 else:
                     if self.backtracking > 0:
@@ -2339,7 +2339,7 @@ class FMFpythonParser(Parser):
                     if self.backtracking == 0:
                         stream_quantity.add(quantity58.tree)
                     # AST Rewrite
-                    # elements: identifier, quantity
+                    # elements: quantity, identifier
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -2912,7 +2912,7 @@ class FMFpythonParser(Parser):
 
 
     # $ANTLR start number
-    # FMFpython.g:192:1: number : ( NPLUS | NMINUS )? absnumber ;
+    # FMFpython.g:192:1: number : ( PLUS | MINUS )? absnumber ;
     def number(self, ):
 
         retval = self.number_return()
@@ -2928,20 +2928,20 @@ class FMFpythonParser(Parser):
 
         try:
             try:
-                # FMFpython.g:192:9: ( ( NPLUS | NMINUS )? absnumber )
-                # FMFpython.g:192:11: ( NPLUS | NMINUS )? absnumber
+                # FMFpython.g:192:9: ( ( PLUS | MINUS )? absnumber )
+                # FMFpython.g:192:11: ( PLUS | MINUS )? absnumber
                 root_0 = self.adaptor.nil()
 
-                # FMFpython.g:192:11: ( NPLUS | NMINUS )?
+                # FMFpython.g:192:11: ( PLUS | MINUS )?
                 alt17 = 2
                 LA17_0 = self.input.LA(1)
 
-                if (LA17_0 == NPLUS or LA17_0 == NMINUS) :
+                if (LA17_0 == PLUS or LA17_0 == MINUS) :
                     alt17 = 1
                 if alt17 == 1:
                     # FMFpython.g:
                     set71 = self.input.LT(1)
-                    if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
+                    if self.input.LA(1) == PLUS or self.input.LA(1) == MINUS:
                         self.input.consume();
                         if self.backtracking == 0:
                             self.adaptor.addChild(root_0, self.adaptor.createWithPayload(set71))
@@ -3000,7 +3000,7 @@ class FMFpythonParser(Parser):
 
 
     # $ANTLR start absnumber
-    # FMFpython.g:194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );
+    # FMFpython.g:194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );
     def absnumber(self, ):
 
         retval = self.absnumber_return()
@@ -3030,13 +3030,13 @@ class FMFpythonParser(Parser):
 
         try:
             try:
-                # FMFpython.g:199:9: ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG )
+                # FMFpython.g:199:9: ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG )
                 alt18 = 5
                 LA18 = self.input.LA(1)
                 if LA18 == FLOAT:
                     LA18_1 = self.input.LA(2)
 
-                    if (LA18_1 == NPLUS or LA18_1 == NMINUS) :
+                    if (LA18_1 == PLUS or LA18_1 == MINUS) :
                         LA18_4 = self.input.LA(3)
 
                         if (LA18_4 == IMAG) :
@@ -3051,7 +3051,7 @@ class FMFpythonParser(Parser):
                                     self.failed = True
                                     return retval
 
-                                nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 8, self.input)
+                                nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 8, self.input)
 
                                 raise nvae
 
@@ -3062,7 +3062,7 @@ class FMFpythonParser(Parser):
                                 self.failed = True
                                 return retval
 
-                            nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 4, self.input)
+                            nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 4, self.input)
 
                             raise nvae
 
@@ -3073,14 +3073,14 @@ class FMFpythonParser(Parser):
                             self.failed = True
                             return retval
 
-                        nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 1, self.input)
+                        nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 1, self.input)
 
                         raise nvae
 
                 elif LA18 == INT:
                     LA18_2 = self.input.LA(2)
 
-                    if (LA18_2 == NPLUS or LA18_2 == NMINUS) :
+                    if (LA18_2 == PLUS or LA18_2 == MINUS) :
                         LA18_6 = self.input.LA(3)
 
                         if (LA18_6 == IMAG) :
@@ -3095,7 +3095,7 @@ class FMFpythonParser(Parser):
                                     self.failed = True
                                     return retval
 
-                                nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 9, self.input)
+                                nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 9, self.input)
 
                                 raise nvae
 
@@ -3106,7 +3106,7 @@ class FMFpythonParser(Parser):
                                 self.failed = True
                                 return retval
 
-                            nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 6, self.input)
+                            nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 6, self.input)
 
                             raise nvae
 
@@ -3117,7 +3117,7 @@ class FMFpythonParser(Parser):
                             self.failed = True
                             return retval
 
-                        nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 2, self.input)
+                        nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 2, self.input)
 
                         raise nvae
 
@@ -3128,12 +3128,12 @@ class FMFpythonParser(Parser):
                         self.failed = True
                         return retval
 
-                    nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( NPLUS | NMINUS ) IMAG | INT ( NPLUS | NMINUS ) IMAG | FLOAT | INT | IMAG );", 18, 0, self.input)
+                    nvae = NoViableAltException("194:1: fragment absnumber options {backtrack=true; } : ( FLOAT ( PLUS | MINUS ) IMAG | INT ( PLUS | MINUS ) IMAG | FLOAT | INT | IMAG );", 18, 0, self.input)
 
                     raise nvae
 
                 if alt18 == 1:
-                    # FMFpython.g:199:11: FLOAT ( NPLUS | NMINUS ) IMAG
+                    # FMFpython.g:199:11: FLOAT ( PLUS | MINUS ) IMAG
                     root_0 = self.adaptor.nil()
 
                     FLOAT73 = self.input.LT(1)
@@ -3145,7 +3145,7 @@ class FMFpythonParser(Parser):
                     self.adaptor.addChild(root_0, FLOAT73_tree)
 
                     set74 = self.input.LT(1)
-                    if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
+                    if self.input.LA(1) == PLUS or self.input.LA(1) == MINUS:
                         self.input.consume();
                         if self.backtracking == 0:
                             self.adaptor.addChild(root_0, self.adaptor.createWithPayload(set74))
@@ -3175,7 +3175,7 @@ class FMFpythonParser(Parser):
 
 
                 elif alt18 == 2:
-                    # FMFpython.g:200:11: INT ( NPLUS | NMINUS ) IMAG
+                    # FMFpython.g:200:11: INT ( PLUS | MINUS ) IMAG
                     root_0 = self.adaptor.nil()
 
                     INT76 = self.input.LT(1)
@@ -3187,7 +3187,7 @@ class FMFpythonParser(Parser):
                     self.adaptor.addChild(root_0, INT76_tree)
 
                     set77 = self.input.LT(1)
-                    if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
+                    if self.input.LA(1) == PLUS or self.input.LA(1) == MINUS:
                         self.input.consume();
                         if self.backtracking == 0:
                             self.adaptor.addChild(root_0, self.adaptor.createWithPayload(set77))
@@ -3556,12 +3556,12 @@ class FMFpythonParser(Parser):
 
     # $ANTLR start synpred4
     def synpred4_fragment(self, ):
-        # FMFpython.g:199:11: ( FLOAT ( NPLUS | NMINUS ) IMAG )
-        # FMFpython.g:199:11: FLOAT ( NPLUS | NMINUS ) IMAG
+        # FMFpython.g:199:11: ( FLOAT ( PLUS | MINUS ) IMAG )
+        # FMFpython.g:199:11: FLOAT ( PLUS | MINUS ) IMAG
         self.match(self.input, FLOAT, self.FOLLOW_FLOAT_in_synpred42158)
         if self.failed:
             return 
-        if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
+        if self.input.LA(1) == PLUS or self.input.LA(1) == MINUS:
             self.input.consume();
             self.errorRecovery = False
             self.failed = False
@@ -3589,12 +3589,12 @@ class FMFpythonParser(Parser):
 
     # $ANTLR start synpred5
     def synpred5_fragment(self, ):
-        # FMFpython.g:200:11: ( INT ( NPLUS | NMINUS ) IMAG )
-        # FMFpython.g:200:11: INT ( NPLUS | NMINUS ) IMAG
+        # FMFpython.g:200:11: ( INT ( PLUS | MINUS ) IMAG )
+        # FMFpython.g:200:11: INT ( PLUS | MINUS ) IMAG
         self.match(self.input, INT, self.FOLLOW_INT_in_synpred52178)
         if self.failed:
             return 
-        if self.input.LA(1) == NPLUS or self.input.LA(1) == NMINUS:
+        if self.input.LA(1) == PLUS or self.input.LA(1) == MINUS:
             self.input.consume();
             self.errorRecovery = False
             self.failed = False
@@ -3646,20 +3646,10 @@ class FMFpythonParser(Parser):
 
 
 
-    def synpred5(self):
+    def synpred4(self):
         self.backtracking += 1
         start = self.input.mark()
-        self.synpred5_fragment()
-        success = not self.failed
-        self.input.rewind(start)
-        self.backtracking -= 1
-        self.failed = False
-        return success
-
-    def synpred6(self):
-        self.backtracking += 1
-        start = self.input.mark()
-        self.synpred6_fragment()
+        self.synpred4_fragment()
         success = not self.failed
         self.input.rewind(start)
         self.backtracking -= 1
@@ -3670,16 +3660,6 @@ class FMFpythonParser(Parser):
         self.backtracking += 1
         start = self.input.mark()
         self.synpred7_fragment()
-        success = not self.failed
-        self.input.rewind(start)
-        self.backtracking -= 1
-        self.failed = False
-        return success
-
-    def synpred1(self):
-        self.backtracking += 1
-        start = self.input.mark()
-        self.synpred1_fragment()
         success = not self.failed
         self.input.rewind(start)
         self.backtracking -= 1
@@ -3706,10 +3686,30 @@ class FMFpythonParser(Parser):
         self.failed = False
         return success
 
-    def synpred4(self):
+    def synpred1(self):
         self.backtracking += 1
         start = self.input.mark()
-        self.synpred4_fragment()
+        self.synpred1_fragment()
+        success = not self.failed
+        self.input.rewind(start)
+        self.backtracking -= 1
+        self.failed = False
+        return success
+
+    def synpred5(self):
+        self.backtracking += 1
+        start = self.input.mark()
+        self.synpred5_fragment()
+        success = not self.failed
+        self.input.rewind(start)
+        self.backtracking -= 1
+        self.failed = False
+        return success
+
+    def synpred6(self):
+        self.backtracking += 1
+        start = self.input.mark()
+        self.synpred6_fragment()
         success = not self.failed
         self.input.rewind(start)
         self.backtracking -= 1
@@ -3740,8 +3740,8 @@ class FMFpythonParser(Parser):
     FOLLOW_ASTERISK_in_dataSection1430 = frozenset([66])
     FOLLOW_66_in_dataSection1432 = frozenset([29])
     FOLLOW_RBRACK_in_dataSection1434 = frozenset([25])
-    FOLLOW_NEWLINE_in_dataSection1436 = frozenset([1, 36, 39, 57, 58, 59, 61, 63])
-    FOLLOW_dataitem_in_dataSection1438 = frozenset([1, 36, 39, 57, 58, 59, 61, 63])
+    FOLLOW_NEWLINE_in_dataSection1436 = frozenset([1, 35, 38, 57, 58, 59, 61, 63])
+    FOLLOW_dataitem_in_dataSection1438 = frozenset([1, 35, 38, 57, 58, 59, 61, 63])
     FOLLOW_LBRACK_in_commonSection1484 = frozenset([4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67])
     FOLLOW_headername_in_commonSection1486 = frozenset([29])
     FOLLOW_RBRACK_in_commonSection1488 = frozenset([25])
@@ -3752,7 +3752,7 @@ class FMFpythonParser(Parser):
     FOLLOW_COLON_in_colitem1550 = frozenset([61])
     FOLLOW_colspec_in_colitem1552 = frozenset([25])
     FOLLOW_NEWLINE_in_colitem1554 = frozenset([1])
-    FOLLOW_cell_in_dataitem1583 = frozenset([25, 36, 39, 57, 58, 59, 61, 63])
+    FOLLOW_cell_in_dataitem1583 = frozenset([25, 35, 38, 57, 58, 59, 61, 63])
     FOLLOW_NEWLINE_in_dataitem1586 = frozenset([1])
     FOLLOW_key_in_commonitem1610 = frozenset([33])
     FOLLOW_COLON_in_commonitem1612 = frozenset([4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67])
@@ -3774,7 +3774,7 @@ class FMFpythonParser(Parser):
     FOLLOW_set_in_key1804 = frozenset([1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67])
     FOLLOW_number_in_value1852 = frozenset([1])
     FOLLOW_identifier_in_value1898 = frozenset([34])
-    FOLLOW_EQUALS_in_value1900 = frozenset([36, 39, 57, 58, 59])
+    FOLLOW_EQUALS_in_value1900 = frozenset([35, 38, 57, 58, 59])
     FOLLOW_quantity_in_value1902 = frozenset([1])
     FOLLOW_datetime_in_value1934 = frozenset([1])
     FOLLOW_catchall_in_value1974 = frozenset([1])
@@ -3790,10 +3790,10 @@ class FMFpythonParser(Parser):
     FOLLOW_FLOAT_in_time2109 = frozenset([1])
     FOLLOW_set_in_number2120 = frozenset([57, 58, 59])
     FOLLOW_absnumber_in_number2127 = frozenset([1])
-    FOLLOW_FLOAT_in_absnumber2158 = frozenset([36, 39])
+    FOLLOW_FLOAT_in_absnumber2158 = frozenset([35, 38])
     FOLLOW_set_in_absnumber2160 = frozenset([59])
     FOLLOW_IMAG_in_absnumber2166 = frozenset([1])
-    FOLLOW_INT_in_absnumber2178 = frozenset([36, 39])
+    FOLLOW_INT_in_absnumber2178 = frozenset([35, 38])
     FOLLOW_set_in_absnumber2180 = frozenset([59])
     FOLLOW_IMAG_in_absnumber2186 = frozenset([1])
     FOLLOW_FLOAT_in_absnumber2198 = frozenset([1])
@@ -3806,13 +3806,13 @@ class FMFpythonParser(Parser):
     FOLLOW_WORD_in_unit2289 = frozenset([1, 32, 44])
     FOLLOW_number_in_synpred11852 = frozenset([1])
     FOLLOW_identifier_in_synpred21898 = frozenset([34])
-    FOLLOW_EQUALS_in_synpred21900 = frozenset([36, 39, 57, 58, 59])
+    FOLLOW_EQUALS_in_synpred21900 = frozenset([35, 38, 57, 58, 59])
     FOLLOW_quantity_in_synpred21902 = frozenset([1])
     FOLLOW_datetime_in_synpred31934 = frozenset([1])
-    FOLLOW_FLOAT_in_synpred42158 = frozenset([36, 39])
+    FOLLOW_FLOAT_in_synpred42158 = frozenset([35, 38])
     FOLLOW_set_in_synpred42160 = frozenset([59])
     FOLLOW_IMAG_in_synpred42166 = frozenset([1])
-    FOLLOW_INT_in_synpred52178 = frozenset([36, 39])
+    FOLLOW_INT_in_synpred52178 = frozenset([35, 38])
     FOLLOW_set_in_synpred52180 = frozenset([59])
     FOLLOW_IMAG_in_synpred52186 = frozenset([1])
     FOLLOW_FLOAT_in_synpred62198 = frozenset([1])

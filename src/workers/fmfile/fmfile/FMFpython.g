@@ -189,15 +189,15 @@ date    : GERMANDATE | ISODATE;
 
 time    : INT COLON INT (COLON FLOAT)?;
 
-number  : (NPLUS|NMINUS)? absnumber;
+number  : (PLUS|MINUS)? absnumber;
 
 fragment
 absnumber
 options {
     backtrack=true;
 }
-        : FLOAT (NPLUS|NMINUS) IMAG
-        | INT (NPLUS|NMINUS) IMAG
+        : FLOAT (PLUS|MINUS) IMAG
+        | INT (PLUS|MINUS) IMAG
         | FLOAT
         | INT
         | IMAG
