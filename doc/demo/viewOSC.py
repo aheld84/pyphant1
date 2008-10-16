@@ -127,7 +127,7 @@ worker = recipe.getWorkers("Slicing")[0]
 if freqRange != None:
     print freqRange, worker.paramDim1.value
     worker.paramDim1.value=freqRange
-    noisyAbsorption = worker.plugExtract.getResult()
+noisyAbsorption = worker.plugExtract.getResult()
 
 #Get Simulation
 worker = recipe.getWorkers("Coat Thickness Model")[0]
@@ -153,20 +153,25 @@ if theme == visualizationThemes[4]:
 worker = recipe.getWorkers("Add Column")[0]
 table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
 
+import numpy
+index = numpy.where(table[u"pixel"].data==curvNo)
+if len(index)>1 or len(index[0])>1:
+    raise RuntimeError, "Invalid curvNo %s: Found index: %s" %(curvNo,index)
+index = index[0][0]
 xPos = table[u"horizontal_table_position"]
 yPos = table[u"vertical_table_position"]
 thickness = table[u"thickness"]
 filename = table[u"filename"]
 
-result = "$%s_{%s}$(%s %s,%s %s)=%s %s" % (thickness[curvNo].shortname,curvNo,
-                                 xPos.data[curvNo],xPos.unit.unit.name(),
-                                 yPos.data[curvNo],yPos.unit.unit.name(),
-                                 thickness.data[curvNo],
+result = "$%s_{%s}$(%s %s,%s %s)=%s %s" % (thickness[index].shortname,curvNo,
+                                 xPos.data[index],xPos.unit.unit.name(),
+                                 yPos.data[index],yPos.unit.unit.name(),
+                                 thickness.data[index],
                                  thickness.unit.unit.name())
-print "Visualizing file %s with %s." % (filename[curvNo].data[0],result)
+print "Visualizing file %s with %s." % (filename[index].data[0],result)
 
 #Compute reference simulation
-residuum = (simulation.dimensions[0].data-thickness.data[curvNo])**2
+residuum = (simulation.dimensions[0].data-thickness.data[index])**2
 absorption = simulation.data[residuum.argmin(),:]
 
 #Get result of MRA
@@ -205,20 +210,20 @@ if options.postscript:
     
 if theme == visualizationThemes[0]:
     pylab.plot(noisyAbsorption.dimensions[1].inUnitsOf(simulation.dimensions[1]).data,
-               noisyAbsorption.data[curvNo,:],label="$%s$"%noisyAbsorption.shortname)
+               noisyAbsorption.data[index,:],label="$%s$"%noisyAbsorption.shortname)
     pylab.plot(simulation.dimensions[1].data,
                absorption,label="$%s$"%simulation.shortname)
     if not noIndicators:
-        pylab.vlines(minimaPos.data[:,curvNo],0.1,1.0,
+        pylab.vlines(minimaPos.data[:,index],0.1,1.0,
                      label ="$%s$"%minimaPos.shortname)
     pylab.title(result)
     pylab.xlabel(simulation.dimensions[1].label)
 
 elif theme == visualizationThemes[1]:
     pylab.plot(noisyAbsorption.dimensions[1].inUnitsOf(simulation.dimensions[1]).data,
-               noisyAbsorption.data[curvNo,:],label="$%s$"%noisyAbsorption.shortname)
+               noisyAbsorption.data[index,:],label="$%s$"%noisyAbsorption.shortname)
     if not noIndicators:
-        pylab.vlines(minimaPos.data[:,curvNo],0.1,1.0,
+        pylab.vlines(minimaPos.data[:,index],0.1,1.0,
                      label ="$%s$"%minimaPos.shortname)
     pylab.title(result)
     pylab.xlabel(simulation.dimensions[1].label)
@@ -226,26 +231,26 @@ elif theme == visualizationThemes[1]:
 
 elif theme == visualizationThemes[2]:
     visualizer = ImageVisualizer(oscMap)
-    pylab.plot([xPos.data[curvNo]],[yPos.data[curvNo]],'xk',scalex=False,scaley=False)
+    pylab.plot([xPos.data[index]],[yPos.data[index]],'xk',scalex=False,scaley=False)
 
 elif theme == visualizationThemes[3]:
     visualizer = ImageVisualizer(functional)
     if not noIndicators:
         ordinate = functional.dimensions[1].data
-        pylab.hlines(minimaPos.data[:,curvNo],ordinate.min(),ordinate.max(),
+        pylab.hlines(minimaPos.data[:,index],ordinate.min(),ordinate.max(),
                      label ="$%s$"%minimaPos.shortname)
         abscissae = functional.dimensions[0].data
-        pylab.vlines(thickness.data[curvNo],abscissae.min(),abscissae.max(),
+        pylab.vlines(thickness.data[index],abscissae.min(),abscissae.max(),
                      label ="$%s$"%minimaPos.shortname)
     
 elif theme == visualizationThemes[4]:
     visualizer = ImageVisualizer(simulation)
     ordinate = simulation.dimensions[1].data
     if not noIndicators:
-        pylab.hlines(thickness.data[curvNo],ordinate.min(),ordinate.max(),
+        pylab.hlines(thickness.data[index],ordinate.min(),ordinate.max(),
                      label ="$%s$"%minimaPos.shortname)
         abscissae = simulation.dimensions[0].data
-        pylab.vlines(minimaPos.data[:,curvNo],abscissae.min(),abscissae.max(),
+        pylab.vlines(minimaPos.data[:,index],abscissae.min(),abscissae.max(),
                      label ="$%s$"%minimaPos.shortname)
         
 if options.postscript:
