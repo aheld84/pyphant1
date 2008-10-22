@@ -34,7 +34,7 @@ __id__ = "$Id$"
 __author__ = "$Author: liehr $"
 __version__ = "$Revision: 29 $"
 
-import threading
+import threading, pylab
 from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 
 class TextSubscriber(object):
@@ -83,132 +83,106 @@ class TextSubscriber(object):
 
 import pyphant.core.PyTablesPersister
 visualizer = None 
-from optparse import OptionParser
-
-visualizationThemes = ("compareAbsorption",
-                       "noisyAbsorption",
-                       "thicknessMap",
-                       "functional",
-                       "simulation")
-
-parser = OptionParser(usage="usage: %prog [options] path2recipe")
-
-parser.add_option("-n", "--number", dest="curvNo",type='long',
-                  help="Number of curve set to visualize", metavar="CURVNO",default=0)
-parser.add_option("-f", "--frequency-range", dest="freqRange", type="str",
-		  help="Frequency range to use for data slicing.", metavar="FREQRANGE", default=None)
-parser.add_option("-s", "--scale", dest="scale", type="str",
-		  help="Scale parameter", metavar="SCALE", default=None)
-
-parser.add_option("-v", "--visualize", dest="theme", type="choice",choices = visualizationThemes,
-                  help="Choose visualization theme from %s" % str(visualizationThemes),
-                  metavar="THEME", default=visualizationThemes[0])
-parser.add_option("-p", "--postscript", dest="postscript", action="store_true",
-                  help="Write diagram to encapsulated postscript file.")
-parser.add_option("-I", "--noIndicators", dest="noIndicators", action="store_true",
-                  help="Don't show indicators like position, local minima, or estimated thickness.")
-
-(options, args) = parser.parse_args()
-
-if len(args) != 1:
+def processArgs():
+    from optparse import OptionParser
+    visualizationThemes = ("compareAbsorption",
+                           "noisyAbsorption",
+                           "thicknessMap",
+                           "functional",
+                           "simulation",
+                           "dumpMinima")
+    parser = OptionParser(usage="usage: %prog [options] path2recipe")
+    parser.add_option("-n", "--number", dest="curvNo",type='long',
+                      help="Number of curve set to visualize", metavar="CURVNO",default=1)
+    parser.add_option("-f", "--frequency-range", dest="freqRange", type="str",
+                      help="Frequency range to use for data slicing.", metavar="FREQRANGE", default=None)
+    parser.add_option("-s", "--scale", dest="scale", type="str",
+                      help="Scale parameter", metavar="SCALE", default=None)
+    parser.add_option("-v", "--visualize", dest="theme", type="choice",choices = visualizationThemes,
+                      help="Choose visualization theme from %s" % str(visualizationThemes),
+                      metavar="THEME", default=visualizationThemes[0])
+    parser.add_option("-p", "--postscript", dest="postscript", action="store_true",
+                      help="Write diagram to encapsulated postscript file.")
+    parser.add_option("-I", "--noIndicators", dest="noIndicators", action="store_true",
+                      help="Don't show indicators like position, local minima, or estimated thickness.")
+    (options, args) = parser.parse_args()
+    if len(args) != 1:
         parser.error("incorrect number of arguments")
-else:
-    pathToRecipe = args[0]
-    curvNo = options.curvNo
-    freqRange = options.freqRange
-    scale = options.scale
-    theme = options.theme
-    noIndicators = options.noIndicators
-#Load recipe from hdf file
-recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File(pathToRecipe)
+    recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File(args[0])
+    return (args[0], options, recipe)
 
-#Get Absorption
-worker = recipe.getWorkers("Slicing")[0]
-if freqRange != None:
-    print freqRange, worker.paramDim1.value
-    worker.paramDim1.value=freqRange
-noisyAbsorption = worker.plugExtract.getResult()
+def curvNo2Index(pixel, curvNo):
+    import numpy
+    index = numpy.where(pixel.data==curvNo)
+    if len(index)>1 or len(index[0])>1:
+        raise RuntimeError, "Invalid curvNo %s: Found index: %s" %(curvNo,index)
+    return index[0][0]
 
-#Get Simulation
-worker = recipe.getWorkers("Coat Thickness Model")[0]
-simulation = worker.plugCalcAbsorption.getResult()
-
-if scale != None:
-	worker = recipe.getWorkers("Multi Resolution Analyser")[0]
+def setParameters(recipe, freqRange=None, scale=None):
+    if freqRange != None:
+        worker = recipe.getWorkers("Slicing")[0]
+        worker.paramDim1.value=freqRange
+    if scale != None:
+        worker = recipe.getWorkers("Multi Resolution Analyser")[0]
 	worker.paramScale.value=scale
 
-if theme == visualizationThemes[2]:
-    worker = recipe.getWorkers("Osc Mapper")[0]
-    oscMap = worker.plugMapHeights.getResult()
+def initPylab(postscript):
+    pylab.hold = True
+    if postscript:
+        inches_per_pt = 1.0/72.27
+        golden_mean = (5.0**0.5+1)/2.0
+        figwidth=246. * inches_per_pt
+        figheight = (figwidth / golden_mean)
+        left = 0.2
+        bottom = 0.25
+        right = 0.95
+        top = 0.90
+        params = {'font.size':10,
+                  'axes.labelsize':10,
+                  'axes.titlesize':10,
+                  'text.fontsize':10,
+                  'xtick.labelsize':10,
+                  'ytick.labelsize':10,
+                  'text.usetex':True,
+                  'backend':'ps',
+                  'figure.figsize': [figwidth/(right-left),figheight/(top-bottom)]
+                  }
+        pylab.rcParams.update(params)
+        pylab.figure(1)
+        pylab.clf()
+        pylab.axes([left,bottom,right-left,top-bottom])
 
-if theme == visualizationThemes[3]:
-    worker = recipe.getWorkers("Compute Functional")[0]
-    functional = worker.plugCompute.getResult()
+def finalizePylab(postscript, visualizer=None):
+    if postscript:
+        from os.path import basename
+        filename = '%s-%s-n%s.eps' % (basename(pathToRecipe)[:-3],theme,curvNo)
+        if visualizer != None:
+            visualizer.figure.savefig(filename)
+        else:
+            pylab.savefig(filename)
+    else:
+        pylab.show()
 
-if theme == visualizationThemes[4]:
+def compareAbsorption(recipe, curvNo, noIndicators):
+    worker = recipe.getWorkers("Slicing")[0]
+    noisyAbsorption = worker.plugExtract.getResult()
     worker = recipe.getWorkers("Coat Thickness Model")[0]
     simulation = worker.plugCalcAbsorption.getResult()
-
-#Get EstimatedWidth
-worker = recipe.getWorkers("Add Column")[0]
-table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
-
-import numpy
-index = numpy.where(table[u"pixel"].data==curvNo)
-if len(index)>1 or len(index[0])>1:
-    raise RuntimeError, "Invalid curvNo %s: Found index: %s" %(curvNo,index)
-index = index[0][0]
-xPos = table[u"horizontal_table_position"]
-yPos = table[u"vertical_table_position"]
-thickness = table[u"thickness"]
-filename = table[u"filename"]
-
-result = "$%s_{%s}$(%s %s,%s %s)=%s %s" % (thickness[index].shortname,curvNo,
-                                 xPos.data[index],xPos.unit.unit.name(),
-                                 yPos.data[index],yPos.unit.unit.name(),
-                                 thickness.data[index],
-                                 thickness.unit.unit.name())
-print "Visualizing file %s with %s." % (filename[index].data[0],result)
-
-#Compute reference simulation
-residuum = (simulation.dimensions[0].data-thickness.data[index])**2
-absorption = simulation.data[residuum.argmin(),:]
-
-#Get result of MRA
-worker = recipe.getWorkers("Multi Resolution Analyser")[0]
-minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
-
-pyphant.core.PyTablesPersister.saveRecipeToHDF5File(recipe, pathToRecipe)
-
-#Visualize Result
-import pylab
-pylab.hold = True
-inches_per_pt = 1.0/72.27
-golden_mean = (5.0**0.5+1)/2.0
-figwidth=246. * inches_per_pt
-figheight = (figwidth / golden_mean)
-
-if options.postscript:
-    left = 0.2
-    bottom = 0.25
-    right = 0.95
-    top = 0.90
-    params = {'font.size':10,
-              'axes.labelsize':10,
-              'axes.titlesize':10,
-              'text.fontsize':10,
-              'xtick.labelsize':10,
-              'ytick.labelsize':10,
-              'text.usetex':True,
-              'backend':'ps',
-              'figure.figsize': [figwidth/(right-left),figheight/(top-bottom)]
-              }
-    pylab.rcParams.update(params)
-    pylab.figure(1)
-    pylab.clf()
-    pylab.axes([left,bottom,right-left,top-bottom])
-    
-if theme == visualizationThemes[0]:
+    worker = recipe.getWorkers("Multi Resolution Analyser")[0]
+    minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
+    worker = recipe.getWorkers("Add Column")[0]
+    table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
+    xPos = table[u"horizontal_table_position"]
+    yPos = table[u"vertical_table_position"]
+    thickness = table[u"thickness"]
+    index = curvNo2Index(table[u"pixel"], curvNo)
+    result = "$%s_{%s}$(%s %s,%s %s)=%s %s" % (thickness[index].shortname,curvNo,
+                                               xPos.data[index],xPos.unit.unit.name(),
+                                               yPos.data[index],yPos.unit.unit.name(),
+                                               thickness.data[index],
+                                               thickness.unit.unit.name())
+    residuum = (simulation.dimensions[0].data-thickness.data[index])**2
+    absorption = simulation.data[residuum.argmin(),:]
     pylab.plot(noisyAbsorption.dimensions[1].inUnitsOf(simulation.dimensions[1]).data,
                noisyAbsorption.data[index,:],label="$%s$"%noisyAbsorption.shortname)
     pylab.plot(simulation.dimensions[1].data,
@@ -219,7 +193,24 @@ if theme == visualizationThemes[0]:
     pylab.title(result)
     pylab.xlabel(simulation.dimensions[1].label)
 
-elif theme == visualizationThemes[1]:
+def noisyAbsorption(recipe, curvNo, noIndicators):
+    worker = recipe.getWorkers("Slicing")[0]
+    noisyAbsorption = worker.plugExtract.getResult()
+    worker = recipe.getWorkers("Coat Thickness Model")[0]
+    simulation = worker.plugCalcAbsorption.getResult()
+    worker = recipe.getWorkers("Multi Resolution Analyser")[0]
+    minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
+    worker = recipe.getWorkers("Add Column")[0]
+    table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
+    xPos = table[u"horizontal_table_position"]
+    yPos = table[u"vertical_table_position"]
+    thickness = table[u"thickness"]
+    index = curvNo2Index(table[u"pixel"], curvNo)
+    result = "$%s_{%s}$(%s %s,%s %s)=%s %s" % (thickness[index].shortname,curvNo,
+                                               xPos.data[index],xPos.unit.unit.name(),
+                                               yPos.data[index],yPos.unit.unit.name(),
+                                               thickness.data[index],
+                                               thickness.unit.unit.name())
     pylab.plot(noisyAbsorption.dimensions[1].inUnitsOf(simulation.dimensions[1]).data,
                noisyAbsorption.data[index,:],label="$%s$"%noisyAbsorption.shortname)
     if not noIndicators:
@@ -229,12 +220,29 @@ elif theme == visualizationThemes[1]:
     pylab.xlabel(simulation.dimensions[1].label)
     pylab.ylabel(simulation.label)
 
-elif theme == visualizationThemes[2]:
-    visualizer = ImageVisualizer(oscMap)
+def thicknessMap(recipe, curvNo):
+    worker = recipe.getWorkers("Osc Mapper")[0]
+    oscMap = worker.plugMapHeights.getResult()
+    worker = recipe.getWorkers("Add Column")[0]
+    table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
+    xPos = table[u"horizontal_table_position"]
+    yPos = table[u"vertical_table_position"]
+    index = curvNo2Index(table[u"pixel"], curvNo)
+    visualizer = ImageVisualizer(oscMap, False)
     pylab.plot([xPos.data[index]],[yPos.data[index]],'xk',scalex=False,scaley=False)
 
-elif theme == visualizationThemes[3]:
-    visualizer = ImageVisualizer(functional)
+def functional(recipe, curvNo, noIndicators):
+    worker = recipe.getWorkers("Compute Functional")[0]
+    functional = worker.plugCompute.getResult()
+    worker = recipe.getWorkers("Coat Thickness Model")[0]
+    simulation = worker.plugCalcAbsorption.getResult()
+    worker = recipe.getWorkers("Multi Resolution Analyser")[0]
+    minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
+    worker = recipe.getWorkers("Add Column")[0]
+    table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
+    thickness = table[u"thickness"]
+    index = curvNo2Index(table[u"pixel"], curvNo)
+    visualizer = ImageVisualizer(functional, False)
     if not noIndicators:
         ordinate = functional.dimensions[1].data
         pylab.hlines(minimaPos.data[:,index],ordinate.min(),ordinate.max(),
@@ -242,9 +250,17 @@ elif theme == visualizationThemes[3]:
         abscissae = functional.dimensions[0].data
         pylab.vlines(thickness.data[index],abscissae.min(),abscissae.max(),
                      label ="$%s$"%minimaPos.shortname)
-    
-elif theme == visualizationThemes[4]:
-    visualizer = ImageVisualizer(simulation)
+
+def simulation(recipe, curvNo, noIndicators):
+    worker = recipe.getWorkers("Coat Thickness Model")[0]
+    simulation = worker.plugCalcAbsorption.getResult()
+    worker = recipe.getWorkers("Add Column")[0]
+    table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
+    thickness = table[u"thickness"]
+    index = curvNo2Index(table[u"pixel"], curvNo)
+    worker = recipe.getWorkers("Multi Resolution Analyser")[0]
+    minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
+    visualizer = ImageVisualizer(simulation, False)
     ordinate = simulation.dimensions[1].data
     if not noIndicators:
         pylab.hlines(thickness.data[index],ordinate.min(),ordinate.max(),
@@ -252,14 +268,52 @@ elif theme == visualizationThemes[4]:
         abscissae = simulation.dimensions[0].data
         pylab.vlines(minimaPos.data[:,index],abscissae.min(),abscissae.max(),
                      label ="$%s$"%minimaPos.shortname)
-        
-if options.postscript:
-    from os.path import basename
-    filename = '%s-%s-n%s.eps' % (basename(pathToRecipe)[:-3],theme,curvNo)
-    if visualizer:
-        visualizer.figure.savefig(filename)
-    else:
-        pylab.savefig(filename)
-else:
-    pylab.show()
 
+def dumpMinima(recipe):
+    worker = recipe.getWorkers("Coat Thickness Model")[0]
+    simulation = worker.plugCalcAbsorption.getResult()
+    worker = recipe.getWorkers("Add Column")[0]
+    table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
+    index = table[u"pixel"]
+    xPos = table[u"horizontal_table_position"]
+    yPos = table[u"vertical_table_position"]
+    thickness = table[u"thickness"]
+    cols = [index, xPos, yPos, thickness]
+    worker = recipe.getWorkers("Multi Resolution Analyser")[0]
+    minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
+    import numpy
+    data = numpy.vstack([ c.data for c in cols]
+                        + numpy.vsplit(minimaPos.data, len(minimaPos.data))).transpose()
+    import fmfile.fmfgen
+    factory = fmfile.fmfgen.gen_factory(out_coding='cp1252', eol='\r\n')
+    fc = factory.gen_fmf()
+    fc.add_reference_item('author', "Kristian")
+    tab = factory.gen_table(data)
+    for c in cols:
+        tab.add_column_def(c.longname, c.shortname, str(c.unit))
+    for i in xrange(len(minimaPos.data)):
+        tab.add_column_def("minimaPos%i"%i, "p_%i"%i)
+    fc.add_table(tab)
+    print str(fc)
+        
+def main():
+    pathToRecipe, options, recipe = processArgs()
+    setParameters(recipe, options.freqRange, options.scale)
+    initPylab(options.postscript)
+    if options.theme == "compareAbsorption":
+        compareAbsorption(recipe, options.curvNo, options.noIndicators)
+    elif options.theme == "noisyAbsorption":
+        noisyAbsorption(recipe, options.curvNo, options.noIndicators)
+    elif options.theme == "thicknessMap":
+        thicknessMap(recipe, options.curvNo)
+    elif options.theme == "functional":
+        functional(recipe, options.curvNo, options.noIndicators)
+    elif options.theme == "simulation":
+        simulation(recipe, options.curvNo, options.noIndicators)
+    elif options.theme == "dumpMinima":
+        dumpMinima(recipe)
+    finalizePylab(options.postscript)
+    pyphant.core.PyTablesPersister.saveRecipeToHDF5File(recipe, pathToRecipe)
+
+if __name__ == '__main__':
+    main()
