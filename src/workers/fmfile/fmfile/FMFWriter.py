@@ -69,6 +69,15 @@ def field2fmf(fieldContainer):
     fc.add_table(tab)
     return str(fc)
 
+
+import wx
+
+class TextFrame(wx.Frame):
+    def __init__(self,fmf):
+        wx.Frame.__init__(self,None,-1,'FMFWriter', size=(300,200))
+        multiText = wx.TextCtrl(self,-1,fmf,size=(200,200),style=wx.TE_MULTILINE)
+        multiText.SetInsertionPoint(0)
+
 class FMFWriter(object):
     name='FMF Writer'
     def __init__(self, fieldContainer,show=True):
@@ -77,4 +86,8 @@ class FMFWriter(object):
         self.execute()
 
     def execute(self):
-        print field2fmf(self.fieldContainer)
+        self.text =  field2fmf(self.fieldContainer)
+        app = wx.PySimpleApp()
+        frame = TextFrame(self.text)
+        frame.Show()
+        app.MainLoop()
