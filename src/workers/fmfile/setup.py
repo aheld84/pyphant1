@@ -25,5 +25,7 @@ setuptools.setup(
     entry_points = """
     [pyphant.workers]
     myeentry = fmfile
+    [pyphant.visualizers]
+    pil.image = fmfile.FMFWriter:FMFWriter
     """,
     test_suite='fmfile.tests')
