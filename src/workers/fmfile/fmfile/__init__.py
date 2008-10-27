@@ -38,5 +38,6 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-workers=["FMFLoader"]
+workers=["FMFLoader",
+         "FMFLoader2"]
 
