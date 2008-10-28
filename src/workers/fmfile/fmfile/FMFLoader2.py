@@ -220,11 +220,60 @@ def readSingleFile(b, pixelName):
     _logger.info(u"Parsing file %s." % pixelName)
     preParsedData, d = preParseData(b)
     from configobj import ConfigObj
+    class FMFConfigObj(ConfigObj):
+        _keyword = re.compile(r'''^ # line start
+            (\s*)                   # indentation
+            (                       # keyword
+                (?:".*?")|          # double quotes
+                (?:'.*?')|          # single quotes
+                (?:[^'":].*?)       # no quotes
+            )
+            \s*:\s*                 # divider
+            (.*)                    # value (including list values and comments)
+            $   # line end
+            ''', re.VERBOSE)
     from StringIO import StringIO
-    config = ConfigObj(StringIO(d.encode('utf-8')), encoding='utf-8')
+    config = FMFConfigObj(d.encode('utf-8').splitlines(), encoding='utf-8')
     return config2tables(preParsedData, config)
 
 def config2tables(preParsedData, config):
+    def str2unit(unit):
+        if unit.startswith('.'):
+            unit = '0'+unit
+        elif not unit[0].isdigit():
+            unit = '1'+unit
+        try:
+            unit = PhysicalQuantity(unit.encode('utf-8'))
+        except:
+            unit = float(unit)
+        return unit
+
+    def item2value(section, key):
+        pm = re.compile(ur"(?:\\pm|\+/?-)")
+        oldVal = section[key]
+        try:
+            shortname, value = tuple([s.strip() for s in oldVal.split('=')])
+            try:
+                value, error = [s.strip() for s in pm.split(value)]
+                if value.startswith('('):
+                    value = float(value[1:])
+                    error, unit = [s.strip() for s in error.split(')')]
+                    if error.endswith('%'):
+                        error = value*float(error[:-1])/100.0
+                    else:
+                        error = float(error)
+                    unit = str2unit(unit)
+                    value *= unit
+                    error *= unit
+                    return (shortname, value, error)
+            except:
+                error = str2unit(error)
+                value = str2unit(value)
+                return (shortname, value, error)
+        except:
+            pass
+        return oldVal
+
     if config.has_key('*table definitions'):
         longnames = dict([(i,k) for k,i in config['*table definitions'].iteritems()])
         del config['*table definitions']
@@ -242,7 +291,7 @@ def config2tables(preParsedData, config):
                                      preParsedData[shortname], 
                                      config[k]))
             del config[k]
-    attributes = dict([(s, dict(c)) for s,c in config.iteritems()])
+    attributes = config.walk(item2value)
     for t in tables:
         t.attributes = copy.deepcopy(attributes)
     return tables
@@ -303,20 +352,22 @@ def data2table(longname, shortname, preParsedData, config):
 
 
 def preParseData(b):
-    localVar = {}
-    if b[0] == ';':
+    localVar = {'fmf-version':'1.0','coding':'cp1252'}
+    commentChar = ';'
+    if b[0] == ';' or b[0] == '#':
+        commentChar = b[0]
         items =  [var.strip().split(':') for var in b.split('-*-')[1].split(';')]
         for key,value in items:
-            localVar[key]=value
-    localVar.update({'fmf-version':'1.0','coding':'cp1252'})
+            localVar[key.strip()]=value.strip()
     d = unicode(b, localVar['coding'])
     dataExpr = re.compile(ur"^(\[\*data(?::\s*([^\]]*))?\]\r?\n)([^[]*)", re.MULTILINE | re.DOTALL)
+    commentExpr = re.compile(ur"^%s.*"%commentChar, re.MULTILINE)
+    d = re.sub(commentExpr, '', d)
     preParsedData = {}
     def preParseData(match):
         try:
             preParsedData[match.group(2)] = numpy.loadtxt(StringIO.StringIO(match.group(3)), unpack=True, comments=';')
         except Exception, e:
-            print e
             return match.group(0)
         return u""
     d = re.sub(dataExpr, preParseData, d)
