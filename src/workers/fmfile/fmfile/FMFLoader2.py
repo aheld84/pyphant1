@@ -40,10 +40,6 @@ __version__ = "$Revision$"
 import zipfile, numpy, re, collections, copy, StringIO, os.path
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
-import antlr3
-from FMFpythonLexer import FMFpythonLexer
-from FMFpythonParser import FMFpythonParser
-from FMFpythonTree import FMFpythonTree
 from Scientific.Physics.PhysicalQuantities import PhysicalQuantity,isPhysicalUnit,isPhysicalQuantity
 import logging
 _logger = logging.getLogger("pyphant")
@@ -176,6 +172,8 @@ def readZipFile(filename, subscriber=1):
     return DataContainer.SampleContainer(containers,attributes=commonAttr)
 
 def reshapeField(field):
+    if field.isIndependent():
+        return field
     dimData = [numpy.unique(d.data) for d in field.dimensions]
     fieldData = numpy.ones([len(d) for d in dimData])*numpy.nan
     data = numpy.vstack([field.data]+[d.data for d in field.dimensions]).transpose()
@@ -201,13 +199,14 @@ def readDataFile(filename):
     dat = filehandle.read()
     filehandle.close()
     rawContainer = readSingleFile(dat,filename)
-    newContainer = [ reshapeField(field)
-                     for field in rawContainer.columns
-                     if not field.isIndependent() ]
-    newSample = DataContainer.SampleContainer(newContainer,
-                                              longname=rawContainer.longname,
-                                              shortname=rawContainer.shortname,
-                                              attributes=rawContainer.attributes)
+    if len(rawContainer)==1:
+        container = rawContainer[0]
+        container.seal()
+        return container
+    newSample = DataContainer.SampleContainer(rawContainer,
+                                              longname='List of tables',
+                                              shortname='L',
+                                              attributes=copy.deepcopy(rawContainer[0].attributes))
     newSample.seal()
     return newSample
 
@@ -219,38 +218,88 @@ def loadFMFFromFile(filename, subscriber=0):
 
 def readSingleFile(b, pixelName):
     _logger.info(u"Parsing file %s." % pixelName)
-    colspec_re = re.compile(ur"(?P<shortname>[^\s([]*)\s*(?P<deps>\([^)]*\))?\s*(?P<unit>\[[^]]*])?")
     preParsedData, d = preParseData(b)
     from configobj import ConfigObj
     from StringIO import StringIO
     config = ConfigObj(StringIO(d.encode('utf-8')), encoding='utf-8')
+    return config2tables(preParsedData, config)
+
+def config2tables(preParsedData, config):
+    if config.has_key('*table definitions'):
+        longnames = dict([(i,k) for k,i in config['*table definitions'].iteritems()])
+        del config['*table definitions']
+    else:
+        longnames = { None : 'Table' }
+    tables = []
+    for k in config:
+        if k.startswith('*data definitions'):
+            if k == '*data definitions':
+                shortname = None
+            else:
+                shortname = k.split(':')[1].strip()
+            tables.append(data2table(longnames[shortname],
+                                     shortname, 
+                                     preParsedData[shortname], 
+                                     config[k]))
+            del config[k]
+    attributes = dict([(s, dict(c)) for s,c in config.iteritems()])
+    for t in tables:
+        t.attributes = copy.deepcopy(attributes)
+    return tables
+
+def data2table(longname, shortname, preParsedData, config):
+    colspec_re = re.compile(ur"(?P<shortname>[^\s([]*)\s*(?P<deps>\([^)]*\))?\s*(?:(?:\\pm|\+-|\+/-)\s*(?P<error>[^\s[]*))?\s*(?P<unit>\[[^]]*])?")
     fields = []
     fields_by_name = {}
-    for i, (name, spec) in enumerate(config['*data definitions'].items()):
+    dimensions_for_fields = {}
+    errors_for_fields = {}
+    for i, (fieldLongname, spec) in enumerate(config.items()):
         match = re.search(colspec_re, spec)
         unit = match.group('unit')
         if unit != None:
             unit = unit[1:-1]
             if unit.startswith('.'):
                 unit = '0'+unit
-            if not unit[0].isdigit():
+            elif unit == '%':
+                unit = 0.01
+            elif not unit[0].isdigit():
                 unit = '1'+unit
             try:
+                unit = unit.replace('^', '**')
                 unit = PhysicalQuantity(unit.encode('utf-8'))
             except:
                 unit = float(unit)
+        fieldShortname=match.group('shortname')
         dimensions = match.group('deps')
         if dimensions != None:
-            dimensions = [ fields_by_name[d] for d in dimensions[1:-1].split(',') ]
-        shortname=match.group('shortname')
-        field = DataContainer.FieldContainer(preParsedData[None][i],
-                                             longname=name,
-                                             shortname=shortname,
-                                             unit=unit,
-                                             dimensions=dimensions)
+            dimensions_for_fields[fieldShortname] = dimensions[1:-1].split(',')
+        else:
+            dimensions_for_fields[fieldShortname] = None
+        errors_for_fields[fieldShortname] = match.group('error')
+        field = DataContainer.FieldContainer(preParsedData[i],
+                                             longname=fieldLongname,
+                                             shortname=fieldShortname,
+                                             unit=unit)
         fields.append(field)
-        fields_by_name[shortname] = field
-    return DataContainer.SampleContainer(fields)
+        fields_by_name[fieldShortname] = field
+    for f in fields:
+        sn = f.shortname
+        dims = dimensions_for_fields[sn]
+        if dims != None:
+            f.dimensions = [ fields_by_name[d] for d in dims ]
+        error = errors_for_fields[sn]
+        if error != None:
+            try:
+                error = float(error)
+                f.error = numpy.ones(f.data.shape)*error
+            except:
+                f.error = fields_by_name[error].inUnitsOf(f).data
+    fields = [ reshapeField(field) for field in fields ]
+    if shortname==None:
+        shortname='T'
+    return DataContainer.SampleContainer(fields,
+                                         longname=longname,
+                                         shortname=shortname)
 
 
 def preParseData(b):
@@ -261,14 +310,15 @@ def preParseData(b):
             localVar[key]=value
     localVar.update({'fmf-version':'1.0','coding':'cp1252'})
     d = unicode(b, localVar['coding'])
-    dataExpr = re.compile(ur"^(\[\*data(?::([^\]]*))?\]\r?\n)([^[]*)", re.MULTILINE | re.DOTALL)
+    dataExpr = re.compile(ur"^(\[\*data(?::\s*([^\]]*))?\]\r?\n)([^[]*)", re.MULTILINE | re.DOTALL)
     preParsedData = {}
     def preParseData(match):
         try:
-            preParsedData[match.group(2)] = numpy.loadtxt(StringIO.StringIO(match.group(3)), unpack=True)
-        except:
+            preParsedData[match.group(2)] = numpy.loadtxt(StringIO.StringIO(match.group(3)), unpack=True, comments=';')
+        except Exception, e:
+            print e
             return match.group(0)
-        return match.group(1)
+        return u""
     d = re.sub(dataExpr, preParseData, d)
     return preParsedData, d
 
