@@ -34,6 +34,8 @@ __id__ = "$Id$"
 __author__ = "$Author: liehr $"
 __version__ = "$Revision: 29 $"
 
+import matplotlib
+matplotlib.use('wxagg') # This MUST stay above 'import pylab'!
 import threading, pylab
 from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 
