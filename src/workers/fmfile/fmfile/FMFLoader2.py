@@ -249,29 +249,41 @@ def config2tables(preParsedData, config):
         return unit
 
     def item2value(section, key):
-        pm = re.compile(ur"(?:\\pm|\+/?-)")
+        pm = re.compile(ur"(?:\\pm|\+-|\+/-)")
         oldVal = section[key]
         try:
             shortname, value = tuple([s.strip() for s in oldVal.split('=')])
             try:
                 value, error = [s.strip() for s in pm.split(value)]
-                if value.startswith('('):
-                    value = float(value[1:])
-                    error, unit = [s.strip() for s in error.split(')')]
-                    if error.endswith('%'):
-                        error = value*float(error[:-1])/100.0
-                    else:
-                        error = float(error)
-                    unit = str2unit(unit)
-                    value *= unit
-                    error *= unit
-                    return (shortname, value, error)
             except:
-                error = str2unit(error)
-                value = str2unit(value)
-                return (shortname, value, error)
+                error = None
+            if value.startswith('('):
+                value = float(value[1:])
+                error, unit = [s.strip() for s in error.split(')')]
+                unit = str2unit(unit)
+                value *= unit
+            else:
+                value = str2unit(value)                    
+            if error != None:
+                if error.endswith('%'):
+                    error = value*float(error[:-1])/100.0
+                else:
+                    try:
+                        error = float(error)*unit
+                    except:
+                        error = str2unit(error)
+            return (shortname, value, error)
         except:
-            pass
+            try: 
+                return int(oldVal)
+            except:
+                try:
+                    return float(oldVal)
+                except:
+                    try: 
+                        return complex(oldVal)
+                    except:
+                        pass
         return oldVal
 
     if config.has_key('*table definitions'):
@@ -297,6 +309,19 @@ def config2tables(preParsedData, config):
     return tables
 
 def data2table(longname, shortname, preParsedData, config):
+    datTable = []
+    for col in preParsedData:
+        try:
+            result = col.astype('i')
+        except ValueError,e:
+            try:
+                result = col.astype('f')
+            except ValueError,e:
+                try:
+                    result = col.astype('complex')
+                except ValueError,e:
+                    result = col
+        datTable.append(result)
     colspec_re = re.compile(ur"(?P<shortname>[^\s([]*)\s*(?P<deps>\([^)]*\))?\s*(?:(?:\\pm|\+-|\+/-)\s*(?P<error>[^\s[]*))?\s*(?P<unit>\[[^]]*])?")
     fields = []
     fields_by_name = {}
@@ -325,7 +350,7 @@ def data2table(longname, shortname, preParsedData, config):
         else:
             dimensions_for_fields[fieldShortname] = None
         errors_for_fields[fieldShortname] = match.group('error')
-        field = DataContainer.FieldContainer(preParsedData[i],
+        field = DataContainer.FieldContainer(datTable[i],
                                              longname=fieldLongname,
                                              shortname=fieldShortname,
                                              unit=unit)
@@ -366,7 +391,7 @@ def preParseData(b):
     preParsedData = {}
     def preParseData(match):
         try:
-            preParsedData[match.group(2)] = numpy.loadtxt(StringIO.StringIO(match.group(3)), unpack=True, comments=';')
+            preParsedData[match.group(2)] = numpy.loadtxt(StringIO.StringIO(match.group(3)), unpack=True, comments=commentChar,dtype='S',delimiter='\t')
         except Exception, e:
             return match.group(0)
         return u""
