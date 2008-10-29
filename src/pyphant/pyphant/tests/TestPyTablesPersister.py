@@ -137,6 +137,29 @@ class SampleContainerTestCase(ContainerTestCase):
         restoredSample = loadSample(self.eln,self.eln.root.testSaveRestoreSample)
         self.assertEqual(restoredSample,self.sample)
 
+class SampleContainerInSampleContainerTestCase(SampleContainerTestCase):
+    def setUp(self):
+        super(SampleContainerInSampleContainerTestCase,self).setUp()
+        sample1 = SampleContainer([self.dependent,self.field],longname='First Sample',shortname='X',
+                                      attributes = copy.copy(self.attributes).update({'isSample':'It seems so.'}))
+        self.independent2 = FieldContainer(0.3*numpy.linspace(0,1,self.testData.shape[0]*10),
+                                          longname='independent variable',
+                                          shortname='x',
+                                          unit = PhysicalQuantity('1 mg'),
+                                          attributes = copy.copy(self.attributes).update({'independent':True}))
+        self.dependent2 = FieldContainer(9.81*self.independent2.data,
+                                        dimensions=[self.independent2],
+                                        longname='dependent variable',
+                                        shortname='f',
+                                        unit = PhysicalQuantity('9.81 nN'),
+                                        attributes = copy.copy(self.attributes).update({'independent':False}))
+
+        sample2 = SampleContainer([self.dependent2,self.independent2],longname='Second Sample',shortname='Y',
+                                      attributes = copy.copy(self.attributes).update({'sample Nr.': 2}))
+        self.sample = SampleContainer([sample1,sample2],longname='SampleContainer with Samples',shortname='(X,Y)',
+                                      attributes = copy.copy(self.attributes).update({'isSample':'It seems so.'}))
+        self.sample.seal()
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) == 1:
