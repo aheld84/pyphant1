@@ -377,13 +377,16 @@ def data2table(longname, shortname, preParsedData, config):
 
 
 def preParseData(b):
-    localVar = {'fmf-version':'1.0','coding':'cp1252'}
+    localVar = {'fmf-version':'1.0','coding':'cp1252',
+                'delimiter':'\t'}
     commentChar = ';'
     if b[0] == ';' or b[0] == '#':
         commentChar = b[0]
         items =  [var.strip().split(':') for var in b.split('-*-')[1].split(';')]
         for key,value in items:
             localVar[key.strip()]=value.strip()
+            if localVar[key.strip()]=='space':
+                localVar[key.strip()] = ' '
     d = unicode(b, localVar['coding'])
     dataExpr = re.compile(ur"^(\[\*data(?::\s*([^\]]*))?\]\r?\n)([^[]*)", re.MULTILINE | re.DOTALL)
     commentExpr = re.compile(ur"^%s.*"%commentChar, re.MULTILINE)
@@ -391,7 +394,11 @@ def preParseData(b):
     preParsedData = {}
     def preParseData(match):
         try:
-            preParsedData[match.group(2)] = numpy.loadtxt(StringIO.StringIO(match.group(3)), unpack=True, comments=commentChar,dtype='S',delimiter='\t')
+            preParsedData[match.group(2)] = numpy.loadtxt(StringIO.StringIO(match.group(3)),
+                                                          unpack=True,
+                                                          comments=commentChar,
+                                                          dtype='S',
+                                                          delimiter=localVar['delimiter'])
         except Exception, e:
             return match.group(0)
         return u""
