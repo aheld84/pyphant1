@@ -42,10 +42,12 @@ Integer: I
 Float with dot: Fd
 Float with exponent: Fe
 Complex: C
+Missing Value: V_m
+Infinite Value: V_i
 [*data: T]
-H_2	1	1.	1e1	1+0j
-O_2	2	.2	2E1	2+.1j
-O 2	2	.2	2E1	2+.1j
+H_2	1	1.	1e1	1+0j	nan	inf	
+O_2	2	.2	2E1	2+.1j	NaN	INF
+O 2	2	.2	2E1	2+.1j	NAN	Inf
 [*data definitions: M]
 String: S
 Complex: C
