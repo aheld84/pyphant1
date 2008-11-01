@@ -1,0 +1,57 @@
+# -*- fmf-version: 1.0; coding: utf-8; delimiter:, -*-
+[*reference]
+title: Demonstrating the flexibility of the Full-Metadata-Format
+creator: Andreas W. Liehr
+created: 2008-10-29
+place: Freiburger Materialforschungszentrum, Universität Freiburg, Deutschland
+[String Examples]
+word: Hello!
+sentence: Hello World!
+comma separated list: world, die Welt, el mundo, monde
+multiline: '''A multiline value, 
+that spans more than one line :-)
+The line breaks are included in the value.'''
+[Numbers]
+#Note, that the 'key' is arbitrary, but has to be unique within a section
+integer: 1
+float: 1.0
+float with leading dot: .1
+float with exponential: 1e-10
+float with Exponential: -1.1E10
+complex: 1+2j
+[Physical Quantities]
+number: N = 2
+voltage: U = 1V
+temperature in Celsius: T_C = 22 degC
+temperature in Fahrenheit: T = 22 degF
+[Physical Quantities with error]
+voltage: U = 1 V +- 1 mV
+current: I = 1 A +/- 0.001 A
+energy:  E = 1 J \pm 1 mJ
+work:    A = 1 W +- 0.1%
+voltage in brackets: U = (1 +- 0.001) V
+current in brackets: I = (1 +- 0.1%)  A
+estimated parameter: p = 1 \pm 0.1
+another estimated parameter: p = 1 \pm 1%
+[*table definitions]
+table: T
+mixed: M
+[*data definitions: T]
+String: S
+Integer: I
+Float with dot: Fd
+Float with exponent: Fe
+Complex: C
+Missing Value: V_m
+Infinite Value: V_i
+[*data: T]
+H_2,1,1.,1e1,1+0j,nan,inf	
+O_2,2,.2,2E1,2+.1j,NaN,INF
+O 2,2,.2,2E1,2+.1j,NAN,Inf
+[*data definitions: M]
+String: S
+Complex: C
+Float: F
+[*data: M]
+N_2,1,2
+2,1+1j,2.1
