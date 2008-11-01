@@ -1,4 +1,4 @@
-# -*- fmf-version: 1.0; coding: utf-8; delimiter: space -*-
+# -*- fmf-version: 1.0; coding: utf-8; delimiter: whitespace -*-
 [*reference]
 title: Demonstrating the flexibility of the Full-Metadata-Format
 creator: Andreas W. Liehr

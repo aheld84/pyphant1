@@ -385,8 +385,8 @@ def preParseData(b):
         items =  [var.strip().split(':') for var in b.split('-*-')[1].split(';')]
         for key,value in items:
             localVar[key.strip()]=value.strip()
-            if localVar[key.strip()]=='space':
-                localVar[key.strip()] = ' '
+            if localVar[key.strip()]=='whitespace':
+                localVar[key.strip()] = None
     d = unicode(b, localVar['coding'])
     dataExpr = re.compile(ur"^(\[\*data(?::\s*([^\]]*))?\]\r?\n)([^[]*)", re.MULTILINE | re.DOTALL)
     commentExpr = re.compile(ur"^%s.*"%commentChar, re.MULTILINE)
