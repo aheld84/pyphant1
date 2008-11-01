@@ -274,16 +274,29 @@ def config2tables(preParsedData, config):
                         error = str2unit(error)
             return (shortname, value, error)
         except:
-            try: 
-                return int(oldVal)
-            except:
+            if type(oldVal)==type([]):
                 try:
-                    return float(oldVal)
+                    return map(int,oldVal)
                 except:
-                    try: 
-                        return complex(oldVal)
+                    try:
+                        return map(float,oldVal)
                     except:
-                        pass
+                        try: 
+                            return map(complex,oldVal)
+                        except:
+                            pass
+            else:
+                try:
+                    return int(oldVal)
+                except:
+                    try:
+                        return float(oldVal)
+                    except:
+                        try: 
+                            return complex(oldVal)
+                        except:
+                            pass
+
         return oldVal
 
     if config.has_key('*table definitions'):

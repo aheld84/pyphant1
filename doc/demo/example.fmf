@@ -4,21 +4,32 @@ title: Demonstrating the flexibility of the Full-Metadata-Format
 creator: Andreas W. Liehr
 created: 2008-10-29
 place: Freiburger Materialforschungszentrum, Universität Freiburg, Deutschland
-[String Examples]
+ort: "Freiburger Materialforschungszentrum, Universität Freiburg, Deutschland"
+[Textual values]
 word: Hello!
 sentence: Hello World!
+timestamp: 2008-10-31 12:00:59.438151
 comma separated list: world, die Welt, el mundo, monde
 multiline: '''A multiline value, 
 that spans more than one line :-)
 The line breaks are included in the value.'''
-[Numbers]
+Another multiline: """A multiline value, 
+that spans more than one line :-)"""
+Enclosed quotation marks: """ Andreas says: "Hello World!" """
+[Numerical values]
 #Note, that the 'key' is arbitrary, but has to be unique within a section
 integer: 1
+list of integers: 1, 2, 3, 4, 5
 float: 1.0
 float with leading dot: .1
 float with exponential: 1e-10
 float with Exponential: -1.1E10
+list of floats: 1.0, .1, 1e-10, -1.1E10
 complex: 1+2j
+Complex: 1+2J
+Complex number with zero real part : 2J
+Complex number with zero imaginary part: 1+0J
+list of complex: 1+2j, 1+2J 
 [Physical Quantities]
 number: N = 2
 voltage: U = 1V
@@ -47,7 +58,7 @@ Infinite Value: V_i
 [*data: T]
 H_2	1	1.	1e1	1+0j	nan	inf	
 O_2	2	.2	2E1	2+.1j	NaN	INF
-O 2	2	.2	2E1	2+.1j	NAN	Inf
+O 2	2	.2	2E1	2+.1J	NAN	Inf
 [*data definitions: M]
 String: S
 Complex: C
