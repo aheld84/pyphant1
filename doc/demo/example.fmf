@@ -35,6 +35,8 @@ number: N = 2
 voltage: U = 1V
 temperature in Celsius: T_C = 22 degC
 temperature in Fahrenheit: T = 22 degF
+resistance: \omega = 2.0 kg*m^2*A^-2*s^-3
+resistance 2: \omega = 2.0 kg*m**2*A**-2*s**-3
 [Physical Quantities with error]
 voltage: U = 1 V +- 1 mV
 current: I = 1 A +/- 0.001 A
@@ -42,6 +44,8 @@ energy:  E = 1 J \pm 1 mJ
 work:    A = 1 W +- 0.1%
 voltage in brackets: U = (1 +- 0.001) V
 current in brackets: I = (1 +- 0.1%)  A
+trailing amplitude: \omega = (1 +- 0.01) 2 ohm
+trailing amplitude, relative error: \omega = (1 +- 1%) 2 ohm
 estimated parameter: p = 1 \pm 0.1
 another estimated parameter: p = 1 \pm 1%
 [*table definitions]

@@ -243,7 +243,7 @@ def config2tables(preParsedData, config):
         elif not unit[0].isdigit():
             unit = '1'+unit
         try:
-            unit = PhysicalQuantity(unit.encode('utf-8'))
+            unit = PhysicalQuantity(unit.encode('utf-8').replace('^','**'))
         except:
             unit = float(unit)
         return unit
