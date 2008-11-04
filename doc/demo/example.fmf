@@ -4,12 +4,14 @@ title: Demonstrating the flexibility of the Full-Metadata-Format
 creator: Andreas W. Liehr
 created: 2008-10-29
 place: Freiburger Materialforschungszentrum, Universität Freiburg, Deutschland
-ort: "Freiburger Materialforschungszentrum, Universität Freiburg, Deutschland"
 [Textual values]
 word: Hello!
 sentence: Hello World!
 timestamp: 2008-10-31 12:00:59.438151
 comma separated list: world, die Welt, el mundo, monde
+inside quotation: Arthur C. Clarke's "The Sentinel"
+single quote: 'Freiburger Materialforschungszentrum, Universität Freiburg, Deutschland'
+double quotation mark: "Freiburger Materialforschungszentrum, Universität Freiburg, Deutschland"
 multiline: '''A multiline value, 
 that spans more than one line :-)
 The line breaks are included in the value.'''
