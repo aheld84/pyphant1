@@ -113,6 +113,11 @@ class FieldContainerTestCaseWithError(FieldContainerTestCase):
         super(FieldContainerTestCase,self).setUp()
         self.field.error = numpy.ones(self.field.data.shape,'float')
 
+class FieldContainerTestCaseWithMask(FieldContainerTestCase):
+    def setUp(self):
+        super(FieldContainerTestCase,self).setUp()
+        self.field.mask = self.field.data>3
+
 class SampleContainerTestCase(ContainerTestCase):
     def setUp(self):
         super(SampleContainerTestCase,self).setUp()
