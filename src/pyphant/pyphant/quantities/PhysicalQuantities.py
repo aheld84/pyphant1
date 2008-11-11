@@ -1,13 +1,40 @@
-# Physical quantities with units
+# -*- coding: utf-8 -*-
+
+# Copyright (c) 1998-2007, Konrad Hinsen <hinsen@cnrs-orleans.fr>
+# Copyright (c) 2008, Rectorate of the University of Freiburg
+# All rights reserved.
 #
-# Written by Konrad Hinsen <hinsen@cnrs-orleans.fr>
-# with contributions from Greg Ward
-# merged into Pyphant by Andreas W. Liehr
-# last revision: 2008-11-10
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
+# * Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+# * Neither the name of the Freiburg Materials Research Center,
+#   University of Freiburg nor the names of its contributors may be used to
+#   endorse or promote products derived from this software without specific
+#   prior written permission.
+#
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-Physical quantities with units.
+Quantities with units
+
+based on the module Scientific.Physics.PhysicalQuantities
+written by Conrad Hinsen with contributions from Greg Ward.
 
 This module provides a data type that represents a physical
 quantity together with its unit. It is possible to add and
@@ -639,18 +666,19 @@ def _convertValue (value, src_unit, target_unit):
 
 # SI unit definitions
 
-_base_names = ['m', 'kg', 's', 'A', 'K', 'mol', 'cd', 'rad', 'sr']
+_base_names = ['m', 'kg', 's', 'A', 'K', 'mol', 'cd', 'rad', 'sr','EUR']
 
-_base_units = [('m',   PhysicalUnit('m',   1.,    [1,0,0,0,0,0,0,0,0])),
-               ('g',   PhysicalUnit('g',   0.001, [0,1,0,0,0,0,0,0,0])),
-               ('s',   PhysicalUnit('s',   1.,    [0,0,1,0,0,0,0,0,0])),
-               ('A',   PhysicalUnit('A',   1.,    [0,0,0,1,0,0,0,0,0])),
-               ('K',   PhysicalUnit('K',   1.,    [0,0,0,0,1,0,0,0,0])),
-               ('mol', PhysicalUnit('mol', 1.,    [0,0,0,0,0,1,0,0,0])),
-               ('cd',  PhysicalUnit('cd',  1.,    [0,0,0,0,0,0,1,0,0])),
-               ('rad', PhysicalUnit('rad', 1.,    [0,0,0,0,0,0,0,1,0])),
-               ('sr',  PhysicalUnit('sr',  1.,    [0,0,0,0,0,0,0,0,1])),
-               ]
+_base_units = [('m',   PhysicalUnit('m',   1.,    [1,0,0,0,0,0,0,0,0,0])),
+	       ('g',   PhysicalUnit('g',   0.001, [0,1,0,0,0,0,0,0,0,0])),
+	       ('s',   PhysicalUnit('s',   1.,    [0,0,1,0,0,0,0,0,0,0])),
+	       ('A',   PhysicalUnit('A',   1.,    [0,0,0,1,0,0,0,0,0,0])),
+	       ('K',   PhysicalUnit('K',   1.,    [0,0,0,0,1,0,0,0,0,0])),
+	       ('mol', PhysicalUnit('mol', 1.,    [0,0,0,0,0,1,0,0,0,0])),
+	       ('cd',  PhysicalUnit('cd',  1.,    [0,0,0,0,0,0,1,0,0,0])),
+	       ('rad', PhysicalUnit('rad', 1.,    [0,0,0,0,0,0,0,1,0,0])),
+	       ('sr',  PhysicalUnit('sr',  1.,    [0,0,0,0,0,0,0,0,1,0])),
+               ('EUR',  PhysicalUnit('EUR',  1.,  [0,0,0,0,0,0,0,0,0,1])),
+	       ]
 
 _prefixes = [('Y',  1.e24),
              ('Z',  1.e21),
@@ -710,7 +738,7 @@ _help.append('SI derived units; these automatically get prefixes:\n' + \
              '\n')
              
 
-_unit_table['kg'] = PhysicalUnit('kg',   1., [0,1,0,0,0,0,0,0,0])
+_unit_table['kg'] = PhysicalUnit('kg',   1., [0,1,0,0,0,0,0,0,0,0])
 
 _addUnit('Hz', '1/s', 'Hertz')
 _addUnit('N', 'm*kg/s**2', 'Newton')
@@ -853,6 +881,57 @@ _addUnit ('degF', PhysicalUnit (None, 5./9., kelvin.powers, 459.67),
           'degree Fahrenheit')
 del kelvin
 
+_help.append('Old European currencies:')
+#Taken from http://www.xe.com/euro.php on 2008-11-05
+_addUnit('ATS', 'EUR/13.7603' ,'Austria, Schilling')
+_addUnit('BEF', 'EUR/40.3399' ,'Belgium, Franc')
+_addUnit('CYP', 'EUR/0.585274','Cyprus, Pound')
+_addUnit('DEM', 'EUR/1.95583' ,'Germany, Deutsche Mark')
+_addUnit('ESP', 'EUR/166.386' ,'Spain, Peseta')
+_addUnit('FIM', 'EUR/5.94573' ,'Finland, Markka')
+_addUnit('FRF', 'EUR/5.94573' ,'France, Franc')
+_addUnit('GRD', 'EUR/340.750' ,'Greece, Drachma')
+_addUnit('IEP', 'EUR/0.787564','Ireland, Pound')
+_addUnit('ITL', 'EUR/1936.27' ,'Italy, Lira')
+_addUnit('LUF', 'EUR/40.3399' ,'Luxembourg, Franc')
+_addUnit('MTL', 'EUR/0.429300','Malta, Lira')
+_addUnit('NLG', 'EUR/2.20371' ,'The Netherlands, Guilder (also called Florin)')
+_addUnit('PTE', 'EUR/200.482' ,'Portugal, Escudo')
+_addUnit('SIT', 'EUR/239.640' ,'Slovenia, Tolar')
+_addUnit('VAL', 'EUR/1936.27' ,'Vatican City, Lira')
+
+#Get daily updated exchange rates
+import urllib
+from xml.dom import minidom
+url = "http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml"
+currencyNames={'USD':'US dollar'  ,     'JPY':'Japanese yen',
+               'BGN':'Bulgarian lev'  , 'CZK':'Czech koruna',
+               'DKK':'Danish krone'  ,  'EEK':'Estonian kroon',
+               'GBP':'Pound sterling'  ,'HUF':'Hungarian forint',
+               'LTL':'Lithuanian litas','LVL':'Latvian lats',
+               'PLN':'Polish zloty',    'RON':'New Romanian leu',
+               'SEK':'Swedish krona',   'SKK':'Slovak koruna',
+               'CHF':'Swiss franc',     'ISK':'Icelandic krona',
+               'NOK':'Norwegian krone', 'HRK':'Croatian kuna', 
+               'RUB':'Russian rouble',  'TRY':'New Turkish lira',
+               'AUD':'Australian dollar','BRL':'Brasilian real',
+               'CAD':'Canadian dollar', 'CNY':'Chinese yuan renminbi',
+               'HKD':'Hong Kong dollar','IDR':'Indonesian rupiah',
+               'KRW':'South Korean won','MXN':'Mexican peso',
+               'MYR':'Malaysian ringgit','NZD':'New Zealand dollar',
+               'PHP':'Philippine peso', 'SGD':'Singapore dollar',
+               'THB':'Thai baht',       'ZAR':'South African rand'}
+try:
+    doc = minidom.parseString(urllib.urlopen(url).read())
+    elements = doc.documentElement.getElementsByTagName('Cube')
+    for element in elements[2:]:
+        currency = element.getAttribute('currency').encode('utf8')
+        _addUnit(currency,
+                 'EUR/%s' % element.getAttribute('rate').encode('utf8'),
+                 currencyNames[currency])
+    print "Added exchange rate of %s for %s." % (elements[1].getAttribute('time'),[i.getAttribute('currency').encode('utf8') for i in elements[2:]])
+except:
+    print "WARNING: No daily exchange rates available."
 
 def description():
     """Return a string describing all available units."""
@@ -893,3 +972,10 @@ if __name__ == '__main__':
 
     freeze = p('0 degC')
     print freeze.inUnitsOf ('degF')
+
+    euro = PhysicalQuantity('1 EUR')
+    print euro.inUnitsOf('DEM')
+    print euro.inUnitsOf('USD')
+
+    euroSQM = PhysicalQuantity('19.99 EUR/m**2')
+    print "%s=%s" % (euroSQM,euroSQM.inUnitsOf('EUR/cm**2'))
