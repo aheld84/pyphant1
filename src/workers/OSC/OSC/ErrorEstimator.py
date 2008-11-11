@@ -40,7 +40,7 @@ import numpy
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 
-from Scientific.Physics import PhysicalQuantities
+from pyphant.quantities import PhysicalQuantities
 import logging, copy, math
 _logger = logging.getLogger("pyphant")
 

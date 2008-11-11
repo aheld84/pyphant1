@@ -40,7 +40,7 @@ __version__ = "$Revision$"
 import zipfile, numpy, re, collections, copy, StringIO, os.path
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
-from Scientific.Physics.PhysicalQuantities import PhysicalQuantity,isPhysicalUnit,isPhysicalQuantity
+from pyphant.quantities.PhysicalQuantities import PhysicalQuantity,isPhysicalUnit,isPhysicalQuantity
 import logging
 _logger = logging.getLogger("pyphant")
 

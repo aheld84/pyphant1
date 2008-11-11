@@ -47,7 +47,7 @@ import numpy
 import pylab
 import ImageProcessing as I
 import ImageProcessing.SlopeCalculator as IM
-import Scientific.Physics.PhysicalQuantities as pq
+import pyphant.quantities.PhysicalQuantities as pq
 from TestDistanceMapper import stringFeature
 from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 from pyphant.core import DataContainer

@@ -42,7 +42,7 @@ from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 import OSC.OscAbsorption as OA
 import scipy.interpolate
-from Scientific.Physics import PhysicalQuantities
+from pyphant.quantities import PhysicalQuantities
 import copy
 
 

@@ -49,7 +49,7 @@ import Statistics.Histogram as S
 from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 import numpy
 import scipy.special
-import Scientific.Physics.PhysicalQuantities as pq
+import pyphant.quantities.PhysicalQuantities as pq
 from pyphant.core import DataContainer
 import pylab
 

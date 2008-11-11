@@ -43,7 +43,7 @@ from pyphant.core import Worker, Connectors,\
 import ImageProcessing
 
 import numpy, copy, pylab
-from Scientific.Physics.PhysicalQuantities import PhysicalQuantity as PQ
+from pyphant.quantities.PhysicalQuantities import PhysicalQuantity as PQ
 
 def unit(value):
     try:

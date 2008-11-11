@@ -8,7 +8,7 @@ import pkg_resources
 pkg_resources.require("Pyphant")
 from pyphant.core import DataContainer as DC
 import numpy, datetime, math
-import Scientific.Physics.PhysicalQuantities as PQ
+import pyphant.quantities.PhysicalQuantities as PQ
 
 
 

@@ -41,7 +41,7 @@ import zipfile, numpy, re, collections
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 
-from Scientific.Physics import PhysicalQuantities
+from pyphant.quantities import PhysicalQuantities
 
 def makeRoot(pixelName, ll):
     return {}

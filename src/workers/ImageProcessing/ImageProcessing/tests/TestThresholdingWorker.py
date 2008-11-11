@@ -50,7 +50,7 @@ import ImageProcessing as I
 import ImageProcessing.ThresholdingWorker as IM
 import PIL.Image as Image
 import scipy, numpy
-import Scientific.Physics.PhysicalQuantities as pq
+import pyphant.quantities.PhysicalQuantities as pq
 from pyphant.core import DataContainer
 
 class TestThresholding(unittest.TestCase):

@@ -51,7 +51,7 @@ pkg_resources.require("Pyphant_OSC")
 import os.path
 
 import numpy, scipy, scipy.optimize
-import Scientific.Physics.PhysicalQuantities as pq
+import pyphant.quantities.PhysicalQuantities as pq
 import OSC.OscAbsorption as OA
 from pyphant.core import DataContainer as DC
 

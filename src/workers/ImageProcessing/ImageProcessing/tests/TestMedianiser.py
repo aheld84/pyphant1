@@ -48,7 +48,7 @@ pkg_resources.require("Pyphant")
 
 import ImageProcessing.Medianiser as IM
 import numpy
-import Scientific.Physics.PhysicalQuantities as pq
+import pyphant.quantities.PhysicalQuantities as pq
 from pyphant.core import DataContainer
 
 class TestMedianizer(unittest.TestCase):

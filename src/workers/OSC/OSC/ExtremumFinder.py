@@ -43,7 +43,7 @@ from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 
 import scipy.interpolate
-from Scientific.Physics import PhysicalQuantities
+from pyphant.quantities import PhysicalQuantities
 import copy
 
 class ExtremumFinder(Worker.Worker):

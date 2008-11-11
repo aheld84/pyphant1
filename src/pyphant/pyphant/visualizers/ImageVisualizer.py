@@ -47,7 +47,7 @@ except:
 import pylab, scipy, numpy
 from pyphant.core.Connectors import TYPE_IMAGE
 from pyphant.wxgui2.DataVisReg import DataVisReg
-from Scientific.Physics.PhysicalQuantities import isPhysicalQuantity
+from pyphant.quantities.PhysicalQuantities import isPhysicalQuantity
 from NonUniformImage import NonUniformImage
 
 class F(pylab.Formatter):

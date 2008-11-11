@@ -44,7 +44,7 @@ import antlr3
 from FMFpythonLexer import FMFpythonLexer
 from FMFpythonParser import FMFpythonParser
 from FMFpythonTree import FMFpythonTree
-from Scientific.Physics.PhysicalQuantities import PhysicalQuantity,isPhysicalUnit,isPhysicalQuantity
+from pyphant.quantities.PhysicalQuantities import PhysicalQuantity,isPhysicalUnit,isPhysicalQuantity
 import logging
 _logger = logging.getLogger("pyphant")
 

@@ -41,7 +41,7 @@ import pylab
 import pyphant.core.Connectors
 from pyphant.core import DataContainer
 from pyphant.wxgui2.DataVisReg import DataVisReg
-from Scientific.Physics.PhysicalQuantities import isPhysicalQuantity
+from pyphant.quantities.PhysicalQuantities import isPhysicalQuantity
 from pyphant.visualizers.Chart import LineChart
 
 class AbsorptionVisualizer(LineChart):

@@ -41,7 +41,7 @@ from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 
 import scipy, copy
-import Scientific.Physics.PhysicalQuantities as PQ
+import pyphant.quantities.PhysicalQuantities as PQ
 import ImageProcessing as I
 
 def UnEqualUnits():

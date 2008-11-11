@@ -52,7 +52,7 @@ import ImageProcessing as I
 import ImageProcessing.DistanceMapper as IM
 from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 import numpy
-import Scientific.Physics.PhysicalQuantities as pq
+import pyphant.quantities.PhysicalQuantities as pq
 from pyphant.core import DataContainer
 import pylab
 import copy

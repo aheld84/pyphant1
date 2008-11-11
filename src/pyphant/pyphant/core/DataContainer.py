@@ -58,7 +58,7 @@ __version__ = "$Revision$"
 
 import scipy, copy, md5, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse
-from Scientific.Physics.PhysicalQuantities import (isPhysicalQuantity, PhysicalQuantity,_prefixes)
+from pyphant.quantities.PhysicalQuantities import (isPhysicalQuantity, PhysicalQuantity,_prefixes)
 
 
 import logging

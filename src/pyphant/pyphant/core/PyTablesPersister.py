@@ -65,7 +65,7 @@ import tables, datetime
 import sys
 from pyphant.core import (CompositeWorker, DataContainer)
 from tables import StringCol, Col
-from Scientific.Physics.PhysicalQuantities import PhysicalQuantity
+from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 import scipy
 import logging
 _logger = logging.getLogger("pyphant")

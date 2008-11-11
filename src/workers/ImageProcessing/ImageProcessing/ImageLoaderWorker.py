@@ -39,7 +39,7 @@ __version__ = "$Revision$"
 
 import PIL.Image as Image
 import scipy
-from Scientific.Physics import PhysicalQuantities
+from pyphant.quantities import PhysicalQuantities
 
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)

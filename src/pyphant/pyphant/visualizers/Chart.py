@@ -43,7 +43,7 @@ import numpy
 import pyphant.core.Connectors
 from pyphant.core import DataContainer
 from pyphant.wxgui2.DataVisReg import DataVisReg
-from Scientific.Physics.PhysicalQuantities import isPhysicalQuantity
+from pyphant.quantities.PhysicalQuantities import isPhysicalQuantity
 
 class Chart(object):
     name='General chart'
