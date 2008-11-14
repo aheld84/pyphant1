@@ -63,7 +63,11 @@ def loadDataFromZip(filename, subscriber=1):
     data = {}
     for i,pixelName in enumerate(names):
         b = z.read(pixelName)
-        data[pixelName] = readSingleFile(b, pixelName)
+        rawContainer = readSingleFile(b, pixelName)
+        if len(rawContainer)==1:
+            data[pixelName] = rawContainer[0]
+        else:
+            data[pixelName] = rawContainer
         subscriber %= float(i+1)/total*100.0
     return data
 
@@ -93,7 +97,7 @@ def collectAttributes(data):
     return (commonAttr, variableAttr)
 
 def column2FieldContainer(longname, column):
-    if type(column[0])==type((0,)) and len(column[0])==2:
+    if type(column[0])==type((0,)) and len(column[0])==3:
         shortname = column[0][0]
         if isPhysicalQuantity(column[0][1]):
             unit = column[0][1].unit
@@ -231,7 +235,7 @@ def readSingleFile(b, pixelName):
             \s*:\s*                 # divider
             (.*)                    # value (including list values and comments)
             $   # line end
-            ''', re.VERBOSE)
+            ''', re.VERBOSE) 
     from StringIO import StringIO
     config = FMFConfigObj(d.encode('utf-8').splitlines(), encoding='utf-8')
     return config2tables(preParsedData, config)
@@ -356,6 +360,8 @@ def data2table(longname, shortname, preParsedData, config):
                 unit = PhysicalQuantity(unit.encode('utf-8'))
             except:
                 unit = float(unit)
+        else:
+            unit = 1.0
         fieldShortname=match.group('shortname')
         dimensions = match.group('deps')
         if dimensions != None:
@@ -420,7 +426,7 @@ def preParseData(b):
     d = re.sub(dataExpr, preParseData, d)
     return preParsedData, d
 
-class FMFLoader2(Worker.Worker):
+class FMFLoader(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
