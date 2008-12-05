@@ -110,13 +110,18 @@ class CompositeWorker(Worker.Worker):
             self._sinks.remove(worker)
         self._notifyListeners(WorkerRemovedEvent(worker, data))
 
-    def getWorkers(self,desiredWorker=''):
+    def getWorkers(self,desiredWorker='',precursor=None):
         if desiredWorker == '':
             result = self._workers
         else:
             result = [w for w in self._workers if w.name == desiredWorker]
             if result == []:
                 raise ValueError, "Recipe does not contain Worker %s" % desiredWorker
+        if precursor:
+            result = [worker for worker in result 
+                      if precursor in
+                      [socket._plug.worker.name for socket in worker.getSockets()]
+                      ]
         return result
 
     def getSources(self):

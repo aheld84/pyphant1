@@ -125,7 +125,7 @@ def setParameters(recipe, freqRange=None, scale=None):
         worker = recipe.getWorkers("Slicing")[0]
         worker.paramDim1.value=freqRange
     if scale != None:
-        worker = recipe.getWorkers("Multi Resolution Analyser")[0]
+        worker = recipe.getWorkers("Multi Resolution Analyser","Slicing")[0]
 	worker.paramScale.value=scale
 
 def initPylab(postscript):
@@ -170,7 +170,7 @@ def compareAbsorption(recipe, curvNo, noIndicators):
     noisyAbsorption = worker.plugExtract.getResult()
     worker = recipe.getWorkers("Coat Thickness Model")[0]
     simulation = worker.plugCalcAbsorption.getResult()
-    worker = recipe.getWorkers("Multi Resolution Analyser")[0]
+    worker = recipe.getWorkers("Multi Resolution Analyser","Slicing")[0]
     minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
     worker = recipe.getWorkers("Add Column")[0]
     table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
@@ -204,7 +204,7 @@ def noisyAbsorption(recipe, curvNo, noIndicators):
     noisyAbsorption = worker.plugExtract.getResult()
     worker = recipe.getWorkers("Coat Thickness Model")[0]
     simulation = worker.plugCalcAbsorption.getResult()
-    worker = recipe.getWorkers("Multi Resolution Analyser")[0]
+    worker = recipe.getWorkers("Multi Resolution Analyser","Slicing")[0]
     minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
     worker = recipe.getWorkers("Add Column")[0]
     table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
@@ -242,7 +242,7 @@ def functional(recipe, curvNo, noIndicators):
     functional = worker.plugCompute.getResult()
     worker = recipe.getWorkers("Coat Thickness Model")[0]
     simulation = worker.plugCalcAbsorption.getResult()
-    worker = recipe.getWorkers("Multi Resolution Analyser")[0]
+    worker = recipe.getWorkers("Multi Resolution Analyser","Slicing")[0]
     minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
     worker = recipe.getWorkers("Add Column")[0]
     table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
@@ -264,7 +264,7 @@ def simulation(recipe, curvNo, noIndicators):
     table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
     thickness = table[u"thickness"]
     index = curvNo2Index(table[u"pixel"], curvNo)
-    worker = recipe.getWorkers("Multi Resolution Analyser")[0]
+    worker = recipe.getWorkers("Multi Resolution Analyser","Slicing")[0]
     minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
     visualizer = ImageVisualizer(simulation, False)
     ordinate = simulation.dimensions[1].data
@@ -285,7 +285,7 @@ def dumpMinima(recipe):
     yPos = table[u"vertical_table_position"]
     thickness = table[u"thickness"]
     cols = [index, xPos, yPos, thickness]
-    worker = recipe.getWorkers("Multi Resolution Analyser")[0]
+    worker = recipe.getWorkers("Multi Resolution Analyser","Slicing")[0]
     minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
     import numpy
     data = numpy.vstack([ c.data for c in cols]
