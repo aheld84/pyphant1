@@ -192,6 +192,10 @@ def compareAbsorption(recipe, curvNo, noIndicators):
     if not noIndicators:
         pylab.vlines(minimaPos.data[:,index],0.1,1.0,
                      label ="$%s$"%minimaPos.shortname)
+        pylab.vlines(minimaPos.data[:,index]+minimaPos.error[:,index],0.1,1.0,
+                     label ="$\\Delta%s$"%minimaPos.shortname, linestyle='dashed')
+        pylab.vlines(minimaPos.data[:,index]-minimaPos.error[:,index],0.1,1.0,
+                     label ="$\\Delta%s$"%minimaPos.shortname, linestyle='dashed')
     pylab.title(result)
     pylab.xlabel(simulation.dimensions[1].label)
 
