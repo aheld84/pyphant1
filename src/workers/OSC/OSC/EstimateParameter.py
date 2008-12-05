@@ -56,24 +56,40 @@ class EstimateParameter(Worker.Worker):
     _params = [("extentX", u"Extension of x-axis [%%]", 10, None),
                ("extentY", u"Extension of y-axis [%%]", 10, None)]
 
-    def calculateThickness(self, row, model):
+    def calculateThickness(self, row, model,error=None):
         if len(row)==0:
             return numpy.nan
         data = model.data.transpose()
-        def calc(row, col):
-            return sum([col[numpy.argmin((model.dimensions[0].data-c)**2)] for c in row])
-        i = numpy.argmin(numpy.array([calc(row, col) for col in data]))
+        def calc(row, col,error):
+            if error:
+                return sum([col[numpy.argmin(((model.dimensions[0].data-c)/e)**2)]
+                            for c,e in zip(row,error)])
+            else:
+                return sum([col[numpy.argmin((model.dimensions[0].data-c)**2)]
+                            for c in row])
+        i = numpy.argmin(numpy.array([calc(row, col,error) for col in data]))
         return model.dimensions[1].data[i]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def compute(self, model, experimental, subscriber=1):
-        minima = experimental.inUnitsOf(model.dimensions[0]).data.transpose()
+        renormedExp = experimental.inUnitsOf(model.dimensions[0])
+        minima = renormedExp.data.transpose()
+        if renormedExp.error != None:
+            error = iter(renormedExp.error.transpose())
+        else:
+            error = None
         parameter = []
         inc = 100.0/float(len(minima))
         acc = inc
         subscriber %= acc
         for row in minima:
-            parameter.append(self.calculateThickness( filter(lambda c: not numpy.isnan(c), row), model))
+            if error:
+                filteredError = filter(lambda c: not numpy.isnan(c), error.next())
+            else:
+                filteredError = None
+            parameter.append(self.calculateThickness( filter(lambda c: not numpy.isnan(c), row),
+                                                      model,
+                                                      filteredError))
             acc += inc
             subscriber %= acc
         result = DataContainer.FieldContainer(numpy.array(parameter),
