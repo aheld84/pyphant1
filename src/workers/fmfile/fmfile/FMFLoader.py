@@ -353,6 +353,8 @@ def data2table(longname, shortname, preParsedData, config):
                 unit = '0'+unit
             elif unit == '%':
                 unit = 0.01
+            elif unit == 'a.u.' or unit == 'A.U.':
+                unit = 1.0
             elif not unit[0].isdigit():
                 unit = '1'+unit
             try:

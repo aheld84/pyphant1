@@ -1,7 +1,13 @@
-from fmfile.FMFLoader2 import FMFLoader2
+import sys
+from fmfile.FMFLoader import FMFLoader
 
-worker = FMFLoader2()
-worker.paramFilename.value='example.fmf'
-result = worker.plugLoadFMF.getResult()
-print result
-print result.attributes
+worker = FMFLoader()
+if len(sys.argv) == 1:
+    filenames = ['example.fmf']
+else:
+    filenames = sys.argv[1:]
+for filename in filenames:
+    worker.paramFilename.value=filename
+    result = worker.plugLoadFMF.getResult()
+    print result
+    print result.attributes
