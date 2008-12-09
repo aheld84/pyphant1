@@ -53,6 +53,8 @@ guarantee for the correctness of all entries in the unit
 table, so use this at your own risk.
 """
 
+rc = { 'fetchCurrencyRates' : False }
+
 class NumberDict(dict):
 
     """
@@ -901,37 +903,40 @@ _addUnit('SIT', 'EUR/239.640' ,'Slovenia, Tolar')
 _addUnit('VAL', 'EUR/1936.27' ,'Vatican City, Lira')
 
 #Get daily updated exchange rates
-import urllib
-from xml.dom import minidom
-url = "http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml"
-currencyNames={'USD':'US dollar'  ,     'JPY':'Japanese yen',
-               'BGN':'Bulgarian lev'  , 'CZK':'Czech koruna',
-               'DKK':'Danish krone'  ,  'EEK':'Estonian kroon',
-               'GBP':'Pound sterling'  ,'HUF':'Hungarian forint',
-               'LTL':'Lithuanian litas','LVL':'Latvian lats',
-               'PLN':'Polish zloty',    'RON':'New Romanian leu',
-               'SEK':'Swedish krona',   'SKK':'Slovak koruna',
-               'CHF':'Swiss franc',     'ISK':'Icelandic krona',
-               'NOK':'Norwegian krone', 'HRK':'Croatian kuna', 
-               'RUB':'Russian rouble',  'TRY':'New Turkish lira',
-               'AUD':'Australian dollar','BRL':'Brasilian real',
-               'CAD':'Canadian dollar', 'CNY':'Chinese yuan renminbi',
-               'HKD':'Hong Kong dollar','IDR':'Indonesian rupiah',
-               'KRW':'South Korean won','MXN':'Mexican peso',
-               'MYR':'Malaysian ringgit','NZD':'New Zealand dollar',
-               'PHP':'Philippine peso', 'SGD':'Singapore dollar',
-               'THB':'Thai baht',       'ZAR':'South African rand'}
-try:
-    doc = minidom.parseString(urllib.urlopen(url).read())
-    elements = doc.documentElement.getElementsByTagName('Cube')
-    for element in elements[2:]:
-        currency = element.getAttribute('currency').encode('utf8')
-        _addUnit(currency,
-                 'EUR/%s' % element.getAttribute('rate').encode('utf8'),
-                 currencyNames[currency])
-    print "Added exchange rate of %s for %s." % (elements[1].getAttribute('time'),[i.getAttribute('currency').encode('utf8') for i in elements[2:]])
-except:
-    print "WARNING: No daily exchange rates available."
+if rc['fetchCurrencyRates']:
+    import urllib
+    from xml.dom import minidom
+    url = "http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml"
+    currencyNames={'USD':'US dollar'  ,     'JPY':'Japanese yen',
+                   'BGN':'Bulgarian lev'  , 'CZK':'Czech koruna',
+                   'DKK':'Danish krone'  ,  'EEK':'Estonian kroon',
+                   'GBP':'Pound sterling'  ,'HUF':'Hungarian forint',
+                   'LTL':'Lithuanian litas','LVL':'Latvian lats',
+                   'PLN':'Polish zloty',    'RON':'New Romanian leu',
+                   'SEK':'Swedish krona',   'SKK':'Slovak koruna',
+                   'CHF':'Swiss franc',     'ISK':'Icelandic krona',
+                   'NOK':'Norwegian krone', 'HRK':'Croatian kuna', 
+                   'RUB':'Russian rouble',  'TRY':'New Turkish lira',
+                   'AUD':'Australian dollar','BRL':'Brasilian real',
+                   'CAD':'Canadian dollar', 'CNY':'Chinese yuan renminbi',
+                   'HKD':'Hong Kong dollar','IDR':'Indonesian rupiah',
+                   'KRW':'South Korean won','MXN':'Mexican peso',
+                   'MYR':'Malaysian ringgit','NZD':'New Zealand dollar',
+                   'PHP':'Philippine peso', 'SGD':'Singapore dollar',
+                   'THB':'Thai baht',       'ZAR':'South African rand'}
+    try:
+        doc = minidom.parseString(urllib.urlopen(url).read())
+        elements = doc.documentElement.getElementsByTagName('Cube')
+        for element in elements[2:]:
+            currency = element.getAttribute('currency').encode('utf8')
+            _addUnit(currency,
+                     'EUR/%s' % element.getAttribute('rate').encode('utf8'),
+                     currencyNames[currency])
+        print "Added exchange rate of %s for %s." % (elements[1].getAttribute('time'),
+                                                     [ i.getAttribute('currency').encode('utf8') 
+                                                       for i in elements[2:] ])
+    except:
+        print "WARNING: No daily exchange rates available."
 
 def description():
     """Return a string describing all available units."""
