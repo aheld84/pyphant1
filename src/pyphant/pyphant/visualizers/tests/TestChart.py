@@ -37,7 +37,7 @@ __version__ = "$Revision$"
 # $Source$
 
 
-import sys
+import sys, os.path
 import tempfile
 import unittest
 sys.path.append("..")
@@ -75,7 +75,7 @@ class TestLinePlot(unittest.TestCase):
                                    attributes={'title':'testVisualization'})
         self.V.seal()
         visualizer = self.visualizer(self.V,show=False)
-        filename = self.tmpdir+'/pyphant-'+DC.parseId(self.V.id)[0]+'%s.png' % visualizer.name
+        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(self.V.id)[0]+'%s.pdf' % visualizer.name)
         visualizer.figure.savefig(filename.replace(' ',''))
 
     def testErrorVisualization(self):
@@ -93,18 +93,18 @@ class TestLinePlot(unittest.TestCase):
         self.V.error = 0.1*numpy.abs(self.V.data)
         self.V.seal()
         visualizer = self.visualizer(self.V,show=False)
-        filename = self.tmpdir+'/pyphant-'+DC.parseId(self.V.id)[0]+'%s.png' % visualizer.name
+        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(self.V.id)[0]+'%s.pdf' % visualizer.name)
         visualizer.figure.savefig(filename.replace(' ',''))
 
     def testIntersectionXArray(self):
         X,LAMB = numpy.meshgrid(numpy.linspace(-1.5,1.5,self.n),
                                 numpy.linspace(-1.0,1.0,self.m))
-        self.lambDim = LAMB[:,0]
-        self.xDim = X
+        self.lambDim = numpy.linspace(-1.0,1.0,self.m)
+        self.xDim = numpy.linspace(-1.5,1.5,self.n)
         lambField = DC.FieldContainer(self.lambDim,
                                       unit = '1 V / m**3',
                                       longname='parameter',
-                                      shortname=r'\lambda')
+                                      shortname='\lambda')
         xField = DC.FieldContainer(self.xDim,
                                    unit = '1 m',
                                    longname = 'position',
@@ -112,15 +112,15 @@ class TestLinePlot(unittest.TestCase):
         #Prepare potential
         V = []
         for i in xrange(len(lambField.data)):
-            u = xField.data[i]
+            u = X[i]
             V.append(-lambField.data[i]/2* u**2 + u**4/4-u*self.kappa1)
-        self.V = DC.FieldContainer(numpy.array(V),unit='1 V',dimensions=[xField],
+        self.V = DC.FieldContainer(numpy.array(V),unit='1 V',dimensions=[lambField,xField],
                                    longname = 'electric potential',
-                                   shortname=r'\varphi',
-                                   attributes={'title':'testIntersectionXArray'})
+                                   shortname=r'\varphi')
+
         self.V.seal()
         visualizer = self.visualizer(self.V,show=False)
-        filename = self.tmpdir+'/pyphant-'+DC.parseId(self.V.id)[0]+'%s.png' % visualizer.name
+        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(self.V.id)[0]+'%s.pdf' % visualizer.name)
         visualizer.figure.savefig(filename.replace(' ',''))
 
 
@@ -142,13 +142,13 @@ class TestLinePlot(unittest.TestCase):
         for i in xrange(len(lambField.data)):
             u = X[i]
             V.append(-lambField.data[i]/2* u**2 + u**4/4-u*self.kappa1)
-        self.V = DC.FieldContainer(numpy.array(V),unit='1 V',dimensions=[xField,lambField],
+        self.V = DC.FieldContainer(numpy.array(V),unit='1 V',dimensions=[lambField, xField],
                                    longname = 'electric potential',
                                    shortname=r'\varphi',
                                    attributes={'title':'testIntersectionXVector'})
         self.V.seal()
         visualizer = self.visualizer(self.V,show=False)
-        filename = self.tmpdir+'/pyphant-'+DC.parseId(self.V.id)[0]+'%s.png' % visualizer.name
+        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(self.V.id)[0]+'%s.pdf' % visualizer.name)
         visualizer.figure.savefig(filename.replace(' ',''))
 
     def testTableIncludingNan(self):
@@ -167,13 +167,13 @@ class TestLinePlot(unittest.TestCase):
         x0,curv,mask = TEF.fixedPoints(lambField.data,kappa1=self.kappa1)
         fixedPoints = DC.FieldContainer(numpy.array(x0).transpose(),
                                         unit = xField.unit,
-                                        dimensions=[lambField,DC.generateIndex(0,3)],
+                                        dimensions=[DC.generateIndex(0,3), lambField],
                                         longname = 'position of the local extrema of electric potential',
                                         shortname = 'x_0',
                                         attributes={'title':'testTableIncludingNan'})
         fixedPoints.seal()
         visualizer = self.visualizer(fixedPoints,show=False)
-        filename = self.tmpdir+'/pyphant-'+DC.parseId(fixedPoints.id)[0]+'%s.png' % visualizer.name
+        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(fixedPoints.id)[0]+'%s.pdf' % visualizer.name)
         visualizer.figure.savefig(filename.replace(' ',''))
 
     def testTableIncludingNanAndErrors(self):
@@ -192,14 +192,14 @@ class TestLinePlot(unittest.TestCase):
         x0,curv,mask = TEF.fixedPoints(lambField.data,kappa1=self.kappa1)
         fixedPoints = DC.FieldContainer(numpy.array(x0).transpose(),
                                         unit = xField.unit,
-                                        dimensions=[lambField,DC.generateIndex(0,3)],
+                                        dimensions=[DC.generateIndex(0,3), lambField],
                                         longname = 'position of the local extrema of electric potential',
                                         shortname = 'x_0',
                                         attributes={'title':'testTableIncludingNanAndErrors'})
         fixedPoints.error = 0.1 * fixedPoints.data
         fixedPoints.seal()
         visualizer = self.visualizer(fixedPoints,show=False)
-        filename = self.tmpdir+'/pyphant-'+DC.parseId(fixedPoints.id)[0]+'%s.png' % visualizer.name
+        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(fixedPoints.id)[0]+'%s.pdf' % visualizer.name)
         visualizer.figure.savefig(filename.replace(' ',''))
 
 class TestScatterPlot(TestLinePlot):

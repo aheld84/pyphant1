@@ -29,7 +29,9 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""Provides unittests for ImageVisualizers. Because it is difficult to check the correct visualization of a image, it is just checked, wether the visualizers run without assertions."""
+u"""Provides unittests for ImageVisualizers. Because it is difficult
+to check the correct visualization of a image, it is just checked,
+wether the visualizers run without assertions."""
 
 __id__ = "$Id$"
 __author__ = "$Author$"
@@ -37,7 +39,7 @@ __version__ = "$Revision$"
 # $Source$
 
 
-import sys
+import sys, os.path
 import tempfile
 import unittest
 sys.path.append("..")
@@ -79,14 +81,14 @@ class TestImageVisualizer(unittest.TestCase):
         for i in xrange(len(lambField.data)):
             u = X[i]
             V.append(-lambField.data[i]/2* u**2 + u**4/4-u*self.kappa1)
-        self.V = DC.FieldContainer(numpy.array(V),unit='1 V',dimensions=[xField,lambField],
+        self.V = DC.FieldContainer(numpy.array(V),unit='1 V',dimensions=[lambField,xField],
                                    longname = 'electric potential',
                                    shortname=r'\varphi')
 
         self.V.seal()
         #Visualise result
         visualizer = ImageVisualizer(self.V,show=False)
-        filename = self.tmpdir+'/pyphant-'+DC.parseId(self.V.id)[0]+'.png'
+        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(self.V.id)[0]+'.pdf')
         visualizer.figure.savefig(filename)
 
 if __name__ == '__main__':
