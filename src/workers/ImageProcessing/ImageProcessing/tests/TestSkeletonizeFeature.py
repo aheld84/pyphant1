@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -72,10 +72,8 @@ class TestSkeletonizeCurvedFeature(unittest.TestCase):
     def setUp(self):
         #Compute thin quarter ring feature
         self.quarterRing = ring()
-        #print self.quarterRing
         #Computer broad quarter ring feature
         self.broadQuarterRing = ring(width=3)
-        #print self.broadQuarterRing
         #get Worker
         self.worker = IM.SkeletonizeFeature(None)
 
@@ -181,121 +179,131 @@ class TestCheckNeighbours(unittest.TestCase):
         self.binIm[:,:] = self.B
         self.binIm[1,1] = self.F
 
-    def assertEqualRot(self,input,proof,cases=1):
+    def assertEqualRot(self,image,proof,cases=1):
         for n in xrange(cases):
-            rotIm = numpy.rot90(input,n)
-            result = IM.checkNeighbours(rotIm)
-            self.assertEqual(result,proof,"The neighbourhood fingerprint should be %s, but is %s for \n%s!"%(proof,result,input))
+            rotIm = numpy.rot90(image,n)
+            result = list(IM.checkNeighbours(rotIm)) + [IM.checkTransitions(rotIm)]
+            self.assertEqual(result,proof,"The neighbourhood fingerprint should be %s, but is %s for \n%s!"%(proof,result,image))
 
     def testSinglePixel(self):
-        """An isolated pixel has 0 feature pixels, 8 background pixels and 0 transitions."""
-        self.assertEqualRot(self.binIm,(0,4,0))
+        """An isolated pixel has 0 feature pixels, 8 background pixels, no corner position, and 0 transitions."""
+        self.assertEqualRot(self.binIm,[0,4,0,0])
 
     def test2CloseConnectedPixel(self):
-        """If a pixel is connected to the central pixel, the latter has 1 neighboured feature pixels, 3 closely neighboured background pixels and 1 transition from feature to background."""
+        """If a pixel is connected to the central pixel, the latter has 1 neighboured feature pixels, 3 closely neighboured background pixels, no corner position and 1 transition from feature to background."""
         self.binIm[1,2] = self.F
-        self.assertEqualRot(self.binIm,(1,3,1),4)
+        self.assertEqualRot(self.binIm,[1,3,0,1],4)
 
     def test2CloseConnectedBackgroundPixel(self):
-        """If a background pixel is connected to the central pixel, the latter has 7 neighboured feature pixels, 1 closely neighboured background pixels and 1 transition from feature to background."""
+        """If a background pixel is connected to the central pixel, the latter has 7 neighboured feature pixels, 1 closely neighboured background pixels, no corner position, and 1 transition from feature to background."""
         self.binIm[1,2] = self.F
-        self.assertEqualRot(self.B-self.binIm,(7,1,1),4)
+        self.assertEqualRot(self.B-self.binIm,[7,1,0,1],4)
 
     def test2DiagConnectedPixel(self):
-        """If a pixel is connected to the central pixel at the diagonal, the latter has 1 neighboured feature pixels, 4 closely neighboured background pixels and 1 transition from feature to background."""
+        """If a pixel is connected to the central pixel at the diagonal, the latter has 1 neighboured feature pixels, 4 closely neighboured background pixels, no corner position, and 1 transition from feature to background."""
         self.binIm[0,0] = self.F
-        self.assertEqualRot(self.binIm,(1,4,1),4)
+        self.assertEqualRot(self.binIm,[1,4,0,1],4)
 
     def test2DiagConnectedBackgroundPixel(self):
-        """If a background pixel is connected to the central pixel at the diagonal, the latter has 7 neighboured feature pixels, 0 closely neighboured background pixels and 1 transition from feature to background."""
+        """If a background pixel is connected to the central pixel at the diagonal, the latter has 7 neighboured feature pixels, 0 closely neighboured background pixels, no corner position, and 1 transition from feature to background."""
         self.binIm[0,0] = self.F
-        self.assertEqualRot(self.B-self.binIm,(7,0,1),4)
+        self.assertEqualRot(self.B-self.binIm,[7,0,0,1],4)
 
     def test2DirectConnectedPixel(self):
-        """If two pixel are directly connected to the central pixel the latter has 2 neighboured feature pixels, 3 closely neighboured background pixels and 1 transition from feature to background."""
+        """If two pixel are directly connected to the central pixel the latter has 2 neighboured feature pixels, 3 closely neighboured background pixels, no corner position, and 1 transition from feature to background."""
         self.binIm[0,0] = self.F
         self.binIm[0,1] = self.F
-        proof = (2,3,1)
+        proof = [2,3,0,1]
         self.assertEqualRot(self.binIm,proof,4)
         self.binIm[0,1] = self.B
         self.binIm[1,0] = self.F
         self.assertEqualRot(self.binIm,proof,4)
 
     def test2DirectConnectedBackgroundPixel(self):
-        """If two background pixel are directly connected to the central pixel the latter has 6 neighboured feature pixels, 1 closely neighboured background pixels and 1 transition from feature to background."""
+        """If two background pixel are directly connected to the central pixel the latter has 6 neighboured feature pixels, 1 closely neighboured background pixels, no corner position, and 1 transition from feature to background."""
         self.binIm[0,0] = self.F
         self.binIm[0,1] = self.F
-        proof = (6,1,1)
+        proof = [6,1,0,1]
         self.assertEqualRot(self.B-self.binIm,proof,4)
         self.binIm[0,1] = self.B
         self.binIm[1,0] = self.F
         self.assertEqualRot(self.B-self.binIm,proof,4)
 
     def test3CloseConnectedPixel(self):
-        """If two pixels are connected to the central pixel, the latter has 2 neighboured feature pixels, 2 closely neighboured background pixels and 2 transitions from feature to background."""
+        """If two pixels are connected to the central pixel, the latter has 2 neighboured feature pixels, 2 closely neighboured background pixels, no corner position, and 2 transitions from feature to background."""
         self.binIm[1,:] = self.F
-        self.assertEqualRot(self.binIm,(2,2,2),2)
+        self.assertEqualRot(self.binIm,[2,2,0,2],2)
 
     def test3CloseConnectedBackgroundPixel(self):
-        """If two background pixels are connected to the central pixel, the latter has 6 neighboured feature pixels, 2 closely neighboured background pixels and 2 transitions from feature to background."""
+        """If two background pixels are connected to the central pixel, the latter has 6 neighboured feature pixels, 2 closely neighboured background pixels, no corner position, and 2 transitions from feature to background."""
         self.binIm[1,:] = self.F
-        self.assertEqualRot(self.B-self.binIm,(6,2,2),2)
+        self.assertEqualRot(self.B-self.binIm,[6,2,0,2],2)
 
     def test3DiagConnectedPixel(self):
-        """If two pixels are connected to the central pixel on the diagonal, the latter has 2 neighboured feature pixels, 4 closely neighboured background pixels and 2 transition from feature to background."""
+        """If two pixels are connected to the central pixel on the diagonal, the latter has 2 neighboured feature pixels, 4 closely neighboured background pixels, no corner position, and 2 transition from feature to background."""
         self.binIm[0,0] = self.F
         self.binIm[2,2] = self.F
-        self.assertEqualRot(self.binIm,(2,4,2),2)
+        self.assertEqualRot(self.binIm,[2,4,0,2],2)
 
     def test3DiagConnectedBackgroundPixel(self):
-        """If two background pixels are connected to the central pixel on the diagonal, the latter has 6 neighboured feature pixels, 0 closely neighboured background pixels and 2 transition from feature to background."""
+        """If two background pixels are connected to the central pixel on the diagonal, the latter has 6 neighboured feature pixels, 0 closely neighboured background pixels, no corner position, and 2 transition from feature to background."""
         self.binIm[0,0] = self.F
         self.binIm[2,2] = self.F
-        self.assertEqualRot(self.B-self.binIm,(6,0,2),2)
+        self.assertEqualRot(self.B-self.binIm,[6,0,0,2],2)
 
     def test3DirectConnectedPixel(self):
-        """If three pixels are directly connected at an edge to the central pixel, the latter has 3 neighboured feature pixels, 3 closely neighboured background pixels and 1 transition from feature to background."""
+        """If three pixels are directly connected at an edge to the central pixel, the latter has 3 neighboured feature pixels, 3 closely neighboured background pixels, no corner position, and 1 transition from feature to background."""
         self.binIm[0,:] = self.F
-        self.assertEqualRot(self.binIm,(3,3,1),4)
+        self.assertEqualRot(self.binIm,[3,3,0,1],4)
 
     def test3DirectConnectedBackgroundPixel(self):
-        """If three background pixels are directly connected at an edge to the central pixel, the latter has 6 neighboured feature pixels, 1 closely neighboured background pixels and 1 transition from feature to background."""
+        """If three background pixels are directly connected at an edge to the central pixel, the latter has 6 neighboured feature pixels, 1 closely neighboured background pixels, no corner position, and 1 transition from feature to background."""
         self.binIm[0,:] = self.F
-        self.assertEqualRot(self.B-self.binIm,(5,1,1),4)
+        self.assertEqualRot(self.B-self.binIm,[5,1,0,1],4)
 
     def test3DirectConnectedPixelCorner(self):
-        """If three pixels are directly connected at an corner to the central pixel, the latter has 3 neighboured feature pixels, 2 closely neighboured background pixels and 1 transition from feature to background."""
-        self.binIm[0,1:] = self.F
-        self.binIm[1,2]  = self.F
-        self.assertEqualRot(self.binIm,(3,2,1),4)
+        """If three pixels are directly connected at an corner to the central pixel, the latter has 3 neighboured feature pixels, 2 closely neighboured background pixels, and 1 transition from feature to background, while the corner position depends on the orientation of the corner."""
+        self.binIm[2,:2] = self.F
+        self.binIm[1,0]  = self.F
+        for n in xrange(4):
+            proof = [3,2,n+1,1]
+            rotIm = numpy.rot90(self.binIm,n)
+            result = list(IM.checkNeighbours(rotIm))+[IM.checkTransitions(rotIm)]
+            self.assertEqual(result,proof,"The neighbourhood fingerprint should be %s, but is %s for \n%s!"%(proof,result,rotIm))
 
     def test3DirectConnectedBackgroundPixelCorner(self):
-        """If three background pixels are directly connected at an corner to the central pixel, the latter has 5 neighboured feature pixels, 2 closely neighboured background pixels and 1 transition from feature to background."""
+        """If three background pixels are directly connected at an corner to the central pixel, the latter has 5 neighboured feature pixels, 2 closely neighboured background pixels, no corner position, and 1 transition from feature to background."""
         self.binIm[0,1:] = self.F
         self.binIm[1,2]  = self.F
-        self.assertEqualRot(self.B-self.binIm,(5,2,1),4)
+        self.assertEqualRot(self.B-self.binIm,[5,2,0,1],4)
 
     def test2DirectConnectedPairsOfPixel(self):
-        """If two pairs of feature or background pixels are directly connected to the central pixel the latter has 4 neighboured feature pixels, 2 closely neighboured background pixels and 2 transition from feature to background."""
+        """If two pairs of feature or background pixels are directly connected to the central pixel the latter has 4 neighboured feature pixels, 2 closely neighboured background pixels, no corner position, and 2 transition from feature to background."""
         self.binIm[0,1:] = self.F
         self.binIm[2,1:] = self.F
-        proof = (4,2,2)
+        proof = [4,2,0,2]
         self.assertEqualRot(self.binIm,proof,4)
         self.assertEqualRot(self.B-self.binIm,proof,4)
 
     def test2DiagConnectedPairsOfPixel(self):
-        """If two pairs of feature or background pixels are directly connected to the central pixel the latter has 4 neighboured feature pixels, 2 closely neighboured background pixels and 2 transition from feature to background."""
+        """If two pairs of feature or background pixels are directly connected to the central pixel the latter has 4 neighboured feature pixels, 2 closely neighboured background pixels, no corner position, and 2 transition from feature to background."""
         self.binIm[0,0:2] = self.F
         self.binIm[2,1:] = self.F
-        proof = (4,2,2)
+        proof = [4,2,0,2]
         self.assertEqualRot(self.binIm,proof,4)
         self.assertEqualRot(self.B-self.binIm,proof,4)
 
     def test2x3Block(self):
-        """If five feature pixels are connected in a single block to the  central pixel the latter has 5 neighboured feature pixels, 1 closely neighboured background pixels and 1 transition from feature to background."""
+        """If five feature pixels are connected in a single block to the  central pixel the latter has 5 neighboured feature pixels, 1 closely neighboured background pixels, no corner position, and 1 transition from feature to background."""
         self.binIm[:,1:] = self.F
-        proof = (5,1,1)
+        proof = [5,1,0,1]
         self.assertEqualRot(self.binIm,proof,4)
 
 if __name__ == '__main__':
-    unittest.main()
+    import sys
+    if len(sys.argv) == 1:
+        unittest.main()
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
+        unittest.TextTestRunner().run(suite)
+

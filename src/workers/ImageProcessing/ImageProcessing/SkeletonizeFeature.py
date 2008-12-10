@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -47,6 +47,11 @@ import copy
 #needed for constants defined in __init__.py
 import ImageProcessing as IP
 
+BC = IP.BACKGROUND_COLOR
+FC = IP.FEATURE_COLOR
+corner = numpy.array([[BC,BC,BC],[FC,FC,BC],[FC,FC,BC]])
+corners = map(lambda i: numpy.rot90(corner,k=i), range(4))
+
 class SkeletonizeFeature(Worker.Worker):
     API = 2
     VERSION = 1
@@ -69,9 +74,7 @@ def checkNeighbours(data):
     """Checks the neighboured pixel of data[1,1] and returns a fingerprint (N_f,N_b,N_t) with
 N_f: Number of neighboured pixels which are features,
 N_b: Number of close neighboure pixels which belong to the background,
-N_f: Number of transitions from feature pixels to background pixels counted in clockwise order."""
-
-    transitions = 0
+N_c: Corner Position, or -1 if no corner."""
     features = 0
     background = 0
     neighbours = [data[0,0],data[0,1],data[0,2],data[1,2],data[2,2],data[2,1],data[2,0],data[1,0]]
@@ -82,21 +85,41 @@ N_f: Number of transitions from feature pixels to background pixels counted in c
             features += 1
         elif fourConnected:
             background += 1
-        if not lastPoint and n:
-            transitions += 1
 
         fourConnected = not fourConnected
         lastPoint = n
 
-    return (features,background,transitions)
+    for pos,corner in enumerate(corners):
+        if numpy.alltrue(data == corner):
+            cornerPos = pos+1
+            break
+        else:
+            cornerPos = 0
+    return (features,background,cornerPos)
 
+def checkTransitions(data):
+    """Checks the neighboured pixel of data[1,1] and returns the 
+    N_f: Number of transitions from feature pixels to background pixels counted in clockwise order."""
+    transitions = 0
+    neighbours = [data[0,0],data[0,1],data[0,2],data[1,2],data[2,2],data[2,1],data[2,0],data[1,0]]
+    lastPoint = neighbours[-1] #Needed for checking a complete transition cycle
+    for n in neighbours:
+        if not lastPoint and n:
+            transitions += 1
+        lastPoint = n
+    return transitions
 
 def skeletonize(data,subscriber = 0):
-    """Computes the skeleton of a binary image by applying the receipe described by Steven W. Smith in his 'The Scientist and Engineer's Guide to Digital Signal Processing' (www.dspguide.com/ch25/4.htm) to a zero padded copy of the input data. Therefore pixels of the feature are removed iteratively while the following rules apply:
-Rule I   : The pixel is a feature.
-Rule II  : At least one of the pixels closests neighbours belongs to the background.
-Rule III : More than one of the neighboured pixels belong to a feature.
-Rule IV  : If the neighboured pixels are considered clockwise, only one transition from feature to background pixels occurs.
+    """Computes the skeleton of a binary image. The algorithm is an enhanced
+    version of the receipe described by Steven W. Smith in his 'The Scientist
+    and Engineer's Guide to Digital Signal Processing' (www.dspguide.com/ch25/4.htm).
+    It is applied to a zero padded copy of the input data. Therefore pixels of the
+    feature are removed iteratively while the following rules apply: 
+    Rule I   : The pixel is a feature.
+    Rule II  : At least one of the pixels closests neighbours belongs to the background.
+    Rule III : More than one of the neighboured pixels belong to a feature.
+    Rule IV  : If the neighboured pixels are considered clockwise, only one transition from feature to background pixels occurs.
+    Rule V   : The pixel was not located diagonally to a corner feature pixel in the previous iteration.
 """
     nx,ny=data.shape
     #zero padding
@@ -108,53 +131,68 @@ Rule IV  : If the neighboured pixels are considered clockwise, only one transiti
     runs = 0
     erosionComplete = False
     runs = 0
+    isCorner = zeros((nx+2,ny+2),'bool')
     while not erosionComplete:
         ruleI   = (image == IP.FEATURE_COLOR)
         XFeat, YFeat = ruleI.nonzero()
         numberFeatures = len(XFeat)
+        erosedPixels = 0
         if runs == 0:
-            progressbar = progress(numberFeatures,nx*ny)
-
+            progressbar = progress(numberFeatures)        
         neighbourhood = zeros((nx+2,ny+2,3),'int16')
         for x,y in zip(XFeat.tolist(),YFeat.tolist()):
             fingerprint = checkNeighbours(image[x-1:x+2,y-1:y+2])
             neighbourhood[x,y,:]=numpy.array(fingerprint)
-            subscriber %= progressbar.step()
 
         ruleII  = neighbourhood[:,:,1]>=1
         ruleIII = neighbourhood[:,:,0]> 1
-        ruleIV  = neighbourhood[:,:,2]<=1
-
-        erosion = (ruleI & ruleII & ruleIII & ruleIV)
-        erosedPixels = len(erosion.nonzero()[0])
-
-        if erosedPixels > 0:
-            image  = numpy.where(erosion,IP.BACKGROUND_COLOR,image)
-            progressbar.updateDelta(erosedPixels)
-        else:
+        border = (ruleI & ruleII & ruleIII)
+        #ruleIV and ruleV
+        XBord, YBord = border.nonzero()
+        XBord2 = []
+        YBord2 = []
+        for x,y in zip(XBord.tolist(),YBord.tolist()):
+            if checkTransitions(image[x-1:x+2,y-1:y+2]) <= 1 and not isCorner[x,y]:
+                image[x,y] = IP.BACKGROUND_COLOR
+                erosedPixels += 1
+                subscriber %= progressbar.step()
+            else:
+                XBord2.append(x)
+                YBord2.append(y)
+        for x,y in zip(XBord2,YBord2):
+            if checkTransitions(image[x-1:x+2,y-1:y+2]) <= 1 and not isCorner[x,y]:
+                image[x,y] = IP.BACKGROUND_COLOR
+                erosedPixels += 1
+                subscriber %= progressbar.step()
+        if erosedPixels == 0:
             erosionComplete = True
-
+            subscriber %= 100.
+        else:
+            xCorn, yCorn = (neighbourhood[:,:,2] > 0 ).nonzero()
+            for x,y in zip(xCorn.tolist(),yCorn.tolist()):
+                if neighbourhood[x,y,2] == 1:
+                    isCorner[x+1,y-1] = True
+                elif neighbourhood[x,y,2] == 2:
+                    isCorner[x+1,y+1] = True
+                elif neighbourhood[x,y,2] == 3:
+                    isCorner[x-1,y+1] = True
+                elif neighbourhood[x,y,2] == 4:
+                    isCorner[x-1,y-1] = True
         runs += 1
-
     return image[1:-1,1:-1].copy()
 
 
 class progress:
-    def __init__(self,initialFeatures,NPixels):
+    def __init__(self,initialFeatures):
         self.features = initialFeatures
-        self.NPixels = NPixels
         #The more features we have, the less will one iteration achieve
-        self.delta = 100.0*(1.0/self.features-1.0/self.NPixels)
+        self.delta = 100.0/self.features
         self.status = 0.0
         self.first = True
 
     def step(self):
         self.status += self.delta
         return self.status
-
-    def updateDelta(self,erosedPixels):
-        self.features -= erosedPixels
-        self.delta = (100.0-self.status)/erosedPixels/self.features
 
 
 
