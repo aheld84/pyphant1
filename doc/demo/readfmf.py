@@ -1,4 +1,8 @@
 import sys
+import logging
+logging.basicConfig(level=logging.WARNING,
+                    format="%(asctime)s - %(levelname)s:%(name)s:%(thread)d:%(module)s.%(funcName)s(l %(lineno)d):%(message)s")
+
 from fmfile.FMFLoader import FMFLoader
 
 worker = FMFLoader()

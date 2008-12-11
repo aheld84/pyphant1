@@ -44,7 +44,6 @@ from pyphant.quantities.PhysicalQuantities import PhysicalQuantity,isPhysicalUni
 import logging
 _logger = logging.getLogger("pyphant")
 
-
 def normation(normationStr):
     try:
         unit = PhysicalQuantity(str(normationStr))
@@ -345,7 +344,10 @@ def data2table(longname, shortname, preParsedData, config):
     dimensions_for_fields = {}
     errors_for_fields = {}
     for i, (fieldLongname, spec) in enumerate(config.items()):
-        match = re.search(colspec_re, spec)
+        try:
+            match = re.search(colspec_re, spec)
+        except TypeError,e:
+            _logger.error("""Cannot interpret definition of data column "%s", which is given as "%s"!""" % (fieldLongname,spec))
         unit = match.group('unit')
         if unit != None:
             unit = unit[1:-1]
