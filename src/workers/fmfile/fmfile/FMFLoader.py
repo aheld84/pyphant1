@@ -240,6 +240,49 @@ def readSingleFile(b, pixelName):
     return config2tables(preParsedData, config)
 
 def config2tables(preParsedData, config):
+    def parseVariable(oldVal):
+        shortname, value = tuple([s.strip() for s in oldVal.split('=')])
+        value, error = parseQuantity(value)
+        return (shortname, value, error)
+
+    def parseQuantity(value):
+        pm = re.compile(ur"(?:\\pm|\+-|\+/-)")
+        try:
+            value, error = [s.strip() for s in pm.split(value)]
+        except:
+            error = None
+        if value.startswith('('):
+            value = float(value[1:])
+            error, unit = [s.strip() for s in error.split(')')]
+            unit = str2unit(unit)
+            value *= unit
+        else:
+            value = str2unit(value)                    
+        if error != None:
+            if error.endswith('%'):
+                error = value*float(error[:-1])/100.0
+            else:
+                try:
+                    error = float(error)*unit
+                except:
+                    error = str2unit(error)
+        return value, error
+
+    def parseBool(value):
+        if value.lower() == 'true':
+            return True
+        elif value.lower() == 'false':
+            return False
+        raise AttributeError
+
+    converters = [ parseVariable,
+                   parseQuantity,
+                   int,
+                   float,
+                   complex, 
+                   parseBool,
+                   ]
+
     def str2unit(unit):
         if unit.startswith('.'):
             unit = '0'+unit
@@ -252,54 +295,18 @@ def config2tables(preParsedData, config):
         return unit
 
     def item2value(section, key):
-        pm = re.compile(ur"(?:\\pm|\+-|\+/-)")
         oldVal = section[key]
-        try:
-            shortname, value = tuple([s.strip() for s in oldVal.split('=')])
+        if type(oldVal)==type([]):
+            for c in converters:
+                try:
+                    return map(c,oldVal)
+                except:
+                    pass
+        for c in converters:
             try:
-                value, error = [s.strip() for s in pm.split(value)]
+                return c(oldVal)
             except:
-                error = None
-            if value.startswith('('):
-                value = float(value[1:])
-                error, unit = [s.strip() for s in error.split(')')]
-                unit = str2unit(unit)
-                value *= unit
-            else:
-                value = str2unit(value)                    
-            if error != None:
-                if error.endswith('%'):
-                    error = value*float(error[:-1])/100.0
-                else:
-                    try:
-                        error = float(error)*unit
-                    except:
-                        error = str2unit(error)
-            return (shortname, value, error)
-        except:
-            if type(oldVal)==type([]):
-                try:
-                    return map(int,oldVal)
-                except:
-                    try:
-                        return map(float,oldVal)
-                    except:
-                        try: 
-                            return map(complex,oldVal)
-                        except:
-                            pass
-            else:
-                try:
-                    return int(oldVal)
-                except:
-                    try:
-                        return float(oldVal)
-                    except:
-                        try: 
-                            return complex(oldVal)
-                        except:
-                            pass
-
+                pass
         return oldVal
 
     if config.has_key('*table definitions'):
