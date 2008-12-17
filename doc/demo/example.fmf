@@ -75,6 +75,15 @@ trailing amplitude, relative error: (1 +- 1%) 2 ohm
 estimated parameter: 1 \pm 0.1
 another estimated parameter: 1 \pm 1%
 list of quantities: 1V, 22 degC,(1 +- 1%) 2 ohm
+[Datetime stamps]
+date: 2008-12-16
+week date: 2008-W47-1 
+list of dates: 2008-11-17,2008-1-3,2006-2-17,2008-W47-1
+datetime: 2008-12-16T16:51
+another datetime: 2008-12-16 16:51
+datetime with second: 2008-12-16T16:51:05
+datetime UTC: 2008-12-16T16:51Z
+datetime+2h: 2006-04-23 14:25:51+02:00
 [*table definitions]
 table: T
 mixed: M

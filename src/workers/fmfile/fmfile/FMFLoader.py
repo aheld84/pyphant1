@@ -41,6 +41,7 @@ import zipfile, numpy, re, collections, copy, StringIO, os.path
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 from pyphant.quantities.PhysicalQuantities import PhysicalQuantity,isPhysicalUnit,isPhysicalQuantity
+import mx.DateTime.ISO
 import logging
 _logger = logging.getLogger("pyphant")
 
@@ -281,6 +282,7 @@ def config2tables(preParsedData, config):
                    float,
                    complex, 
                    parseBool,
+                   lambda d: str(mx.DateTime.ISO.ParseAny(d))
                    ]
 
     def str2unit(unit):
