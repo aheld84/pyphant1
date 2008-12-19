@@ -45,6 +45,7 @@ voltage: 1V
 temperature in Celsius: 22 degC
 resistance: 2.0 kg*m^2*A^-2*s^-3
 arbitrary units: 10 a.u.
+distance from Earth to Sun: 1 AU
 [Quantities with error]
 voltage: 1 V +- 1 mV
 current: 1 A +/- 0.001 A
