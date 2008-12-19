@@ -40,13 +40,31 @@ false1: False
 false2: false
 false3: FALSE
 list of booleans: True, true, TRUE, False, false, FALSE
-[Physical Quantities]
+[Quantities]
+voltage: 1V
+temperature in Celsius: 22 degC
+resistance: 2.0 kg*m^2*A^-2*s^-3
+arbitrary units: 10 a.u.
+[Quantities with error]
+voltage: 1 V +- 1 mV
+current: 1 A +/- 0.001 A
+energy:  1 J \pm 1 mJ
+work:    1 W +- 0.1%
+voltage in brackets: (1 +- 0.001) V
+current in brackets: (1 +- 0.1%)  A
+trailing amplitude: (1 +- 0.01) 2 ohm
+trailing amplitude, relative error: (1 +- 1%) 2 ohm
+estimated parameter: 1 \pm 0.1
+another estimated parameter: 1 \pm 1%
+list of quantities: 1V, 22 degC,(1 +- 1%) 2 ohm
+[Variables]
 number: N = 2
 voltage: U = 1V
 temperature in Celsius: T_C = 22 degC
 temperature in Fahrenheit: T = 22 degF
 resistance: \omega = 2.0 kg*m^2*A^-2*s^-3
 resistance 2: \omega = 2.0 kg*m**2*A**-2*s**-3
+normed variable: n = 10 a.u.
 [Physical Quantities with error]
 voltage: U = 1 V +- 1 mV
 current: I = 1 A +/- 0.001 A
@@ -59,22 +77,6 @@ trailing amplitude, relative error: \omega = (1 +- 1%) 2 ohm
 estimated parameter: p = 1 \pm 0.1
 another estimated parameter: p = 1 \pm 1%
 list of quantities: number: N = 2, U = 1V, T_C = 22 degC
-[Simplified quantities]
-voltage: 1V
-temperature in Celsius: 22 degC
-resistance: 2.0 kg*m^2*A^-2*s^-3
-[Simplified Quantities with error]
-voltage: 1 V +- 1 mV
-current: 1 A +/- 0.001 A
-energy:  1 J \pm 1 mJ
-work:    1 W +- 0.1%
-voltage in brackets: (1 +- 0.001) V
-current in brackets: (1 +- 0.1%)  A
-trailing amplitude: (1 +- 0.01) 2 ohm
-trailing amplitude, relative error: (1 +- 1%) 2 ohm
-estimated parameter: 1 \pm 0.1
-another estimated parameter: 1 \pm 1%
-list of quantities: 1V, 22 degC,(1 +- 1%) 2 ohm
 [Datetime stamps]
 date: 2008-12-16
 week date: 2008-W47-1 

@@ -240,6 +240,25 @@ def readSingleFile(b, pixelName):
     config = FMFConfigObj(d.encode('utf-8').splitlines(), encoding='utf-8')
     return config2tables(preParsedData, config)
 
+def str2unit(unit):
+    if unit.startswith('.'):
+        unit = '0'+unit
+    elif unit == '%':
+        unit = 0.01
+    elif unit.endswith('a.u.'):
+        try:
+            unit = float(unit[:-4])
+        except:
+            unit = 1.0
+    elif not unit[0].isdigit():
+        unit = '1'+unit
+    try:
+        unit = unit.replace('^', '**')
+        unit = PhysicalQuantity(unit.encode('utf-8'))
+    except:
+        unit = float(unit)
+    return unit
+
 def config2tables(preParsedData, config):
     def parseVariable(oldVal):
         shortname, value = tuple([s.strip() for s in oldVal.split('=')])
@@ -284,17 +303,6 @@ def config2tables(preParsedData, config):
                    parseBool,
                    lambda d: str(mx.DateTime.ISO.ParseAny(d))
                    ]
-
-    def str2unit(unit):
-        if unit.startswith('.'):
-            unit = '0'+unit
-        elif not unit[0].isdigit():
-            unit = '1'+unit
-        try:
-            unit = PhysicalQuantity(unit.encode('utf-8').replace('^','**'))
-        except:
-            unit = float(unit)
-        return unit
 
     def item2value(section, key):
         oldVal = section[key]
@@ -359,20 +367,7 @@ def data2table(longname, shortname, preParsedData, config):
             _logger.error("""Cannot interpret definition of data column "%s", which is given as "%s"!""" % (fieldLongname,spec))
         unit = match.group('unit')
         if unit != None:
-            unit = unit[1:-1]
-            if unit.startswith('.'):
-                unit = '0'+unit
-            elif unit == '%':
-                unit = 0.01
-            elif unit == 'a.u.':
-                unit = 1.0
-            elif not unit[0].isdigit():
-                unit = '1'+unit
-            try:
-                unit = unit.replace('^', '**')
-                unit = PhysicalQuantity(unit.encode('utf-8'))
-            except:
-                unit = float(unit)
+            unit = str2unit(unit[1:-1])
         else:
             unit = 1.0
         fieldShortname=match.group('shortname')
