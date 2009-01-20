@@ -42,6 +42,7 @@ FEATURE_COLOR=0
 
 workers=[ 
     "ApplyMask",
+    "CoverageWorker",
     "DiffWorker",
     "DistanceMapper",
     "EdgeFillWorker",

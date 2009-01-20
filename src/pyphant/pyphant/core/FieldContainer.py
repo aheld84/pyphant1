@@ -474,7 +474,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 if not self._dimensions[i] == other.dimensions[i]:
                     return NotImplemented
             if isPhysicalQuantity(self.unit):
-                if not self.unit.isCompatible(other.unit.unit):
+                if not (isPhysicalQuantity(other.unit) and self.unit.isCompatible(other.unit.unit)):
                     return NotImplemented
                 if self.unit >= other.unit:
                     data = self.data - (other.data*other.unit.value*other.unit.unit.conversionFactorTo(self.unit.unit))/self.unit.value
