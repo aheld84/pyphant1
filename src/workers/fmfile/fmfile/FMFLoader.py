@@ -41,6 +41,7 @@ import zipfile, numpy, re, collections, copy, StringIO, os.path
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 from pyphant.quantities.PhysicalQuantities import PhysicalQuantity,isPhysicalUnit,isPhysicalQuantity
+from pyphant.quantities.ParseQuantities import parseQuantity, parseVariable, str2unit
 import mx.DateTime.ISO
 import logging
 _logger = logging.getLogger("pyphant")
@@ -240,61 +241,14 @@ def readSingleFile(b, pixelName):
     config = FMFConfigObj(d.encode('utf-8').splitlines(), encoding='utf-8')
     return config2tables(preParsedData, config)
 
-def str2unit(unit):
-    if unit.startswith('.'):
-        unit = '0'+unit
-    elif unit == '%':
-        unit = 0.01
-    elif unit.endswith('a.u.'):
-        try:
-            unit = float(unit[:-4])
-        except:
-            unit = 1.0
-    elif not (unit[0].isdigit() or unit[0]=='-'):
-        unit = '1'+unit
-    try:
-        unit = unit.replace('^', '**')
-        unit = PhysicalQuantity(unit.encode('utf-8'))
-    except:
-        unit = float(unit)
-    return unit
+def parseBool(value):
+    if value.lower() == 'true':
+        return True
+    elif value.lower() == 'false':
+        return False
+    raise AttributeError
 
 def config2tables(preParsedData, config):
-    def parseVariable(oldVal):
-        shortname, value = tuple([s.strip() for s in oldVal.split('=')])
-        value, error = parseQuantity(value)
-        return (shortname, value, error)
-
-    def parseQuantity(value):
-        pm = re.compile(ur"(?:\\pm|\+-|\+/-)")
-        try:
-            value, error = [s.strip() for s in pm.split(value)]
-        except:
-            error = None
-        if value.startswith('('):
-            value = float(value[1:])
-            error, unit = [s.strip() for s in error.split(')')]
-            unit = str2unit(unit)
-            value *= unit
-        else:
-            value = str2unit(value)
-        if error != None:
-            if error.endswith('%'):
-                error = value*float(error[:-1])/100.0
-            else:
-                try:
-                    error = float(error)*unit
-                except:
-                    error = str2unit(error)
-        return value, error
-
-    def parseBool(value):
-        if value.lower() == 'true':
-            return True
-        elif value.lower() == 'false':
-            return False
-        raise AttributeError
-
     converters = [
         int,
         float,
