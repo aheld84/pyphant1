@@ -20,7 +20,9 @@ setuptools.setup(
     version = VERSION,
     author = __author__,
     description = __doc__,
-    install_requires=['pyphant>=0.4alpha3'],
+    install_requires=['pyphant>=0.4alpha3',
+                      'ConfigObj',
+                      'egenix-mx-base'],
     packages = ['fmfile'],
     entry_points = """
     [pyphant.workers]
