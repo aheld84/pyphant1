@@ -235,7 +235,7 @@ def readSingleFile(b, pixelName):
             \s*:\s*                 # divider
             (.*)                    # value (including list values and comments)
             $   # line end
-            ''', re.VERBOSE) 
+            ''', re.VERBOSE)
     from StringIO import StringIO
     config = FMFConfigObj(d.encode('utf-8').splitlines(), encoding='utf-8')
     return config2tables(preParsedData, config)
@@ -250,7 +250,7 @@ def str2unit(unit):
             unit = float(unit[:-4])
         except:
             unit = 1.0
-    elif not unit[0].isdigit():
+    elif not (unit[0].isdigit() or unit[0]=='-'):
         unit = '1'+unit
     try:
         unit = unit.replace('^', '**')
@@ -277,7 +277,7 @@ def config2tables(preParsedData, config):
             unit = str2unit(unit)
             value *= unit
         else:
-            value = str2unit(value)                    
+            value = str2unit(value)
         if error != None:
             if error.endswith('%'):
                 error = value*float(error[:-1])/100.0
@@ -295,14 +295,15 @@ def config2tables(preParsedData, config):
             return False
         raise AttributeError
 
-    converters = [ parseVariable,
-                   parseQuantity,
-                   int,
-                   float,
-                   complex, 
-                   parseBool,
-                   lambda d: str(mx.DateTime.ISO.ParseAny(d))
-                   ]
+    converters = [
+        int,
+        float,
+        complex,
+        parseBool,
+        parseQuantity,
+        parseVariable,
+        lambda d: str(mx.DateTime.ISO.ParseAny(d))
+        ]
 
     def item2value(section, key):
         oldVal = section[key]
@@ -332,8 +333,8 @@ def config2tables(preParsedData, config):
             else:
                 shortname = k.split(':')[1].strip()
             tables.append(data2table(longnames[shortname],
-                                     shortname, 
-                                     preParsedData[shortname], 
+                                     shortname,
+                                     preParsedData[shortname],
                                      config[k]))
             del config[k]
     attributes = config.walk(item2value)
@@ -415,7 +416,7 @@ def preParseData(b):
             if localVar[key.strip()]=='whitespace':
                 localVar[key.strip()] = None
             if localVar[key.strip()]=='semicolon':
-                localVar[key.strip()] = ';' 
+                localVar[key.strip()] = ';'
     d = unicode(b, localVar['coding'])
     dataExpr = re.compile(ur"^(\[\*data(?::\s*([^\]]*))?\]\r?\n)([^[]*)", re.MULTILINE | re.DOTALL)
     commentExpr = re.compile(ur"^%s.*"%commentChar, re.MULTILINE)
