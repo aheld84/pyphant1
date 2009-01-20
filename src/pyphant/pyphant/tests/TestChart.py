@@ -52,6 +52,8 @@ from pyphant.visualizers.Chart import LineChart,ScatterPlot
 from pyphant.core import DataContainer as DC
 import OSC.tests.TestExtremumFinder as TEF
 
+outputFormat = 'png'
+
 class TestLinePlot(unittest.TestCase):
     """Create a one-dimensional field and check the problem-free generation of a line plot."""
     def setUp(self):
@@ -60,7 +62,7 @@ class TestLinePlot(unittest.TestCase):
         self.kappa1=0.0
         self.tmpdir = tempfile.gettempdir()
         self.visualizer = LineChart
-
+        
     def testVisualization(self):
         X = numpy.linspace(-1.5,1.5,self.n)
         self.lambDim = 1.0
@@ -75,7 +77,7 @@ class TestLinePlot(unittest.TestCase):
                                    attributes={'title':'testVisualization'})
         self.V.seal()
         visualizer = self.visualizer(self.V,show=False)
-        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(self.V.id)[0]+'%s.pdf' % visualizer.name)
+        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(self.V.id)[0]+'%s.%s' % (visualizer.name,outputFormat))
         visualizer.figure.savefig(filename.replace(' ',''))
 
     def testErrorVisualization(self):
@@ -93,7 +95,7 @@ class TestLinePlot(unittest.TestCase):
         self.V.error = 0.1*numpy.abs(self.V.data)
         self.V.seal()
         visualizer = self.visualizer(self.V,show=False)
-        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(self.V.id)[0]+'%s.pdf' % visualizer.name)
+        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(self.V.id)[0]+'%s.%s' % (visualizer.name,outputFormat))
         visualizer.figure.savefig(filename.replace(' ',''))
 
     def testIntersectionXArray(self):
@@ -120,7 +122,7 @@ class TestLinePlot(unittest.TestCase):
 
         self.V.seal()
         visualizer = self.visualizer(self.V,show=False)
-        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(self.V.id)[0]+'%s.pdf' % visualizer.name)
+        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(self.V.id)[0]+'%s.%s' % (visualizer.name,outputFormat))
         visualizer.figure.savefig(filename.replace(' ',''))
 
 
@@ -148,7 +150,7 @@ class TestLinePlot(unittest.TestCase):
                                    attributes={'title':'testIntersectionXVector'})
         self.V.seal()
         visualizer = self.visualizer(self.V,show=False)
-        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(self.V.id)[0]+'%s.pdf' % visualizer.name)
+        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(self.V.id)[0]+'%s.%s' % (visualizer.name,outputFormat))
         visualizer.figure.savefig(filename.replace(' ',''))
 
     def testTableIncludingNan(self):
@@ -173,7 +175,7 @@ class TestLinePlot(unittest.TestCase):
                                         attributes={'title':'testTableIncludingNan'})
         fixedPoints.seal()
         visualizer = self.visualizer(fixedPoints,show=False)
-        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(fixedPoints.id)[0]+'%s.pdf' % visualizer.name)
+        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(fixedPoints.id)[0]+'%s.%s' % (visualizer.name,outputFormat))
         visualizer.figure.savefig(filename.replace(' ',''))
 
     def testTableIncludingNanAndErrors(self):
@@ -199,7 +201,7 @@ class TestLinePlot(unittest.TestCase):
         fixedPoints.error = 0.1 * fixedPoints.data
         fixedPoints.seal()
         visualizer = self.visualizer(fixedPoints,show=False)
-        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(fixedPoints.id)[0]+'%s.pdf' % visualizer.name)
+        filename = os.path.join(self.tmpdir,'pyphant-'+DC.parseId(fixedPoints.id)[0]+'%s.%s' % (visualizer.name,outputFormat))
         visualizer.figure.savefig(filename.replace(' ',''))
 
 class TestScatterPlot(TestLinePlot):
