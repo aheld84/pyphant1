@@ -53,6 +53,9 @@ import numpy
 from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 from pyphant.core import DataContainer as DC
 
+import matplotlib
+matplotlib.rcParams['backend'] = 'Agg'
+
 class TestImageVisualizer(unittest.TestCase):
     """Create a two-dimensional field and check the problem-free generation of a labelled image."""
     def setUp(self):
