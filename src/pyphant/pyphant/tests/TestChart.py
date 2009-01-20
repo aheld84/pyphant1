@@ -52,7 +52,7 @@ from pyphant.visualizers.Chart import LineChart,ScatterPlot
 from pyphant.core import DataContainer as DC
 import OSC.tests.TestExtremumFinder as TEF
 
-outputFormat = 'png'
+outputFormat = 'ps'
 
 class TestLinePlot(unittest.TestCase):
     """Create a one-dimensional field and check the problem-free generation of a line plot."""
