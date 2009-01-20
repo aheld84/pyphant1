@@ -290,7 +290,8 @@ class BodyShape(sogl.RectangleShape):
 
     def OnLeftClick(self, x, y, keys, attachment):
         frame=wx.GetTopLevelParent(self.GetCanvas())
-        frame._wxPyphantApp.editCompositeWorker(self.workerShape.worker)
+        frame._wxPyphantApp.configureWorker(self.workerShape.worker)
+        #frame._wxPyphantApp.editCompositeWorker(self.workerShape.worker)
 
 
 class ConnectorBox(sogl.CompositeShape):
