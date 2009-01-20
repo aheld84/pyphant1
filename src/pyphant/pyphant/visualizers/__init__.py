@@ -40,6 +40,9 @@ __version__ = "$Revision$"
 import os,sys
 import matplotlib
 matplotlib.rcParams['backend']='WXAgg'
+import platform
+if platform.system()=='Linux' and not 'DISPLAY' in os.environ:
+    matplotlib.rcParams['backend'] = 'Agg'
 #matplotlib.rcParams['text.usetex']=True
 #matplotlib.rcParams['text.latex.unicode']=True
 #matplotlib.rcParams['text.latex.preamble']=(r"\usepackage[utf8]{inputenc}",r"\usepackage{amsmath}")
