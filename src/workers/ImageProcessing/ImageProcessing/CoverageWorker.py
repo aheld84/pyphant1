@@ -68,10 +68,11 @@ class CoverageWorker(Worker.Worker):
     def threshold(self, image, subscriber=0):
         from pyphant.quantities.ParseQuantities import parseQuantity
         w1 = parseQuantity(self.paramW1.value)[0]
-        rho1 = parseQuantity(self.paramRho1.value)
-        rho2 = parseQuantity(self.paramRho2.value)
+        rho1 = parseQuantity(self.paramRho1.value)[0]
+        rho2 = parseQuantity(self.paramRho2.value)[0]
         coveragePercent = weight2Coverage(w1, rho1, rho2)
         th = calculateThreshold(image, coveragePercent)
+        import scipy, ImageProcessing, copy
         resultArray = scipy.where( image.data < th,
                                    ImageProcessing.FEATURE_COLOR,
                                    ImageProcessing.BACKGROUND_COLOR )
