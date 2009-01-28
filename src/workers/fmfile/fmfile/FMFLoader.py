@@ -360,7 +360,7 @@ def data2table(longname, shortname, preParsedData, config):
 
 def preParseData(b):
     localVar = {'fmf-version':'1.0','coding':'cp1252',
-                'delimiter':'\t'}
+                'delimiter':'whitespace'}
     commentChar = ';'
     if b[0] == ';' or b[0] == '#':
         commentChar = b[0]
