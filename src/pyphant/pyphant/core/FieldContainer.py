@@ -324,7 +324,8 @@ Concerning the ordering of data matrices and the dimension list consult http://w
 
     def __eq__(self, other, rtol=1e-5, atol=1e-8):
         if type(self) != type(other):
-            _logger.debug('Cannot compare objects with different type (%s and %s).' % (type(self),type(other)))
+            if type(other) != IndexMarker:
+                _logger.debug('Cannot compare objects with different type (%s and %s).' % (type(self),type(other)))
             return False
         if not (self.typeString == other.typeString):
             _logger.debug('The typeString is not identical.')
