@@ -194,7 +194,9 @@ def reshapeField(field):
             for i,v in enumerate(row[1:]):
                 try:
                     numpy.argwhere(dimData[i]==v)
-                except AttributeError:
+                except AttributeError, e:
+                    _logger.debug(u"AttributeError occured:",
+                                  exc_info=True)
                     f = open(os.path.join(DEBDIR, "deblog"), 'w')
                     f.write("dShape: %s; vShape: %s\n\n"%(dimData[i].shape, v.shape))
                     f.write("%s"%dimData[i])
@@ -203,6 +205,8 @@ def reshapeField(field):
                     f.write("\n")
                     f.close()
                     numpy.savetxt(os.path.join(DEBDIR, "dimData.txt"), dimData[i])
+                    numpy.savetxt(os.path.join(DEBDIR, "data.txt"), data)
+                    numpy.savetxt(os.path.join(DEBDIR, "row.txt"), row)
                     numpy.savetxt(os.path.join(DEBDIR, "v.txt"), v)
                     raise
     newDims = [ DataContainer.FieldContainer(dimData[i],
