@@ -183,7 +183,28 @@ def reshapeField(field):
     fieldData = numpy.ones([len(d) for d in dimData])*numpy.nan
     data = numpy.vstack([field.data]+[d.data for d in field.dimensions]).transpose()
     for row in data:
-        fieldData[[numpy.argwhere(dimData[i]==v) for i,v in enumerate(row[1:])]] = row[0]
+        try:
+            fieldData[[numpy.argwhere(dimData[i]==v) for i,v in enumerate(row[1:])]] = row[0]
+        except AttributeError:
+            from pyphant.wxgui2.wxPyphantApplication import LOGDIR
+            import os, os.path
+            DEBDIR=os.path.join(LOGDIR, "pyphant_debug")
+            if not os.path.exists(DEBDIR):
+                os.mkdir(DEBDIR)
+            for i,v in enumerate(row[1:]):
+                try:
+                    numpy.argwhere(dimData[i]==v)
+                except AttributeError:
+                    f = open(os.path.join(DEBDIR, "deblog"), 'w')
+                    f.write("dShape: %s; vShape: %s\n\n"%(dimData[i].shape, v.shape))
+                    f.write("%s"%dimData[i])
+                    f.write("\n\nv:\n")
+                    f.write("%s"%v)
+                    f.write("\n")
+                    f.close()
+                    numpy.savetxt(os.path.join(DEBDIR, "dimData.txt"), dimData[i])
+                    numpy.savetxt(os.path.join(DEBDIR, "v.txt"), v)
+                    raise
     newDims = [ DataContainer.FieldContainer(dimData[i],
                                              f.unit,
                                              longname=f.longname,
