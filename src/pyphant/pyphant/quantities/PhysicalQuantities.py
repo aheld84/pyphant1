@@ -802,6 +802,7 @@ _addUnit('nmi', '1852.*m', 'Nautical mile')
 _addUnit('Ang', '1.e-10*m', 'Angstrom')
 _addUnit('lyr', 'c*yr', 'light year')
 _addUnit('AU', '149597870691*m', 'astronomical unit')
+_addUnit('pc', '3.08567758128E16*m','parsec')
 _addUnit('Bohr', '4*pi*eps0*hbar**2/me/e**2', 'Bohr radius')
 
 # Area units
