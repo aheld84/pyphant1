@@ -309,7 +309,7 @@ class SampleContainerTest(unittest.TestCase):
         self.rows=100
         self.intSample = FieldContainer(scipy.arange(0,self.rows),
                                         PhysicalQuantity('1m'),
-                                        dimensions=INDEX,
+                                        #dimensions=INDEX,
                                         longname=u"Integer sample",
                                         shortname=u"i")
         self.floatSample = FieldContainer(scipy.arange(self.rows/2,self.rows,0.5),
@@ -323,7 +323,11 @@ class SampleContainerTest(unittest.TestCase):
         self.longname=u"Toller Sample"
         self.shortname=u"phi"
         self.sampleContainer=SampleContainer([self.intSample, self.floatSample], self.longname, self.shortname)
+        
+    def runTest(self):
+        return
 
+class CommonSampleContainerTests(SampleContainerTest):
     def testLabeling(self):
         self.assertEqual(self.sampleContainer.label,"%s %s" % (self.longname,self.shortname))
 
@@ -386,6 +390,50 @@ class SampleContainerTest(unittest.TestCase):
         sample1 = SampleContainer([self.intSample,self.floatSample],longname=self.longname,shortname=self.shortname)
         sample2 = SampleContainer([self.intSample,self.floatSample],longname=self.longname,shortname=self.shortname,attributes={'set':True})
         self.assertNotEqual( sample1, sample2)
+
+
+class SampleContainerSlicingTests(SampleContainerTest):
+    def testSimpleExpression(self):
+        result = self.sampleContainer.filter('50m <= "i" < 57m')
+        self.assertEqual(len(result.columns), 2)
+        self.assertEqual(len(result[0].data), 7)
+        self.assertEqual(len(result[1].data), 7)
+        expected = self.sampleContainer["i"][50:57]
+        expected.attributes={}
+        result.attributes={}
+        self.assertEqual(result[0], expected) 
+        expected = self.sampleContainer["t"][50:57]
+        expected.attributes={}
+        result.attributes={}
+        self.assertEqual(result[1], expected) 
+
+    def testANDExpression(self):
+        result = self.sampleContainer.filter("10m <= 'i' < 20m or 87.5s < 't' <= 98.5s")
+        self.assertEqual(len(result[0].data), 32)
+        for index in range(10, 20) + range(76, 98):
+            self.assertEqual(result[0].data[index], self.sampleContainer[0].data[index])
+            self.assertEqual(result[1].data[index], self.sampleContainer[1].data[index])
+
+    def testORExpression(self):
+        result = self.sampleContainer.filter("'t' >= 20m and 't' <= 98.5s")
+        expectedi = self.sampleContainer["i"][21:98]
+        expectedt = self.sampleContainer["t"][21:98]
+        expectedi.attributes = {}
+        expectedt.attributes = {}
+        result[0].attributes = {}
+        result[1].attributes = {}
+        self.assertEqual(result[0], expectedi)
+        self.assertEqual(result[1], expectedt)
+
+    def testConsistancy(self):
+        result1 = self.sampleContainer.filter('20m < "i" and 80m > "i"')
+        result2 = self.sampleContainer.filter('20m < "i" < 80m')
+        result1[0].attributes = {}
+        result2[0].attributes = {}
+        result1[1].attributes = {}
+        result2[1].attributes = {}
+        self.assertEqual(result1[0], result2[0])
+        self.assertEqual(result1[1], result2[1])
 
 
 class FieldContainerRescaling(unittest.TestCase):

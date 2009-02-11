@@ -264,6 +264,22 @@ class SampleContainer(DataContainer):
 
     def numberOfColumns(self):
         return len(self.columns)
+    
+    #def filter(self, expr):
+        #dirty, no error handling etc.
+        #import re
+        #refindquotes = re.compile('("[^"]*")')
+        #bitmask = numpy.array([])
+        #for index in range(len(self.columns[0].data))
+
+        #TODO
+        #ind = ...
+        #result = SampleContainer([copy.deepcopy(c[ind]) for c in self.columns],
+        #                         longname=self.longname,
+        #                         shortname=self.shortname,
+        #                         attributes=copy.deepcopy(self.attributes))
+        #return result
+
 
 def assertEqual(con1,con2,rtol=1e-5,atol=1e-8):
     diagnosis=StringIO.StringIO()
