@@ -264,63 +264,139 @@ class SampleContainer(DataContainer):
 
     def numberOfColumns(self):
         return len(self.columns)
-    
-    def filter(self, expression):
-        #dirty, no error handling etc.
-        #TODO: a <= b < c ----> (a <= b and b < c)
+
+    #helper method for filter(expression) which parses human input to python code, ensuring no harm can be done by eval()
+    def _parseExpression(self, expression):
+        #still dirty, not enough error handling etc.
+
+        #define regular expressions for parsing:
+        #TODO: capital AND, OR, NOT
         import re
         reSplitting = re.compile(r'(<[^=]|<=|>[^=]|>=|==|!=|\sand\s|\sor\s|\snot\s|\(|\))')
         reQuotes = re.compile(r'[\s]*("[^"][^"]*")[\s]*')
+        reCompareOp = re.compile(r'<[^=]|<=|>[^=]|>=|==|!=')
 
-        #TODO: Case unit == 1
+        #split the expression
         splitlist = reSplitting.split(expression)
-        parsed = ''
+        abstractlist = []
+        i = -1
         for e in splitlist:
-            if e == '': continue
-            if reSplitting.match(e) != None:
-                parsed += e
+            i += 1
+            #catch empty strings
+            if e == '':
+                abstractlist.append('Empty')
                 continue
+            #is it a delimiter?
+            if reSplitting.match(e) != None:
+                #more precisely: is it a CompareOp?
+                if reCompareOp.match(e) != None:
+                    #yes, it is
+                    abstractlist.append('CompareOp')
+                else:
+                    #no, just any other delimiter
+                    abstractlist.append('Splitter')
+                continue
+            #is it a reference to a column in the SampleContainer aka an expression in doublequotes?
             matchQuotes = reQuotes.match(e)
             if matchQuotes != None:
-                idstring = matchQuotes.groups()[0]
-                parsed += ' self[' + idstring + '].data[index]*self[' + idstring + '].unit '
+                splitlist[i] =  matchQuotes.groups()[0]
+                abstractlist.append('FCValue')
                 continue
+            #finally test for PhysicalQuantities or numbers
+            #this also catches any code fragments that must not be executed
             try:
                 phq = PhysicalQuantity(e)
-                parsed += ' PhysicalQuantity(' + e + ') '
+                abstractlist.append('PhysQuant')
             except:
-                #TODO
+                #maybe it's a number...
+                try:
+                    number = PhysicalQuantity(e+' m')
+                    #it was a number indeed
+                    abstractlist.append('Number')
+                    continue
+                except:
+                    #wasn't a number
+                    pass
+                #someone messed up his or her expression:
+                #TODO how should this be handled?:
+                abstractlist.append('Error')
                 print("Error parsing expression: "+e)
+
+        #resolve multiple CompareOps like a <= b <= c == d:
+        ral = abstractlist[:]    #future resolved abstractlist
+        rsl = splitlist[:]       #future resolved splitlist
+        i = 0
+        Values = ['PhysQuant', 'FCValue', 'Number']
+        while i < len(ral) - 4:
+            #match double CompareOps:
+            if (ral[i] in Values) and (ral[i+1] == 'CompareOp') and (ral[i+2] in Values) and (ral[i+3] == 'CompareOp') and (ral[i+4] in Values):
+                #found something, let's fix it:
+                ral.insert(i+3, 'Splitter')
+                rsl.insert(i+3, ' and ')
+                ral.insert(i+4, ral[i+2])
+                rsl.insert(i+4, rsl[i+2])
+                #skip to next possible occurrence:
+                i += 4
+            else:
+                #keep on searching...:
+                i += 1
+            
+        
+        #parse splitted expression to fit requierements of python eval() method:
+        parsed = ''
+        for i in range(len(ral)):
+            currtype = ral[i]
+            currexpr = rsl[i]
+            if currtype == 'PhysQuant':
+                parsed += ' PhysicalQuantity("' + currexpr + '") '
+            elif currtype == 'FCValue':
+                parsed += ' self[' + currexpr + '].data[index]*self[' + currexpr + '].unit '
+            elif currtype in ['Number', 'CompareOp', 'Splitter']:
+                parsed += currexpr
                 
-        print parsed
-                
+        #return parsed string
+        return parsed
+    
+
+    #returns new SampleContainer containing all entries that match expression
+    def filter(self, expression):
+        parsed = self._parseExpression(expression)
+
+        #TODO: Nicer Iteration, reject multidim arrays or even better: handle them correctly,
+        #      check whether all columns have same length
+
+        #create the selection mask
         mask = []
         for index in range(len(self.columns[0].data)):
             boolexpr = False
             try:
                 boolexpr = eval(parsed)
             except:
+                #TODO:Throw Exc
                 print('Error evaluating ' + parsed)
             
             mask.append(boolexpr)
-            #s = 'False'
-            #if boolexpr :
-                #s='True'
-                #print(parsed + ' evaluated to ' + s)
-        
         numpymask = numpy.array(mask)
+        
+        #apply mask to data, error and TODO:dimensions
         maskedcolumns = copy.deepcopy(self.columns)
         for index in range(len(maskedcolumns)):
             if maskedcolumns[index].data != None:
                 maskedcolumns[index].data = self.columns[index].data[numpymask]
             if maskedcolumns[index].error != None:
                 maskedcolumns[index].error = self.columns[index].error[numpymask]
-            #TODO:
+            #TODO: is this the right thing???
             #if maskedcolumns[index].dimensions != None:
-            #    maskedcolumns[index].dimensions = self.columns[index].dimensions[numpymask]
+            N = len(maskedcolumns[index].data.shape)-1
+            maskedcolumns[index].dimensions = [generateIndex(N-i,n) for i,n in enumerate(maskedcolumns[index].data.shape)]
+        
+
+    
+                
+            
 
         
-        
+        #build new SampleContainer from masked data and return it
         result = SampleContainer(maskedcolumns,
                                  longname=self.longname,
                                  shortname=self.shortname,
