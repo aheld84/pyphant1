@@ -378,24 +378,17 @@ class SampleContainer(DataContainer):
             mask.append(boolexpr)
         numpymask = numpy.array(mask)
         
-        #apply mask to data, error and TODO:dimensions
+        #apply mask to data, error and dimensions
         maskedcolumns = copy.deepcopy(self.columns)
         for index in range(len(maskedcolumns)):
             if maskedcolumns[index].data != None:
                 maskedcolumns[index].data = self.columns[index].data[numpymask]
             if maskedcolumns[index].error != None:
                 maskedcolumns[index].error = self.columns[index].error[numpymask]
-            #TODO: is this the right thing???
-            #if maskedcolumns[index].dimensions != None:
-            N = len(maskedcolumns[index].data.shape)-1
-            maskedcolumns[index].dimensions = [generateIndex(N-i,n) for i,n in enumerate(maskedcolumns[index].data.shape)]
-        
-
-    
+            if maskedcolumns[index].dimensions != None:
+                maskedcolumns[index].dimensions[0].data = self.columns[index].dimensions[0].data[numpymask]
                 
-            
 
-        
         #build new SampleContainer from masked data and return it
         result = SampleContainer(maskedcolumns,
                                  longname=self.longname,
