@@ -265,20 +265,67 @@ class SampleContainer(DataContainer):
     def numberOfColumns(self):
         return len(self.columns)
     
-    #def filter(self, expr):
+    def filter(self, expression):
         #dirty, no error handling etc.
-        #import re
-        #refindquotes = re.compile('("[^"]*")')
-        #bitmask = numpy.array([])
-        #for index in range(len(self.columns[0].data))
+        #TODO: a <= b < c ----> (a <= b and b < c)
+        import re
+        reSplitting = re.compile(r'(<[^=]|<=|>[^=]|>=|==|!=|\sand\s|\sor\s|\snot\s|\(|\))')
+        reQuotes = re.compile(r'[\s]*("[^"][^"]*")[\s]*')
 
-        #TODO
-        #ind = ...
-        #result = SampleContainer([copy.deepcopy(c[ind]) for c in self.columns],
-        #                         longname=self.longname,
-        #                         shortname=self.shortname,
-        #                         attributes=copy.deepcopy(self.attributes))
-        #return result
+        #TODO: Case unit == 1
+        splitlist = reSplitting.split(expression)
+        parsed = ''
+        for e in splitlist:
+            if e == '': continue
+            if reSplitting.match(e) != None:
+                parsed += e
+                continue
+            matchQuotes = reQuotes.match(e)
+            if matchQuotes != None:
+                idstring = matchQuotes.groups()[0]
+                parsed += ' self[' + idstring + '].data[index]*self[' + idstring + '].unit '
+                continue
+            try:
+                phq = PhysicalQuantity(e)
+                parsed += ' PhysicalQuantity(' + e + ') '
+            except:
+                #TODO
+                print("Error parsing expression: "+e)
+                
+        print parsed
+                
+        mask = []
+        for index in range(len(self.columns[0].data)):
+            boolexpr = False
+            try:
+                boolexpr = eval(parsed)
+            except:
+                print('Error evaluating ' + parsed)
+            
+            mask.append(boolexpr)
+            #s = 'False'
+            #if boolexpr :
+                #s='True'
+                #print(parsed + ' evaluated to ' + s)
+        
+        numpymask = numpy.array(mask)
+        maskedcolumns = copy.deepcopy(self.columns)
+        for index in range(len(maskedcolumns)):
+            if maskedcolumns[index].data != None:
+                maskedcolumns[index].data = self.columns[index].data[numpymask]
+            if maskedcolumns[index].error != None:
+                maskedcolumns[index].error = self.columns[index].error[numpymask]
+            #TODO:
+            #if maskedcolumns[index].dimensions != None:
+            #    maskedcolumns[index].dimensions = self.columns[index].dimensions[numpymask]
+
+        
+        
+        result = SampleContainer(maskedcolumns,
+                                 longname=self.longname,
+                                 shortname=self.shortname,
+                                 attributes=copy.deepcopy(self.attributes))
+        return result
 
 
 def assertEqual(con1,con2,rtol=1e-5,atol=1e-8):

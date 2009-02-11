@@ -408,14 +408,14 @@ class SampleContainerSlicingTests(SampleContainerTest):
         self.assertEqual(result[1], expected) 
 
     def testANDExpression(self):
-        result = self.sampleContainer.filter("10m <= 'i' < 20m or 87.5s < 't' <= 98.5s")
+        result = self.sampleContainer.filter('10m <= "i" < 20m or 87.5s < "t" <= 98.5s')
         self.assertEqual(len(result[0].data), 32)
         for index in range(10, 20) + range(76, 98):
             self.assertEqual(result[0].data[index], self.sampleContainer[0].data[index])
             self.assertEqual(result[1].data[index], self.sampleContainer[1].data[index])
 
     def testORExpression(self):
-        result = self.sampleContainer.filter("'t' >= 20m and 't' <= 98.5s")
+        result = self.sampleContainer.filter('"t" >= 20m and "t" <= 98.5s')
         expectedi = self.sampleContainer["i"][21:98]
         expectedt = self.sampleContainer["t"][21:98]
         expectedi.attributes = {}
