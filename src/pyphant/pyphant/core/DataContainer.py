@@ -267,100 +267,74 @@ class SampleContainer(DataContainer):
 
     #helper method for filter(expression) which parses human input to python code, ensuring no harm can be done by eval()
     def _parseExpression(self, expression):
-        #still dirty, not enough error handling etc.
-
-        #define regular expressions for parsing:
-        #TODO: capital AND, OR, NOT
         import re
-        reSplitting = re.compile(r'(<[^=]|<=|>[^=]|>=|==|!=|\sand\s|\sor\s|\snot\s|\(|\))')
-        reQuotes = re.compile(r'[\s]*("[^"][^"]*")[\s]*')
-        reCompareOp = re.compile(r'<[^=]|<=|>[^=]|>=|==|!=')
-
+        reDoubleQuotes = re.compile(r'("[^"][^"]*")')
+        reSplit = re.compile(r'(<(?!=)|<=|>(?!=)|>=|==|!=|and|or|not|AND|OR|NOT|\(|\))')
+        reCompareOp = re.compile(r'<|>|==|!=')
+        
         #split the expression
-        splitlist = reSplitting.split(expression)
-        abstractlist = []
-        i = -1
-        for e in splitlist:
-            i += 1
-            #catch empty strings
-            if e == '':
-                abstractlist.append('Empty')
-                continue
-            #is it a delimiter?
-            if reSplitting.match(e) != None:
-                #more precisely: is it a CompareOp?
-                if reCompareOp.match(e) != None:
-                    #yes, it is
-                    abstractlist.append('CompareOp')
-                else:
-                    #no, just any other delimiter
-                    abstractlist.append('Splitter')
-                continue
-            #is it a reference to a column in the SampleContainer aka an expression in doublequotes?
-            matchQuotes = reQuotes.match(e)
-            if matchQuotes != None:
-                splitlist[i] =  matchQuotes.groups()[0]
-                abstractlist.append('FCValue')
-                continue
-            #finally test for PhysicalQuantities or numbers
-            #this also catches any code fragments that must not be executed
-            try:
-                phq = PhysicalQuantity(e)
-                abstractlist.append('PhysQuant')
-            except:
-                #maybe it's a number...
-                try:
-                    number = PhysicalQuantity(e+' m')
-                    #it was a number indeed
-                    abstractlist.append('Number')
-                    continue
-                except:
-                    #wasn't a number
-                    pass
-                #someone messed up his or her expression:
-                #TODO how should this be handled?:
-                abstractlist.append('Error')
-                print("Error parsing expression: "+e)
+        DQList = reDoubleQuotes.split(expression)
+        splitlist = []
+        for dq in DQList:
+            if reDoubleQuotes.match(dq) != None: splitlist.append(dq)
+            else: splitlist.extend(reSplit.split(dq))
 
+        #identify splitted Elements
+        abstractlist = []
+        for e in splitlist:
+            if len(re.findall(r'\S', e)) == 0: pass
+            elif reCompareOp.match(e) != None:
+                abstractlist.append(('CompareOp', e))
+            elif reSplit.match(e) != None:
+                abstractlist.append(('Delimiter', e.lower()))
+            elif reDoubleQuotes.match(e) != None:
+                try:
+                    dummy = self[e[1:-1]]
+                except:
+                    print('Could not find column ' + e + ' in "' + self.longname + '".')
+                    return None
+                abstractlist.append(('SCColumn', e))
+            else:
+                try:
+                    phq = PhysicalQuantity(e)
+                    abstractlist.append(('PhysQuant', e))
+                except:
+                    try:
+                        number = PhysicalQuantity(e+' m')
+                        abstractlist.append(('Number', e))
+                        continue
+                    except: pass
+                    print("Error parsing expression: "+e)
+                    return None
+        
         #resolve multiple CompareOps like a <= b <= c == d:
         ral = abstractlist[:]    #future resolved abstractlist
-        rsl = splitlist[:]       #future resolved splitlist
         i = 0
-        Values = ['PhysQuant', 'FCValue', 'Number']
+        values = ['PhysQuant', 'SCColumn', 'Number']
         while i < len(ral) - 4:
-            #match double CompareOps:
-            if (ral[i] in Values) and (ral[i+1] == 'CompareOp') and (ral[i+2] in Values) and (ral[i+3] == 'CompareOp') and (ral[i+4] in Values):
-                #found something, let's fix it:
-                ral.insert(i+3, 'Splitter')
-                rsl.insert(i+3, ' and ')
+            if (ral[i][0] in values) and (ral[i+1][0] == 'CompareOp') and (ral[i+2][0] in values) and (ral[i+3][0] == 'CompareOp') and (ral[i+4][0] in values):
+                ral.insert(i+3, ('Delimiter', 'and'))
                 ral.insert(i+4, ral[i+2])
-                rsl.insert(i+4, rsl[i+2])
-                #skip to next possible occurrence:
                 i += 4
-            else:
-                #keep on searching...:
-                i += 1
+            else: i += 1
             
-        
         #parse splitted expression to fit requierements of python eval() method:
         parsed = ''
         for i in range(len(ral)):
-            currtype = ral[i]
-            currexpr = rsl[i]
-            if currtype == 'PhysQuant':
-                parsed += ' PhysicalQuantity("' + currexpr + '") '
-            elif currtype == 'FCValue':
-                parsed += ' self[' + currexpr + '].data[index]*self[' + currexpr + '].unit '
-            elif currtype in ['Number', 'CompareOp', 'Splitter']:
-                parsed += currexpr
-                
-        #return parsed string
+            currtype = ral[i][0]
+            currexpr = ral[i][1]
+            if currtype == 'PhysQuant': parsed += ' PhysicalQuantity("' + currexpr + '") '
+            elif currtype == 'SCColumn': parsed += ' self[' + currexpr + '].data[index]*self[' + currexpr + '].unit '
+            else: parsed += ' ' + currexpr + ' '
+
         return parsed
     
 
     #returns new SampleContainer containing all entries that match expression
     def filter(self, expression):
         parsed = self._parseExpression(expression)
+        if parsed == None:
+            return None
 
         #TODO: Nicer Iteration, reject multidim arrays or even better: handle them correctly,
         #      check whether all columns have same length
@@ -372,8 +346,8 @@ class SampleContainer(DataContainer):
             try:
                 boolexpr = eval(parsed)
             except:
-                #TODO:Throw Exc
                 print('Error evaluating ' + parsed)
+                return None
             
             mask.append(boolexpr)
         numpymask = numpy.array(mask)
@@ -387,7 +361,6 @@ class SampleContainer(DataContainer):
                 maskedcolumns[index].error = self.columns[index].error[numpymask]
             if maskedcolumns[index].dimensions != None:
                 maskedcolumns[index].dimensions[0].data = self.columns[index].dimensions[0].data[numpymask]
-                
 
         #build new SampleContainer from masked data and return it
         result = SampleContainer(maskedcolumns,
