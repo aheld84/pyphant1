@@ -16,7 +16,7 @@ VERSION = '0.1'
 import setuptools
 
 setuptools.setup(
-    name = "Pyphant OSC",
+    name = "pyphant.osc",
     version = VERSION,
     author = __author__,
     description = __doc__,

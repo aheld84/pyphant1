@@ -19,11 +19,11 @@ VERSION = '0.1'
 import setuptools
 
 setuptools.setup(
-    name = "Pyphant Statistics",
+    name = "pyphant.statistics",
     version = VERSION,
     author = __author__,
     description = __doc__,
-    install_requires=['Pyphant>=0.4alpha3'],
+    install_requires=['pyphant>=0.4alpha3'],
     packages = ['Statistics'],
     entry_points = """
     [pyphant.workers]

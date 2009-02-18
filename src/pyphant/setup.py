@@ -9,7 +9,7 @@ VERSION = '0.5'
 
 from setuptools import setup, find_packages
 
-setup( name='Pyphant',
+setup( name='pyphant',
        version = VERSION,
        description='Workflow modelling app',
        author='Klaus Zimmermann, Andreas W. Liehr',
@@ -18,13 +18,13 @@ setup( name='Pyphant',
        maintainer_email='zklaus@sourceforge.net',
        license = "BSD",
        url='http://pyphant.sourceforge.net/',
-       install_requires=['sogl>=0.2.0'
-## The following are required, but currently not setuptools enabled.
-#                         ,'ScientificPython>=2.6',
-#                         ,'matplotlib>=0.90.1',
-#                         ,'scipy>=0.5.2',
-#                         ,'tables>=1.4',
-#                         ,'wxPython>=2.6.3.2'
+       install_requires=['sogl>=0.2.0',
+                         ## The following are required, but currently not setuptools enabled.
+                         #'ScientificPython>=2.6',
+                         #'matplotlib>=0.90.1',
+                         #'scipy>=0.5.2',
+                         #'tables>=1.4',
+                         #'wxPython>=2.6.3.2',
                          ],
        packages = find_packages(),
        entry_points={'gui_scripts':['wxPyphant = pyphant.wxgui2.wxPyphantApplication:startWxPyphant']},
