@@ -40,7 +40,7 @@ __version__ = "$Revision$"
 
 import unittest
 import pkg_resources
-pkg_resources.require("Pyphant")
+pkg_resources.require("pyphant")
 
 import scipy
 import copy

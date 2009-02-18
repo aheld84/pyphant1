@@ -46,7 +46,7 @@ logging.basicConfig(level=logging.DEBUG,
 
 import pkg_resources
 
-pkg_resources.require("Pyphant")
+pkg_resources.require("pyphant")
 
 import ImageProcessing as I
 import ImageProcessing.DistanceMapper as IM

@@ -43,7 +43,7 @@ sys.path.append("..")
 
 import pkg_resources
 
-pkg_resources.require("Pyphant")
+pkg_resources.require("pyphant")
 
 import ImageProcessing as I
 import ImageProcessing.SkeletonizeFeature as IM
