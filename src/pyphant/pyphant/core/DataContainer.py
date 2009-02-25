@@ -332,6 +332,9 @@ class SampleContainer(DataContainer):
 
     #returns new SampleContainer containing all entries that match expression
     def filter(self, expression):
+        if expression == '':
+            return copy.deepcopy(self)
+
         parsed = self._parseExpression(expression)
         if parsed == None:
             return None
@@ -369,6 +372,148 @@ class SampleContainer(DataContainer):
                                  attributes=copy.deepcopy(self.attributes))
         return result
 
+
+
+    def _parseExpression2(self, expression):
+        import re
+        reDoubleQuotes = re.compile(r'("[^"][^"]*")')
+        reSplit = re.compile(r'(<(?!=)|<=|>(?!=)|>=|==|!=|and|or|AND|OR|\(|\))')
+        reCompareOp = re.compile(r'<|>|==|!=')
+        
+        #split the expression
+        DQList = reDoubleQuotes.split(expression)
+        splitlist = []
+        for dq in DQList:
+            if reDoubleQuotes.match(dq) != None: splitlist.append(dq)
+            else: splitlist.extend(reSplit.split(dq))
+
+        #identify splitted Elements
+        al = [] #abstractlist
+        for e in splitlist:
+            if len(re.findall(r'\S', e)) == 0: pass
+            elif reCompareOp.match(e) != None:
+                al.append(('CompareOp', e))
+            elif reSplit.match(e) != None:
+                al.append(('Delimiter', e.lower()))
+            elif reDoubleQuotes.match(e) != None:
+                try:
+                    dummy = self[e[1:-1]]
+                except:
+                    print('Could not find column ' + e + ' in "' + self.longname + '".')
+                    return None
+                al.append(('SCColumn', e))
+            else:
+                try:
+                    phq = PhysicalQuantity(e)
+                    al.append(('PhysQuant', e))
+                    continue
+                except:
+                    try:
+                        number = PhysicalQuantity(e+' m')
+                        al.append(('Number', e))
+                        continue
+                    except: pass
+                    print("Error parsing expression: "+e)
+                    return None
+        
+        #resolve multiple CompareOps like a <= b <= c == d:
+        i = 0
+        values = ['PhysQuant', 'SCColumn', 'Number']
+        while i < len(al) - 4:
+            if (al[i][0] in values) and (al[i+1][0] == 'CompareOp') and (al[i+2][0] in values) and (al[i+3][0] == 'CompareOp') and (al[i+4][0] in values):
+                al.insert(i+3, ('Delimiter', 'and'))
+                al.insert(i+4, al[i+2])
+                i += 4
+            else: i += 1
+
+
+        #identify atomar components like a <= 10, 10 > a, and compress them:
+        i = 1
+        while i < len(al):
+            if al[i][0] == 'CompareOp':
+                compressed = ('Atomar', [])
+                compressed[1].append(al.pop(i-1))
+                compressed[1].append(al.pop(i-1))
+                compressed[1].append(al.pop(i-1))
+                al.insert(i-1, compressed)
+            i += 1
+                
+        #identify braces and compress them:
+        
+            
+        #parse splitted expression to fit requierements of python eval() method:
+        parsed = ''
+        for i in range(len(al)):
+            currtype = al[i][0]
+            currexpr = al[i][1]
+            if currtype == 'PhysQuant':
+                if i-2 >= 0 and al[i-1][0] == 'CompareOp' and al[i-2][0] == 'SCColumn':
+                    relatedto = al[i-2][1]
+                elif i+2 < len(al) and al[i+1][0] == 'CompareOp' and al[i+2][0] == 'SCColumn':
+                    relatedto = al[i+2][1]
+                else:
+                    print ('Cannot associate ' + currexpr + ' to a column!')
+                    return ''
+                parsed += ' PhysicalQuantity("' + currexpr + '")/self[' + relatedto + '].unit '
+            elif currtype == 'SCColumn': parsed += ' self[' + currexpr + '].data '
+            else: parsed += ' ' + currexpr + ' '
+
+        return parsed
+    
+
+
+    def filter2(self, expression):
+        if expression == '':
+            return copy.deepcopy(self)
+
+        parsed = self._parseExpression2(expression)
+        if parsed == '': return None
+        numpymask = eval(parsed)
+
+        maskedcolumns = []
+        for c in self.columns:
+            mdims = []
+            for d in c.dimensions:
+                if mdims == []:
+                    if d.error == None:
+                        derr = None
+                    else:
+                        derr = d.error[numpymask]
+
+                    mdims.append(FieldContainer(d.data[numpymask],
+                                                copy.deepcopy(d.unit),
+                                                derr,
+                                                copy.deepcopy(d.mask),
+                                                None,
+                                                longname=d.longname,
+                                                shortname=d.shortname,
+                                                attributes=copy.deepcopy(d.attributes),
+                                                rescale=False))
+                else:
+                    mdims.append(copy.deepcopy(d))
+            
+            if c.error == None:
+                cerr = None
+            else:
+                cerr = c.error[numpymask]
+            maskedcolumns.append(FieldContainer(c.data[numpymask],
+                                                copy.deepcopy(c.unit),
+                                                cerr,
+                                                copy.deepcopy(c.mask), 
+                                                mdims, 
+                                                longname=c.longname,
+                                                shortname=c.shortname,
+                                                attributes=copy.deepcopy(c.attributes),
+                                                rescale=False))
+
+    #build new SampleContainer from masked data and return it
+        result = SampleContainer(maskedcolumns,
+                                 longname=self.longname,
+                                 shortname=self.shortname,
+                                 attributes=copy.deepcopy(self.attributes))
+        return result
+
+    
 
 def assertEqual(con1,con2,rtol=1e-5,atol=1e-8):
     diagnosis=StringIO.StringIO()

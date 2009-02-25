@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+
 """
 
 __id__ = "$Id$"
@@ -37,27 +38,20 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-BACKGROUND_COLOR=255
-FEATURE_COLOR=0
+from pyphant.core import Worker, Connectors,\
+                         Param, DataContainer
 
-workers=[ 
-    "ApplyMask",
-    "CoverageWorker",
-    "DiffWorker",
-    "DistanceMapper",
-    "EdgeFillWorker",
-    "EdgeTouchingFeatureRemover",
-    "FilterWorker",
-    "ImageLoaderWorker",
-    "InvertWorker",
-    "Medianiser",
-    "SkeletonizeFeature",
-    "ThresholdingWorker",
-    "UltimatePointsCalculator",
-    ]
+class FilterWorker(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "SC Filter"
+    _sockets = [("table", Connectors.TYPE_ARRAY)]
+    _params = [("expression", "Filter Expression", '', None)]
 
-def isFeature(point):
-    if point == FEATURE_COLOR:
-        return True
-    else:
-        return False
+    @Worker.plug(Connectors.TYPE_ARRAY)
+    def applyfilter(self, table, subscriber=0):
+        result = table.filter(self.paramExpression.value.encode('utf-8'))
+        result.seal()
+        return result
+

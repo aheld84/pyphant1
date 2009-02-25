@@ -393,7 +393,37 @@ class CommonSampleContainerTests(SampleContainerTest):
 
 
 class SampleContainerSlicingTests(SampleContainerTest):
-    #TODO: Write more tests with more complicated expressions
+    def setUp(self):
+        super(SampleContainerSlicingTests, self).setUp()
+        time_data = numpy.array([10.0, 20.0, 30.0, 5.0, 9000.0])
+        time_error = numpy.array([1.0, 2.0, 3.0, .5, 900.0])
+        time_unit = PhysicalQuantity('2s')
+        time_FC = FieldContainer(time_data, time_unit, time_error, None, None, "Zeit", "t", None, False)
+    
+        length_data = numpy.array([-20.0, 0.0, 20.0, 10.0, 5.5])
+        length_error = numpy.array([2.0, 0.1, 2.0, 1.0, .5])
+        length_unit = PhysicalQuantity('1000m')
+        length_FC = FieldContainer(length_data, length_unit, length_error, None, None, "Strecke", "l", None, False)
+    
+
+        temperature_data = numpy.array([[10.1, 10.2, 10.3],
+                                        [20.1, 20.2, 20.3],
+                                        [30.1, 30.2, 30.3],
+                                        [40.1, 40.2, 40.3],
+                                        [50.1, 50.2, 50.3]])
+        temperature_error = numpy.array([[0.1, 0.2, 0.3],
+                                         [1.1, 1.2, 1.3],
+                                         [2.1, 2.2, 2.3],
+                                         [3.1, 3.2, 3.3],
+                                         [4.1, 4.2, 4.3]])
+        temperature_unit = PhysicalQuantity('1mK')
+    
+        temperature_FC = FieldContainer(temperature_data, temperature_unit, temperature_error, None, None, "Temperatur", "T", None, False)
+    
+        self.sc2d = SampleContainer([length_FC, temperature_FC, time_FC], "Test Container", "TestC")
+    
+    
+    #purely one dimensional Tests:
     def testConsistancy(self):
         result1 = self.sampleContainer.filter('20m < "i" and 80m > "i"')
         result2 = self.sampleContainer.filter('20m < "i" < 80m')
@@ -424,6 +454,37 @@ class SampleContainerSlicingTests(SampleContainerTest):
         result[1].attributes = {}
         self.assertEqual(result[0], expectedi)
         self.assertEqual(result[1], expectedt)
+
+    #tests involving 2 dimensional FieldContainers:
+    def testEmptyExpression(self):
+        result = self.sc2d.filter('')
+        self.assertEqual(result, self.sc2d)
+
+    def testSimple2dExpression(self):
+        result = self.sc2d.filter('"t" <= 40.0s')
+        expected_t_data = numpy.array([10.0, 20.0, 5.0])
+        expected_l_data = numpy.array([-20.0, 0.0, 10.0])
+        expected_T_data = numpy.array([[10.1, 10.2, 10.3],[20.1,20.2,20.3],[40.1,40.2,40.3]])
+        self.assertEqual(len(result["t"].data), len(expected_t_data))
+        self.assertEqual(len(result["l"].data), len(expected_l_data))
+        self.assertEqual(len(result["T"].data), len(expected_T_data))
+        i = 0
+        for x in result["t"].data:
+            self.assertEqual(x, expected_t_data[i])
+            i += 1
+        
+        i = 0
+        for x in result["l"].data:
+            self.assertEqual(x, expected_l_data[i])
+            i += 1
+        
+        resit = result["T"].data.flat
+        expit = expected_T_data.flat
+        for x in resit:
+            self.assertEqual(x, expit.next())
+    
+
+    
 
 
 class FieldContainerRescaling(unittest.TestCase):
