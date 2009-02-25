@@ -341,6 +341,8 @@ def data2table(longname, shortname, preParsedData, config):
     dimensions_for_fields = {}
     errors_for_fields = {}
     for i, (fieldLongname, spec) in enumerate(config.items()):
+        if type(spec)==type([]):
+            spec = ','.join(spec)
         try:
             match = re.search(colspec_re, spec)
         except TypeError,e:
