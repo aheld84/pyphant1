@@ -30,6 +30,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The Slicing Worker is a class of Pyphant's OSC Toolbox. It cut out one
+part of a field and provides it as a new field to work on.
 """
 
 __id__ = "$Id$"

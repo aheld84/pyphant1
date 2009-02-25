@@ -30,7 +30,11 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""Pyphant module computing the local extrema of one-dimensional sampled fields. If a two-dimensional field is provided as input, the algorithm loops over the 0th dimension denoting the y-axis, which corresponds to an iteration over the rows of the data matrix.
+u"""
+Pyphant module computing the local extrema of one-dimensional
+sampled fields. If a two-dimensional field is provided as input, the
+algorithm loops over the 0th dimension denoting the y-axis, which
+corresponds to an iteration over the rows of the data matrix.  
 """
 
 __id__ = "$Id$"

@@ -30,6 +30,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The Inverter Worker is a class of Pyphant's Image Processing
+Toolbox. It simply inverts an image. 
 """
 
 __id__ = "$Id$"

@@ -30,6 +30,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The Madianiser Worker is a class of Pyphant's Image Processing
+Toolbox. It is used to remove noise from an image, by implementing a
+standard median filter. In its configurations the size of the applied
+kernel and the number of smoothing runs can be edited.
 """
 
 __id__ = "$Id$"
