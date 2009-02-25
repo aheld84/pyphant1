@@ -249,7 +249,7 @@ def loadFMFFromFile(filename, subscriber=0):
 def readSingleFile(b, pixelName):
     _logger.info(u"Parsing file %s." % pixelName)
     preParsedData, d = preParseData(b)
-    from configobj import ConfigObj
+    from configobj import ConfigObj,ConfigObjError
     class FMFConfigObj(ConfigObj):
         _keyword = re.compile(r'''^ # line start
             (\s*)                   # indentation
@@ -262,8 +262,11 @@ def readSingleFile(b, pixelName):
             (.*)                    # value (including list values and comments)
             $   # line end
             ''', re.VERBOSE)
-    from StringIO import StringIO
-    config = FMFConfigObj(d.encode('utf-8').splitlines(), encoding='utf-8')
+    try:
+        config = FMFConfigObj(d.encode('utf-8').splitlines(), encoding='utf-8')
+    except ConfigObjError,e:
+        from sys import exit
+        exit('%s\nPlease check the syntax of the FMF-file, in particular the correct usage of comments.' % e)
     return config2tables(preParsedData, config)
 
 def parseBool(value):
@@ -386,18 +389,22 @@ def data2table(longname, shortname, preParsedData, config):
 
 
 def preParseData(b):
-    localVar = {'fmf-version':'1.0','coding':'cp1252',
+    localVar = {'fmf-version':'1.0','coding':'utf-8',
                 'delimiter':'\t'}
     commentChar = ';'
     if b[0] == ';' or b[0] == '#':
         commentChar = b[0]
         items =  [var.strip().split(':') for var in b.split('-*-')[1].split(';')]
-        for key,value in items:
-            localVar[key.strip()]=value.strip()
-            if localVar[key.strip()]=='whitespace':
-                localVar[key.strip()] = None
-            if localVar[key.strip()]=='semicolon':
-                localVar[key.strip()] = ';'
+        try:
+            for key,value in items:
+                localVar[key.strip()]=value.strip()
+                if localVar[key.strip()]=='whitespace':
+                    localVar[key.strip()] = None
+                if localVar[key.strip()]=='semicolon':
+                    localVar[key.strip()] = ';'
+        except ValueError,e:
+            from sys import exit
+            exit('%s\nPlease, check syntax of headline, presumably a key and its value are not separated by a colon.' % e)
     d = unicode(b, localVar['coding'])
     dataExpr = re.compile(ur"^(\[\*data(?::\s*([^\]]*))?\]\r?\n)([^[]*)", re.MULTILINE | re.DOTALL)
     commentExpr = re.compile(ur"^%s.*"%commentChar, re.MULTILINE)
