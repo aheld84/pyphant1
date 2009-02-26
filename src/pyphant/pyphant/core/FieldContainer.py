@@ -30,6 +30,29 @@ from __future__ import with_statement
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+u"""
+=================================================================
+The **FieldContainer** -- A module storing sampled scalar fields
+=================================================================
+
+The *FieldContainer* represents a class of Pyphant's L{DataContainer}
+module.
+
+        That is Pyphant's module for *self-desriptive scientific data*
+        which is designed to maximise the interoperability of the various
+        workers. It can be seen as an interface for exchanging scientific
+        information between workers and visualizers. It reproduces the
+        self-descriptiveness of the *network Common Data Form* (netCDF). Once
+        sealed a DataContainer is immutable but can be identified by
+        its *emd5* format which holds information about the origin of
+        the container.
+
+The *FieldContainer* stores a sampled scalar Filed. 
+
+        It holds an *n-dimensional array* together with
+        its *unit* and coordinates of the idependent variable (*dimensions*).
+"""
+
 __id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
