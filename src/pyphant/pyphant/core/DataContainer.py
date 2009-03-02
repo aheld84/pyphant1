@@ -266,7 +266,8 @@ class SampleContainer(DataContainer):
         return len(self.columns)
 
     #helper method for filter(expression) which parses human input to python code, ensuring no harm can be done by eval()
-    def _parseExpression(self, expression):
+    #this method is discarded
+    def _parseExpressionDiscarded(self, expression):
         import re
         reDoubleQuotes = re.compile(r'("[^"][^"]*")')
         reSplit = re.compile(r'(<(?!=)|<=|>(?!=)|>=|==|!=|and|or|not|AND|OR|NOT|\(|\))')
@@ -331,16 +332,16 @@ class SampleContainer(DataContainer):
     
 
     #returns new SampleContainer containing all entries that match expression
-    def filter(self, expression):
+    #this method has been replaced by the new version of SampleContainer.filter
+    def filterDiscarded(self, expression):
         if expression == '':
             return copy.deepcopy(self)
 
-        parsed = self._parseExpression(expression)
+        parsed = self._parseExpressionDiscarded(expression)
         if parsed == None:
             return None
 
-        #TODO: Nicer Iteration, reject multidim arrays or even better: handle them correctly,
-        #      check whether all columns have same length
+        #TODO: check whether all columns have same length
 
         #create the selection mask
         mask = []
@@ -373,11 +374,18 @@ class SampleContainer(DataContainer):
         return result
 
 
-
-    def _parseExpression2(self, expression):
+    #This method generates nested tuples of filter commands to be applied to a SampleContainer out of a string expression
+    def _getCommands(self, expression):
+        #TODO: "or" keyword
+        
         import re
+        #test for expressions containing whitespaces only:
+        if len(re.findall(r'\S', expression)) == 0:
+            return None
+        
+        #prepare regular expressions
         reDoubleQuotes = re.compile(r'("[^"][^"]*")')
-        reSplit = re.compile(r'(<(?!=)|<=|>(?!=)|>=|==|!=|and|or|AND|OR|\(|\))')
+        reSplit = re.compile(r'(<(?!=)|<=|>(?!=)|>=|==|!=|not|NOT|and|AND|\(|\))')
         reCompareOp = re.compile(r'<|>|==|!=')
         
         #split the expression
@@ -388,33 +396,34 @@ class SampleContainer(DataContainer):
             else: splitlist.extend(reSplit.split(dq))
 
         #identify splitted Elements
-        al = [] #abstractlist
+        al = [] #abstractlist containing tuples of (type, expression)
         for e in splitlist:
-            if len(re.findall(r'\S', e)) == 0: pass
+            if len(re.findall(r'\S', e)) == 0: pass #skip whitespaces
             elif reCompareOp.match(e) != None:
                 al.append(('CompareOp', e))
             elif reSplit.match(e) != None:
                 al.append(('Delimiter', e.lower()))
             elif reDoubleQuotes.match(e) != None:
+                column = None
                 try:
-                    dummy = self[e[1:-1]]
+                    column = self[e[1:-1]]
                 except:
-                    print('Could not find column ' + e + ' in "' + self.longname + '".')
-                    return None
-                al.append(('SCColumn', e))
+                    raise IndexError, 'Could not find column ' + e + ' in "' + self.longname + '".'
+                if column.data.ndim != 1:
+                    raise NotImplementedError, "Comparing columns of dimensions other than one is not yet implemented: " + e
+                al.append(('SCColumn', column))
             else:
                 try:
                     phq = PhysicalQuantity(e)
-                    al.append(('PhysQuant', e))
+                    al.append(('PhysQuant', phq))
                     continue
                 except:
                     try:
                         number = PhysicalQuantity(e+' m')
-                        al.append(('Number', e))
+                        al.append(('Number', eval(e)))
                         continue
                     except: pass
-                    print("Error parsing expression: "+e)
-                    return None
+                    raise ValueError, "Error parsing expression: " + e
         
         #resolve multiple CompareOps like a <= b <= c == d:
         i = 0
@@ -426,87 +435,206 @@ class SampleContainer(DataContainer):
                 i += 4
             else: i += 1
 
-
-        #identify atomar components like a <= 10, 10 > a, and compress them:
+        #identify atomar components like "a" <= 10, 10 > "a", ... and compress them:
         i = 1
+        valid = False
         while i < len(al):
             if al[i][0] == 'CompareOp':
-                compressed = ('Atomar', [])
-                compressed[1].append(al.pop(i-1))
-                compressed[1].append(al.pop(i-1))
-                compressed[1].append(al.pop(i-1))
-                al.insert(i-1, compressed)
+                left = al.pop(i-1)
+                middle = al.pop(i-1)
+                right = al.pop(i-1)
+                if left[0] not in values:
+                    raise TypeError, str(left[1]) + " is not a proper value."
+                if right[0] not in values:
+                    raise TypeError, str(right[1]) + " is not a proper value."
+                al.insert(i-1, ('Atomar', left, middle[1], right))
+                valid = True
             i += 1
+        if not valid: raise ValueError, "There has to be at least one valid comparison: " + expression
                 
-        #identify braces and compress them:
-        
-            
-        #parse splitted expression to fit requierements of python eval() method:
-        parsed = ''
-        for i in range(len(al)):
-            currtype = al[i][0]
-            currexpr = al[i][1]
-            if currtype == 'PhysQuant':
-                if i-2 >= 0 and al[i-1][0] == 'CompareOp' and al[i-2][0] == 'SCColumn':
-                    relatedto = al[i-2][1]
-                elif i+2 < len(al) and al[i+1][0] == 'CompareOp' and al[i+2][0] == 'SCColumn':
-                    relatedto = al[i+2][1]
+        #identify braces and compress them recursively:
+        def compressBraces(sublist):
+            openbraces = 0
+            start = 0
+            end = 0
+            finished = False
+            for i in range(len(sublist)):
+                if sublist[i] == ('Delimiter', '('):
+                    openbraces += 1
+                    if openbraces == 1 and not finished:
+                        start = i
+                elif sublist[i] == ('Delimiter', ')'):
+                    openbraces -= 1
+                    if openbraces == 0 and not finished:
+                        end = i
+                        finished = True
+            if openbraces != 0:
+                raise ValueError, "There are unmatched braces within the expression: " + expression
+            if start==0 and end==0:
+                #no more braces found: end of recursion
+                return sublist[:]
+            else:
+                if end-start == 1:
+                    raise ValueError, "There are braces enclosing nothing in the expression: " + expression
+                middle = None
+                if end-start == 2:
+                    #discard unnecessary braces:
+                    middle = sublist[start+1:start+2]
                 else:
-                    print ('Cannot associate ' + currexpr + ' to a column!')
-                    return ''
-                parsed += ' PhysicalQuantity("' + currexpr + '")/self[' + relatedto + '].unit '
-            elif currtype == 'SCColumn': parsed += ' self[' + currexpr + '].data '
-            else: parsed += ' ' + currexpr + ' '
+                    middle = [('Brace', compressBraces(sublist[start+1:end]))]
+                return sublist[0:start] + middle + compressBraces(sublist[end+1:])
+        
+        #identify "not"s and compress them recursively:
+        def compressNot(sublist):
+            i = 0
+            while i < len(sublist):
+                if sublist[i] == ('Delimiter', 'not'):
+                    if i+1 >= len(sublist):
+                        raise ValueError, "'not' must not stand at the very end of an expression: " + expression
+                    x = sublist[i+1]
+                    if x[0] == 'Atomar':
+                        return sublist[0:i] + [('NOT', x)] + compressNot(sublist[i+2:])
+                    elif x[0] == 'Brace':
+                        return sublist[0:i] + [('NOT', ('Brace', compressNot(x[1])))] + compressNot(sublist[i+2:])
+                    else:
+                        raise ValueError, "'not' cannot be applied to " + str(x) + "."
+                elif sublist[i][0] == 'Brace':
+                    return sublist[0:i] + [('Brace', compressNot(sublist[i][1]))] + compressNot(sublist[i+1:])
+                i += 1
+            return sublist[:]
+                        
 
-        return parsed
-    
+        #identify "and"s and compress them recursively:
+        def compressAnd(sublist, start=0):
+            i = start
+            while i < len(sublist):
+                if sublist[i] == ('Delimiter', 'and'):
+                    left = None
+                    if start == 1 and i == 1: left = sublist[i-1]
+                    else: left = compressAnd(sublist[i-1:i])[0]
+                    if left[0] not in ['NOT', 'AND', 'Brace', 'Atomar']:
+                        raise ValueError, "'and' cannot be applied to " + str(left) + "."
+                    right = compressAnd(sublist[i+1:i+2])[0]
+                    if right[0] not in ['NOT', 'AND', 'Brace', 'Atomar']:
+                        raise ValueError, "'and' cannot be applied to " + str(right) + "."
+                    return sublist[0:i-1] + compressAnd([('AND', left, right)] + sublist[i+2:], 1)
+                elif sublist[i][0] == 'Brace':
+                    return sublist[0:i] + compressAnd([('Brace', compressAnd(sublist[i][1]))] + sublist[i+1:], 1)
+                elif sublist[i][0] == 'NOT':
+                    return sublist[0:i] + compressAnd([('NOT', compressAnd([sublist[i][1]])[0])] + sublist[i+1:], 1)
+                i += 1
+            return sublist[:]
 
+        compressed = compressAnd(compressNot(compressBraces(al)))
+        if len(compressed) != 1:
+            raise NotImplementedError, "Expression has not been parsed completely. There has to be a bug within the parser."
+        return compressed[0]
 
-    def filter2(self, expression):
-        if expression == '':
+  
+    #returns a new SampleContainer with filter commands applied to it. Expression can be either a string expression or nested tuples of commands
+    def filter(self, expression):
+        #determine type of expression:
+        from types import StringType, UnicodeType, TupleType
+        commands = None
+        if isinstance(expression, UnicodeType):
+            commands = self._getCommands(expression.encode('utf-8'))
+        elif isinstance(expression, StringType):
+            commands = self._getCommands(expression)
+        elif isinstance(expression, TupleType) or expression==None:
+            commands = expression
+        else:
+            raise TypeError, "Expression has to be of StringType, UnicodeType, TupleType or None. Found " + str(type(expression)) +" instead!"
+        
+        #check for empty commands:
+        if commands == None or commands==():
             return copy.deepcopy(self)
+        
+        #generate boolean numpymask from commands:
+        def evaluateAtomar(expr, linkedto):
+            if expr[0] == 'SCColumn':
+                if linkedto[0] == 'SCColumn':
+                    raise NotImplementedError, "Comparing two columns is not yet implemented: " + expr[1].longname + ", " + linkedto[1].longname
+                return expr[1].data
+            else:
+                if linkedto[0] != 'SCColumn':
+                    raise TypeError, "Could not link " + str(expr[1]) + " to a column. Tried to link with " + str(linkedto)
+                number = expr[1] / linkedto[1].unit
+                if isPhysicalQuantity(number):
+                    raise TypeError, "Cannot compare " + str(expr[1]) + " to " + linkedto[1].longname
+                return number
 
-        parsed = self._parseExpression2(expression)
-        if parsed == '': return None
-        numpymask = eval(parsed)
-
+        def getMaskFromCommands(cmds):
+            if cmds[0] == 'Atomar':
+                left = evaluateAtomar(cmds[1], cmds[3])
+                right = evaluateAtomar(cmds[3], cmds[1])
+                if cmds[2] == '==': return left == right
+                elif cmds[2] == '!=': return left != right
+                elif cmds[2] == '<=': return left <= right
+                elif cmds[2] == '<': return left < right
+                elif cmds[2] == '>=': return left >= right
+                elif cmds[2] == '>': return left > right
+            elif cmds[0] == 'Brace':
+                if len(cmds[1]) != 1:
+                    raise NotImplementedError, "Expression has not been parsed completely. There has to be a bug within the parser."
+                else:
+                    return getMaskFromCommands(cmds[1][0])
+            elif cmds[0] == 'AND':
+                left = getMaskFromCommands(cmds[1])
+                right = getMaskFromCommands(cmds[2])
+                if left.shape != right.shape:
+                    raise TypeError, "Cannot apply 'and' to columns of different shape: " + str(left.shape) + ", " + str(right.shape)
+                return numpy.logical_and(left, right)
+            elif cmds[0] == 'OR':
+                left = getMaskFromCommands(cmds[1])
+                right = getMaskFromCommands(cmds[2])
+                if left.shape != right.shape:
+                    raise TypeError, "Cannot apply 'or' to columns of different shape: " + str(left.shape) + ", " + str(right.shape)
+                return numpy.logical_or(left, right)
+            elif cmds[0] == 'NOT':
+                return numpy.logical_not(getMaskFromCommands(cmds[1]))
+                
+        numpymask = getMaskFromCommands(commands)
+        
+        #generate new columns with the boolean mask applied to them
         maskedcolumns = []
         for c in self.columns:
+            #mask dimension
             mdims = []
-            for d in c.dimensions:
-                if mdims == []:
-                    if d.error == None:
-                        derr = None
-                    else:
-                        derr = d.error[numpymask]
+            try:
+                for d in c.dimensions:
+                    md = copy.deepcopy(d)
+                    if mdims == []: #only primary axis has to be masked
+                        #mask errors of dimensions
+                        if d.error != None:
+                            md.error = d.error[numpymask]
 
-                    mdims.append(FieldContainer(d.data[numpymask],
-                                                copy.deepcopy(d.unit),
-                                                derr,
-                                                copy.deepcopy(d.mask),
-                                                None,
-                                                longname=d.longname,
-                                                shortname=d.shortname,
-                                                attributes=copy.deepcopy(d.attributes),
-                                                rescale=False))
-                else:
-                    mdims.append(copy.deepcopy(d))
+                        #mask data of dimensions
+                        if d.data != None:
+                            md.data = d.data[numpymask]
+
+                    mdims.append(md)
             
-            if c.error == None:
+                #mask errors:
                 cerr = None
-            else:
-                cerr = c.error[numpymask]
-            maskedcolumns.append(FieldContainer(c.data[numpymask],
-                                                copy.deepcopy(c.unit),
-                                                cerr,
-                                                copy.deepcopy(c.mask), 
-                                                mdims, 
-                                                longname=c.longname,
-                                                shortname=c.shortname,
-                                                attributes=copy.deepcopy(c.attributes),
-                                                rescale=False))
+                if c.error != None: cerr = c.error[numpymask]
+            
+                #mask data:
+                cdata = None
+                if c.data != None: cdata = c.data[numpymask]
+            
+                maskedcolumns.append(FieldContainer(cdata,
+                                                    copy.deepcopy(c.unit),
+                                                    cerr,
+                                                    copy.deepcopy(c.mask), 
+                                                    mdims, 
+                                                    longname=c.longname,
+                                                    shortname=c.shortname,
+                                                    attributes=copy.deepcopy(c.attributes),
+                                                    rescale=False))
+            except ValueError:
+                raise ValueError, 'Column "' + c.longname + '" has not enough rows!'
 
-    #build new SampleContainer from masked data and return it
+        #build new SampleContainer from masked columns and return it
         result = SampleContainer(maskedcolumns,
                                  longname=self.longname,
                                  shortname=self.shortname,

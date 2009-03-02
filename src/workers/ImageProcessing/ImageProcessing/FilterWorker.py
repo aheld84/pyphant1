@@ -51,7 +51,7 @@ class FilterWorker(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def applyfilter(self, table, subscriber=0):
-        result = table.filter(self.paramExpression.value.encode('utf-8'))
+        result = table.filter(self.paramExpression.value)
         result.seal()
         return result
 
