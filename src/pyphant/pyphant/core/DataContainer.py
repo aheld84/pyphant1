@@ -376,7 +376,9 @@ class SampleContainer(DataContainer):
 
     #This method generates nested tuples of filter commands to be applied to a SampleContainer out of a string expression
     def _getCommands(self, expression):
-        #TODO: "or" keyword
+        #TODO: "or" keyword,
+        #      compare SCColumns with each other,
+        #      allow multi dimensional columns (think up new syntax)
         
         import re
         #test for expressions containing whitespaces only:
@@ -527,7 +529,7 @@ class SampleContainer(DataContainer):
 
         compressed = compressAnd(compressNot(compressBraces(al)))
         if len(compressed) != 1:
-            raise NotImplementedError, "Expression has not been parsed completely. There has to be a bug within the parser."
+            raise ValueError, "Expression could not be parsed completely (probably missing keyword): " + expression
         return compressed[0]
 
   
@@ -543,7 +545,7 @@ class SampleContainer(DataContainer):
         elif isinstance(expression, TupleType) or expression==None:
             commands = expression
         else:
-            raise TypeError, "Expression has to be of StringType, UnicodeType, TupleType or None. Found " + str(type(expression)) +" instead!"
+            raise TypeError, "Expression has to be of StringType, UnicodeType, TupleType or None. Found " + str(type(expression)) + " instead!"
         
         #check for empty commands:
         if commands == None or commands==():
@@ -575,7 +577,7 @@ class SampleContainer(DataContainer):
                 elif cmds[2] == '>': return left > right
             elif cmds[0] == 'Brace':
                 if len(cmds[1]) != 1:
-                    raise NotImplementedError, "Expression has not been parsed completely. There has to be a bug within the parser."
+                    raise ValueError, "Expression could not be parsed completely. (probably missing keyword): " + str(expression)
                 else:
                     return getMaskFromCommands(cmds[1][0])
             elif cmds[0] == 'AND':
