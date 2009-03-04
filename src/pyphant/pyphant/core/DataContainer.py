@@ -265,7 +265,7 @@ class SampleContainer(DataContainer):
     def numberOfColumns(self):
         return len(self.columns)
 
-    #helper method for filter(expression) which parses human input to python code, ensuring no harm can be done by eval()
+    #helper method for filterDiscarded(expression) which parses human input to python code, ensuring no harm can be done by eval()
     #this method is discarded
     def _parseExpressionDiscarded(self, expression):
         import re
@@ -309,15 +309,27 @@ class SampleContainer(DataContainer):
                     return None
         
         #resolve multiple CompareOps like a <= b <= c == d:
-        ral = abstractlist[:]    #future resolved abstractlist
+        ral = abstractlist[:]    #<-- future resolved abstractlist
         i = 0
         values = ['PhysQuant', 'SCColumn', 'Number']
+        start_sequence = -1
         while i < len(ral) - 4:
             if (ral[i][0] in values) and (ral[i+1][0] == 'CompareOp') and (ral[i+2][0] in values) and (ral[i+3][0] == 'CompareOp') and (ral[i+4][0] in values):
+                if start_sequence == -1: start_sequence = i
                 ral.insert(i+3, ('Delimiter', 'and'))
                 ral.insert(i+4, ral[i+2])
                 i += 4
-            else: i += 1
+            else: 
+                if start_sequence != -1: #<-- this is necessary because 'not' has higher precedence than 'and'
+                    ral.insert(start_sequence, ('Delimiter', '('))
+                    ral.insert(i+4, ('Delimiter', ')'))
+                    start_sequence = -1
+                    i += 3
+                else:
+                    i += 1
+        if start_sequence != -1:
+            ral.insert(start_sequence, ('Delimiter', '('))
+            ral.insert(i+4, ('Delimiter', ')'))
             
         #parse splitted expression to fit requierements of python eval() method:
         parsed = ''
@@ -376,18 +388,17 @@ class SampleContainer(DataContainer):
 
     #This method generates nested tuples of filter commands to be applied to a SampleContainer out of a string expression
     def _getCommands(self, expression):
-        #TODO: "or" keyword,
-        #      compare SCColumns with each other,
+        #TODO: compare SCColumns with each other,
         #      allow multi dimensional columns (think up new syntax)
         
         import re
         #test for expressions containing whitespaces only:
         if len(re.findall(r'\S', expression)) == 0:
-            return None
+            return ()
         
         #prepare regular expressions
         reDoubleQuotes = re.compile(r'("[^"][^"]*")')
-        reSplit = re.compile(r'(<(?!=)|<=|>(?!=)|>=|==|!=|not|NOT|and|AND|\(|\))')
+        reSplit = re.compile(r'(<(?!=)|<=|>(?!=)|>=|==|!=|not|NOT|and|AND|or|OR|\(|\))')
         reCompareOp = re.compile(r'<|>|==|!=')
         
         #split the expression
@@ -398,9 +409,9 @@ class SampleContainer(DataContainer):
             else: splitlist.extend(reSplit.split(dq))
 
         #identify splitted Elements
-        al = [] #abstractlist containing tuples of (type, expression)
+        al = [] #<-- abstractlist containing tuples of (type, expression)
         for e in splitlist:
-            if len(re.findall(r'\S', e)) == 0: pass #skip whitespaces
+            if len(re.findall(r'\S', e)) == 0: pass #<-- skip whitespaces
             elif reCompareOp.match(e) != None:
                 al.append(('CompareOp', e))
             elif reSplit.match(e) != None:
@@ -430,14 +441,29 @@ class SampleContainer(DataContainer):
         #resolve multiple CompareOps like a <= b <= c == d:
         i = 0
         values = ['PhysQuant', 'SCColumn', 'Number']
+        start_sequence = -1
         while i < len(al) - 4:
             if (al[i][0] in values) and (al[i+1][0] == 'CompareOp') and (al[i+2][0] in values) and (al[i+3][0] == 'CompareOp') and (al[i+4][0] in values):
+                if start_sequence == -1:
+                    start_sequence = i
                 al.insert(i+3, ('Delimiter', 'and'))
                 al.insert(i+4, al[i+2])
                 i += 4
-            else: i += 1
+            else: 
+                if start_sequence != -1: #<-- this is necessary because 'not' has higher precedence than 'and'
+                    al.insert(start_sequence, ('Delimiter', '('))
+                    al.insert(i+4, ('Delimiter', ')'))
+                    start_sequence = -1
+                    i += 3
+                else:
+                    i += 1
+        if start_sequence != -1:
+            al.insert(start_sequence, ('Delimiter', '('))
+            al.insert(i+4, ('Delimiter', ')'))
 
-        #identify atomar components like "a" <= 10, 10 > "a", ... and compress them:
+        #identify atomar components like "a" <= 10m, 10s > "b", ... and compress them:
+        if al[0][0] == 'CompareOp':
+            raise ValueError, al[0][1] + " may not stand at the very beginning of an expression!"
         i = 1
         valid = False
         while i < len(al):
@@ -480,7 +506,7 @@ class SampleContainer(DataContainer):
                     raise ValueError, "There are braces enclosing nothing in the expression: " + expression
                 middle = None
                 if end-start == 2:
-                    #discard unnecessary braces:
+                    #discard unnecessary braces in order to reduce recursion depth later on:
                     middle = sublist[start+1:start+2]
                 else:
                     middle = [('Brace', compressBraces(sublist[start+1:end]))]
@@ -505,7 +531,6 @@ class SampleContainer(DataContainer):
                 i += 1
             return sublist[:]
                         
-
         #identify "and"s and compress them recursively:
         def compressAnd(sublist, start=0):
             i = start
@@ -527,7 +552,33 @@ class SampleContainer(DataContainer):
                 i += 1
             return sublist[:]
 
-        compressed = compressAnd(compressNot(compressBraces(al)))
+        #identify "or"s and compress them recursively, decompress braces in order to reduce recursion depth later on:
+        def compressOrDCB(sublist, start=0):
+            i = start
+            while i < len(sublist):
+                if sublist[i] == ('Delimiter', 'or'):
+                    left = None
+                    if start == 1 and i == 1: left = sublist[i-1]
+                    else: left = compressOrDCB(sublist[i-1:i])[0]
+                    if left[0] not in ['NOT', 'AND', 'Atomar', 'OR']:
+                        raise ValueError, "'or' cannot be applied to " + str(left) + "."
+                    right = compressOrDCB(sublist[i+1:i+2])[0]
+                    if right[0] not in ['NOT', 'AND', 'Atomar', 'OR']:
+                        raise ValueError, "'or' cannot be applied to " + str(right) + "."
+                    return sublist[0:i-1] + compressOrDCB([('OR', left, right)] + sublist[i+2:], 1)
+                elif sublist[i][0] == 'Brace':
+                    inner = compressOrDCB(sublist[i][1])
+                    if len(inner) != 1:
+                        raise ValueError, "Expression could not be parsed completely. (probably missing keyword): " + expression
+                    return sublist[0:i] + compressOrDCB(inner + sublist[i+1:], 1)
+                elif sublist[i][0] == 'NOT':
+                    return sublist[0:i] + compressOrDCB([('NOT', compressOrDCB([sublist[i][1]])[0])] + sublist[i+1:], 1)
+                elif sublist[i][0] == 'AND':
+                    return sublist[0:i] + compressOrDCB([('AND', compressOrDCB([sublist[i][1]])[0], compressOrDCB([sublist[i][2]])[0])] + sublist[i+1:], 1)
+                i += 1
+            return sublist[:]
+
+        compressed = compressOrDCB(compressAnd(compressNot(compressBraces(al))))
         if len(compressed) != 1:
             raise ValueError, "Expression could not be parsed completely (probably missing keyword): " + expression
         return compressed[0]
@@ -551,7 +602,7 @@ class SampleContainer(DataContainer):
         if commands == None or commands==():
             return copy.deepcopy(self)
         
-        #generate boolean numpymask from commands:
+        #generate boolean numpymask from commands using fast numpy methods:
         def evaluateAtomar(expr, linkedto):
             if expr[0] == 'SCColumn':
                 if linkedto[0] == 'SCColumn':
@@ -575,11 +626,6 @@ class SampleContainer(DataContainer):
                 elif cmds[2] == '<': return left < right
                 elif cmds[2] == '>=': return left >= right
                 elif cmds[2] == '>': return left > right
-            elif cmds[0] == 'Brace':
-                if len(cmds[1]) != 1:
-                    raise ValueError, "Expression could not be parsed completely. (probably missing keyword): " + str(expression)
-                else:
-                    return getMaskFromCommands(cmds[1][0])
             elif cmds[0] == 'AND':
                 left = getMaskFromCommands(cmds[1])
                 right = getMaskFromCommands(cmds[2])
@@ -596,17 +642,19 @@ class SampleContainer(DataContainer):
                 return numpy.logical_not(getMaskFromCommands(cmds[1]))
                 
         numpymask = getMaskFromCommands(commands)
+
+        #the following code is a bit longish whereas time consuming copy.deepcopy operations with subsequent masking are avoided wherever possible 
         
-        #generate new columns with the boolean mask applied to them
+        #generate new columns with the boolean mask applied to them using fast numpy slicing
         maskedcolumns = []
         for c in self.columns:
             #mask dimension
             mdims = []
             try:
                 for d in c.dimensions:
-                    md = copy.deepcopy(d)
-                    if mdims == []: #only primary axis has to be masked
-                        #mask errors of dimensions
+                    md = copy.deepcopy(d) #<-- could be avoided too, but creating a new FieldContainer always ends up with standard dimensions whereas dimensions are not supposed to bear dimensions themselves
+                    if mdims == []: #<-- only primary axis has to be masked
+                        #mask errors of dimensions if there are any
                         if d.error != None:
                             md.error = d.error[numpymask]
 
