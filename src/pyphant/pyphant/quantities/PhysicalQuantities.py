@@ -865,6 +865,8 @@ _addUnit('hp', '745.7*W', 'horsepower')
 _help.append('Pressure units:')
 
 _addUnit('bar', '1.e5*Pa', 'bar (cgs unit)')
+_addUnit('dbar', '1.e4*Pa', 'dbar (cgs unit)')
+_addUnit('mbar', '1.e2*Pa', 'mbar (cgs unit)')
 _addUnit('atm', '101325.*Pa', 'standard atmosphere')
 _addUnit('torr', 'atm/760', 'torr = mm of mercury')
 _addUnit('psi', '6894.75729317*Pa', 'pounds per square inch')
