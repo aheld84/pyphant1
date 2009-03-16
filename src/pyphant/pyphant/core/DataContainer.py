@@ -422,8 +422,6 @@ class SampleContainer(DataContainer):
                     column = self[e[1:-1]]
                 except:
                     raise IndexError, 'Could not find column ' + e + ' in "' + self.longname + '".'
-                if column.data.ndim != 1:
-                    raise NotImplementedError, "Comparing columns of dimensions other than one is not yet implemented: " + e
                 al.append(('SCColumn', column))
             else:
                 try:
@@ -511,6 +509,8 @@ class SampleContainer(DataContainer):
                 else:
                     middle = [('Brace', compressBraces(sublist[start+1:end]))]
                 return sublist[0:start] + middle + compressBraces(sublist[end+1:])
+
+        #TODO: The following three methods could be merged into one generalized method for compressing unitary and binary operators. This would be useful in a future version when there are lots of operators to be supported.
         
         #identify "not"s and compress them recursively:
         def compressNot(sublist):
@@ -533,7 +533,7 @@ class SampleContainer(DataContainer):
                         
         #identify "and"s and compress them recursively:
         def compressAnd(sublist, start=0):
-            i = start
+            i = start #<-- start=1 indicates that the 1st element of sublist has already been compressed. This is necessary for binary operators.
             while i < len(sublist):
                 if sublist[i] == ('Delimiter', 'and'):
                     left = None
@@ -554,7 +554,7 @@ class SampleContainer(DataContainer):
 
         #identify "or"s and compress them recursively, decompress braces in order to reduce recursion depth later on:
         def compressOrDCB(sublist, start=0):
-            i = start
+            i = start #<-- start=1 indicates that the 1st element of sublist has already been compressed. This is necessary for binary operators.
             while i < len(sublist):
                 if sublist[i] == ('Delimiter', 'or'):
                     left = None
@@ -603,29 +603,51 @@ class SampleContainer(DataContainer):
             return copy.deepcopy(self)
         
         #generate boolean numpymask from commands using fast numpy methods:
-        def evaluateAtomar(expr, linkedto):
-            if expr[0] == 'SCColumn':
-                if linkedto[0] == 'SCColumn':
-                    raise NotImplementedError, "Comparing two columns is not yet implemented: " + expr[1].longname + ", " + linkedto[1].longname
-                return expr[1].data
-            else:
-                if linkedto[0] != 'SCColumn':
-                    raise TypeError, "Could not link " + str(expr[1]) + " to a column. Tried to link with " + str(linkedto)
-                number = expr[1] / linkedto[1].unit
-                if isPhysicalQuantity(number):
-                    raise TypeError, "Cannot compare " + str(expr[1]) + " to " + linkedto[1].longname
-                return number
+        def evaluateAtomar(atomar):
+            left = atomar[1]
+            if left[0] == 'SCColumn':
+                if left[1].data.ndim != 1:
+                    raise NotImplementedError, 'Comparing columns of dimensions other than one is not yet implemented: "' + left[1].longname + '"'
 
+            right = atomar[3]
+            if right[0] == 'SCColumn':
+                if right[1].data.ndim != 1:
+                    raise NotImplementedError, 'Comparing columns of dimensions other than one is not yet implemented: "' + right[1].longname + '"'
+
+            leftvalue = None
+            rightvalue = None
+            if left[0] == 'SCColumn' and right[0] == 'SCColumn':
+                number = right[1].unit/left[1].unit
+                if isPhysicalQuantity(number):
+                    raise TypeError, 'Cannot compare "' + left[1].longname + '" to "' + right[1].longname + '".'
+                leftvalue = left[1].data
+                rightvalue = right[1].data*number
+            elif left[0] == 'SCColumn':
+                number = right[1]/left[1].unit
+                if isPhysicalQuantity(number):
+                    raise TypeError, 'Cannot compare "' + left[1].longname + '" to ' + str(right[1]) + '".'
+                leftvalue = left[1].data
+                rightvalue = number
+            elif right[0] == 'SCColumn':
+                number = left[1]/right[1].unit
+                if isPhysicalQuantity(number):
+                    raise TypeError, "Cannot compare " + str(left[1]) + ' to "' + right[1].longname + '".'
+                leftvalue = number
+                rightvalue = right[1].data
+            else:
+                raise ValueError, "At least one argument of '" + atomar[2][1] + "' has to be a column."
+            
+            if   atomar[2] == '==': return leftvalue == rightvalue
+            elif atomar[2] == '!=': return leftvalue != rightvalue
+            elif atomar[2] == '<=': return leftvalue <= rightvalue
+            elif atomar[2] == '<' : return leftvalue <  rightvalue
+            elif atomar[2] == '>=': return leftvalue >= rightvalue
+            elif atomar[2] == '>' : return leftvalue >  rightvalue
+            raise ValueError, "Invalid atomar expression: " + str(atomar)
+            
         def getMaskFromCommands(cmds):
             if cmds[0] == 'Atomar':
-                left = evaluateAtomar(cmds[1], cmds[3])
-                right = evaluateAtomar(cmds[3], cmds[1])
-                if cmds[2] == '==': return left == right
-                elif cmds[2] == '!=': return left != right
-                elif cmds[2] == '<=': return left <= right
-                elif cmds[2] == '<': return left < right
-                elif cmds[2] == '>=': return left >= right
-                elif cmds[2] == '>': return left > right
+                return evaluateAtomar(cmds)
             elif cmds[0] == 'AND':
                 left = getMaskFromCommands(cmds[1])
                 right = getMaskFromCommands(cmds[2])

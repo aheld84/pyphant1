@@ -503,11 +503,15 @@ class SampleContainerSlicingTests(SampleContainerTest):
     def testPrecedence2dExpression(self):
         self._compareExpected('0m > "l" or not ("t" == 20s or "t" == 40s) and (("l" == -20000m or "t" == 40s) or "l" == 5500m)', [True, False, False, False, True])
 
-    def testNestedTupleExpression(self):
+    def testNestedTuple2dExpression(self):
         self._compareExpected(('AND', ('Atomar', ('SCColumn', self.sc2d["t"]), '==',('PhysQuant', PhysicalQuantity('20s'))), ('Atomar', ('SCColumn', self.sc2d["l"]), '==', ('PhysQuant', PhysicalQuantity('-20000m')))), [True, False, False, False, False])
 
     def testMultipleCompareOpPrecedence2dExpression(self):
         self._compareExpected('not 0m <= "l" <= 10000m', [True, False, True, False, False])
+
+    def testColumnToColumn2dExpression(self):
+        self._compareExpected('"l" == "Strecke"', [True, True, True, True, True])
+        self._compareExpected('"t" != "Zeit"', [False, False, False, False, False])
 
 
 class FieldContainerRescaling(unittest.TestCase):
