@@ -37,7 +37,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-workers=[ 
+workers=[
     "AddColumn",
     "CompareFields",
     "ComputeFunctional",

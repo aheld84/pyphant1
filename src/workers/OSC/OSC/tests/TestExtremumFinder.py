@@ -324,7 +324,7 @@ class TestEstimateExtremumPosition(unittest.TestCase):
         self.y = numpy.array([2,1,1.5],'f')
         self.zeros = numpy.zeros((3,),'f')
         self.error = numpy.array([0.01,0.01,0.01],'f')
-        
+
     def testExactMinimum(self):
         y = numpy.array([2,1,2],'f')
         result =  EF.estimateExtremumPosition(y,self.x)
@@ -334,7 +334,7 @@ class TestEstimateExtremumPosition(unittest.TestCase):
         result =  EF.estimateExtremumPosition(y,self.x,sigmaY=self.error)
         numpy.testing.assert_almost_equal(numpy.array(result),
                                           numpy.array((3.0,0.005,1.0)))
-        
+
     def testExactMaximum(self):
         y = numpy.array([2,3,2],'f')
         result =  EF.estimateExtremumPosition(y,self.x)
@@ -395,6 +395,6 @@ class TestEstimateExtremumPosition(unittest.TestCase):
         self.assertRaises(ValueError,EF.estimateExtremumPosition,self.y,x)
         x = numpy.array([2,3,3],'f')
         self.assertRaises(ValueError,EF.estimateExtremumPosition,self.y,x)
-        
+
 if __name__ == '__main__':
     unittest.main()
