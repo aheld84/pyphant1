@@ -42,8 +42,8 @@ pkg_resources.require('setuptools')
 import StringIO, sys
 import logging
 
-ei = pkg_resources.load_entry_point('setuptools', 
-                                    'console_scripts', 
+ei = pkg_resources.load_entry_point('setuptools',
+                                    'console_scripts',
                                     'easy_install')
 
 def updatePackage(package):

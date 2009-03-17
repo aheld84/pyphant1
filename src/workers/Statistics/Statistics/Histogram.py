@@ -33,7 +33,7 @@ u"""
 The Historgam Worker is a class of Pyphant's Statistic Toolbox. It
 calcuates a histogram from the provided data. Histograms can be
 visualisd as bar charts or line charts. The rexpective axes are
-automatically correctly labled. 
+automatically correctly labled.
 """
 
 __id__ = "$Id$"

@@ -62,8 +62,8 @@ def field2fmf(fieldContainer):
     data = numpy.vstack([dim.data, fieldContainer.data])
     tab = factory.gen_table(data.transpose())
     tab.add_column_def(dim.longname, dim.shortname, str(dim.unit))
-    tab.add_column_def(fieldContainer.longname, 
-                       fieldContainer.shortname, 
+    tab.add_column_def(fieldContainer.longname,
+                       fieldContainer.shortname,
                        str(fieldContainer.unit),
                        dependencies = [dim.shortname])
     fc.add_table(tab)

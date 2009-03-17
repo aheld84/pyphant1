@@ -32,7 +32,7 @@
 u"""
 The ApplyMask Worker is a class of Pyphant's Image Processing
 Toolbox. By using this worker one gry-scale image can be applied as a
-mask on another image.  
+mask on another image.
 """
 
 __id__ = "$Id$"

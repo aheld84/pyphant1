@@ -98,7 +98,7 @@ N_c: Corner Position, or -1 if no corner."""
     return (features,background,cornerPos)
 
 def checkTransitions(data):
-    """Checks the neighboured pixel of data[1,1] and returns the 
+    """Checks the neighboured pixel of data[1,1] and returns the
     N_f: Number of transitions from feature pixels to background pixels counted in clockwise order."""
     transitions = 0
     neighbours = [data[0,0],data[0,1],data[0,2],data[1,2],data[2,2],data[2,1],data[2,0],data[1,0]]
@@ -114,7 +114,7 @@ def skeletonize(data,subscriber = 0):
     version of the receipe described by Steven W. Smith in his 'The Scientist
     and Engineer's Guide to Digital Signal Processing' (www.dspguide.com/ch25/4.htm).
     It is applied to a zero padded copy of the input data. Therefore pixels of the
-    feature are removed iteratively while the following rules apply: 
+    feature are removed iteratively while the following rules apply:
     Rule I   : The pixel is a feature.
     Rule II  : At least one of the pixels closests neighbours belongs to the background.
     Rule III : More than one of the neighboured pixels belong to a feature.
@@ -138,7 +138,7 @@ def skeletonize(data,subscriber = 0):
         numberFeatures = len(XFeat)
         erosedPixels = 0
         if runs == 0:
-            progressbar = progress(numberFeatures)        
+            progressbar = progress(numberFeatures)
         neighbourhood = zeros((nx+2,ny+2,3),'int16')
         for x,y in zip(XFeat.tolist(),YFeat.tolist()):
             fingerprint = checkNeighbours(image[x-1:x+2,y-1:y+2])

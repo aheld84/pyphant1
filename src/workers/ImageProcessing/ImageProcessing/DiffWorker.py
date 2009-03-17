@@ -32,7 +32,7 @@
 u"""
 The Diff Worker belongs to Pyphant's Image Processing Toolbox. It
 computes the difference between two images, eg. the skeletonised image
-and the origial image. 
+and the origial image.
 """
 
 __id__ = "$Id$"

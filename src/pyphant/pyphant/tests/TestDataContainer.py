@@ -302,7 +302,7 @@ class IsValidFieldContainer(unittest.TestCase):
     def testDimension1HasSameShapeAsField(self):
         self.field.dimensions[1] = copy.deepcopy(self.field)
         self.assertFalse(self.field.isValid())
-        
+
 
 class SampleContainerTest(unittest.TestCase):
     def setUp(self):
@@ -323,7 +323,7 @@ class SampleContainerTest(unittest.TestCase):
         self.longname=u"Toller Sample"
         self.shortname=u"phi"
         self.sampleContainer=SampleContainer([self.intSample, self.floatSample], self.longname, self.shortname)
-        
+
     def runTest(self):
         return
 
@@ -399,7 +399,7 @@ class SampleContainerSlicingTests(SampleContainerTest):
         result2 = self.sampleContainer.filter('20m < "i" < 80m')
         self.assertEqual(result1[0], result2[0])
         self.assertEqual(result1[1], result2[1])
-    
+
     def testSimpleExpression(self):
         result = self.sampleContainer.filter('50m <= "i" < 57m')
         self.assertEqual(len(result.columns), 2)
@@ -408,7 +408,7 @@ class SampleContainerSlicingTests(SampleContainerTest):
         expected = self.sampleContainer["i"][50:57]
         expected.attributes={}
         result.attributes={}
-        self.assertEqual(result[0], expected) 
+        self.assertEqual(result[0], expected)
         expected = self.sampleContainer["t"][50:57]
         expected.attributes={}
         result.attributes={}
@@ -488,30 +488,30 @@ class FieldContainerRescaling(unittest.TestCase):
 
 class FieldContainerSlicing1d(unittest.TestCase):
     def setUp(self):
-        self.field1d = FieldContainer(numpy.linspace(0.1,1,10), longname="voltage", 
+        self.field1d = FieldContainer(numpy.linspace(0.1,1,10), longname="voltage",
                                       shortname="U", unit="1V")
     def testSingleIndex(self):
         section = self.field1d[0]
-        afoot = FieldContainer(numpy.array([0.1]), longname="afoot", 
+        afoot = FieldContainer(numpy.array([0.1]), longname="afoot",
                                shortname="U", unit="1V", dimensions=[],
                                attributes={u'Index':(u'i',0)})
         assertEqual(section,afoot)
 
     def testRegionIndex(self):
         section = self.field1d[1:4]
-        afoot = FieldContainer(numpy.linspace(0.2,0.4,3), longname="voltage", 
+        afoot = FieldContainer(numpy.linspace(0.2,0.4,3), longname="voltage",
                                       shortname="U", unit="1V")
         afoot.dimensions[0].data = numpy.linspace(1,3,3)
         self.assertEqual(section,afoot)
         section = self.field1d[1:-1]
-        afoot = FieldContainer(numpy.linspace(0.2,0.9,8), longname="voltage", 
+        afoot = FieldContainer(numpy.linspace(0.2,0.9,8), longname="voltage",
                                       shortname="U", unit="1V")
         afoot.dimensions[0].data = numpy.linspace(1,8,8)
         self.assertEqual(section,afoot)
 
     def testCommaSeparated(self):
         section = self.field1d[[1,3,7],]
-        afoot = FieldContainer(numpy.array([0.2,0.4,0.8]), longname="voltage", 
+        afoot = FieldContainer(numpy.array([0.2,0.4,0.8]), longname="voltage",
                                shortname="U", unit="1V")
         afoot.dimensions[0].data = numpy.array([1,3,7])
         self.assertEqual(section,afoot)
@@ -540,19 +540,19 @@ class FieldContainerSlicing1dDim(FieldContainerSlicing1d):
 
     def testSingleIndex(self):
         section = self.field1d[0]
-        afoot = FieldContainer(numpy.array([0.1]), longname="afoot", 
+        afoot = FieldContainer(numpy.array([0.1]), longname="afoot",
                                shortname="U", unit="1V", dimensions=[self.xDim[0]],
                                attributes={u'current':(u'I',PhysicalQuantity("0.3A"))})
         assertEqual(section,afoot)
 
     def testRegionIndex(self):
         section = self.field1d[1:4]
-        afoot = FieldContainer(numpy.linspace(0.2,0.4,3), longname="voltage", 
+        afoot = FieldContainer(numpy.linspace(0.2,0.4,3), longname="voltage",
                                shortname="U", unit="1V")
         afoot.dimensions[0] = self.xDim[1:4]
         self.assertEqual(section,afoot)
         section = self.field1d[1:-1]
-        afoot = FieldContainer(numpy.linspace(0.2,0.9,8), longname="voltage", 
+        afoot = FieldContainer(numpy.linspace(0.2,0.9,8), longname="voltage",
                                shortname="U", unit="1V")
         afoot.dimensions[0] = self.xDim[1:-1]
         self.assertEqual(section,afoot)
@@ -563,7 +563,7 @@ class FieldContainerSlicing1dDim(FieldContainerSlicing1d):
         intEnd   = dim.data.max()*dim.unit
         unitname = dim.unit.unit.name()
         section = self.field1d["%.4f%s:%.4f%s"%(intStart.value,unitname,intEnd.value,unitname)]
-        afoot = FieldContainer(numpy.linspace(0.1,0.9,9), longname="voltage", 
+        afoot = FieldContainer(numpy.linspace(0.1,0.9,9), longname="voltage",
                                shortname="U", unit="1V")
         afoot.dimensions[0] = self.xDim[0:-1]
         self.assertEqual(section,afoot)
@@ -579,7 +579,7 @@ class FieldContainerSlicing1dDim(FieldContainerSlicing1d):
 
     def testCommaSeparated(self):
         section = self.field1d[[1,3,7],]
-        afoot = FieldContainer(numpy.array([0.2,0.4,0.8]), longname="voltage", 
+        afoot = FieldContainer(numpy.array([0.2,0.4,0.8]), longname="voltage",
                                shortname="U", unit="1V")
         afoot.dimensions[0] = self.xDim[[1,3,7],]
         self.assertEqual(section,afoot)
@@ -627,19 +627,19 @@ class FieldContainerSlicing1dDim(FieldContainerSlicing1d):
         section = self.field1d["0.4A:1000mA"]
         assertEqual(section, afoot)
         section = self.field1d["0.4A:700mA"]
-        assertEqual(section, afoot)        
+        assertEqual(section, afoot)
 
 
 class FieldContainerSlicing2d(unittest.TestCase):
     def setUp(self):
         l = numpy.linspace(0,0.9,10)
         m = numpy.meshgrid(l, l*10)
-        self.field2d = FieldContainer(m[0]+m[1], longname="voltage", 
+        self.field2d = FieldContainer(m[0]+m[1], longname="voltage",
                                       shortname="U", unit="1V")
 
     def testSingleIndex(self):
         section = self.field2d[0]
-        afoot = FieldContainer(numpy.linspace(0,0.9,10), longname="voltage", 
+        afoot = FieldContainer(numpy.linspace(0,0.9,10), longname="voltage",
                                shortname="U", unit="1V",
                                attributes={u'Index':(u'j',0)})
         self.assertTrue(section.isValid())
@@ -647,19 +647,19 @@ class FieldContainerSlicing2d(unittest.TestCase):
 
     def testRegionIndex(self):
         section = self.field2d[1:4]
-        afoot = FieldContainer(self.field2d.data[1:4], longname="afoot", 
+        afoot = FieldContainer(self.field2d.data[1:4], longname="afoot",
                                shortname="U", unit="1V")
         afoot.dimensions[0].data = numpy.linspace(1,3,3)
         self.assertEqual(section,afoot)
         section = self.field2d[1:-1]
-        afoot = FieldContainer(self.field2d.data[1:-1], longname="voltage", 
+        afoot = FieldContainer(self.field2d.data[1:-1], longname="voltage",
                                shortname="U", unit="1V")
         afoot.dimensions[0].data = numpy.linspace(1,8,8)
         self.assertEqual(section,afoot)
 
     def testCommaSeparated(self):
         section = self.field2d[[1,3,7],]
-        afoot = FieldContainer(self.field2d.data[[1,3,7],], longname="voltage", 
+        afoot = FieldContainer(self.field2d.data[[1,3,7],], longname="voltage",
                                shortname="U", unit="1V")
         afoot.dimensions[0].data = numpy.array([1,3,7])
         self.assertEqual(section,afoot)
@@ -678,22 +678,22 @@ class FieldContainerSlicing2dDim(FieldContainerSlicing2d):
 
     def testSingleIndex(self):
         section = self.field2d[0]
-        afoot = FieldContainer(numpy.linspace(0,0.9,10), longname="voltage", 
+        afoot = FieldContainer(numpy.linspace(0,0.9,10), longname="voltage",
                                shortname="U", unit="1V",
                                attributes={u'position':(u'p',PhysicalQuantity("30cm"))},
-                               dimensions=[self.xDim]) 
+                               dimensions=[self.xDim])
         self.assertTrue(section.isValid())
         self.assertEqual(section,afoot)
 
     def testRegionIndex(self):
         section = self.field2d[1:4]
-        afoot = FieldContainer(self.field2d.data[1:4], longname="afoot", 
+        afoot = FieldContainer(self.field2d.data[1:4], longname="afoot",
                                shortname="U", unit="1V")
         afoot.dimensions[0] = self.yDim[1:4]
         afoot.dimensions[1] = self.xDim
         self.assertEqual(section,afoot)
         section = self.field2d[1:-1]
-        afoot = FieldContainer(self.field2d.data[1:-1], longname="voltage", 
+        afoot = FieldContainer(self.field2d.data[1:-1], longname="voltage",
                                shortname="U", unit="1V")
         afoot.dimensions[0] = self.yDim[1:-1]
         afoot.dimensions[1] = self.xDim
@@ -701,7 +701,7 @@ class FieldContainerSlicing2dDim(FieldContainerSlicing2d):
 
     def testCommaSeparated(self):
         section = self.field2d[[1,3,7],]
-        afoot = FieldContainer(self.field2d.data[[1,3,7],], longname="voltage", 
+        afoot = FieldContainer(self.field2d.data[[1,3,7],], longname="voltage",
                                shortname="U", unit="1V")
         afoot.dimensions[0] = self.yDim[[1,3,7],]
         afoot.dimensions[1] = self.xDim
@@ -711,7 +711,7 @@ class FieldContainerSlicing2dDim(FieldContainerSlicing2d):
 
     def testRegionIndexUnit(self):
         section = self.field2d["4:6dm"]
-        afoot = FieldContainer(self.field2d.data[3:7], longname="afoot", 
+        afoot = FieldContainer(self.field2d.data[3:7], longname="afoot",
                                shortname="U", unit="1V")
         afoot.dimensions[0] = self.yDim[3:7]
         afoot.dimensions[1] = self.xDim
@@ -722,7 +722,7 @@ class FieldContainerSlicing2dDim(FieldContainerSlicing2d):
 
     def test2FoldRegionIndexUnit(self):
         section = self.field2d["4:6dm","4e-1:.6A"]
-        afoot = FieldContainer(self.field2d.data[3:7,3:7], longname="afoot", 
+        afoot = FieldContainer(self.field2d.data[3:7,3:7], longname="afoot",
                                shortname="U", unit="1V")
         afoot.dimensions[0] = self.yDim[3:7]
         afoot.dimensions[1] = self.xDim[3:7]
@@ -730,7 +730,7 @@ class FieldContainerSlicing2dDim(FieldContainerSlicing2d):
 
     def test2ndAxisRegionIndexUnit(self):
         section = self.field2d[:,"4e-1:.6A"]
-        afoot = FieldContainer(self.field2d.data[:,3:7], longname="afoot", 
+        afoot = FieldContainer(self.field2d.data[:,3:7], longname="afoot",
                                shortname="U", unit="1V")
         afoot.dimensions[0] = self.yDim
         afoot.dimensions[1] = self.xDim[3:7]

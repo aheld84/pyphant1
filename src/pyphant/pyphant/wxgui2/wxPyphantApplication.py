@@ -235,7 +235,7 @@ class wxPyphantFrame(wx.Frame):
     def onUpdatePyphant(self, event):
         import pyphant.core.UpdateManager
         pyphant.core.UpdateManager.updatePackage(self.updateIds[event.Id])
-    
+
     def onQuit(self,event):
         self.Close()
 

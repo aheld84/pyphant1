@@ -33,7 +33,7 @@ u"""
 The Coverage Worker is a class of Pyphant's Image Processing
 toolbox. It compares everx pixel with a calculated
 threshold. Therefore required percentages of black and white material
-in the image can be edited. 
+in the image can be edited.
 """
 
 __id__ = "$Id$"

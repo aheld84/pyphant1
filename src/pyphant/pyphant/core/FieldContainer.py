@@ -47,7 +47,7 @@ module.
         its *emd5* format which holds information about the origin of
         the container.
 
-The *FieldContainer* stores a sampled scalar Filed. 
+The *FieldContainer* stores a sampled scalar Filed.
 
         It holds an *n-dimensional array* together with
         its *unit* and coordinates of the idependent variable (*dimensions*).

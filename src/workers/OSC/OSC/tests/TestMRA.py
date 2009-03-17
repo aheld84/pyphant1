@@ -72,7 +72,7 @@ class TestMRA(unittest.TestCase):
                                    unit='1 V',dimensions=[self.xField],
                                    longname = 'electric potential',
                                    shortname=r'\varphi')
-        
+
     def testMinima(self):
         """Test the correct computation of all local minima for a bistable potential."""
         #Predict result
@@ -87,7 +87,7 @@ class TestMRA(unittest.TestCase):
         result = w.mra(self.V)
         #Testing
         numpy.testing.assert_array_almost_equal(result.data,expectedResult.data,4)
-        
+
 class TestExtremumFinderTable(unittest.TestCase):
     """Sets up a mirror symmetric bistable potential with a continuous
     distretisation and computes its local extrema and the respective

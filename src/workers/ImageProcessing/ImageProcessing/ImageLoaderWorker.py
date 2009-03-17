@@ -32,7 +32,7 @@
 u"""
 The ImageLoader Worker is a class of Pyphant's Image Processing
 Toolbox. It simply loads an image from the location given in the
-worker's configuration. 
+worker's configuration.
 """
 
 __id__ = "$Id$"
