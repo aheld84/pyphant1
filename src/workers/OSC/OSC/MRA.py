@@ -107,7 +107,7 @@ def mra1d(dim, field, n):
     pos = dim.data[numpy.array(lastMinima)+1]
     error = numpy.abs(pos - dim.data[numpy.array(firstMinima)+1])
     return pos, error
-    
+
 
 class MRA(Worker.Worker):
     API = 2

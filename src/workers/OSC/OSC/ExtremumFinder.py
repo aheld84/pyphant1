@@ -241,7 +241,7 @@ def estimateExtremumPosition(y, x, sigmaY = None):
     #than zero a local minimum or local maximum has been detected, respectively.
     if deltaYleft == 0.0:
         if deltaYright == 0.0: #constant region
-            return numpy.NaN,numpy.NaN,numpy.NaN    
+            return numpy.NaN,numpy.NaN,numpy.NaN
         elif deltaYright > 0:  #local minimum
             curv_sign = 1.0
         else:                  #local maximum
@@ -250,7 +250,7 @@ def estimateExtremumPosition(y, x, sigmaY = None):
         curv_sign = -numpy.sign(deltaYleft)
     # Estimate position of local extrema according to Eq. $\text{(\ref{Eq:estimator})}$.
     x0 =xCleft-(xCright-xCleft)/(deltaYright/deltaXright-deltaYleft/deltaXleft)*deltaYleft/deltaXleft
-    # If an y-error has been provided, compute the estimation error according to Eq. $\text{(\ref{Eq:uncertainty})}$.    
+    # If an y-error has been provided, compute the estimation error according to Eq. $\text{(\ref{Eq:uncertainty})}$.
     if sigmaY != None:
         numerator = 0.5*deltaXleft*deltaXright*(x[2]-x[0])
         R = numerator / (y[0]*deltaXright+y[1]*(x[0]-x[2])+y[2]*deltaXleft)**2

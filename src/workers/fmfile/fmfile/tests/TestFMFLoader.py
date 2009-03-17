@@ -36,7 +36,7 @@ import pkg_resources
 pkg_resources.require('pyphant.fmf')
 
 import unittest, numpy
-from fmfile import FMFLoader 
+from fmfile import FMFLoader
 
 
 class FieldContainerCondenseDim(unittest.TestCase):

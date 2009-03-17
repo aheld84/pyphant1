@@ -271,7 +271,7 @@ class SampleContainer(DataContainer):
         reDoubleQuotes = re.compile(r'("[^"][^"]*")')
         reSplit = re.compile(r'(<(?!=)|<=|>(?!=)|>=|==|!=|and|or|not|AND|OR|NOT|\(|\))')
         reCompareOp = re.compile(r'<|>|==|!=')
-        
+
         #split the expression
         DQList = reDoubleQuotes.split(expression)
         splitlist = []
@@ -306,7 +306,7 @@ class SampleContainer(DataContainer):
                     except: pass
                     print("Error parsing expression: "+e)
                     return None
-        
+
         #resolve multiple CompareOps like a <= b <= c == d:
         ral = abstractlist[:]    #future resolved abstractlist
         i = 0
@@ -317,7 +317,7 @@ class SampleContainer(DataContainer):
                 ral.insert(i+4, ral[i+2])
                 i += 4
             else: i += 1
-            
+
         #parse splitted expression to fit requierements of python eval() method:
         parsed = ''
         for i in range(len(ral)):
@@ -328,7 +328,7 @@ class SampleContainer(DataContainer):
             else: parsed += ' ' + currexpr + ' '
 
         return parsed
-    
+
 
     #returns new SampleContainer containing all entries that match expression
     def filter(self, expression):
@@ -348,10 +348,10 @@ class SampleContainer(DataContainer):
             except:
                 print('Error evaluating ' + parsed)
                 return None
-            
+
             mask.append(boolexpr)
         numpymask = numpy.array(mask)
-        
+
         #apply mask to data, error and dimensions
         maskedcolumns = copy.deepcopy(self.columns)
         for index in range(len(maskedcolumns)):

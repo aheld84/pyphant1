@@ -84,7 +84,7 @@ class TextSubscriber(object):
 
 
 import pyphant.core.PyTablesPersister
-visualizer = None 
+visualizer = None
 def processArgs():
     from optparse import OptionParser
     visualizationThemes = ("compareAbsorption",
@@ -301,7 +301,7 @@ def dumpMinima(recipe):
         tab.add_column_def("minimaPos%i"%i, "p_%i"%i)
     fc.add_table(tab)
     print str(fc)
-        
+
 def main():
     pathToRecipe, options, recipe = processArgs()
     setParameters(recipe, options.freqRange, options.scale)
