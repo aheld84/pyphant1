@@ -30,6 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The ImageProcessing toolbox holds workers to process data resulting from scalar fields.
 """
 
 __id__ = "$Id$"
@@ -40,7 +41,7 @@ __version__ = "$Revision$"
 BACKGROUND_COLOR=255
 FEATURE_COLOR=0
 
-workers=[ 
+workers=[
     "ApplyMask",
     "CoverageWorker",
     "DiffWorker",

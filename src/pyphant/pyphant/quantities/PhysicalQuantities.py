@@ -68,7 +68,7 @@ class NumberDict(dict):
     and subtraction with other NumberDict instances, and multiplication
     and division by scalars.
     """
-    
+
     def __getitem__(self, item):
         try:
             return dict.__getitem__(self, item)
@@ -109,7 +109,7 @@ class NumberDict(dict):
             new[key] = self[key]/other
         return new
 
-import numpy.oldnumeric 
+import numpy.oldnumeric
 def int_sum(a, axis=0):
     return numpy.oldnumeric.add.reduce(a, axis)
 def zeros_st(shape, other):
@@ -142,7 +142,7 @@ class PhysicalQuantity:
 
     See the documentation of the PhysicalQuantities module for a list
     of the available units.
-    
+
     Here is an example on usage:
 
     >>> from PhysicalQuantities import PhysicalQuantity as p  # short hand
@@ -159,14 +159,14 @@ class PhysicalQuantity:
     >>> total = total.inBaseUnits()
     >>> total
     PhysicalQuantity(10010.0,'m')
-    >>> 
+    >>>
     >>> t = p(314159., 's')
     >>> # convert to days, hours, minutes, and second:
     >>> t2 = t.inUnitsOf('d','h','min','s')
     >>> t2_print = ' '.join([str(i) for i in t2])
     >>> t2_print
     '3.0 d 15.0 h 15.0 min 59.0 s'
-    >>> 
+    >>>
     >>> e = p('2.7 Hartree*Nav')
     >>> e.convertToUnit('kcal/mol')
     >>> e
@@ -174,12 +174,12 @@ class PhysicalQuantity:
     >>> e = e.inBaseUnits()
     >>> str(e)
     '7088849.77818 kg*m**2/s**2/mol'
-    >>> 
+    >>>
     >>> freeze = p('0 degC')
     >>> freeze = freeze.inUnitsOf ('degF')
     >>> str(freeze)
     '32.0 degF'
-    >>> 
+    >>>
     """
 
     def __init__(self, *args):
@@ -214,7 +214,7 @@ class PhysicalQuantity:
         return str(self.value) + ' ' + self.unit.name()
 
     def __repr__(self):
-        return (self.__class__.__name__ + '(' + `self.value` + ',' + 
+        return (self.__class__.__name__ + '(' + `self.value` + ',' +
                 `self.unit.name()` + ')')
 
     def _sum(self, other, sign1, sign2):
@@ -391,7 +391,7 @@ class PhysicalQuantity:
     def getUnitName(self):
         """Return unit (string) of physical quantity."""
         return self.unit.name()
-    
+
     def sqrt(self):
         return pow(self, 0.5)
 
@@ -426,7 +426,7 @@ class PhysicalUnit:
     factor, and the exponentials of each of the SI base units that enter into
     it. Units can be multiplied, divided, and raised to integer powers.
     """
-    
+
     def __init__(self, names, factor, powers, offset=0):
         """
         @param names: a dictionary mapping each name component to its
@@ -738,7 +738,7 @@ def _addPrefixed(unit):
 _help.append('SI derived units; these automatically get prefixes:\n' + \
      ', '.join([prefix + ' (%.0E)' % value for prefix, value in _prefixes]) + \
              '\n')
-             
+
 
 _unit_table['kg'] = PhysicalUnit('kg',   1., [0,1,0,0,0,0,0,0,0,0])
 
@@ -919,7 +919,7 @@ if rc['fetchCurrencyRates']:
                    'PLN':'Polish zloty',    'RON':'New Romanian leu',
                    'SEK':'Swedish krona',   'SKK':'Slovak koruna',
                    'CHF':'Swiss franc',     'ISK':'Icelandic krona',
-                   'NOK':'Norwegian krone', 'HRK':'Croatian kuna', 
+                   'NOK':'Norwegian krone', 'HRK':'Croatian kuna',
                    'RUB':'Russian rouble',  'TRY':'New Turkish lira',
                    'AUD':'Australian dollar','BRL':'Brasilian real',
                    'CAD':'Canadian dollar', 'CNY':'Chinese yuan renminbi',
@@ -937,7 +937,7 @@ if rc['fetchCurrencyRates']:
                      'EUR/%s' % element.getAttribute('rate').encode('utf8'),
                      currencyNames[currency])
         print "Added exchange rate of %s for %s." % (elements[1].getAttribute('time'),
-                                                     [ i.getAttribute('currency').encode('utf8') 
+                                                     [ i.getAttribute('currency').encode('utf8')
                                                        for i in elements[2:] ])
     except:
         print "WARNING: No daily exchange rates available."

@@ -30,6 +30,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The Add Column Worker is a class of Pyphant's OSC Toolbox. It inserts a
+column that was once extracted by using the column extractor in the
+orignial chart again.
 """
 
 __id__ = "$Id$"

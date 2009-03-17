@@ -31,25 +31,37 @@ from __future__ import with_statement
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-DataContainer \t- A Pyphant modul for self-explanatory scientific data
-======================================================================
-\nA Pyphant DataContainer presents the following attributes:
-\t  .longname \t- Notation of the data, e.g. 'electric field',
-\t\t\t  which is used for the automatic annotation of charts.
-\t  .shortname \t- Symbol of the physical variable in LaTeX notation, e.g. 'E_\\alpha',
-\t\t\t  which is also used for the automatic annotation of charts.
-\t  .id \t\t- Identifier of Enhanced MD5 (emd5) format
-\t\t\t\temd5://NODE/USER/DATETIME/MD5-HASH.TYPESTRING
-\t\t\t  which is set by calling method .seal() and
-\t\t\t  indicates that the stored information are unchangable.
-\t  .label\t- Typical axis description composed from the meta information of the DataContainer.
-\t  .data \t- Data object, e.g. numpy.array
+=============================================================================
+**DataContainer** -- A Pyphant module for *self-explanatory scientific data*
+=============================================================================
 
-DataContainer \t\t- Base class for self-explanatory scientific data
-FieldContainer \t\t- Class describing sampled fields
-SampleContainer \t- Class used for storing realizations of random variables
-generateIndex() \t- Function returning an indexing FieldContainer instance
-parseId()\t\t- Function returning tupple (HASH,TYPESTRING) from given .id attribute.
+The *DataContainer* is Pypahnt's preferred data exchange class. It is
+designed to maximise the interoperability of the various workers
+provided by Pyphant.
+
+It can be seen as an interface for exchanging data between workers and
+visualizers and among workers. It reproduces the self-descriptiveness of the *network
+Common Data Form* (netCDF). Once sealed it is immutable. It can be
+identified by its *emd5* attribute, a unique identifier composed of
+information about the origin of the container.
+
+There are two kinds of DataContainers:
+
+     - L{FieldContainer}
+        - is designed to store *sampled scalar Fields*
+
+     - L{SampleContainer}
+        - is designed to store *tabular data*
+
+
+**SampleConatiner** -- A pyphant module storing tabular data
+=============================================================
+
+The *SampleContainer* combines different FieldContainers that have the
+same numer of sample points to a table-like representation. It stores
+different observations on the same subject per row whereby each column
+comprises a quantity of the same kind. Each row can be regarded as the
+realization of a random variable.
 """
 
 __id__ = "$Id$"
@@ -271,7 +283,7 @@ class SampleContainer(DataContainer):
         reDoubleQuotes = re.compile(r'("[^"][^"]*")')
         reSplit = re.compile(r'(<(?!=)|<=|>(?!=)|>=|==|!=|and|or|not|AND|OR|NOT|\(|\))')
         reCompareOp = re.compile(r'<|>|==|!=')
-        
+
         #split the expression
         DQList = reDoubleQuotes.split(expression)
         splitlist = []
@@ -306,7 +318,7 @@ class SampleContainer(DataContainer):
                     except: pass
                     print("Error parsing expression: "+e)
                     return None
-        
+
         #resolve multiple CompareOps like a <= b <= c == d:
         ral = abstractlist[:]    #future resolved abstractlist
         i = 0
@@ -317,7 +329,7 @@ class SampleContainer(DataContainer):
                 ral.insert(i+4, ral[i+2])
                 i += 4
             else: i += 1
-            
+
         #parse splitted expression to fit requierements of python eval() method:
         parsed = ''
         for i in range(len(ral)):
@@ -328,7 +340,7 @@ class SampleContainer(DataContainer):
             else: parsed += ' ' + currexpr + ' '
 
         return parsed
-    
+
 
     #returns new SampleContainer containing all entries that match expression
     def filter(self, expression):
@@ -348,10 +360,10 @@ class SampleContainer(DataContainer):
             except:
                 print('Error evaluating ' + parsed)
                 return None
-            
+
             mask.append(boolexpr)
         numpymask = numpy.array(mask)
-        
+
         #apply mask to data, error and dimensions
         maskedcolumns = copy.deepcopy(self.columns)
         for index in range(len(maskedcolumns)):

@@ -30,6 +30,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The OSC Toolbox holds workers for processing data coming from organic
+solar cells.
 """
 
 __id__ = "$Id$"
@@ -37,7 +39,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-workers=[ 
+workers=[
     "AddColumn",
     "CompareFields",
     "ComputeFunctional",

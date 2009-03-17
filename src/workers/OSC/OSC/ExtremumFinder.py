@@ -30,7 +30,11 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""Pyphant module computing the local extrema of one-dimensional sampled fields. If a two-dimensional field is provided as input, the algorithm loops over the 0th dimension denoting the y-axis, which corresponds to an iteration over the rows of the data matrix.
+u"""
+Pyphant module computing the local extrema of one-dimensional
+sampled fields. If a two-dimensional field is provided as input, the
+algorithm loops over the 0th dimension denoting the y-axis, which
+corresponds to an iteration over the rows of the data matrix.
 """
 
 __id__ = "$Id$"
@@ -241,7 +245,7 @@ def estimateExtremumPosition(y, x, sigmaY = None):
     #than zero a local minimum or local maximum has been detected, respectively.
     if deltaYleft == 0.0:
         if deltaYright == 0.0: #constant region
-            return numpy.NaN,numpy.NaN,numpy.NaN    
+            return numpy.NaN,numpy.NaN,numpy.NaN
         elif deltaYright > 0:  #local minimum
             curv_sign = 1.0
         else:                  #local maximum
@@ -250,7 +254,7 @@ def estimateExtremumPosition(y, x, sigmaY = None):
         curv_sign = -numpy.sign(deltaYleft)
     # Estimate position of local extrema according to Eq. $\text{(\ref{Eq:estimator})}$.
     x0 =xCleft-(xCright-xCleft)/(deltaYright/deltaXright-deltaYleft/deltaXleft)*deltaYleft/deltaXleft
-    # If an y-error has been provided, compute the estimation error according to Eq. $\text{(\ref{Eq:uncertainty})}$.    
+    # If an y-error has been provided, compute the estimation error according to Eq. $\text{(\ref{Eq:uncertainty})}$.
     if sigmaY != None:
         numerator = 0.5*deltaXleft*deltaXright*(x[2]-x[0])
         R = numerator / (y[0]*deltaXright+y[1]*(x[0]-x[2])+y[2]*deltaXleft)**2

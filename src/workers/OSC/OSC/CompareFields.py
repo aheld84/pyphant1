@@ -30,6 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The Compare Fields Worker is a class of Pyphant's OSC Toolbox.
 """
 
 __id__ = "$Id$"

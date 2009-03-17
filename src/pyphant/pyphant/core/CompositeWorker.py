@@ -118,7 +118,7 @@ class CompositeWorker(Worker.Worker):
             if result == []:
                 raise ValueError, "Recipe does not contain Worker %s" % desiredWorker
         if precursor:
-            result = [worker for worker in result 
+            result = [worker for worker in result
                       if precursor in
                       [socket._plug.worker.name for socket in worker.getSockets()]
                       ]

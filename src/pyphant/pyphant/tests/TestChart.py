@@ -62,7 +62,7 @@ class TestLinePlot(unittest.TestCase):
         self.kappa1=0.0
         self.tmpdir = tempfile.gettempdir()
         self.visualizer = LineChart
-        
+
     def testVisualization(self):
         X = numpy.linspace(-1.5,1.5,self.n)
         self.lambDim = 1.0
