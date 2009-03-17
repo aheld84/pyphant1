@@ -30,6 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The FMF Toolbox holds workers for processing full meta data format files.
 """
 
 

@@ -30,6 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The ImageProcessing toolbox holds workers to process data resulting from scalar fields.
 """
 
 __id__ = "$Id$"

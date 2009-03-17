@@ -29,6 +29,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The Error Estimaotr Worker is a class of Pyphant's OSC-Toolbox. It
+valuates the error caused by noise for every pixel in a field.
 """
 
 __id__ = "$Id$"

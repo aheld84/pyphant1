@@ -30,6 +30,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The Touching Feature Remover Worker is a class of Pyphant's Image Processing
+Toolbox. It removes all features of an image that are touching the
+edge until only the outline remains.
 """
 
 __id__ = "$Id$"
