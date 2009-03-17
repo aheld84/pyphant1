@@ -40,7 +40,7 @@ __version__ = "$Revision$"
 BACKGROUND_COLOR=255
 FEATURE_COLOR=0
 
-workers=[ 
+workers=[
     "ApplyMask",
     "CoverageWorker",
     "DiffWorker",

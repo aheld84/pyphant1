@@ -272,7 +272,7 @@ class SampleContainer(DataContainer):
         reDoubleQuotes = re.compile(r'("[^"][^"]*")')
         reSplit = re.compile(r'(<(?!=)|<=|>(?!=)|>=|==|!=|and|or|not|AND|OR|NOT|\(|\))')
         reCompareOp = re.compile(r'<|>|==|!=')
-        
+
         #split the expression
         DQList = reDoubleQuotes.split(expression)
         splitlist = []
@@ -307,7 +307,7 @@ class SampleContainer(DataContainer):
                     except: pass
                     print("Error parsing expression: "+e)
                     return None
-        
+
         #resolve multiple CompareOps like a <= b <= c == d:
         ral = abstractlist[:]    #<-- future resolved abstractlist
         i = 0
@@ -319,7 +319,7 @@ class SampleContainer(DataContainer):
                 ral.insert(i+3, ('Delimiter', 'and'))
                 ral.insert(i+4, ral[i+2])
                 i += 4
-            else: 
+            else:
                 if start_sequence != -1: #<-- this is necessary because 'not' has higher precedence than 'and'
                     ral.insert(start_sequence, ('Delimiter', '('))
                     ral.insert(i+4, ('Delimiter', ')'))
@@ -330,7 +330,7 @@ class SampleContainer(DataContainer):
         if start_sequence != -1:
             ral.insert(start_sequence, ('Delimiter', '('))
             ral.insert(i+4, ('Delimiter', ')'))
-            
+
         #parse splitted expression to fit requierements of python eval() method:
         parsed = ''
         for i in range(len(ral)):
@@ -341,7 +341,7 @@ class SampleContainer(DataContainer):
             else: parsed += ' ' + currexpr + ' '
 
         return parsed
-    
+
 
     #returns new SampleContainer containing all entries that match expression
     #this method has been replaced by the new version of SampleContainer.filter
@@ -364,10 +364,10 @@ class SampleContainer(DataContainer):
             except:
                 print('Error evaluating ' + parsed)
                 return None
-            
+
             mask.append(boolexpr)
         numpymask = numpy.array(mask)
-        
+
         #apply mask to data, error and dimensions
         maskedcolumns = copy.deepcopy(self.columns)
         for index in range(len(maskedcolumns)):
@@ -390,17 +390,17 @@ class SampleContainer(DataContainer):
     def _getCommands(self, expression):
         #TODO: compare SCColumns with each other,
         #      allow multi dimensional columns (think up new syntax)
-        
+
         import re
         #test for expressions containing whitespaces only:
         if len(re.findall(r'\S', expression)) == 0:
             return ()
-        
+
         #prepare regular expressions
         reDoubleQuotes = re.compile(r'("[^"][^"]*")')
         reSplit = re.compile(r'(<(?!=)|<=|>(?!=)|>=|==|!=|not|NOT|and|AND|or|OR|\(|\))')
         reCompareOp = re.compile(r'<|>|==|!=')
-        
+
         #split the expression
         DQList = reDoubleQuotes.split(expression)
         splitlist = []
@@ -435,7 +435,7 @@ class SampleContainer(DataContainer):
                         continue
                     except: pass
                     raise ValueError, "Error parsing expression: " + e
-        
+
         #resolve multiple CompareOps like a <= b <= c == d:
         i = 0
         values = ['PhysQuant', 'SCColumn', 'Number']
@@ -447,7 +447,7 @@ class SampleContainer(DataContainer):
                 al.insert(i+3, ('Delimiter', 'and'))
                 al.insert(i+4, al[i+2])
                 i += 4
-            else: 
+            else:
                 if start_sequence != -1: #<-- this is necessary because 'not' has higher precedence than 'and'
                     al.insert(start_sequence, ('Delimiter', '('))
                     al.insert(i+4, ('Delimiter', ')'))
@@ -477,7 +477,7 @@ class SampleContainer(DataContainer):
                 valid = True
             i += 1
         if not valid: raise ValueError, "There has to be at least one valid comparison: " + expression
-                
+
         #identify braces and compress them recursively:
         def compressBraces(sublist):
             openbraces = 0
@@ -511,7 +511,7 @@ class SampleContainer(DataContainer):
                 return sublist[0:start] + middle + compressBraces(sublist[end+1:])
 
         #TODO: The following three methods could be merged into one generalized method for compressing unitary and binary operators. This would be useful in a future version when there are lots of operators to be supported.
-        
+
         #identify "not"s and compress them recursively:
         def compressNot(sublist):
             i = 0
@@ -530,7 +530,7 @@ class SampleContainer(DataContainer):
                     return sublist[0:i] + [('Brace', compressNot(sublist[i][1]))] + compressNot(sublist[i+1:])
                 i += 1
             return sublist[:]
-                        
+
         #identify "and"s and compress them recursively:
         def compressAnd(sublist, start=0):
             i = start #<-- start=1 indicates that the 1st element of sublist has already been compressed. This is necessary for binary operators.
@@ -583,7 +583,7 @@ class SampleContainer(DataContainer):
             raise ValueError, "Expression could not be parsed completely (probably missing keyword): " + expression
         return compressed[0]
 
-  
+
     #returns a new SampleContainer with filter commands applied to it. Expression can be either a string expression or nested tuples of commands
     def filter(self, expression):
         #determine type of expression:
@@ -597,11 +597,11 @@ class SampleContainer(DataContainer):
             commands = expression
         else:
             raise TypeError, "Expression has to be of StringType, UnicodeType, TupleType or None. Found " + str(type(expression)) + " instead!"
-        
+
         #check for empty commands:
         if commands == None or commands==():
             return copy.deepcopy(self)
-        
+
         #generate boolean numpymask from commands using fast numpy methods:
         def evaluateAtomar(atomar):
             left = atomar[1]
@@ -636,7 +636,7 @@ class SampleContainer(DataContainer):
                 rightvalue = right[1].data
             else:
                 raise ValueError, "At least one argument of '" + atomar[2][1] + "' has to be a column."
-            
+
             if   atomar[2] == '==': return leftvalue == rightvalue
             elif atomar[2] == '!=': return leftvalue != rightvalue
             elif atomar[2] == '<=': return leftvalue <= rightvalue
@@ -644,7 +644,7 @@ class SampleContainer(DataContainer):
             elif atomar[2] == '>=': return leftvalue >= rightvalue
             elif atomar[2] == '>' : return leftvalue >  rightvalue
             raise ValueError, "Invalid atomar expression: " + str(atomar)
-            
+
         def getMaskFromCommands(cmds):
             if cmds[0] == 'Atomar':
                 return evaluateAtomar(cmds)
@@ -662,11 +662,11 @@ class SampleContainer(DataContainer):
                 return numpy.logical_or(left, right)
             elif cmds[0] == 'NOT':
                 return numpy.logical_not(getMaskFromCommands(cmds[1]))
-                
+
         numpymask = getMaskFromCommands(commands)
 
-        #the following code is a bit longish whereas time consuming copy.deepcopy operations with subsequent masking are avoided wherever possible 
-        
+        #the following code is a bit longish whereas time consuming copy.deepcopy operations with subsequent masking are avoided wherever possible
+
         #generate new columns with the boolean mask applied to them using fast numpy slicing
         maskedcolumns = []
         for c in self.columns:
@@ -685,20 +685,20 @@ class SampleContainer(DataContainer):
                             md.data = d.data[numpymask]
 
                     mdims.append(md)
-            
+
                 #mask errors:
                 cerr = None
                 if c.error != None: cerr = c.error[numpymask]
-            
+
                 #mask data:
                 cdata = None
                 if c.data != None: cdata = c.data[numpymask]
-            
+
                 maskedcolumns.append(FieldContainer(cdata,
                                                     copy.deepcopy(c.unit),
                                                     cerr,
-                                                    copy.deepcopy(c.mask), 
-                                                    mdims, 
+                                                    copy.deepcopy(c.mask),
+                                                    mdims,
                                                     longname=c.longname,
                                                     shortname=c.shortname,
                                                     attributes=copy.deepcopy(c.attributes),
@@ -713,7 +713,7 @@ class SampleContainer(DataContainer):
                                  attributes=copy.deepcopy(self.attributes))
         return result
 
-    
+
 
 def assertEqual(con1,con2,rtol=1e-5,atol=1e-8):
     diagnosis=StringIO.StringIO()
