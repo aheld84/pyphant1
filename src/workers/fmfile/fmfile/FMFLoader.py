@@ -30,6 +30,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The FMF Loader is a class of Pyphant's FMF Toolbox. It loads an FMF
+file from the location given in the worker's configuration.
 """
 
 __id__ = "$Id$"

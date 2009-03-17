@@ -30,6 +30,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The Edge Fill Worker is a class of Pyphant's Image Processing
+Toolbox. It is used to backfil outlined features again.
 """
 
 __id__ = "$Id$"

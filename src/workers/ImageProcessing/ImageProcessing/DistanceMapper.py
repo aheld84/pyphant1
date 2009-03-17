@@ -30,8 +30,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The Distance Mapper Worker is a class of Pyphant's Image Processing
+Toolbox. It is used to determine the size of respective features in
+binary images through calculating the distance of every pixel to the
+nearest background pixel.
 """
-
 __id__ = "$Id: /local/pyphant/sourceforge/trunk/src/workers/ImageProcessing/ImageProcessing/DistanceMapper.py 3671 2007-12-19T14:18:11.779018Z obi  $"
 __author__ = "$Author: obi $"
 __version__ = "$Revision: 3671 $"

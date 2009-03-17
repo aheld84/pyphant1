@@ -29,7 +29,10 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""Class ApplyMask of Pyphant's Imageprocessing toolbox.
+u"""
+The ApplyMask Worker is a class of Pyphant's Image Processing
+Toolbox. By using this worker one gry-scale image can be applied as a
+mask on another image.
 """
 
 __id__ = "$Id$"
