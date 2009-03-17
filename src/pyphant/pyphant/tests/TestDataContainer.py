@@ -393,15 +393,56 @@ class CommonSampleContainerTests(SampleContainerTest):
 
 
 class SampleContainerSlicingTests(SampleContainerTest):
-    #TODO: Write more tests with more complicated expressions
+    def setUp(self):
+        super(SampleContainerSlicingTests, self).setUp()
+        time_data = numpy.array([10.0, 20.0, 30.0, 5.0, 9000.0])
+        time_error = numpy.array([1.0, 2.0, 3.0, .5, 900.0])
+        time_unit = PhysicalQuantity('2s')
+        time_FC = FieldContainer(time_data, time_unit, time_error, None, None, "Zeit", "t", None, False)
+
+        length_data = numpy.array([-20.0, 0.0, 20.0, 10.0, 5.5])
+        length_error = numpy.array([2.0, 0.1, 2.0, 1.0, .5])
+        length_unit = PhysicalQuantity('1000m')
+        length_FC = FieldContainer(length_data, length_unit, length_error, None, None, "Strecke", "l", None, False)
+
+
+        temperature_data = numpy.array([[10.1, 10.2, 10.3],
+                                        [20.1, 20.2, 20.3],
+                                        [30.1, 30.2, 30.3],
+                                        [40.1, 40.2, 40.3],
+                                        [50.1, 50.2, 50.3]])
+        temperature_error = numpy.array([[0.1, 0.2, 0.3],
+                                         [1.1, 1.2, 1.3],
+                                         [2.1, 2.2, 2.3],
+                                         [3.1, 3.2, 3.3],
+                                         [4.1, 4.2, 4.3]])
+        temperature_unit = PhysicalQuantity('1mK')
+
+        temperature_FC = FieldContainer(temperature_data, temperature_unit, temperature_error, None, None, "Temperatur", "T", None, False)
+
+        self.sc2d = SampleContainer([length_FC, temperature_FC, time_FC], "Test Container", "TestC")
+
+        self.sc2d["t"].dimensions[0].unit = PhysicalQuantity('5m')
+        self.sc2d["t"].dimensions[0].data = numpy.array([-20, -10, 0, 10, 20])
+
+        self.sc2d["l"].dimensions[0].unit = PhysicalQuantity('2mm')
+        self.sc2d["l"].dimensions[0].data = numpy.array([-1, -0.5, 0, 0.5, 1])
+
+        self.sc2d["T"].dimensions[0].unit = PhysicalQuantity('0.5mm')
+        self.sc2d["T"].dimensions[0].data = numpy.array([-3, -1.5, 0, 1.5, 3])
+        self.sc2d["T"].dimensions[1].unit = PhysicalQuantity('10nm')
+        self.sc2d["T"].dimensions[1].data = numpy.array([-1, 0, 1])
+
+
+    #purely one dimensional Tests:
     def testConsistancy(self):
         result1 = self.sampleContainer.filter('20m < "i" and 80m > "i"')
         result2 = self.sampleContainer.filter('20m < "i" < 80m')
         self.assertEqual(result1[0], result2[0])
         self.assertEqual(result1[1], result2[1])
 
-    def testSimpleExpression(self):
-        result = self.sampleContainer.filter('50m <= "i" < 57m')
+    def testSimpleUnicodeExpression(self):
+        result = self.sampleContainer.filter(u'50m <= "i" < 57m')
         self.assertEqual(len(result.columns), 2)
         self.assertEqual(len(result[0].data), 7)
         self.assertEqual(len(result[1].data), 7)
@@ -424,6 +465,53 @@ class SampleContainerSlicingTests(SampleContainerTest):
         result[1].attributes = {}
         self.assertEqual(result[0], expectedi)
         self.assertEqual(result[1], expectedt)
+
+    #tests involving 2 dimensional FieldContainers:
+    def _compareExpected(self, expression, ind):
+        indices = numpy.array(ind)
+        result = self.sc2d.filter(expression)
+        expectedSC = copy.deepcopy(self.sc2d)
+        for FC in expectedSC:
+            FC.data = FC.data[indices]
+            FC.error = FC.error[indices]
+            FC.dimensions[0].data = FC.dimensions[0].data[indices]
+        self.assertEqual(result, expectedSC)
+
+    def testEmpty2dExpression(self):
+        result = self.sc2d.filter('')
+        self.assertEqual(result, self.sc2d)
+        result = self.sc2d.filter(())
+        self.assertEqual(result, self.sc2d)
+
+    def testAtomar2dExpressions(self):
+        self._compareExpected('"t" <= 40.0s', [True, True, False, True, False])
+        self._compareExpected('"l" < 10000m', [True, True, False, False, True])
+        self._compareExpected('"Zeit" >= 20.0s', [True, True, True, False, True])
+        self._compareExpected('"l" > 5500m', [False, False, True, True, False])
+        self._compareExpected('"t" == 18000s', [False, False, False, False, True])
+        self._compareExpected('"Strecke" != 20000m', [True, True, False, True, True])
+
+    def testNot2dExpression(self):
+        self._compareExpected('not "t" == 10s', [True, True, True, False, True])
+
+    def testAnd2dExpression(self):
+        self._compareExpected('"Zeit" == 60s and 20000m == "Strecke"', [False, False, True, False, False])
+
+    def testOr2dExpression(self):
+        self._compareExpected('"Zeit" < 60s or "Strecke" == 5500m', [True, True, False, True, True])
+
+    def testPrecedence2dExpression(self):
+        self._compareExpected('0m > "l" or not ("t" == 20s or "t" == 40s) and (("l" == -20000m or "t" == 40s) or "l" == 5500m)', [True, False, False, False, True])
+
+    def testNestedTuple2dExpression(self):
+        self._compareExpected(('AND', ('Atomar', ('SCColumn', self.sc2d["t"]), '==',('PhysQuant', PhysicalQuantity('20s'))), ('Atomar', ('SCColumn', self.sc2d["l"]), '==', ('PhysQuant', PhysicalQuantity('-20000m')))), [True, False, False, False, False])
+
+    def testMultipleCompareOpPrecedence2dExpression(self):
+        self._compareExpected('not 0m <= "l" <= 10000m', [True, False, True, False, False])
+
+    def testColumnToColumn2dExpression(self):
+        self._compareExpected('"l" == "Strecke"', [True, True, True, True, True])
+        self._compareExpected('"t" != "Zeit"', [False, False, False, False, False])
 
 
 class FieldContainerRescaling(unittest.TestCase):
