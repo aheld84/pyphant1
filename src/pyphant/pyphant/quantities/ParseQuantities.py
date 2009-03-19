@@ -43,7 +43,10 @@ def str2unit(unit):
     if unit.startswith('.'):
         unit = '0'+unit
     elif unit.endswith('%'):
-        unit = float(unit[:-1])/100.0
+        try:
+            unit = float(unit[:-1])/100.0
+        except: 
+            unit = 0.01
     elif unit.endswith('a.u.'):
         try:
             unit = float(unit[:-4])
