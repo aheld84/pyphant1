@@ -53,22 +53,50 @@ else:
 
 import fmfgen, numpy
 
+def dtype2colFormat(dtype):
+    if dtype.name.startswith('float'):
+        return "%e"
+    elif dtype.name.startswith('int'):
+        return "%i"
+    else:
+        print dtype
+        return "%s"
+
 def field2fmf(fieldContainer):
-    assert len(fieldContainer.data.shape)==1
-    dim = fieldContainer.dimensions[0]
     factory = fmfgen.gen_factory(out_coding='utf-8', eol='\n')
     fc = factory.gen_fmf()
     fc.add_reference_item('author', USER)
-    data = numpy.vstack([dim.data, fieldContainer.data])
-    tab = factory.gen_table(data.transpose())
-    tab.add_column_def(dim.longname, dim.shortname, str(dim.unit))
-    tab.add_column_def(fieldContainer.longname,
-                       fieldContainer.shortname,
-                       str(fieldContainer.unit),
-                       dependencies = [dim.shortname])
+    if len(fieldContainer.data.shape)==1:
+        dim = fieldContainer.dimensions[0]
+        data = numpy.vstack([dim.data, fieldContainer.data])
+        tab = factory.gen_table(data.transpose())
+        tab.add_column_def(dim.longname, dim.shortname, str(dim.unit))
+        tab.add_column_def(fieldContainer.longname,
+                           fieldContainer.shortname,
+                           str(fieldContainer.unit),
+                           dependencies = [dim.shortname])
+    elif fieldContainer.dimensions[0].isIndex():
+        dim = fieldContainer.dimensions[-1]
+        try:
+            data = numpy.vstack([dim.data, fieldContainer.data])
+        except:
+            print dim.data,fieldContainer
+        tab = factory.gen_table(data.transpose())
+        tab.add_column_def(dim.longname, dim.shortname, str(dim.unit), format=dtype2colFormat(dim.data.dtype))
+        superscript = ('st','nd','rd')
+        for i in xrange(len(fieldContainer.dimensions[0].data)):
+            if i<3:
+                sup = superscript[i]
+            else:
+                sup = 'th'
+            longname = "%i$^%s$ %s" % (i+1,sup,fieldContainer.longname)
+            shortname = "%s_%i" % (fieldContainer.shortname,i+1)
+            tab.add_column_def(longname,shortname,
+                               str(fieldContainer.unit),
+                               dependencies = [dim.shortname],
+                               format=dtype2colFormat(fieldContainer.data.dtype))
     fc.add_table(tab)
     return str(fc)
-
 
 import wx
 
