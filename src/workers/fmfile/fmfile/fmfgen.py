@@ -101,8 +101,8 @@ RPAREN_DEPEND = ')'
 
 DEFAULT_EOL = '\r\n'
 
-DEFAULT_OUT_ENCODING = 'cp1252' # Windows ANSI encoding, Western Europe
-DEFAULT_IN_ENCODING = 'cp1252' # Windows ANSI encoding, Western Europe
+DEFAULT_OUT_ENCODING = 'utf-8' # Windows ANSI encoding, Western Europe
+DEFAULT_IN_ENCODING = 'utf-8' # Windows ANSI encoding, Western Europe
 
 DEFAULT_TABLE_LONGNAME_PATTERN = 'table %d'
 DEFAULT_TABLE_SHORTNAME_PATTERN = 'T_{%d}'
@@ -214,7 +214,7 @@ class _Item(_FMFElement):
         self._value = value
 
     def unicode(self):
-        return u"%s:%s%s" % (self._metatag, self._value, self._eol)
+        return u"%s: %s%s" % (self._metatag, self._value, self._eol)
 
     metatag = _AutoProperty('_metatag')
     value = _AutoProperty('_value')
