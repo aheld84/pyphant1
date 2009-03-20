@@ -110,6 +110,11 @@ def column2FieldContainer(longname, column):
             field = [row[1] for row in column]
         result = DataContainer.FieldContainer(numpy.array(field),unit=PhysicalQuantity(1.0, unit),shortname=shortname,longname=longname)
     else:
+        #Joining lists of strings
+        if type(column[0]) in (type(''),type(u'')):
+            for i in xrange(len(column)):
+                if type(column[i]) == type([]):
+                    column[i] = ','.join(column[i])
         result = DataContainer.FieldContainer(numpy.array(column),longname=longname)
     return result
 
