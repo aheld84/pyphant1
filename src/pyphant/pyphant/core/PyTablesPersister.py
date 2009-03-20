@@ -177,11 +177,12 @@ def loadSample(h5, resNode):
 
 def saveField(h5, resultGroup, result):
     def dump(inputList):
-        if type(inputList)==type([]):
-            if type(inputList[0])==type(u' '):
-                conversion = lambda s: s.encode('utf-8')
+        def conversion(arg):
+            if type(arg) == type(u' '):
+                return arg.encode('utf-8')
             else:
-                conversion = lambda s: s.__repr__()
+                return arg.__repr__()
+        if type(inputList)==type([]):
             return map(conversion,inputList)
         else:
             return map(dump,inputList)
