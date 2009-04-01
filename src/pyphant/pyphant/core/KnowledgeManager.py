@@ -87,10 +87,6 @@ class KnowledgeManager(Singleton):
         return localfilename
 
     def registerURL(self, url):
-
-        assert url.startswith('file://')
-        # load to cache+reference in file?
-        #
         localfilename = self._retrieveURL(url)
             
 

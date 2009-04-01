@@ -47,9 +47,10 @@ import pyphant.core.PyTablesPersister as ptp
 from pyphant.core.FieldContainer import FieldContainer
 import numpy as N
 import tables
+import urllib
+
 import tempfile
 import os
-
 import logging
 
 
@@ -78,6 +79,30 @@ class KnowledgeManagerTestCase(unittest.TestCase):
         self.assertEqual(self._fc, km_fc)
 
         os.remove(h5name)
+        
+    def testGetHTTPFile(self):
+
+        host = "omnibus.uni-freiburg.de"
+        remote_dir = "/~mr78/pyphant-test"
+        url = "http://"+host+remote_dir+"/knowledgemanager-http-test.h5"
+
+        # Get remote file and load DataContainer
+        filename, headers = urllib.urlretrieve(url)
+        h5 = tables.openFile(filename)
+        for g in h5.walkGroups("/results"):
+            if (len(g._v_attrs.TITLE)>0) \
+                    and (r"\Psi" in g._v_attrs.shortname):
+                http_fc = ptp.loadField(h5,g)
+
+        km = KnowledgeManager.getInstance()
+
+        km.registerURL(url)
+
+        km_fc = km.getDataContainer(http_fc.id)
+
+        self.assertEqual(http_fc, km_fc)
+        
+        os.remove(filename)
 
 if __name__ == "__main__":
     import sys
