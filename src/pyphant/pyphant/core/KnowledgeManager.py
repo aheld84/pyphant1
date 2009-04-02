@@ -67,7 +67,7 @@ class KnowledgeManagerException(Exception):
         super(KnowledgeManagerException, self).__init__(message, *args, **kwds)
         self._message = message
         self._parent_excep = parent_excep
-        
+
     #def __repr__(self):
     #    return message+" (reason: %s)" % (str(self._parent_excep),)
 
@@ -81,7 +81,7 @@ class KnowledgeManager(Singleton):
         self._server = None
         #start http server TODO
 
-    
+
     def _getServerURL(self):
         if self._server is None:
             return None
@@ -89,18 +89,18 @@ class KnowledgeManager(Singleton):
 
     def startServer(self, host, port):
         """Start HTTP server.
-         
+
           host -- full qualified domain name or IP address under which
                   server can be contacted via HTTP
           port -- port of HTTP server
 
           The data may be announced to other KnowledgeManagers.
-        """  
+        """
         self._http_host = host
         self._http_port = port
         self._http_dir = tempfile.mkdtemp(prefix='pyphant-knowledgemanager')
         self._server = _HTTPServer((host,port),_HTTPRequestHandler)
-        
+
         class _HTTPServerThread(threading.Thread):
             def run(other):
                 self._server.start()
@@ -109,9 +109,9 @@ class KnowledgeManager(Singleton):
         self._logger.debug("Started HTTP server."\
                          +" host: %s, port: %d,"\
                          +" temp dir: %s", host, port, self._http_dir)
-                         
 
-    def stopServer(self):        
+
+    def stopServer(self):
 
         logger = self._logger
         if self.isServerRunning():
@@ -149,7 +149,7 @@ class KnowledgeManager(Singleton):
 
     def registerURL(self, url):
         self._retrieveURL(url)
-           
+
     def registerDataContainer(self, datacontainer):
         try:
             assert datacontainer.id is not None
@@ -167,17 +167,17 @@ class KnowledgeManager(Singleton):
         self._logger.info("Header information: %s", (str(headers),))
 
         #
-        # Save index entries 
+        # Save index entries
         #
         h5 = tables.openFile(localfilename)
         # title of 'result_' groups has id in TITLE attribute
         dc = None
-        for group in h5.walkGroups(where="/results"):            
+        for group in h5.walkGroups(where="/results"):
             id = group._v_attrs.TITLE
             if len(id)>0:
                 self._logger.debug("Registering id '%s'.." % (id,))
                 self._refs[id] = (url, localfilename, group._v_pathname)
-        
+
         h5.close()
 
     def _retrieveRemoteKMs(self, id, omit_km_urls):
@@ -193,7 +193,7 @@ class KnowledgeManager(Singleton):
         logger = self._logger
         #
         # build query for http request with
-        # id of data container and 
+        # id of data container and
         # list of URLs which should not be requested by
         # the remote side
         #
@@ -207,13 +207,13 @@ class KnowledgeManager(Singleton):
             query['url%d' % (idx,)] = serverURL
 
         #
-        # ask every remote KnowledgeManager for id   
+        # ask every remote KnowledgeManager for id
         #
         logger.debug("Requesting knowledge managers for id '%s'..." % (id,))
         found = False
         id_url = None
         for km_url in self._remoteKMs:
-            if not (found or (km_url in omit_km_urls)): 
+            if not (found or (km_url in omit_km_urls)):
                 logger.debug("Requesting Knowledgemanager with URL '%s'...", km_url)
                 # request url for given id over http
                 data = urllib.urlencode(query)
@@ -234,7 +234,7 @@ class KnowledgeManager(Singleton):
 
         if id in self._refs.keys():
             dc = self.getDataContainer(id, omit_km_urls=omit_km_urls)
-            
+
             #
             # Wrap data container in temporary HDF5 file
             #
@@ -250,10 +250,10 @@ class KnowledgeManager(Singleton):
             url = self._getServerURL()+"/"+os.path.basename(h5name)
         else:
             try:
-                url = self._getURLFromRemoteKMs(id, omit_km_urls)            
+                url = self._getURLFromRemoteKMs(id, omit_km_urls)
             except Exception, e:
                 raise KnowledgeManagerException(
-                    "URL for ID '%s' not found." % (id,))    
+                    "URL for ID '%s' not found." % (id,))
         return url
 
     def getDataContainer(self, id, try_cache=True, omit_km_urls=[]):
@@ -262,14 +262,14 @@ class KnowledgeManager(Singleton):
             try:
                 self._retrieveRemoteKMs(id, omit_km_urls)
             except Exception, e:
-                raise KnowledgeManagerException("Id '%s' unknown." % (id,))    
-            
+                raise KnowledgeManagerException("Id '%s' unknown." % (id,))
+
         ref = self._refs[id]
         if isinstance(ref, TupleType):
             dc = self._getDCfromURLRef(id, try_cache = try_cache)
         else:
             dc = ref
-            
+
         return dc
 
     def _getDCfromURLRef(self, id, try_cache=True, omit_km_urls=[]):
@@ -289,11 +289,11 @@ class KnowledgeManager(Singleton):
                         "Id '%s' not found on remote sites."%(id,),
                         KnowledgeManagerException(
                             "Id '%s' could not be resolved using URL '%s'"%(id, url)))
-        
+
             url, localfilename, h5path = self._refs[id]
 
         h5 = tables.openFile(localfilename)
-        
+
         hash, type = parseId(id)
         assert type in ['sample','field']
         if type=='sample':
@@ -306,7 +306,7 @@ class KnowledgeManager(Singleton):
         try:
             self._logger.debug("Loading data from '%s' in file '%s'.." % (localfilename, h5path))
             dc = loader(h5, h5.getNode(h5path))
-        except Exception, e: 
+        except Exception, e:
             raise KnowledgeManagerException("Id '%s' known, but cannot be read from file '%s'." \
                                                 % (id,localfilename), e)
         finally:
@@ -319,17 +319,17 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
     _logger = logging.getLogger("pyphant")
 
     def do_POST(self):
-        self._logger.debug("POST request from client (host,port): %s", 
+        self._logger.debug("POST request from client (host,port): %s",
                            self.client_address)
         self.log_request()
-        
+
         if self.headers.has_key('content-length'):
             length= int( self.headers['content-length'] )
             query = self.rfile.read(length)
             query_dict = cgi.parse_qs(query)
 
             id = query_dict['id'][0]
-            omit_km_urls = [ value[0] for (key,value) in query_dict.iteritems() 
+            omit_km_urls = [ value[0] for (key,value) in query_dict.iteritems()
                              if key!='id']
             self._logger.debug("Query data: id: %s, omit_km_urls: %s",
                                id, omit_km_urls)
@@ -376,7 +376,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
         source_dir = km._http_dir # this is intended
         log.debug("HTTP GET request: "\
                       +"Reading files from directory '%s'..", source_dir)
-                  
+
         try:
             # build filename, remove preceding '/' in path
             filename = os.path.join(source_dir, self.path[1:])
@@ -393,13 +393,13 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
         self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
         self.end_headers()
         return f
-            
+
 
 class _HTTPServer(HTTPServer):
-    
+
     stop_server = False
     _logger = logging.getLogger("pyphant")
-    
+
     def start(self):
         while not self.stop_server:
             self.handle_request()
@@ -407,4 +407,4 @@ class _HTTPServer(HTTPServer):
 
 
 
-    
+

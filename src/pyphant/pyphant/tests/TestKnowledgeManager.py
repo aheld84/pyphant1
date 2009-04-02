@@ -30,7 +30,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""Provides unittest classes 
+u"""Provides unittest classes
 """
 
 __id__ = "$Id$".replace('$','')
@@ -61,7 +61,7 @@ class KnowledgeManagerTestCase(unittest.TestCase):
         self._fc.seal()
 
     def testGetLocalFile(self):
-        
+
         h5fileid, h5name = tempfile.mkstemp(suffix='.h5',prefix='test-')
         os.close(h5fileid)
 
@@ -79,7 +79,7 @@ class KnowledgeManagerTestCase(unittest.TestCase):
         self.assertEqual(self._fc, km_fc)
 
         os.remove(h5name)
-        
+
     def testGetHTTPFile(self):
 
         host = "omnibus.uni-freiburg.de"
@@ -102,7 +102,7 @@ class KnowledgeManagerTestCase(unittest.TestCase):
         km_fc = km.getDataContainer(http_fc.id)
 
         self.assertEqual(http_fc, km_fc)
-        
+
         os.remove(filename)
 
     def testGetDataContainer(self):
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     import sys
 
     logger = logging.getLogger('pyphant')
-    
+
 
     hdlr = logging.StreamHandler(sys.stderr)
     formatter = logging.Formatter('[%(name)s|%(levelname)s] %(message)s')
