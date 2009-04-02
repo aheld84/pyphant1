@@ -160,6 +160,12 @@ class Worker(object):
             paramList.append(self._params[name])
         return paramList
 
+    def registerParamChangeVetoer(self, vetoer, param):
+        self.getParam(param).registerChangeVetoer(vetoer)
+
+    def unregisterParamChangeVetoer(self, vetoer, param):
+        self.getParam(param).unregisterChangeVetoer(vetoer)
+
     def invalidate(self, event=None):
         map(lambda p: p.invalidate(), self._plugs.values())
 

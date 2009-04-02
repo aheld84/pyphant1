@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,12 +37,33 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-import wx
+import unittest
+import pkg_resources
+pkg_resources.require("pyphant")
+pkg_resources.require("pyphant.imageprocessing")
+import ImageProcessing.ThresholdingWorker
+import pyphant.core.Param as Param
 
-class OLSF(wx.TextCtrl):
-    def __init__(self, parent, param, validator):
-        wx.TextCtrl.__init__(self, parent, size=(175,-1), validator=validator)
-        self.SetValue(param.value)
+import pyphant.core.EventDispatcher as EventDispatcher
 
-    def getValue(self):
-        return self.GetValue()
+class VetoParamChangeTest(unittest.TestCase):
+
+    def setUp(self):
+        self.worker = ImageProcessing.ThresholdingWorker.ThresholdingWorker()
+        self.worker.registerParamChangeVetoer(self.vetoer, 'name')
+
+    def vetoer(self, event):
+        if event.newValue == 'bad':
+            raise Param.VetoParamChange(event)
+
+    def testVetoBadName(self):
+        def setNameParam():
+            self.worker.getParam('name').value = 'bad'
+        self.assertRaises(Param.VetoParamChange, setNameParam)
+
+    def testVetoGoodName(self):
+        self.worker.getParam('name').value = 'good'
+
+
+if __name__ == '__main__':
+    unittest.main()
