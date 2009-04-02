@@ -152,29 +152,6 @@ def saveSample(h5, resultGroup, result):
         columns.append(saveResult(column,h5))
     h5.setNodeAttr(resultGroup, "columns", columns)
 
-def loadSample(h5, resNode):
-    result = DataContainer.SampleContainer.__new__(DataContainer.SampleContainer)
-    result.longname = unicode(h5.getNodeAttr(resNode, "longname"), 'utf-8')
-    result.shortname = unicode(h5.getNodeAttr(resNode, "shortname"), 'utf-8')
-    result.attributes = {}
-    for key in resNode._v_attrs._v_attrnamesuser:
-        if key not in _reservedAttributes:
-            result.attributes[key]=h5.getNodeAttr(resNode,key)
-    columns = []
-    for resId in h5.getNodeAttr(resNode,"columns"):
-        nodename = "/results/"+resId
-        hash, uriType = DataContainer.parseId(h5.getNodeAttr(nodename, "TITLE"))
-        if uriType == 'sample':
-            loader = loadSample
-        elif uriType =='field':
-            loader = loadField
-        else:
-            raise KeyError, "Unknown UriType %s in saving result %s." % (uriType, result.id)
-        columns.append(loader(h5,h5.getNode(nodename)))
-    result.columns=columns
-    result.seal(resNode._v_title)
-    return result
-
 def saveField(h5, resultGroup, result):
     def dump(inputList):
         def conversion(arg):
@@ -313,4 +290,26 @@ def loadField(h5, resNode):
     result.seal(resNode._v_title)
     return result
 
+def loadSample(h5, resNode):
+    result = DataContainer.SampleContainer.__new__(DataContainer.SampleContainer)
+    result.longname = unicode(h5.getNodeAttr(resNode, "longname"), 'utf-8')
+    result.shortname = unicode(h5.getNodeAttr(resNode, "shortname"), 'utf-8')
+    result.attributes = {}
+    for key in resNode._v_attrs._v_attrnamesuser:
+        if key not in _reservedAttributes:
+            result.attributes[key]=h5.getNodeAttr(resNode,key)
+    columns = []
+    for resId in h5.getNodeAttr(resNode,"columns"):
+        nodename = "/results/"+resId
+        hash, uriType = DataContainer.parseId(h5.getNodeAttr(nodename, "TITLE"))
+        if uriType == 'sample':
+            loader = loadSample
+        elif uriType =='field':
+            loader = loadField
+        else:
+            raise KeyError, "Unknown UriType %s in saving result %s." % (uriType, result.id)
+        columns.append(loader(h5,h5.getNode(nodename)))
+    result.columns=columns
+    result.seal(resNode._v_title)
+    return result
 

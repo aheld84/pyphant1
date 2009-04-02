@@ -68,13 +68,25 @@ def field2fmf(fieldContainer):
     fc.add_reference_item('author', USER)
     if len(fieldContainer.data.shape)==1:
         dim = fieldContainer.dimensions[0]
-        data = numpy.vstack([dim.data, fieldContainer.data])
+        if fieldContainer.error == None:
+            data = numpy.vstack([dim.data, fieldContainer.data])
+        else:
+            data = numpy.vstack([dim.data, fieldContainer.data,fieldContainer.error])
         tab = factory.gen_table(data.transpose())
         tab.add_column_def(dim.longname, dim.shortname, str(dim.unit))
+        if fieldContainer.error == None:
+            errorSymbol = None
+        else:
+            errorSymbol = u"\\Delta_{%s}" % fieldContainer.shortname
         tab.add_column_def(fieldContainer.longname,
                            fieldContainer.shortname,
                            str(fieldContainer.unit),
-                           dependencies = [dim.shortname])
+                           dependencies = [dim.shortname],
+                           error = errorSymbol)
+        if fieldContainer.error != None:
+            tab.add_column_def(u"encertainty of %s" % fieldContainer.longname,
+                               errorSymbol,
+                               str(fieldContainer.unit))
     elif fieldContainer.dimensions[0].isIndex():
         dim = fieldContainer.dimensions[-1]
         try:
