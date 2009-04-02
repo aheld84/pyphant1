@@ -1,0 +1,29 @@
+
+
+Ideas:
+
+* 
+  Before caching an entire file, test whether a KnowledgeManager runs
+  on the remote side. If yes, ask for the file.
+
+* Download auf Wunsch erzwingen, falls remote Datei geändert?
+  Alternativ: KnowledgeManager Cache löschen lassen, siehe urllib.urlcleanup()
+
+* Was tun, wenn id nicht auffindbar?
+  
+  - anderen KnowledgeManager fragen, der sich
+    entweder aus der URL ergibt oder
+    der extra registriert ist 
+
+* Referenzen (Index) innerhalb HDF5-Dateien auffrischen?
+
+* Dictionaries/Caches
+
+  - id -> Referenzen (URLs)
+  - Referenzen -> lokale Kopien (urllib macht das schon!)
+  - id -> (Referenz, Knotenreferenz)
+
+
+* Cache Verzeichnis
+Bei Initialisieren des KnowledgeManagers Cache Verzeichnis angeben und
+bei urlretreive nutzen
