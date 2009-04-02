@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -45,10 +45,13 @@ import copy, numpy
 
 class DiffWorker(Worker.Worker):
     API = 2
-    VERSION = 1
+    VERSION = 2
     REVISION = "$Revision$"[11:-1]
-    name="Diff Worker"
-    _params = [("absolute", u"Return absolute of difference: ", [u"Yes", u"No"], None)]
+    name=u"Diff Worker"
+    _params = [("absolute", u"Return absolute of difference: ", [u"Yes", u"No"], None),
+               ("longname",u"Name of result",'default',None),
+               ("symbol",u"Symbol of result",'default',None)]
+    
     _sockets = [ ("image1", Connectors.TYPE_IMAGE),
                  ("image2", Connectors.TYPE_IMAGE)]
 
@@ -57,5 +60,9 @@ class DiffWorker(Worker.Worker):
         result = image1 - image2
         if self.paramAbsolute.value==u"Yes":
             result.data = numpy.abs(result.data)
+        if self.paramLongname.value != 'default':
+            result.longname = self.paramLongname.value
+        if self.paramSymbol.value != 'default':
+            result.shortname = self.paramSymbol.value
         result.seal()
         return result
