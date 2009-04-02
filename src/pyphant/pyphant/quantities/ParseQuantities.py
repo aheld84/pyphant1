@@ -38,6 +38,7 @@ __version__ = "$Revision$"
 # $Source$
 
 from PhysicalQuantities import PhysicalQuantity
+import mx.DateTime.ISO
 
 def str2unit(unit):
     if unit.startswith('.'):
@@ -89,3 +90,20 @@ def parseVariable(oldVal):
     shortname, value = tuple([s.strip() for s in oldVal.split('=')])
     value, error = parseQuantity(value)
     return (shortname, value, error)
+
+def parseDateTime(value):
+    """
+    >>>parseDateTime('2004-08-21 12:00:00+-12h')
+    (PhysicalQuantity(731814.5,'d'), PhysicalQuantity(0.5,'d'))
+    >>>parseDateTime('2004-08-21 12:00:00')
+    (PhysicalQuantity(731814.5,'d'), None)
+    """
+    datetimeWithError = value.split('+-')
+    if len(datetimeWithError)==2:
+        datetime = mx.DateTime.ISO.ParseAny(datetimeWithError[0])
+        error = parseQuantity(datetimeWithError[1])[0].inUnitsOf('d')
+    else:
+        datetime = mx.DateTime.ISO.ParseAny(value)
+        error = None
+    days,seconds = datetime.absvalues()
+    return (PhysicalQuantity(days,'d')+PhysicalQuantity(seconds,'s'),error)
