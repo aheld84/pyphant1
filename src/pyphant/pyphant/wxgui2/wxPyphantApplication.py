@@ -34,7 +34,7 @@ u"""
 
 __id__ = "$Id$"
 __author__ = "$Author$"
-__version__ = "$Revision$"
+__version__ = "Pyphant Sprint - opticalSkinModel"
 # $Source$
 
 import os, os.path, pkg_resources
