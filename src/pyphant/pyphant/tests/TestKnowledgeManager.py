@@ -104,6 +104,26 @@ class KnowledgeManagerTestCase(unittest.TestCase):
         
         os.remove(filename)
 
+    def testGetDataContainer(self):
+        km = KnowledgeManager.getInstance()
+
+        km.registerDataContainer(self._fc)
+
+        km_fc = km.getDataContainer(self._fc.id)
+
+        self.assertEqual(self._fc, km_fc)
+
+    def testExceptions(self):
+        km = KnowledgeManager.getInstance()
+
+        #invalid id
+
+        #DataContainer not sealed
+
+        #Local file not readable
+
+        #Register empty hdf
+
 if __name__ == "__main__":
     import sys
 

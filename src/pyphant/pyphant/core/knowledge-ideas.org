@@ -22,3 +22,8 @@ Ideas:
   - id -> Referenzen (URLs)
   - Referenzen -> lokale Kopien (urllib macht das schon!)
   - id -> (Referenz, Knotenreferenz)
+
+
+* Cache Verzeichnis
+Bei Initialisieren des KnowledgeManagers Cache Verzeichnis angeben und
+bei urlretreive nutzen

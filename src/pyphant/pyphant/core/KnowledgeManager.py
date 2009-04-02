@@ -44,6 +44,7 @@ from pyphant.core.singletonmixin import Singleton
 from pyphant.core.DataContainer import parseId
 import pyphant.core.PyTablesPersister as ptp
 
+from types import TupleType
 import urllib
 import tables
 import os, os.path
@@ -88,7 +89,14 @@ class KnowledgeManager(Singleton):
 
     def registerURL(self, url):
         localfilename = self._retrieveURL(url)
-            
+           
+    def registerDataContainer(self, datacontainer):
+        try:
+            assert datacontainer.id is not None
+            self._refs[datacontainer.id] = datacontainer
+        except Exception, e:
+            raise KnowledgeManagerException("Invalid id for DataContainer '" +\
+                                                datacontainer.longname+"'", e)
 
     #def searchAndRegisterKnowledgeManager(self, host)
     #    KM =remote object auf host
@@ -96,14 +104,19 @@ class KnowledgeManager(Singleton):
     #def registerKnowledgeManager(self, KM)
 
     def getDataContainer(self, id, try_cache=True):
-        #if id not in self._refs.keys():
-        #    pass
-        #    self._refs[id]
-        try:
-            url, localfilename, h5path = self._refs[id]
-        except KeyError,e:
-            raise KnowledgeManagerException("Id '%s' unknown." % (id,), e)
-        
+        if id not in self._refs.keys():
+            raise KnowledgeManagerException("Id '%s' unknown." % (id,))
+            
+        ref = self._refs[id]
+        if isinstance(ref, TupleType):
+            dc = self._getDCfromURLRef(id, try_cache = try_cache)
+        else:
+            dc = ref
+            
+        return dc
+
+    def _getDCfromURLRef(self, id, try_cache=True):
+        url, localfilename, h5path = self._refs[id]
         if not try_cache:
             os.remove(localfilename)
 
@@ -125,10 +138,7 @@ class KnowledgeManager(Singleton):
         try:
             self._logger.debug("Loading data from '%s' in file '%s'.." % (localfilename, h5path))
             dc = loader(h5, h5.getNode(h5path))
-        finally:
-            pass
-        #except Exception, e:
-        #    
-        #    raise KnowledgeManagerException("Id '%s' known, but cannot be read from file '%s'." \
-        #                                        % (id,localfilename), e)
+        except Exception, e: 
+            raise KnowledgeManagerException("Id '%s' known, but cannot be read from file '%s'." \
+                                                % (id,localfilename), e)
         return dc
