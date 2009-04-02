@@ -68,10 +68,8 @@ class WorkerFactory(type):
         for f in filter(lambda key : identifyPlugs(key, cdict), cdict):
             cls._plugs.append((f, cdict[f]))
         super(WorkerFactory, cls).__init__(name, bases, cdict)
-        try:
+        if cls.__name__ != 'Worker':
             WorkerFactory.workerRegistry.registerWorker(WorkerInfo(cls.name,cls))
-        except (AttributeError):
-            WorkerFactory.log.warning("Ignoring worker "+name+" due to missing name attribute.")
 
 class Worker(object):
     API = 2
@@ -92,7 +90,13 @@ class Worker(object):
         self.initParams(self._params)
         self.inithook()
         if parent:
-            parent.addWorker(self)
+            basename=self.getParam('name').value
+            for i in xrange(10000):
+                try:
+                    parent.addWorker(self)
+                    break
+                except ValueError:
+                    self.getParam('name').value = basename+'_%i'%i
 
     def inithook(self):
         pass

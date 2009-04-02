@@ -37,7 +37,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import EventDispatcher, Worker, Connectors
+from pyphant.core import EventDispatcher, Worker, Connectors, Param
 import copy, pkg_resources
 
 class CompositeWorkerChangedEvent(object):
@@ -95,11 +95,15 @@ class CompositeWorker(Worker.Worker):
             self._plugs[name]=s
 
     def addWorker(self, worker, data=None):
+        if not self.checkWorkerName(worker, worker.getParam('name').value):
+            raise ValueError(u'Duplicate worker name')
+        worker.registerParamChangeVetoer(self.vetoWorkerName, 'name')
         self._workers.append(worker)
         if len(worker.getPlugs())==0:
             self._sinks.append(worker)
         if len(worker.getSockets())==0:
             self._sources.append(worker)
+
         self._notifyListeners(WorkerAddedEvent(worker, data))
 
     def removeWorker(self, worker, data=None):
@@ -110,18 +114,13 @@ class CompositeWorker(Worker.Worker):
             self._sinks.remove(worker)
         self._notifyListeners(WorkerRemovedEvent(worker, data))
 
-    def getWorkers(self,desiredWorker='',precursor=None):
+    def getWorkers(self,desiredWorker=''):
         if desiredWorker == '':
             result = self._workers
         else:
-            result = [w for w in self._workers if w.name == desiredWorker]
+            result = [w for w in self._workers if w.__class__.__name__ == desiredWorker]
             if result == []:
                 raise ValueError, "Recipe does not contain Worker %s" % desiredWorker
-        if precursor:
-            result = [worker for worker in result
-                      if precursor in
-                      [socket._plug.worker.name for socket in worker.getSockets()]
-                      ]
         return result
 
     def getSources(self):
@@ -173,6 +172,17 @@ class CompositeWorker(Worker.Worker):
     def workersConnectorStateChanged(self, worker, connector):
         self._notifyListeners(ConnectorsExternalizationStateChangedEvent(worker,connector))
 
+    def vetoWorkerName(self, paramChangeEvent):
+        if not self.checkWorkerName(paramChangeEvent.param.worker, paramChangeEvent.newValue):
+            raise Param.VetoParamChange(paramChangeEvent)
+
+    def checkWorkerName(self, worker, name):
+        ws = [w for w in self._workers
+              if w.getParam('name').value == name]
+        if ws == [] or ws[0] == worker:
+            return True
+        else:
+            return False
 
 class CompositeWorkerWalker(object):
     def __init__(self, compositeWorker):
