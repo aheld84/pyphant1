@@ -93,6 +93,7 @@ class KnowledgeManagerTestCase(unittest.TestCase):
             if (len(g._v_attrs.TITLE)>0) \
                     and (r"\Psi" in g._v_attrs.shortname):
                 http_fc = ptp.loadField(h5,g)
+        h5.close()
 
         km = KnowledgeManager.getInstance()
 

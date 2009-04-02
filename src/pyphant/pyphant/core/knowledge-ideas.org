@@ -27,3 +27,13 @@ Ideas:
 * Cache Verzeichnis
 Bei Initialisieren des KnowledgeManagers Cache Verzeichnis angeben und
 bei urlretreive nutzen
+
+* Proxy-Server-Angabe für KM-Zugriff
+
+* Threaded HTTPServer
+ 
+http://www.doughellmann.com/PyMOTW/BaseHTTPServer/index.html
+
+* HTTP server Thread stoppen
+
+* Inhaltsverzeichnis mit Infos von remote Knowledgemanager abfragen für GUI
