@@ -411,7 +411,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                     _logger.debug('The errors differ: The error of the second argument is none, while the error of the first argument is %s.' % error)
                     return False
                 if not numpy.allclose(scaledError,otherScaledError,rtol,atol):
-                    _logger.debug('The errors differ: %s\n%s' % (scaledError,otherScaledError))
+                    _logger.debug('The normed errors differ: %s\n%s' % (scaledError,otherScaledError))
                     return False
         else:
             if not data.dtype.char in ['S','U']:
@@ -489,7 +489,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
     def __sub__(self, other):
         if isinstance(other, FieldContainer):
             if self.error!=None or other.error!=None:
-                return NotImplemented
+                error = other.error + self.error
             else:
                 error = None
             if len(self._dimensions) != len(other.dimensions):
