@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008, Rectorate of the University of Freiburg
+# Copyright (c) 2008-2009, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -43,8 +43,7 @@ import zipfile, numpy, re, collections, copy, StringIO, os.path
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 from pyphant.quantities.PhysicalQuantities import PhysicalQuantity,isPhysicalUnit,isPhysicalQuantity
-from pyphant.quantities.ParseQuantities import parseQuantity, parseVariable, str2unit
-import mx.DateTime.ISO
+from pyphant.quantities.ParseQuantities import parseQuantity, parseVariable, parseDateTime, str2unit
 import logging
 _logger = logging.getLogger("pyphant")
 
@@ -75,6 +74,10 @@ def loadDataFromZip(filename, subscriber=1):
     return data
 
 def collectAttributes(data):
+    """Function collectAttributes(data)
+    data: dictionary referencing the FMF attributes by the respective filenames
+    returns tupple (dictionary of common attributes, dictionary of varibale attributes)
+    """
     #Collect attributes, define filename as new attribute
     atts = {u'filename': []}
     for filename,sc in data.iteritems():
@@ -99,24 +102,76 @@ def collectAttributes(data):
             variableAttr[k]=l
     return (commonAttr, variableAttr)
 
-def column2FieldContainer(longname, column):
-    if type(column[0])==type((0,)) and len(column[0])==3:
-        shortname = column[0][0]
-        if isPhysicalQuantity(column[0][1]):
-            unit = column[0][1].unit
-            field = [row[1].inUnitsOf(unit).value for row in column]
+class column2Field:
+    def __init__(self):
+        self.Np = 0
+        self.Nt = 0
+
+    def norm(self,datum,unit,error=False):
+        if isPhysicalQuantity(datum):
+            try:
+                return datum.inUnitsOf(unit).value
+            except:
+                raise ValueError, "The datum %s cannot be expressed in terms of %s." % (datum,unit)
+        elif error:
+            return 0.0
         else:
-            unit = 1.0
-            field = [row[1] for row in column]
-        result = DataContainer.FieldContainer(numpy.array(field),unit=PhysicalQuantity(1.0, unit),shortname=shortname,longname=longname)
-    else:
-        #Joining lists of strings
-        if type(column[0]) in (type(''),type(u'')):
-            for i in xrange(len(column)):
-                if type(column[i]) == type([]):
-                    column[i] = ','.join(column[i])
-        result = DataContainer.FieldContainer(numpy.array(column),longname=longname)
-    return result
+            return numpy.NaN
+
+    def __call__(self,longname,column):
+        if type(column[0])==type((0,)):
+            if len(column[0])==2:
+                indexDatum = 0
+                indexError = 1
+                if isPhysicalQuantity(column[0][1]) and column[0][1].isCompatible('s'):
+                    shortname = 't_%i' % self.Nt
+                    self.Nt += 1
+                else:
+                    shortname = 'p_%i' % self.Np
+                    self.Np += 1
+                for i,element in enumerate(column):
+                    if not type(element)==type((0,)):
+                        column[i]=(numpy.NaN,None)
+            elif len(column[0])==3:
+                shortname = column[0][0]
+                indexDatum = 1
+                indexError = 2
+                for i,element in enumerate(column):
+                    if not type(element)==type((0,)):
+                        column[i]=(shortname,numpy.NaN,None) 
+            try:
+                data = [element[indexDatum] for element in column]
+            except:
+                print longname,column
+                import sys
+                sys.exit(0)
+            error = [element[indexError] for element in column]
+            unitCandidates = [element.unit for element in data if isPhysicalQuantity(element)]
+            if len(unitCandidates) == 0:
+                unit = 1.0
+            else:
+                unit = unitCandidates[0]
+            normation = lambda arg: self.norm(arg,unit)
+            field = numpy.array(map(normation,data))
+            ErrorNormation = lambda arg: self.norm(arg,unit,error=True)
+            result = DataContainer.FieldContainer(field,
+                                                  error=numpy.array(map(ErrorNormation,error)),
+                                                  mask = numpy.isnan(field),
+                                                  unit=PhysicalQuantity(1.0, unit),
+                                                  shortname=shortname,longname=longname)
+        else:
+            #Joining lists of strings
+            if type(column[0])==type([]):
+                firstElement = column[0][0]
+            else:
+                firstElement = column[0]
+            if type(firstElement) in (type(''),type(u'')):
+                for i in xrange(len(column)):
+                    if type(column[i]) == type([]):
+                        column[i] = ','.join(column[i])
+            result = DataContainer.FieldContainer(numpy.array(column),longname=longname)
+        return result
+column2FieldContainer = column2Field()
 
 def unpackAndCollateFields(variableAttr, data):
     fieldData = {}
@@ -291,7 +346,7 @@ def config2tables(preParsedData, config):
         parseBool,
         parseQuantity,
         parseVariable,
-        lambda d: str(mx.DateTime.ISO.ParseAny(d))
+        parseDateTime
         ]
 
     def item2value(section, key):

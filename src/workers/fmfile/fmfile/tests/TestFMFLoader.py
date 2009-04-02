@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.5
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008, Rectorate of the University of Freiburg
+# Copyright (c) 2008-2009  Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,8 @@ pkg_resources.require('pyphant.fmf')
 
 import unittest, numpy
 from fmfile import FMFLoader
-
+from pyphant.core.DataContainer import FieldContainer,assertEqual
+from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 
 class FieldContainerCondenseDim(unittest.TestCase):
     def setUp(self):
@@ -53,14 +54,59 @@ class FieldContainerCondenseDim(unittest.TestCase):
         result = FMFLoader.checkAndCondense(self.valid)
         numpy.testing.assert_array_equal(self.x, result)
 
+class TestColumn2FieldContainer(unittest.TestCase):
+    def testStrings(self):
+        column = ['Hello','World']
+        result = FMFLoader.column2FieldContainer('simple string',column)
+        expectedResult = FieldContainer(numpy.array(column),longname='simple string')
+        assertEqual(result,expectedResult)
 
+    def testListofStrings(self):
+        column = ['World',['Hello', 'World'],'World']
+        result = FMFLoader.column2FieldContainer('simple string',column)
+        expectedResult = FieldContainer(numpy.array(['World','Hello, World','World']),longname='simple string')
+        assertEqual(result,expectedResult)
+
+    def testListofStrings2(self):
+        column = [['Hello', 'World'],'World']
+        result = FMFLoader.column2FieldContainer('simple string',column)
+        expectedResult = FieldContainer(numpy.array(['Hello, World','World']),longname='simple string')
+        assertEqual(result,expectedResult)
+
+    def testVariable(self):
+        column = [('T',PhysicalQuantity('22.4 degC'),PhysicalQuantity('0.5 degC')),
+                  ('T',PhysicalQuantity('11.2 degC'),PhysicalQuantity('0.5 degC'))
+                  ]
+        result = FMFLoader.column2FieldContainer('temperature',column)
+        expectedResult = FieldContainer(numpy.array([22.4,11.2]),error=numpy.array([0.5,0.5]),
+                                        mask = numpy.array([False,False]),
+                                        unit='1 degC',longname='temperature',shortname='T')
+        assertEqual(result,expectedResult)
+
+    def testVariableWithNaN(self):
+        column = [('T',PhysicalQuantity('22.4 degC'),PhysicalQuantity('0.5 degC')),
+                  ('T',PhysicalQuantity('11.2 degC'),None)
+                  ]
+        result = FMFLoader.column2FieldContainer('temperature',column)
+        expectedResult = FieldContainer(numpy.array([22.4,11.2]),error=numpy.array([0.5,0.0]),
+                                        mask = numpy.array([False,False]),
+                                        unit='1 degC',longname='temperature',shortname='T')
+        assertEqual(result,expectedResult)
+
+    def testVariableFirstNaN(self):
+        column = [('T','NaN',PhysicalQuantity('0.5 degC')),
+                  ('T',PhysicalQuantity('11.2 degC'),None)
+                  ]
+        result = FMFLoader.column2FieldContainer('temperature',column)
+        expectedResult = FieldContainer(numpy.array([numpy.NaN,11.2]),error=numpy.array([0.5,0.0]),
+                                        mask = numpy.array([True,False]),
+                                        unit='1 degC',longname='temperature',shortname='T')
+        assertEqual(result,expectedResult)
+                  
 if __name__ == "__main__":
-    suite = unittest.TestLoader().loadTestsFromTestCase(FieldContainerCondenseDim)
-    unittest.TextTestRunner().run(suite)
-    #suite.addTest(unittest.TestLoader().loadTestsFromTestCase(FieldContainerSlicing1dDim))
-    #import sys
-    #if len(sys.argv) == 1:
-    #    unittest.main()
-    #else:
-    #    suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
-    #    unittest.TextTestRunner().run(suite)
+    import sys
+    if len(sys.argv) == 1:
+        unittest.main()
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
+        unittest.TextTestRunner().run(suite)
