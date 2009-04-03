@@ -86,6 +86,7 @@ class KnowledgeManager(Singleton):
         self._refs = {}
         self._remoteKMs = {} # key:id, value:url
         self._server = None
+        self._server_id = uuid1()
 
     def __del__(self):
         if self.isServerRunning():
@@ -109,7 +110,6 @@ class KnowledgeManager(Singleton):
         self._http_port = port
         self._http_dir = tempfile.mkdtemp(prefix='pyphant-knowledgemanager')
         self._server = _HTTPServer((host,port),_HTTPRequestHandler)
-        self._server_id = uuid1()
 
         class _HTTPServerThread(threading.Thread):
             def run(other):
