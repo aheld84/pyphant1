@@ -30,10 +30,58 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-knowledge manager
+Knowledge Manager for Pyphant
+=============================
 
-- retrieve data from local HDF5 files for given emd5s
-- ...
+The ID of a DataContainer object is given by a emd5 string.
+
+Responsibilities:
+-----------------
+
+ - register HDF5 files by their URLs
+ - register remote knowledge managers by urls
+ - share data containers via HTTP, they are requested by id
+ - get references for these data containers (local or remote)
+
+If an operation fails, a KnowledgeManagerException
+will be raised. These exceptions have a method
+
+  .getParentException()
+
+in order to get additional information about the reason.
+
+Usage:
+------
+
+ Get a reference to the KnowledgeManager instance, which is a
+ singleton:
+
+  import pyphant.core.KnowledgeManager as KM
+  km = KM.KnowledgeManager.getInstance()
+
+ Optionally: Start HTTP server for sharing data with others by
+
+  km.startServer(<host>,<port>)
+
+ Register a local HDF5 file:
+
+  km.registerURL("file://tmp/data.h5")
+
+ Register a remote HDF5 file:
+
+  km.registerURL("http://example.com/repository/data.h5")
+
+ Register another KnowledgeManager in order to benefit
+ from their knowledge (see arguments of .startServer):
+
+  km.registerKnowledgeManager("http://example.com:8000")
+
+ Request data container by its id:
+
+  dc = km.getDataContainer(id)
+
+ Use the data container!
+
 """
 
 __id__ = "$Id$"
@@ -78,6 +126,9 @@ class KnowledgeManagerException(Exception):
     def __str__(self):
         return self._message+" (reason: %s)" % (str(self._parent_excep),)
 
+    def getParentException(self):
+        return self._parent_excep
+
 class KnowledgeManager(Singleton):
 
     def __init__(self):
@@ -86,6 +137,7 @@ class KnowledgeManager(Singleton):
         self._refs = {}
         self._remoteKMs = {} # key:id, value:url
         self._server = None
+        self._server_id = uuid1()
 
     def __del__(self):
         if self.isServerRunning():
@@ -96,20 +148,26 @@ class KnowledgeManager(Singleton):
             return None
         return "http://%s:%d" % (self._http_host, self._http_port)
 
+    def getServerId(self):
+        """Return uniqe id of the KnowledgeManager.
+        """
+        return self._server_id
+
     def startServer(self, host, port):
-        """Start HTTP server.
+        """Start the HTTP server.
 
           host -- full qualified domain name or IP address under which
                   server can be contacted via HTTP
-          port -- port of HTTP server
+          port -- port of HTTP server (integer)
 
+          A temporary directory is generated in order to
+          save temporary HDF5 files.
           The data may be announced to other KnowledgeManagers.
         """
         self._http_host = host
         self._http_port = port
         self._http_dir = tempfile.mkdtemp(prefix='pyphant-knowledgemanager')
         self._server = _HTTPServer((host,port),_HTTPRequestHandler)
-        self._server_id = uuid1()
 
         class _HTTPServerThread(threading.Thread):
             def run(other):
@@ -122,6 +180,10 @@ class KnowledgeManager(Singleton):
 
 
     def stopServer(self):
+        """Stop the HTTP server.
+
+        The temporary directory is removed.
+        """
 
         logger = self._logger
         if self.isServerRunning():
@@ -152,29 +214,52 @@ class KnowledgeManager(Singleton):
             self._logger.warn("HTTP server should be stopped but isn't running.")
 
     def isServerRunning(self):
+        """Return whether HTTP server is running."""
         return self._server is not None
 
-    def registerKnowledgeManager(self, url):
+    def registerKnowledgeManager(self, km_url):
+        """Register a knowledge manager.
+
+        km_url -- url where another KnowledgeManager can be contacted,
+                  form:  http://<hostname>:<port>
+
+        The remote KnowledgeManager is contacted immediately in order
+        to save its unique ID.
+        """
         logger = self._logger
         try:
             # get unique id from KM via HTTP
-            logger.debug("Requesting ID from Knowledgemanager with URL '%s'...", url)
+            logger.debug("Requesting ID from Knowledgemanager with URL '%s'...", km_url)
             # request url for given id over http
             dummy_data = urllib.urlencode({'dummykey':'dummyvalue'})
-            answer = urllib.urlopen(url+HTTP_REQUEST_KM_ID_PATH, dummy_data)
+            answer = urllib.urlopen(km_url+HTTP_REQUEST_KM_ID_PATH, dummy_data)
             logger.debug("Info from HTTP answer: %s", answer.info())
-            id = answer.readline().strip()
-            logger.debug("ID read from HTTP answer: %s", id)
+            km_id = answer.readline().strip()
+            logger.debug("KM ID read from HTTP answer: %s", km_id)
         except Exception, e:
             raise KnowledgeManagerException(
-                "Couldn't get ID for knowledge manager under URL %s." % (url,),e)
+                "Couldn't get ID for knowledge manager under URL %s." % (km_url,),e)
 
-        self._remoteKMs[id] = url
+        self._remoteKMs[km_id] = km_url
 
     def registerURL(self, url):
+        """Register an HDF5 file downloadable from given URL.
+
+        url -- URL of the HDF5 file
+
+        The HDF5 file is downloaded and all DataContainers
+        in the file are registered with their identifiers.
+        """
         self._retrieveURL(url)
 
     def registerDataContainer(self, datacontainer):
+        """Register a DataContainer located in memory using a given reference.
+
+        datacontainer -- reference to the DataContainer object
+
+        The DataContainer must have an .id attribute,
+        which could be generated by the datacontainer.seal() method.
+        """
         try:
             assert datacontainer.id is not None
             self._refs[datacontainer.id] = datacontainer
@@ -184,6 +269,13 @@ class KnowledgeManager(Singleton):
 
 
     def _retrieveURL(self, url):
+        """Retrieve HDF5 file from a given URL.
+
+        url -- URL of the HDF5 file
+
+        The HDF5 file is downloaded and all DataContainers
+        in the file are registered with their identifiers.
+        """
 
         self._logger.info("Retrieving url '%s'..." % (url,))
         localfilename, headers = urllib.urlretrieve(url)
@@ -197,23 +289,32 @@ class KnowledgeManager(Singleton):
         # title of 'result_' groups has id in TITLE attribute
         dc = None
         for group in h5.walkGroups(where="/results"):
-            id = group._v_attrs.TITLE
-            if len(id)>0:
-                self._logger.debug("Registering id '%s'.." % (id,))
-                self._refs[id] = (url, localfilename, group._v_pathname)
+            dc_id = group._v_attrs.TITLE
+            if len(dc_id)>0:
+                self._logger.debug("Registering DC ID '%s'.." % (dc_id,))
+                self._refs[dc_id] = (url, localfilename, group._v_pathname)
 
         h5.close()
 
-    def _retrieveRemoteKMs(self, id, omit_km_ids):
-        id_url = self._getURLFromRemoteKMs(id, omit_km_ids)
-        if id_url is None:
+    def _retrieveRemoteKMs(self, dc_id, omit_km_ids):
+        """Retrieve datacontainer by its id from remote KnowledgeManagers.
+
+        dc_id -- unique id of the requested DataContainer
+        """
+        dc_url = self._getURLFromRemoteKMs(dc_id, omit_km_ids)
+        if dc_url is None:
             raise KnowledgeManagerException(
-                "Couldn't retrieve ID '%s' from remote knowledgemanagers" % (id,))
+                "Couldn't retrieve DC ID '%s' from remote knowledgemanagers" % (dc_id,))
         else:
-            self._retrieveURL(id_url)
+            self._retrieveURL(dc_url)
 
-    def _getURLFromRemoteKMs(self, id, omit_km_ids):
+    def _getURLFromRemoteKMs(self, dc_id, omit_km_ids):
+        """Return URL for a DataContainer by requesting remote KnowledgeManagers.
 
+        dc_id -- ID of the requested DataContainer
+        omit_km_ids -- list of KnowledgeManager IDs which shouldn't be
+                       asked
+        """
         logger = self._logger
         #
         # build query for http request with
@@ -221,7 +322,7 @@ class KnowledgeManager(Singleton):
         # list of URLs which should not be requested by
         # the remote side
         #
-        query = { 'id': id}
+        query = { 'dcid': dc_id}
         idx = -1 # needed if omit_km_ids is empty
         for idx,km_id in enumerate(omit_km_ids):
             query['kmid%d' % (idx,)] = km_id
@@ -234,9 +335,9 @@ class KnowledgeManager(Singleton):
         #
         # ask every remote KnowledgeManager for id
         #
-        logger.debug("Requesting knowledge managers for id '%s'..." % (id,))
+        logger.debug("Requesting knowledge managers for DC id '%s'..." % (dc_id,))
         found = False
-        dc_id_url = None
+        dc_url = None
         for km_id, km_url in self._remoteKMs.iteritems():
             if not (found or (km_id in omit_km_ids)):
                 logger.debug(
@@ -249,20 +350,30 @@ class KnowledgeManager(Singleton):
                 logger.debug("Info from HTTP answer: %s", answer.info())
                 found = not tmp.startswith("Failed") # TODO: check for code 404 instead!
                 if found:
-                    dc_id_url = tmp
-                    logger.debug("URL for id read from HTTP answer: %s", dc_id_url)
+                    dc_url = tmp
+                    logger.debug("URL for id read from HTTP answer: %s", dc_url)
                 else:
                     # message for everyone: do not ask this KM again
                     idx += 1
                     query['kmid%d' % (idx),] = km_id
 
-        return dc_id_url
+        return dc_url
 
 
-    def getDataContainerURL(self, id, omit_km_ids=[]):
+    def _getDataContainerURL(self, dc_id, omit_km_ids=[]):
+        """Return a URL from which a DataContainer can be downloaded.
 
-        if id in self._refs.keys():
-            dc = self.getDataContainer(id, omit_km_ids=omit_km_ids)
+        dc_id -- ID of requested DataContainer
+        omit_km_ids -- list of KnowledgeManager IDs which shouldn't be
+                       asked (Default: [])
+
+        The DataContainer can be downloaded as HDF5 file.
+        The server must be running before calling this method.
+        """
+        assert self.isServerRunning(), "Server is not running."
+
+        if dc_id in self._refs.keys():
+            dc = self.getDataContainer(dc_id, omit_km_ids=omit_km_ids)
 
             #
             # Wrap data container in temporary HDF5 file
@@ -276,55 +387,80 @@ class KnowledgeManager(Singleton):
             resultsGroup = h5.createGroup("/", "results")
             ptp.saveResult(dc, h5)
             h5.close()
-            url = self._getServerURL()+"/"+os.path.basename(h5name)
+            dc_url = self._getServerURL()+"/"+os.path.basename(h5name)
         else:
             try:
-                url = self._getURLFromRemoteKMs(id, omit_km_ids)
+                dc_url = self._getURLFromRemoteKMs(dc_id, omit_km_ids)
             except Exception, e:
                 raise KnowledgeManagerException(
-                    "URL for ID '%s' not found." % (id,), e)
-        return url
+                    "URL for DC ID '%s' not found." % (dc_id,), e)
+        return dc_url
 
-    def getDataContainer(self, id, try_cache=True, omit_km_ids=[]):
-        if id not in self._refs.keys():
-            # raise KnowledgeManagerException("Id '%s'unknown."%(id,))
+    def getDataContainer(self, dc_id, try_cache=True, omit_km_ids=[]):
+        """Request reference on DataContainer having the given id.
+
+        dc_id       -- Unique ID of the DataContainer
+        try_cache   -- Try local cache first (default: True)
+        omit_km_ids -- list of KnowledgeManager IDs which shouldn't be
+                       asked (Default: [])
+        """
+        if dc_id not in self._refs.keys():
+            # raise KnowledgeManagerException("DC ID '%s'unknown."%(dc_id,))
             try:
-                self._retrieveRemoteKMs(id, omit_km_ids)
+                self._retrieveRemoteKMs(dc_id, omit_km_ids)
             except Exception, e:
                 raise KnowledgeManagerException(
-                    "Id '%s' unknown." % (id,), e)
+                    "DC ID '%s' unknown." % (dc_id,), e)
 
-        ref = self._refs[id]
+        ref = self._refs[dc_id]
         if isinstance(ref, TupleType):
-            dc = self._getDCfromURLRef(id, try_cache = try_cache)
+            dc = self._getDCfromURLRef(dc_id, try_cache = try_cache)
         else:
             dc = ref
 
         return dc
 
-    def _getDCfromURLRef(self, id, try_cache=True, omit_km_ids=[]):
-        url, localfilename, h5path = self._refs[id]
+    def _getDCfromURLRef(self, dc_id, try_cache=True, omit_km_ids=[]):
+        """Return DataContainer.
+
+        dc_id       -- Unique ID of the DataContainer
+        try_cache   -- Try local cache first (default: True)
+        omit_km_ids -- list of KnowledgeManager IDs which shouldn't be
+                       asked (Default: [])
+
+        The following request order is used:
+
+         1. Use local cache file, if available (only for try_cache=True)
+         2. Try to download HDF5 file (again).
+         3. Ask remote KnowledgeManagers for the given ID.
+            Download the DataContainer as HDF5 file (if available).
+
+        Afterwards open the file and extract the DataContainer.
+        The given dc_id must be known to the KnowledgeManager.
+        """
+        dc_url, localfilename, h5path = self._refs[dc_id]
         if not try_cache:
             os.remove(localfilename)
 
         if not os.path.exists(localfilename):
             try:
                 # download URL and save ids as references
-                self._retrieveURL(url)
+                self._retrieveURL(dc_url)
             except Exception, e_url:
                 try:
-                    self._retrieveRemoteKMs(id, omit_km_ids)
+                    self._retrieveRemoteKMs(dc_id, omit_km_ids)
                 except Exception, e_rem:
                     raise KnowledgeManagerException(
-                        "Id '%s' not found on remote sites."%(id,),
+                        "DC ID '%s' not found on remote sites."% (dc_id,),
                         KnowledgeManagerException(
-                            "Id '%s' could not be resolved using URL '%s'"%(id, url)), e_url)
+                            "DC ID '%s' could not be resolved using URL '%s'" \
+                                % (dc_id, dc_url)), e_url)
 
-            url, localfilename, h5path = self._refs[id]
+            dc_url, localfilename, h5path = self._refs[dc_id]
 
         h5 = tables.openFile(localfilename)
 
-        hash, type = parseId(id)
+        hash, type = parseId(dc_id)
         assert type in ['sample','field']
         if type=='sample':
             loader = ptp.loadSample
@@ -337,8 +473,9 @@ class KnowledgeManager(Singleton):
             self._logger.debug("Loading data from '%s' in file '%s'.." % (localfilename, h5path))
             dc = loader(h5, h5.getNode(h5path))
         except Exception, e:
-            raise KnowledgeManagerException("Id '%s' known, but cannot be read from file '%s'." \
-                                                % (id,localfilename), e)
+            raise KnowledgeManagerException(
+                "DC ID '%s' known, but cannot be read from file '%s'." \
+                    % (dc_id,localfilename), e)
         finally:
             h5.close()
         return dc
@@ -368,6 +505,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
 
 
     def _do_POST_request_km_id(self):
+        """Return the KnowledgeManager ID."""
 
         km = _HTTPRequestHandler._knowledge_manager
         code = 200
@@ -376,26 +514,27 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
         return code, answer
 
     def _do_POST_request_dc_url(self):
+        """Return a URL for a given DataContainer ID."""
         if self.headers.has_key('content-length'):
             length= int( self.headers['content-length'] )
             query = self.rfile.read(length)
             query_dict = cgi.parse_qs(query)
 
-            id = query_dict['id'][0]
+            dc_id = query_dict['dcid'][0]
             omit_km_ids = [ value[0] for (key,value) in query_dict.iteritems()
-                             if key!='id']
-            self._logger.debug("Query data: id: %s, omit_km_ids: %s",
-                               id, omit_km_ids)
+                             if key!='dcid']
+            self._logger.debug("Query data: dc_id: %s, omit_km_ids: %s",
+                               dc_id, omit_km_ids)
 
             try:
                 km = _HTTPRequestHandler._knowledge_manager
                 code = 200
-                answer = km.getDataContainerURL(id, omit_km_ids)
+                answer = km._getDataContainerURL(dc_id, omit_km_ids)
                 self._logger.debug("Returning URL '%s'...", answer)
             except Exception, e:
                 self._logger.warn("Catched exception: %s", traceback.format_exc())
                 code = 404
-                answer = "Failed: Id '%s' not found." % (id,) # 'Failed' significant!
+                answer = "Failed: DC ID '%s' not found." % (dc_id,) # 'Failed' significant!
         else:
             code = 404
             answer = "Cannot interpret query."
@@ -403,7 +542,8 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
         return code, answer
 
     def do_GET(self):
-        """Serve a GET request."""
+        """Return a requested HDF5 from temporary directory.
+        """
         log = self._logger
         f = self.send_head()
         if f:
@@ -418,7 +558,8 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
 
 
     def send_head(self): # see SimpleHTTPServer.SimpleHTTPRequestHandler
-
+        """Send header for HDF5 file request.
+        """
         log = self._logger
 
         km = _HTTPRequestHandler._knowledge_manager
@@ -445,7 +586,8 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
 
 
 class _HTTPServer(ThreadingMixIn,HTTPServer):
-
+    """Threaded HTTP Server for the KnowledgeManager.
+    """
     stop_server = False
     _logger = logging.getLogger("pyphant")
 
