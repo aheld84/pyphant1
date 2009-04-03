@@ -40,14 +40,14 @@ __version__ = "$Revision$"
 import wx.lib.masked
 
 class BoundedIntegerTextField(wx.lib.masked.NumCtrl):
-    def __init__(self, parent, param):
+    def __init__(self, parent, param, validator):
         min = -50000000
         max = 50000000
         if min and min>=0: allowNegative=False
         else: allowNegative=True
         if min or max: limited=True
         else: limited=False
-        wx.lib.masked.NumCtrl.__init__(self, parent, min=min, max=max, allowNegative=allowNegative, limited=limited)
+        wx.lib.masked.NumCtrl.__init__(self, parent, min=min, max=max, allowNegative=allowNegative, limited=limited, validator=validator)
         self.SetValue(int(param.value))
 
     def getValue(self):

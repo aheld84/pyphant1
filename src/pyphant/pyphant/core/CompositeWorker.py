@@ -104,13 +104,12 @@ class CompositeWorker(Worker.Worker):
     def addWorker(self, worker, data=None):
         if not self.checkWorkerName(worker, worker.getParam('name').value):
             raise ValueError(u'Duplicate worker name')
-        worker.registerParamChangeVetoer(self.vetoWorkerName, 'name')
+        worker.registerParamListener(self.vetoWorkerName, 'name', Param.ParamChangeRequested)
         self._workers.append(worker)
         if len(worker.getPlugs())==0:
             self._sinks.append(worker)
         if len(worker.getSockets())==0:
             self._sources.append(worker)
-
         self._notifyListeners(WorkerAddedEvent(worker, data))
 
     def removeWorker(self, worker, data=None):

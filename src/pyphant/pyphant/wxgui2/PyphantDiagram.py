@@ -45,6 +45,7 @@ import pyphant.core.Connectors as Connectors
 import pyphant.core.WorkerRegistry
 import pyphant.wxgui2.wxPyphantApplication
 import pyphant.wxgui2.DataVisReg
+from pyphant.core import Param
 import cPickle as pickle
 
 class PyphantDiagram(sogl.Diagram):
@@ -282,7 +283,18 @@ class BodyShape(sogl.RectangleShape):
         sogl.RectangleShape.__init__(self,100,50)
         self.workerShape=workerShape
         self.RemoveSensitivityFilter(sogl.OP_DRAG_LEFT|sogl.OP_DRAG_RIGHT)
-        self.AddText(name)
+        self.SetText(name)
+
+    def SetText(self, string):
+        """Add a line of text to the shape's default text region."""
+        if not self._regions:
+            return
+        region = self._regions[0]
+        region.ClearText()
+        new_line = sogl.ShapeTextLine(0, 0, string)
+        text = region.GetFormattedText()
+        text.append(new_line)
+        self._formatted = False
 
     def OnRightClick(self, x, y, keys, attachment):
         frame=wx.GetTopLevelParent(self.GetCanvas())
@@ -329,8 +341,7 @@ class WorkerShape(sogl.CompositeShape):
         self.diag = diag
         self.SetCanvas(diag.GetCanvas())
         self.worker=worker
-
-        bodyShape = BodyShape(self,worker.name)
+        bodyShape = BodyShape(self,worker.getParam('name').value)
         self.AddChild(bodyShape)
 
         self.socketShapes=[]
@@ -385,6 +396,7 @@ class WorkerShape(sogl.CompositeShape):
         self.RemoveSensitivityFilter(sogl.OP_CLICK_LEFT, False)
         #self.AddSensitivityFilter(sogl.OP_CLICK_LEFT, True)
 
+        self.worker.registerParamListener(lambda event: (bodyShape.SetText(event.newValue), bodyShape.GetCanvas().Refresh()), 'name', Param.ParamChanged)
         self.Show(True)
 
         map(lambda con: self.diag.connectors[con].Show(False),

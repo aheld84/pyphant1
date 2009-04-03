@@ -40,8 +40,8 @@ __version__ = "$Revision$"
 import wx
 
 class CheckBox(wx.CheckBox):
-    def __init__(self, parent, param):
-        wx.CheckBox.__init__(self, parent)
+    def __init__(self, parent, param, validator):
+        wx.CheckBox.__init__(self, parent, validator=validator)
         self.SetValue(param.value)
 
     def getValue(self):

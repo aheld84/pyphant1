@@ -50,7 +50,7 @@ class VetoParamChangeTest(unittest.TestCase):
 
     def setUp(self):
         self.worker = ImageProcessing.ThresholdingWorker.ThresholdingWorker()
-        self.worker.registerParamChangeVetoer(self.vetoer, 'name')
+        self.worker.registerParamListener(self.vetoer, 'name', ParamChangeRequested)
 
     def vetoer(self, event):
         if event.newValue == 'bad':

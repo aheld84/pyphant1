@@ -175,11 +175,11 @@ class Worker(object):
             paramList.append(self._params[name])
         return paramList
 
-    def registerParamChangeVetoer(self, vetoer, param):
-        self.getParam(param).registerChangeVetoer(vetoer)
+    def registerParamListener(self, listener, param, eventType):
+        self.getParam(param).registerListener(listener, eventType)
 
-    def unregisterParamChangeVetoer(self, vetoer, param):
-        self.getParam(param).unregisterChangeVetoer(vetoer)
+    def unregisterParamListener(self, vetoer, param, eventType):
+        self.getParam(param).unregisterListener(listener, eventType)
 
     def invalidate(self, event=None):
         map(lambda p: p.invalidate(), self._plugs.values())

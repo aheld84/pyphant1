@@ -40,10 +40,10 @@ __version__ = "$Revision$"
 import wx, os.path
 
 class FileButton(wx.Button):
-    def __init__(self, parent, param):
+    def __init__(self, parent, param, validator):
         self.path=os.path.abspath(param.value)
         self.dir, self.filename=os.path.split(self.path)
-        wx.Button.__init__(self, parent, label=self.filename)
+        wx.Button.__init__(self, parent, label=self.filename, validator=validator)
         self.Bind(wx.EVT_BUTTON, self.selectFile)
 
     def selectFile(self, event):

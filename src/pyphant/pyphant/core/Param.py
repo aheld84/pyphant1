@@ -48,7 +48,13 @@ class ParamFactory(object):
             return Param(worker, paramName, displayName, values, subtype)
 
 
-class ParamChangeEvent(object):
+class ParamChangeRequested(object):
+    def __init__(self, param, oldValue, newValue):
+        self.param = param
+        self.oldValue = oldValue
+        self.newValue = newValue
+
+class ParamChanged(object):
     def __init__(self, param, oldValue, newValue):
         self.param = param
         self.oldValue = oldValue
@@ -73,10 +79,11 @@ class Param(Connectors.Socket):
     def __setValue(self, value):
         oldValue=self.value
         if oldValue==value: return
-        self._eventDispatcher.dispatchEvent(ParamChangeEvent(self, oldValue, value))
+        self._eventDispatcher.dispatchEvent(ParamChangeRequested(self, oldValue, value))
 #        if self._validator: ##reintroduce with appropriate subtype validator lookup
 #            self._validator(oldValue, value)
         self._value = value
+        self._eventDispatcher.dispatchEvent(ParamChanged(self, oldValue, value))
         self.invalidate()
 
     value=property(__getValue, __setValue)
@@ -90,11 +97,11 @@ class Param(Connectors.Socket):
         self.subtype=subtype
         self._eventDispatcher = EventDispatcher.EventDispatcher()
 
-    def registerChangeVetoer(self, vetoer):
-        self._eventDispatcher.registerListener(vetoer, ParamChangeEvent)
+    def registerListener(self, vetoer, eventType):
+        self._eventDispatcher.registerListener(vetoer, eventType)
 
-    def unregisterChangeVetoer(self, vetoer):
-        self._eventDispatcher.unregisterListener(vetoer, ParamChangeEvent)
+    def unregisterListener(self, vetoer, eventType):
+        self._eventDispatcher.unregisterListener(vetoer, eventType)
 
     #pickle
     def __getstate__(self):
