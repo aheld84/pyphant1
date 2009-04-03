@@ -40,12 +40,13 @@ __version__ = "$Revision$"
 import wx
 
 class ListSelect(wx.Choice):
-    def __init__(self, parent, param):
-        wx.Choice.__init__(self, parent, choices=param.possibleValues)
-        self.SetStringSelection(param.value)
+    def __init__(self, parent, param, validator):
+        self.data = dict([(str(v), v) for v in param.possibleValues])
+        wx.Choice.__init__(self, parent, choices=map(str,param.possibleValues), validator=validator)
+        self.SetStringSelection(str(param.value))
 
     def getValue(self):
         if self.GetSelection()==wx.NOT_FOUND:
             raise ValueError("Invalid value")
         else:
-            return unicode(self.GetStringSelection())
+            return self.data[self.GetStringSelection()]
