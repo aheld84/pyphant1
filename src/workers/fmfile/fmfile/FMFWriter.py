@@ -84,7 +84,7 @@ def field2fmf(fieldContainer):
                            dependencies = [dim.shortname],
                            error = errorSymbol)
         if fieldContainer.error != None:
-            tab.add_column_def(u"encertainty of %s" % fieldContainer.longname,
+            tab.add_column_def(u"uncertainty of %s" % fieldContainer.longname,
                                errorSymbol,
                                str(fieldContainer.unit))
     elif fieldContainer.dimensions[0].isIndex():
