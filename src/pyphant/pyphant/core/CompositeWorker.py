@@ -137,6 +137,21 @@ class CompositeWorker(Worker.Worker):
                 raise ValueError, "Recipe does not contain Worker %s" % desiredWorker
         return result
 
+    def findConnectorForId(self, id):
+        splittedId = id.split('.',1)
+        if len(splittedId)==1:
+            return super(CompositeWorker, self).findConnectorForId(splittedId[0])
+        else:
+            w = self.getWorker(splittedId[0])
+            return w.findConnectorForId(splittedId[1])
+
+    def getAllPlugs(self):
+        return sum([w.getPlugs() for w in self.getWorkers()], [])
+
+    def getOpenSocketsForPlug(self, plug):
+        walker = self.createCompositeWorkerWalker()
+        return sum(walker.visit(lambda w: [s for s in w.getSockets() if not s.isFull()], [plug.worker]), []) 
+
     def getSources(self):
         return self._sources
 

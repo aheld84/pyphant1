@@ -196,6 +196,12 @@ class Worker(object):
     def getPlugs(self):
         return self._plugs.values()
 
+    def findConnectorForId(self, id):
+        splittedId = id.split('.',1)
+        if len(splittedId)==1:
+            return getattr(self, splittedId[0])
+        raise ValueError, "Illegal connector id <%s>"%id
+
     def connectorsExternalizationStateChanged(self, connector):
         if self.parent:
             self.parent.workersConnectorStateChanged(self,connector)
