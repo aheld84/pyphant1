@@ -22,7 +22,7 @@ setuptools.setup(
     description = __doc__,
     install_requires=['pyphant>=0.4alpha3',
                       'ConfigObj'
-                      ]
+                      ],
     packages = ['fmfile'],
     entry_points = """
     [pyphant.workers]
