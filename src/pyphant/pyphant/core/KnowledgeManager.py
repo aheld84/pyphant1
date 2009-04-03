@@ -259,7 +259,8 @@ class KnowledgeManager(Singleton):
         return dc_url
 
 
-    def getDataContainerURL(self, dc_id, omit_km_ids=[]):
+    def _getDataContainerURL(self, dc_id, omit_km_ids=[]):
+        assert self.isServerRunning(), "Server is not running."
 
         if dc_id in self._refs.keys():
             dc = self.getDataContainer(dc_id, omit_km_ids=omit_km_ids)
@@ -392,7 +393,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
             try:
                 km = _HTTPRequestHandler._knowledge_manager
                 code = 200
-                answer = km.getDataContainerURL(dc_id, omit_km_ids)
+                answer = km._getDataContainerURL(dc_id, omit_km_ids)
                 self._logger.debug("Returning URL '%s'...", answer)
             except Exception, e:
                 self._logger.warn("Catched exception: %s", traceback.format_exc())
