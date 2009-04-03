@@ -249,7 +249,7 @@ class KnowledgeManager(Singleton):
                 logger.debug("Info from HTTP answer: %s", answer.info())
                 found = not tmp.startswith("Failed") # TODO: check for code 404 instead!
                 if found:
-                    dc_id_url = tmp 
+                    dc_id_url = tmp
                     logger.debug("URL for id read from HTTP answer: %s", dc_id_url)
                 else:
                     # message for everyone: do not ask this KM again
@@ -360,21 +360,21 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
         else:
             code = 404
             answer = "Unknown request path '%s'." % (self.path,)
-            
+
         self.send_response(code)
         self.end_headers()
         self.wfile.write(answer)
         self.wfile.write('\n')
 
-        
+
     def _do_POST_request_km_id(self):
-        
+
         km = _HTTPRequestHandler._knowledge_manager
         code = 200
         answer = km._server_id
         self._logger.debug("Returning ID '%s'...", answer)
         return code, answer
-        
+
     def _do_POST_request_dc_url(self):
         if self.headers.has_key('content-length'):
             length= int( self.headers['content-length'] )
@@ -399,7 +399,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
         else:
             code = 404
             answer = "Cannot interpret query."
-            
+
         return code, answer
 
     def do_GET(self):
