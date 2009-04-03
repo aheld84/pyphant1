@@ -154,22 +154,22 @@ class KnowledgeManager(Singleton):
     def isServerRunning(self):
         return self._server is not None
 
-    def registerKnowledgeManager(self, url):
+    def registerKnowledgeManager(self, km_url):
         logger = self._logger
         try:
             # get unique id from KM via HTTP
-            logger.debug("Requesting ID from Knowledgemanager with URL '%s'...", url)
+            logger.debug("Requesting ID from Knowledgemanager with URL '%s'...", km_url)
             # request url for given id over http
             dummy_data = urllib.urlencode({'dummykey':'dummyvalue'})
-            answer = urllib.urlopen(url+HTTP_REQUEST_KM_ID_PATH, dummy_data)
+            answer = urllib.urlopen(km_url+HTTP_REQUEST_KM_ID_PATH, dummy_data)
             logger.debug("Info from HTTP answer: %s", answer.info())
-            id = answer.readline().strip()
-            logger.debug("ID read from HTTP answer: %s", id)
+            km_id = answer.readline().strip()
+            logger.debug("KM ID read from HTTP answer: %s", km_id)
         except Exception, e:
             raise KnowledgeManagerException(
-                "Couldn't get ID for knowledge manager under URL %s." % (url,),e)
+                "Couldn't get ID for knowledge manager under URL %s." % (km_url,),e)
 
-        self._remoteKMs[id] = url
+        self._remoteKMs[km_id] = km_url
 
     def registerURL(self, url):
         self._retrieveURL(url)
@@ -197,22 +197,22 @@ class KnowledgeManager(Singleton):
         # title of 'result_' groups has id in TITLE attribute
         dc = None
         for group in h5.walkGroups(where="/results"):
-            id = group._v_attrs.TITLE
-            if len(id)>0:
-                self._logger.debug("Registering id '%s'.." % (id,))
-                self._refs[id] = (url, localfilename, group._v_pathname)
+            dc_id = group._v_attrs.TITLE
+            if len(dc_id)>0:
+                self._logger.debug("Registering DC ID '%s'.." % (dc_id,))
+                self._refs[dc_id] = (url, localfilename, group._v_pathname)
 
         h5.close()
 
-    def _retrieveRemoteKMs(self, id, omit_km_ids):
-        id_url = self._getURLFromRemoteKMs(id, omit_km_ids)
-        if id_url is None:
+    def _retrieveRemoteKMs(self, dc_id, omit_km_ids):
+        dc_url = self._getURLFromRemoteKMs(dc_id, omit_km_ids)
+        if dc_url is None:
             raise KnowledgeManagerException(
-                "Couldn't retrieve ID '%s' from remote knowledgemanagers" % (id,))
+                "Couldn't retrieve DC ID '%s' from remote knowledgemanagers" % (dc_id,))
         else:
-            self._retrieveURL(id_url)
+            self._retrieveURL(dc_url)
 
-    def _getURLFromRemoteKMs(self, id, omit_km_ids):
+    def _getURLFromRemoteKMs(self, dc_id, omit_km_ids):
 
         logger = self._logger
         #
@@ -221,7 +221,7 @@ class KnowledgeManager(Singleton):
         # list of URLs which should not be requested by
         # the remote side
         #
-        query = { 'id': id}
+        query = { 'dcid': dc_id}
         idx = -1 # needed if omit_km_ids is empty
         for idx,km_id in enumerate(omit_km_ids):
             query['kmid%d' % (idx,)] = km_id
@@ -234,9 +234,9 @@ class KnowledgeManager(Singleton):
         #
         # ask every remote KnowledgeManager for id
         #
-        logger.debug("Requesting knowledge managers for id '%s'..." % (id,))
+        logger.debug("Requesting knowledge managers for DC id '%s'..." % (dc_id,))
         found = False
-        dc_id_url = None
+        dc_url = None
         for km_id, km_url in self._remoteKMs.iteritems():
             if not (found or (km_id in omit_km_ids)):
                 logger.debug(
@@ -249,20 +249,20 @@ class KnowledgeManager(Singleton):
                 logger.debug("Info from HTTP answer: %s", answer.info())
                 found = not tmp.startswith("Failed") # TODO: check for code 404 instead!
                 if found:
-                    dc_id_url = tmp
-                    logger.debug("URL for id read from HTTP answer: %s", dc_id_url)
+                    dc_url = tmp
+                    logger.debug("URL for id read from HTTP answer: %s", dc_url)
                 else:
                     # message for everyone: do not ask this KM again
                     idx += 1
                     query['kmid%d' % (idx),] = km_id
 
-        return dc_id_url
+        return dc_url
 
 
-    def getDataContainerURL(self, id, omit_km_ids=[]):
+    def getDataContainerURL(self, dc_id, omit_km_ids=[]):
 
-        if id in self._refs.keys():
-            dc = self.getDataContainer(id, omit_km_ids=omit_km_ids)
+        if dc_id in self._refs.keys():
+            dc = self.getDataContainer(dc_id, omit_km_ids=omit_km_ids)
 
             #
             # Wrap data container in temporary HDF5 file
@@ -276,55 +276,56 @@ class KnowledgeManager(Singleton):
             resultsGroup = h5.createGroup("/", "results")
             ptp.saveResult(dc, h5)
             h5.close()
-            url = self._getServerURL()+"/"+os.path.basename(h5name)
+            dc_url = self._getServerURL()+"/"+os.path.basename(h5name)
         else:
             try:
-                url = self._getURLFromRemoteKMs(id, omit_km_ids)
+                dc_url = self._getURLFromRemoteKMs(dc_id, omit_km_ids)
             except Exception, e:
                 raise KnowledgeManagerException(
-                    "URL for ID '%s' not found." % (id,), e)
-        return url
+                    "URL for DC ID '%s' not found." % (dc_id,), e)
+        return dc_url
 
-    def getDataContainer(self, id, try_cache=True, omit_km_ids=[]):
-        if id not in self._refs.keys():
-            # raise KnowledgeManagerException("Id '%s'unknown."%(id,))
+    def getDataContainer(self, dc_id, try_cache=True, omit_km_ids=[]):
+        if dc_id not in self._refs.keys():
+            # raise KnowledgeManagerException("DC ID '%s'unknown."%(dc_id,))
             try:
-                self._retrieveRemoteKMs(id, omit_km_ids)
+                self._retrieveRemoteKMs(dc_id, omit_km_ids)
             except Exception, e:
                 raise KnowledgeManagerException(
-                    "Id '%s' unknown." % (id,), e)
+                    "DC ID '%s' unknown." % (dc_id,), e)
 
-        ref = self._refs[id]
+        ref = self._refs[dc_id]
         if isinstance(ref, TupleType):
-            dc = self._getDCfromURLRef(id, try_cache = try_cache)
+            dc = self._getDCfromURLRef(dc_id, try_cache = try_cache)
         else:
             dc = ref
 
         return dc
 
-    def _getDCfromURLRef(self, id, try_cache=True, omit_km_ids=[]):
-        url, localfilename, h5path = self._refs[id]
+    def _getDCfromURLRef(self, dc_id, try_cache=True, omit_km_ids=[]):
+        dc_url, localfilename, h5path = self._refs[dc_id]
         if not try_cache:
             os.remove(localfilename)
 
         if not os.path.exists(localfilename):
             try:
                 # download URL and save ids as references
-                self._retrieveURL(url)
+                self._retrieveURL(dc_url)
             except Exception, e_url:
                 try:
-                    self._retrieveRemoteKMs(id, omit_km_ids)
+                    self._retrieveRemoteKMs(dc_id, omit_km_ids)
                 except Exception, e_rem:
                     raise KnowledgeManagerException(
-                        "Id '%s' not found on remote sites."%(id,),
+                        "DC ID '%s' not found on remote sites."% (dc_id,),
                         KnowledgeManagerException(
-                            "Id '%s' could not be resolved using URL '%s'"%(id, url)), e_url)
+                            "DC ID '%s' could not be resolved using URL '%s'" \
+                                % (dc_id, dc_url)), e_url)
 
-            url, localfilename, h5path = self._refs[id]
+            dc_url, localfilename, h5path = self._refs[dc_id]
 
         h5 = tables.openFile(localfilename)
 
-        hash, type = parseId(id)
+        hash, type = parseId(dc_id)
         assert type in ['sample','field']
         if type=='sample':
             loader = ptp.loadSample
@@ -337,8 +338,9 @@ class KnowledgeManager(Singleton):
             self._logger.debug("Loading data from '%s' in file '%s'.." % (localfilename, h5path))
             dc = loader(h5, h5.getNode(h5path))
         except Exception, e:
-            raise KnowledgeManagerException("Id '%s' known, but cannot be read from file '%s'." \
-                                                % (id,localfilename), e)
+            raise KnowledgeManagerException(
+                "DC ID '%s' known, but cannot be read from file '%s'." \
+                    % (dc_id,localfilename), e)
         finally:
             h5.close()
         return dc
@@ -381,21 +383,21 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
             query = self.rfile.read(length)
             query_dict = cgi.parse_qs(query)
 
-            id = query_dict['id'][0]
+            dc_id = query_dict['dcid'][0]
             omit_km_ids = [ value[0] for (key,value) in query_dict.iteritems()
-                             if key!='id']
-            self._logger.debug("Query data: id: %s, omit_km_ids: %s",
-                               id, omit_km_ids)
+                             if key!='dcid']
+            self._logger.debug("Query data: dc_id: %s, omit_km_ids: %s",
+                               dc_id, omit_km_ids)
 
             try:
                 km = _HTTPRequestHandler._knowledge_manager
                 code = 200
-                answer = km.getDataContainerURL(id, omit_km_ids)
+                answer = km.getDataContainerURL(dc_id, omit_km_ids)
                 self._logger.debug("Returning URL '%s'...", answer)
             except Exception, e:
                 self._logger.warn("Catched exception: %s", traceback.format_exc())
                 code = 404
-                answer = "Failed: Id '%s' not found." % (id,) # 'Failed' significant!
+                answer = "Failed: DC ID '%s' not found." % (dc_id,) # 'Failed' significant!
         else:
             code = 404
             answer = "Cannot interpret query."
