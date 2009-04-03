@@ -60,6 +60,7 @@ def normation(normationStr):
 def loadDataFromZip(filename, subscriber=1):
     z = zipfile.ZipFile(filename, 'r')
     names = z.namelist()
+    names.sort()
     total = len(names)
     assert total>0, "The loaded FMF archive named %s does not contain any files." % filename
     data = {}
@@ -71,17 +72,17 @@ def loadDataFromZip(filename, subscriber=1):
         else:
             data[pixelName] = rawContainer
         subscriber %= float(i+1)/total*100.0
-    return data
+    return data,names
 
-def collectAttributes(data):
+def collectAttributes(data,names):
     """Function collectAttributes(data)
     data: dictionary referencing the FMF attributes by the respective filenames
     returns tupple (dictionary of common attributes, dictionary of varibale attributes)
     """
     #Collect attributes, define filename as new attribute
-    atts = {u'filename': []}
-    for filename,sc in data.iteritems():
-        atts['filename'].append(filename)
+    atts = {u'filename': names}
+    for filename in names:
+        sc = data[filename]
         for section,sectionDict in sc.attributes.iteritems():
             for key,treetoken in sectionDict.iteritems():
                 attlist = atts.setdefault(key, [])
@@ -205,8 +206,8 @@ def checkAndCondense(data):
     return reference
 
 def readZipFile(filename, subscriber=1):
-    data = loadDataFromZip(filename, subscriber)
-    commonAttr, variableAttr = collectAttributes(data)
+    data,names = loadDataFromZip(filename, subscriber)
+    commonAttr, variableAttr = collectAttributes(data,names)
     #Wrap variable attributes into FieldContainer
     containers = [ column2FieldContainer(longname, column) for longname, column in variableAttr.iteritems()]
     #Process SampleContainers of parsed FMF files and skip independent variables, which are used as dimensions.
@@ -237,7 +238,6 @@ def readZipFile(filename, subscriber=1):
         assert newField.isValid()
         containers.append(newField)
     result = DataContainer.SampleContainer(containers,attributes=commonAttr)
-    print "FMFLoader",result.attributes
     return result
 
 def reshapeField(field):
