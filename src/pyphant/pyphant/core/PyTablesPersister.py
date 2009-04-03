@@ -79,6 +79,31 @@ class Connection(tables.IsDescription):
 ##########################################################################
 # Saving Part
 ##########################################################################
+def saveExecutionOrder(h5, order):
+    if 'executionOrder' in h5.root:
+        executionOrderGroup = h5.root.executionOrder
+    else:
+        executionOrderGroup = h5.createGroup('/', 'executionOrder')
+    import md5
+    m = md5.new()
+    m.update(str(sorted(order[0].items()))) # Call 'sorted' to
+                                            # normalize representation
+                                            # of order[0]
+    m.update(str(sorted(order[1])))
+    name = "pre_"+m.hexdigest()
+    orderGroup = h5.createGroup(executionOrderGroup, name)
+    class InputDescription(tables.IsDescription):
+        socket = StringCol(max(map(len, order[0].keys())))
+        data = StringCol(max(map(len, order[0].values())))
+    input = h5.createTable(orderGroup, 'input', InputDescription, "Socket Map")
+    m = input.row
+    for s, d in order[0].iteritems():
+        m['socket'] = s
+        m['data'] = d
+        m.append()
+    input.flush()
+    orderGroup._v_attrs.resultPlug = order[1]
+
 def saveRecipeToHDF5File( recipe, filename ):
     _logger.info( "Saving to %s" % filename )
     h5 = tables.openFile(filename, 'w')
@@ -214,13 +239,17 @@ def restoreParamsToWorkers(recipeGroup, workers):
 
 def loadRecipeFromHDF5File( filename ):
     h5 = tables.openFile(filename, 'r')
+    recipe = loadRecipe(h5)
+    h5.close()
+    return recipe
+
+def loadRecipe(h5):
     recipeGroup = h5.root.recipe
     recipe = CompositeWorker.CompositeWorker()
     workers = {}
     createWorkerGraph(recipeGroup, workers, recipe)
     restoreResultsToWorkers(recipeGroup, workers, h5)
     restoreParamsToWorkers(recipeGroup, workers)
-    h5.close()
     return recipe
 
 def createWorkerGraph(recipeGroup, workers, recipe):
@@ -313,3 +342,11 @@ def loadSample(h5, resNode):
     result.seal(resNode._v_title)
     return result
 
+def loadExecutionOrders(h5):
+    orders = []
+    for orderGroup in h5.root.executionOrder:
+        socketMapTable = orderGroup.input
+        socketMap = dict([(row['socket'], row['data']) for row in socketMapTable.iterrows()])
+        resultPlug = orderGroup._v_attrs.resultPlug
+        orders.append((socketMap, resultPlug))
+    return orders

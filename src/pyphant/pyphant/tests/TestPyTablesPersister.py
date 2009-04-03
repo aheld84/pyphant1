@@ -46,7 +46,7 @@ import scipy
 import copy, datetime
 from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 from pyphant.core.DataContainer import FieldContainer,SampleContainer,assertEqual
-from pyphant.core.PyTablesPersister import saveField,loadField,saveSample,loadSample
+from pyphant.core.PyTablesPersister import saveField,loadField,saveSample,loadSample,saveExecutionOrder,loadExecutionOrders
 import numpy.testing as nt
 import numpy
 import tables
@@ -165,6 +165,24 @@ class SampleContainerInSampleContainerTestCase(SampleContainerTestCase):
                                       attributes = copy.copy(self.attributes).update({'isSample':'It seems so.'}))
         self.sample.seal()
 
+class ExecutionOrderTestCase(unittest.TestCase):
+    def setUp(self):
+        import tempfile
+        self.path = tempfile.mktemp()
+        self.orders = [({'sock1' : 'emd5://foo', 'sock2' : 'emd5://bar'}, 'baz'),
+                       ({'sockA' : 'emd5://quux', 'sockB' : 'emd5://froz'}, 'pink')]
+
+    def testSaveAndLoad(self):
+        h5 = tables.openFile(self.path, mode='w')
+        for order in self.orders:
+            saveExecutionOrder(h5, order)
+        h5.close()
+
+        h5 = tables.openFile(self.path)
+        orders = loadExecutionOrders(h5)
+        h5.close()
+        self.assertEquals(sorted(orders), sorted(self.orders))
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) == 1:
@@ -172,6 +190,3 @@ if __name__ == "__main__":
     else:
         suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
         unittest.TextTestRunner().run(suite)
-
-
-
