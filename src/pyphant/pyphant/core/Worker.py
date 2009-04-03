@@ -98,6 +98,17 @@ class Worker(object):
                 except ValueError:
                     self.getParam('name').value = basename+'_%i'%i
 
+    def _id(self):
+        if self.parent != None:
+            pre = self.parent.id
+        else:
+            pre = ""
+        if pre != "":
+            return pre+"."+self.getParam('name').value
+        else:
+            return self.getParam('name').value
+    id = property(_id)
+
     def inithook(self):
         pass
 

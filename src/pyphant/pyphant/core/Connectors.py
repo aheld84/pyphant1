@@ -52,11 +52,12 @@ TYPE_BOOL=type(True)
 DEFAULT_DATA_TYPE=TYPE_ARRAY
 
 class Connector(object):
-    def __init__(self, worker, name, type=DEFAULT_DATA_TYPE):
+    def __init__(self, worker, name, type=DEFAULT_DATA_TYPE, pre=""):
         self.worker=worker
         self.name=name
         self.type=type
         self._isExternal=True
+        self.pre = pre
     def _getIsExternal(self):
         return self._isExternal
     def _setIsExternal(self, isExternal):
@@ -64,6 +65,7 @@ class Connector(object):
             self._isExternal=isExternal
             self.worker.connectorsExternalizationStateChanged(self)
     isExternal=property(_getIsExternal,_setIsExternal)
+    id = property(lambda self: self.worker.id+"."+self.pre+self.name.capitalize())
 
 class Computer(threading.Thread):
     def __init__(self, method, **kwargs):
@@ -84,7 +86,7 @@ class Computer(threading.Thread):
 
 class Plug(Connector):
     def __init__(self, worker, name, type=DEFAULT_DATA_TYPE):
-        Connector.__init__(self, worker, name, type)
+        Connector.__init__(self, worker, name, type, "plug")
         self._result=None
         self._resultLock=threading.Lock()
         self._sockets=[]
@@ -181,7 +183,7 @@ class CalculatingPlug(Plug):
 
 class Socket(Connector):
     def __init__(self, worker, name, type=DEFAULT_DATA_TYPE):
-        Connector.__init__(self, worker, name, type)
+        Connector.__init__(self, worker, name, type, "socket")
         self._plug=None
 
     def isFull(self):

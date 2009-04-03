@@ -78,6 +78,13 @@ class CompositeWorker(Worker.Worker):
     _params = [("noSockets", "Number of sockets", 0, None),
                ("noPlugs", "Number of plugs", 0, None)]
 
+    def _id(self):
+        if self.parent == None:
+            return ""
+        else:
+            return super(CompositeWorker, self)._id()
+    id = property(_id)
+
     def inithook(self):
         self._workers = []
         self._sources = []
