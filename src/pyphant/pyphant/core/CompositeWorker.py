@@ -120,6 +120,14 @@ class CompositeWorker(Worker.Worker):
             self._sinks.remove(worker)
         self._notifyListeners(WorkerRemovedEvent(worker, data))
 
+    def getWorker(self, name):
+        cands = [w for w in self._workers if w.getParam('name').value==name]
+        if len(cands)>1:
+            raise RuntimeError, "Ambiguous worker name <%s> in CompositeWorker <%s>."%(name, self)
+        if len(cands)==0:
+            return None
+        return cands[0]
+
     def getWorkers(self,desiredWorker=''):
         if desiredWorker == '':
             result = self._workers
@@ -194,12 +202,12 @@ class CompositeWorkerWalker(object):
     def __init__(self, compositeWorker):
         self._compositeWorker=compositeWorker
 
-    def visit(self, visitor):
+    def visit(self, visitor, start):
         visited=[]
-        toVisit=copy.copy(self._compositeWorker.getSinks())
+        toVisit=start
         while toVisit:
             worker=toVisit.pop(0)
-            visitor(worker)
+            yield visitor(worker)
             visited.append(worker)
             for socket in worker.getSockets():
                 plug=socket.getPlug()
