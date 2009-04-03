@@ -236,7 +236,9 @@ def readZipFile(filename, subscriber=1):
             newField.dimensions[dim]=independentFields[indepField]
         assert newField.isValid()
         containers.append(newField)
-    return DataContainer.SampleContainer(containers,attributes=commonAttr)
+    result = DataContainer.SampleContainer(containers,attributes=commonAttr)
+    print "FMFLoader",result.attributes
+    return result
 
 def reshapeField(field):
     if field.isIndependent():
