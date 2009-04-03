@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008, Rectorate of the University of Freiburg
+# Copyright (c) 2008-2009, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -111,12 +111,14 @@ def mra1d(dim, field, n):
 
 class MRA(Worker.Worker):
     API = 2
-    VERSION = 1
+    VERSION = 2
     REVISION = "$Revision$"[11:-1]
     name = "Multi Resolution Analyser"
 
     _sockets = [("field", Connectors.TYPE_IMAGE)]
-    _params = [("scale", u"Scale", "200 nm", None)]
+    _params = [("scale", u"Scale", "200 nm", None),
+               ("longname",u"Name of result",'default',None),
+               ("symbol",u"Symbol of result",'default',None)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def mra(self, field, subscriber=0):
@@ -160,6 +162,10 @@ class MRA(Worker.Worker):
                                              mask = numpy.isnan(pos).transpose(),
                                              longname="%s of the local %s of %s" % (dim.longname,"minima",field.longname),
                                              shortname="%s_0" % dim.shortname)
+        if self.paramLongname.value != 'default':
+            roots.longname = self.paramLongname.value
+        if self.paramSymbol.value != 'default':
+            roots.shortname = self.paramSymbol.value
         roots.seal()
         return roots
 

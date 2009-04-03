@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008, Rectorate of the University of Freiburg
+# Copyright (c) 2008-2009, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@ __version__ = "$Revision$"
 
 enc=lambda s: unicode(s, "utf-8")
 
-import platform,os
+import platform,os,socket,datetime
 pltform=platform.system()
 if pltform=='Linux' or pltform=='Darwin':
     USER=enc(os.environ['LOGNAME'])
@@ -66,6 +66,17 @@ def field2fmf(fieldContainer):
     factory = fmfgen.gen_factory(out_coding='utf-8', eol='\n')
     fc = factory.gen_fmf()
     fc.add_reference_item('author', USER)
+    fc.add_reference_item('title',fieldContainer.longname)
+    fc.add_reference_item('place',socket.getfqdn())
+    fc.add_reference_item('created',datetime.datetime.utcnow().isoformat())
+    sec = factory.gen_section("parameters")
+    for key,value in fieldContainer.attributes.iteritems():
+        if type(value)==type([]):
+            output = ' '.join(value)
+        else:
+            output = str(value)
+        sec.add_item(key,output)
+    fc.add_section(sec)
     if len(fieldContainer.data.shape)==1:
         dim = fieldContainer.dimensions[0]
         if fieldContainer.error == None:
@@ -84,7 +95,7 @@ def field2fmf(fieldContainer):
                            dependencies = [dim.shortname],
                            error = errorSymbol)
         if fieldContainer.error != None:
-            tab.add_column_def(u"encertainty of %s" % fieldContainer.longname,
+            tab.add_column_def(u"uncertainty of %s" % fieldContainer.longname,
                                errorSymbol,
                                str(fieldContainer.unit))
     elif fieldContainer.dimensions[0].isIndex():
@@ -111,12 +122,44 @@ def field2fmf(fieldContainer):
     return str(fc)
 
 import wx
+ID_EXIT = 102
+
+class FMFframe(wx.Frame):
+    def __init__(self,parent, ID, title):
+        wx.Frame.__init__(self,parent,ID, title,
+                          wx.DefaultPosition,wx.Size(300,300))
+        self.CreateStatusBar()
+        self.SetStatusText("Full-Metadata Format")
+        p = wx.Panel(self)
+        menuBar = wx.MenuBar()
+        menu = wx.Menu()
+        menu.Append(101, "&About",
+                    "Full-Metadata Format Viewer")
+        menu.AppendSeparator()
+        menu.Append(ID_EXIT,"E&xit","Terminate the program")
+        menuBar.Append(menu,"&File")
+        self.SetMenuBar(menuBar)
+
+        wx.EVT_MENU(self,ID_EXIT, self.timeToQuit)
+
+    def timeToQuit(self,event):
+        self.Close(True)
 
 class TextFrame(wx.Frame):
     def __init__(self,fmf):
         wx.Frame.__init__(self,None,-1,'FMFWriter', size=(300,200))
         multiText = wx.TextCtrl(self,-1,fmf,size=(200,200),style=wx.TE_MULTILINE)
         multiText.SetInsertionPoint(0)
+
+class MyApp(wx.App):
+    def OnInit(self):
+        frame = FMFframe(None,-1,"Pyphant Full-Metadata Format Viewer")
+        frame.Show(True)
+        return True
+
+    def OnExit(self):
+        self.ExitMainLoop()
+        wx.Exit()
 
 class FMFWriter(object):
     name='FMF Writer'

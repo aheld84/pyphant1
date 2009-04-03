@@ -120,7 +120,7 @@ class DataContainer(object):
     def __init__(self, longname, shortname, attributes=None):
         self.longname = longname
         self.shortname = shortname
-        if attributes:
+        if type(attributes) == type({}):
             self.attributes = attributes
         else:
             self.attributes = {}

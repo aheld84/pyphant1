@@ -120,7 +120,7 @@ class ColumnExtractor(Worker.Worker):
     def extract(self, osc, subscriber=0):
         col = osc[self.paramColumn.value]
         if self.paramIndex.value=='All':
-            result = col
+            result = copy.deepcopy(col)
         else:
             index = int(self.paramIndex.value)
             if len(col.dimensions)>1:
@@ -137,6 +137,7 @@ class ColumnExtractor(Worker.Worker):
                                                    dimensions = [dim],
                                                    longname=col.longname,
                                                    shortname=col.shortname)
+        result.attributes = osc.attributes
         result.seal()
         return result
 
