@@ -29,9 +29,15 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import pkg_resources
-pkg_resources.require("pyphant")
+#import pkg_resources
+#pkg_resources.require("pyphant")
 
+import pyphant
+import ImageProcessing
+import ImageProcessing.ImageLoaderWorker
+import ImageProcessing.InvertWorker
+import PIL.Image
+import tools
 
 def main():
     import sys
@@ -45,6 +51,7 @@ def main():
     from pyphant.core import PyTablesPersister
     recipe = PyTablesPersister.loadRecipe(h5)
     executionOrders = PyTablesPersister.loadExecutionOrders(h5)
+    h5.close()
     from tools import Emd5Src
     for order in executionOrders:
         for socket, emd5 in order[0].iteritems():
@@ -61,8 +68,9 @@ def main():
         plug = getattr(d, pSpec[1])
         res = plug.getResult()
         res.seal()
+        h5 = tables.openFile(filename, 'r+')
         PyTablesPersister.saveResult(res, h5)
-    h5.close()
+        h5.close()
 
 if __name__ == '__main__':
     main()

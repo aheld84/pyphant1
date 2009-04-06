@@ -350,3 +350,7 @@ def loadExecutionOrders(h5):
         resultPlug = orderGroup._v_attrs.resultPlug
         orders.append((socketMap, resultPlug))
     return orders
+
+def pruneResults(h5):
+    h5.removeNode("/results", recursive=True)
+    h5.createGroup("/", "results")
