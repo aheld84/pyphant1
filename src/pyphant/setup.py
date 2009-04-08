@@ -19,6 +19,7 @@ setup( name='pyphant',
        license = "BSD",
        url='http://pyphant.sourceforge.net/',
        install_requires=['sogl>=0.2.0',
+                         'egenix-mx-base',
                          ## The following are required, but currently not setuptools enabled.
                          #'ScientificPython>=2.6',
                          #'matplotlib>=0.90.1',

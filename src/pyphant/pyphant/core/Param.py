@@ -37,8 +37,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-import Connectors
-
+import Connectors, EventDispatcher
 
 class ParamFactory(object):
     @classmethod
@@ -48,6 +47,24 @@ class ParamFactory(object):
         else:
             return Param(worker, paramName, displayName, values, subtype)
 
+
+class ParamChangeRequested(object):
+    def __init__(self, param, oldValue, newValue):
+        self.param = param
+        self.oldValue = oldValue
+        self.newValue = newValue
+
+class ParamChanged(object):
+    def __init__(self, param, oldValue, newValue):
+        self.param = param
+        self.oldValue = oldValue
+        self.newValue = newValue
+
+class VetoParamChange(ValueError):
+    def __init__(self, paramChangeEvent):
+        ValueError.__init__(self, "Veto: change %s from %s to %s." % 
+                            (paramChangeEvent.param.name, paramChangeEvent.oldValue, paramChangeEvent.newValue))
+        self.paramChangeEvent = paramChangeEvent
 
 class Param(Connectors.Socket):
     def __getValue(self):
@@ -62,9 +79,11 @@ class Param(Connectors.Socket):
     def __setValue(self, value):
         oldValue=self.value
         if oldValue==value: return
+        self._eventDispatcher.dispatchEvent(ParamChangeRequested(self, oldValue, value))
 #        if self._validator: ##reintroduce with appropriate subtype validator lookup
 #            self._validator(oldValue, value)
         self._value = value
+        self._eventDispatcher.dispatchEvent(ParamChanged(self, oldValue, value))
         self.invalidate()
 
     value=property(__getValue, __setValue)
@@ -76,7 +95,19 @@ class Param(Connectors.Socket):
         self.displayName=displayName
         self._value=value
         self.subtype=subtype
+        self._eventDispatcher = EventDispatcher.EventDispatcher()
 
+    def registerListener(self, vetoer, eventType):
+        self._eventDispatcher.registerListener(vetoer, eventType)
+
+    def unregisterListener(self, vetoer, eventType):
+        self._eventDispatcher.unregisterListener(vetoer, eventType)
+
+    #pickle
+    def __getstate__(self):
+        pdict=copy.copy(self.__dict__)
+        pdict['_eventDispatcher']=EventDispatcher.EventDispatcher()
+        return pdict
 
 
 class SelectionParam(Param):

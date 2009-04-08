@@ -79,6 +79,31 @@ class Connection(tables.IsDescription):
 ##########################################################################
 # Saving Part
 ##########################################################################
+def saveExecutionOrder(h5, order):
+    if 'executionOrder' in h5.root:
+        executionOrderGroup = h5.root.executionOrder
+    else:
+        executionOrderGroup = h5.createGroup('/', 'executionOrder')
+    import md5
+    m = md5.new()
+    m.update(str(sorted(order[0].items()))) # Call 'sorted' to
+                                            # normalize representation
+                                            # of order[0]
+    m.update(str(sorted(order[1])))
+    name = "pre_"+m.hexdigest()
+    orderGroup = h5.createGroup(executionOrderGroup, name)
+    class InputDescription(tables.IsDescription):
+        socket = StringCol(max(map(len, order[0].keys())))
+        data = StringCol(max(map(len, order[0].values())))
+    input = h5.createTable(orderGroup, 'input', InputDescription, "Socket Map")
+    m = input.row
+    for s, d in order[0].iteritems():
+        m['socket'] = s
+        m['data'] = d
+        m.append()
+    input.flush()
+    orderGroup._v_attrs.resultPlug = order[1]
+
 def saveRecipeToHDF5File( recipe, filename ):
     _logger.info( "Saving to %s" % filename )
     h5 = tables.openFile(filename, 'w')
@@ -152,36 +177,14 @@ def saveSample(h5, resultGroup, result):
         columns.append(saveResult(column,h5))
     h5.setNodeAttr(resultGroup, "columns", columns)
 
-def loadSample(h5, resNode):
-    result = DataContainer.SampleContainer.__new__(DataContainer.SampleContainer)
-    result.longname = unicode(h5.getNodeAttr(resNode, "longname"), 'utf-8')
-    result.shortname = unicode(h5.getNodeAttr(resNode, "shortname"), 'utf-8')
-    result.attributes = {}
-    for key in resNode._v_attrs._v_attrnamesuser:
-        if key not in _reservedAttributes:
-            result.attributes[key]=h5.getNodeAttr(resNode,key)
-    columns = []
-    for resId in h5.getNodeAttr(resNode,"columns"):
-        nodename = "/results/"+resId
-        hash, uriType = DataContainer.parseId(h5.getNodeAttr(nodename, "TITLE"))
-        if uriType == 'sample':
-            loader = loadSample
-        elif uriType =='field':
-            loader = loadField
-        else:
-            raise KeyError, "Unknown UriType %s in saving result %s." % (uriType, result.id)
-        columns.append(loader(h5,h5.getNode(nodename)))
-    result.columns=columns
-    result.seal(resNode._v_title)
-    return result
-
 def saveField(h5, resultGroup, result):
     def dump(inputList):
-        if type(inputList)==type([]):
-            if type(inputList[0])==type(u' '):
-                conversion = lambda s: s.encode('utf-8')
+        def conversion(arg):
+            if type(arg) == type(u' '):
+                return arg.encode('utf-8')
             else:
-                conversion = lambda s: s.__repr__()
+                return arg.__repr__()
+        if type(inputList)==type([]):
             return map(conversion,inputList)
         else:
             return map(dump,inputList)
@@ -236,13 +239,17 @@ def restoreParamsToWorkers(recipeGroup, workers):
 
 def loadRecipeFromHDF5File( filename ):
     h5 = tables.openFile(filename, 'r')
+    recipe = loadRecipe(h5)
+    h5.close()
+    return recipe
+
+def loadRecipe(h5):
     recipeGroup = h5.root.recipe
     recipe = CompositeWorker.CompositeWorker()
     workers = {}
     createWorkerGraph(recipeGroup, workers, recipe)
     restoreResultsToWorkers(recipeGroup, workers, h5)
     restoreParamsToWorkers(recipeGroup, workers)
-    h5.close()
     return recipe
 
 def createWorkerGraph(recipeGroup, workers, recipe):
@@ -312,4 +319,38 @@ def loadField(h5, resNode):
     result.seal(resNode._v_title)
     return result
 
+def loadSample(h5, resNode):
+    result = DataContainer.SampleContainer.__new__(DataContainer.SampleContainer)
+    result.longname = unicode(h5.getNodeAttr(resNode, "longname"), 'utf-8')
+    result.shortname = unicode(h5.getNodeAttr(resNode, "shortname"), 'utf-8')
+    result.attributes = {}
+    for key in resNode._v_attrs._v_attrnamesuser:
+        if key not in _reservedAttributes:
+            result.attributes[key]=h5.getNodeAttr(resNode,key)
+    columns = []
+    for resId in h5.getNodeAttr(resNode,"columns"):
+        nodename = "/results/"+resId
+        hash, uriType = DataContainer.parseId(h5.getNodeAttr(nodename, "TITLE"))
+        if uriType == 'sample':
+            loader = loadSample
+        elif uriType =='field':
+            loader = loadField
+        else:
+            raise KeyError, "Unknown UriType %s in saving result %s." % (uriType, result.id)
+        columns.append(loader(h5,h5.getNode(nodename)))
+    result.columns=columns
+    result.seal(resNode._v_title)
+    return result
 
+def loadExecutionOrders(h5):
+    orders = []
+    for orderGroup in h5.root.executionOrder:
+        socketMapTable = orderGroup.input
+        socketMap = dict([(row['socket'], row['data']) for row in socketMapTable.iterrows()])
+        resultPlug = orderGroup._v_attrs.resultPlug
+        orders.append((socketMap, resultPlug))
+    return orders
+
+def pruneResults(h5):
+    h5.removeNode("/results", recursive=True)
+    h5.createGroup("/", "results")

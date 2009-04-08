@@ -30,6 +30,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The OSC Toolbox holds workers for processing data coming from organic
+solar cells.
 """
 
 __id__ = "$Id$"
@@ -37,12 +39,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-import wx
+workers=[
+    "Emd5Src",
+    ]
 
-class OLSF(wx.TextCtrl):
-    def __init__(self, parent, param, validator):
-        wx.TextCtrl.__init__(self, parent, size=(175,-1), validator=validator)
-        self.SetValue(param.value)
-
-    def getValue(self):
-        return self.GetValue()

@@ -40,6 +40,8 @@ __version__ = "$Revision$"
 import wx
 from pyphant.core.Connectors import Computer
 
+        
+
 class ConfigureFrame(wx.Dialog):
     def __init__(self, parent, paramVisReg, worker):
         from PyphantDiagram import ProgressMeter
@@ -70,13 +72,13 @@ class ConfigureFrame(wx.Dialog):
                 checkBox=wx.CheckBox(self)
                 checkBox.SetValue(param.isExternal)
                 sizer.Add(checkBox)
-                self._paramDict[param]=(vis,checkBox)
+                self._paramDict[vis]=(param,checkBox)
             sizer.Add(self.CreateButtonSizer(wx.OK | wx.CANCEL))
             self.SetSizer(sizer)
             sizer.Fit(self)
 
     def applyAll(self, event=None):
-        for (param,(vis,checkBox)) in self._paramDict.items():
+        for (vis,(param,checkBox)) in self._paramDict.items():
             try:
                 param.value=vis.getValue()
                 param.isExternal=checkBox.GetValue()

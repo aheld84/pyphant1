@@ -1,6 +1,7 @@
+#!/usr/bin/env python2.5
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,20 +30,30 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""
-"""
-
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
 # $Source$
 
-import wx
+import pkg_resources
+pkg_resources.require('pyphant')
 
-class OLSF(wx.TextCtrl):
-    def __init__(self, parent, param, validator):
-        wx.TextCtrl.__init__(self, parent, size=(175,-1), validator=validator)
-        self.SetValue(param.value)
+import unittest, numpy
+from pyphant.quantities.ParseQuantities import parseDateTime
+from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+"""
+    >>>parseDateTime('2004-08-21 12:00:00+-12h')
+    (PhysicalQuantity(731814.5,'d'), PhysicalQuantity(0.5,'d'))
+    >>>parseDateTime('2004-08-21 12:00:00')
+    (PhysicalQuantity(731814.5,'d'), None)
+"""
+class TestParseDateTime(unittest.TestCase):
+    def testWithoutError(self):
+        self.assertEqual(parseDateTime('2004-08-21 12:00:00+-12h'),
+                         (PhysicalQuantity(731814.5,'d'), PhysicalQuantity(0.5,'d'))
+                         )
 
-    def getValue(self):
-        return self.GetValue()
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) == 1:
+        unittest.main()
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
+        unittest.TextTestRunner().run(suite)

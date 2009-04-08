@@ -29,20 +29,48 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""
-"""
+#import pkg_resources
+#pkg_resources.require("pyphant")
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
+import pyphant
+import ImageProcessing
+import ImageProcessing.ImageLoaderWorker
+import ImageProcessing.InvertWorker
+import PIL.Image
+import tools
 
-import wx
+def main():
+    import sys
+    filename = sys.argv[1]
+    from pyphant.core import KnowledgeManager
+    km = KnowledgeManager.KnowledgeManager.getInstance()
+    import os.path
+    km.registerURL("file://"+os.path.realpath(filename))
+    import tables
+    h5 = tables.openFile(filename, 'r+')
+    from pyphant.core import PyTablesPersister
+    recipe = PyTablesPersister.loadRecipe(h5)
+    executionOrders = PyTablesPersister.loadExecutionOrders(h5)
+    h5.close()
+    from tools import Emd5Src
+    for order in executionOrders:
+        for socket, emd5 in order[0].iteritems():
+            sSpec = socket.split('.')
+            w = recipe.getWorker(sSpec[0])
+            s = getattr(w, sSpec[-1])
+            src = Emd5Src.Emd5Src(recipe)
+            src.paramDc.value=emd5
+            if s.isFull():
+                s.pullPlug()
+            s.insert(src.plugLoad)
+        pSpec = order[1][0].split('.')
+        d = recipe.getWorker(pSpec[0])
+        plug = getattr(d, pSpec[1])
+        res = plug.getResult()
+        res.seal()
+        h5 = tables.openFile(filename, 'r+')
+        PyTablesPersister.saveResult(res, h5)
+        h5.close()
 
-class OLSF(wx.TextCtrl):
-    def __init__(self, parent, param, validator):
-        wx.TextCtrl.__init__(self, parent, size=(175,-1), validator=validator)
-        self.SetValue(param.value)
-
-    def getValue(self):
-        return self.GetValue()
+if __name__ == '__main__':
+    main()

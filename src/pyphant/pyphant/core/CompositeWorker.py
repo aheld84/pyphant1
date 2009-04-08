@@ -37,7 +37,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import EventDispatcher, Worker, Connectors
+from pyphant.core import EventDispatcher, Worker, Connectors, Param
 import copy, pkg_resources
 
 class CompositeWorkerChangedEvent(object):
@@ -78,6 +78,13 @@ class CompositeWorker(Worker.Worker):
     _params = [("noSockets", "Number of sockets", 0, None),
                ("noPlugs", "Number of plugs", 0, None)]
 
+    def _id(self):
+        if self.parent == None:
+            return ""
+        else:
+            return super(CompositeWorker, self)._id()
+    id = property(_id)
+
     def inithook(self):
         self._workers = []
         self._sources = []
@@ -95,6 +102,9 @@ class CompositeWorker(Worker.Worker):
             self._plugs[name]=s
 
     def addWorker(self, worker, data=None):
+        if not self.checkWorkerName(worker, worker.getParam('name').value):
+            raise ValueError(u'Duplicate worker name')
+        worker.registerParamListener(self.vetoWorkerName, 'name', Param.ParamChangeRequested)
         self._workers.append(worker)
         if len(worker.getPlugs())==0:
             self._sinks.append(worker)
@@ -110,19 +120,37 @@ class CompositeWorker(Worker.Worker):
             self._sinks.remove(worker)
         self._notifyListeners(WorkerRemovedEvent(worker, data))
 
-    def getWorkers(self,desiredWorker='',precursor=None):
+    def getWorker(self, name):
+        cands = [w for w in self._workers if w.getParam('name').value==name]
+        if len(cands)>1:
+            raise RuntimeError, "Ambiguous worker name <%s> in CompositeWorker <%s>."%(name, self)
+        if len(cands)==0:
+            return None
+        return cands[0]
+
+    def getWorkers(self,desiredWorker=''):
         if desiredWorker == '':
             result = self._workers
         else:
-            result = [w for w in self._workers if w.name == desiredWorker]
+            result = [w for w in self._workers if w.__class__.__name__ == desiredWorker]
             if result == []:
                 raise ValueError, "Recipe does not contain Worker %s" % desiredWorker
-        if precursor:
-            result = [worker for worker in result
-                      if precursor in
-                      [socket._plug.worker.name for socket in worker.getSockets()]
-                      ]
         return result
+
+    def findConnectorForId(self, id):
+        splittedId = id.split('.',1)
+        if len(splittedId)==1:
+            return super(CompositeWorker, self).findConnectorForId(splittedId[0])
+        else:
+            w = self.getWorker(splittedId[0])
+            return w.findConnectorForId(splittedId[1])
+
+    def getAllPlugs(self):
+        return sum([w.getPlugs() for w in self.getWorkers()], [])
+
+    def getOpenSocketsForPlug(self, plug):
+        walker = self.createCompositeWorkerWalker()
+        return sum(walker.visit(lambda w: [s for s in w.getSockets() if not s.isFull()], [plug.worker]), []) 
 
     def getSources(self):
         return self._sources
@@ -173,17 +201,28 @@ class CompositeWorker(Worker.Worker):
     def workersConnectorStateChanged(self, worker, connector):
         self._notifyListeners(ConnectorsExternalizationStateChangedEvent(worker,connector))
 
+    def vetoWorkerName(self, paramChangeEvent):
+        if not self.checkWorkerName(paramChangeEvent.param.worker, paramChangeEvent.newValue):
+            raise Param.VetoParamChange(paramChangeEvent)
+
+    def checkWorkerName(self, worker, name):
+        ws = [w for w in self._workers
+              if w.getParam('name').value == name]
+        if ws == [] or ws[0] == worker:
+            return True
+        else:
+            return False
 
 class CompositeWorkerWalker(object):
     def __init__(self, compositeWorker):
         self._compositeWorker=compositeWorker
 
-    def visit(self, visitor):
+    def visit(self, visitor, start):
         visited=[]
-        toVisit=copy.copy(self._compositeWorker.getSinks())
+        toVisit=start
         while toVisit:
             worker=toVisit.pop(0)
-            visitor(worker)
+            yield visitor(worker)
             visited.append(worker)
             for socket in worker.getSockets():
                 plug=socket.getPlug()

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,12 +37,38 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-import wx
+import unittest
+import pkg_resources
+pkg_resources.require("pyphant")
+pkg_resources.require("pyphant.imageprocessing")
+from ImageProcessing.ThresholdingWorker import ThresholdingWorker
+import pyphant.core.Param as Param
+from pyphant.core.CompositeWorker import CompositeWorker
+import pyphant.core.EventDispatcher as EventDispatcher
 
-class OLSF(wx.TextCtrl):
-    def __init__(self, parent, param, validator):
-        wx.TextCtrl.__init__(self, parent, size=(175,-1), validator=validator)
-        self.SetValue(param.value)
+class CompositeWorkerParamNameChangeTest(unittest.TestCase):
+    def setUp(self):
+        self.composite = CompositeWorker()
+        self.worker1 = ThresholdingWorker(self.composite)
+        self.worker1.getParam('name').value = 'worker1'
+        self.worker2 = ThresholdingWorker(self.composite)
+        self.worker2.getParam('name').value = 'worker2'
 
-    def getValue(self):
-        return self.GetValue()
+    def testVetoBadNameChange(self):
+        def setNameParam():
+            self.worker1.getParam('name').value = 'worker2'
+        self.assertRaises(Param.VetoParamChange, setNameParam)
+
+    def testVetoGoodNameChange(self):
+        self.worker1.getParam('name').value = 'worker1_neu'
+
+    def testVetoBadNameCreation(self):
+        ThresholdingWorker(self.composite)
+        ThresholdingWorker(self.composite)
+        ThresholdingWorker(self.composite)
+        ThresholdingWorker(self.composite)
+        ThresholdingWorker(self.composite)
+        ThresholdingWorker(self.composite)
+
+if __name__ == '__main__':
+    unittest.main()

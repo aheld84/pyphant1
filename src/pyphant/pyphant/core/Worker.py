@@ -68,10 +68,8 @@ class WorkerFactory(type):
         for f in filter(lambda key : identifyPlugs(key, cdict), cdict):
             cls._plugs.append((f, cdict[f]))
         super(WorkerFactory, cls).__init__(name, bases, cdict)
-        try:
+        if cls.__name__ != 'Worker':
             WorkerFactory.workerRegistry.registerWorker(WorkerInfo(cls.name,cls))
-        except (AttributeError):
-            WorkerFactory.log.warning("Ignoring worker "+name+" due to missing name attribute.")
 
 class Worker(object):
     API = 2
@@ -92,7 +90,24 @@ class Worker(object):
         self.initParams(self._params)
         self.inithook()
         if parent:
-            parent.addWorker(self)
+            basename=self.getParam('name').value
+            for i in xrange(10000):
+                try:
+                    parent.addWorker(self)
+                    break
+                except ValueError:
+                    self.getParam('name').value = basename+'_%i'%i
+
+    def _id(self):
+        if self.parent != None:
+            pre = self.parent.id
+        else:
+            pre = ""
+        if pre != "":
+            return pre+"."+self.getParam('name').value
+        else:
+            return self.getParam('name').value
+    id = property(_id)
 
     def inithook(self):
         pass
@@ -160,6 +175,12 @@ class Worker(object):
             paramList.append(self._params[name])
         return paramList
 
+    def registerParamListener(self, listener, param, eventType):
+        self.getParam(param).registerListener(listener, eventType)
+
+    def unregisterParamListener(self, vetoer, param, eventType):
+        self.getParam(param).unregisterListener(listener, eventType)
+
     def invalidate(self, event=None):
         map(lambda p: p.invalidate(), self._plugs.values())
 
@@ -174,6 +195,12 @@ class Worker(object):
 
     def getPlugs(self):
         return self._plugs.values()
+
+    def findConnectorForId(self, id):
+        splittedId = id.split('.',1)
+        if len(splittedId)==1:
+            return getattr(self, splittedId[0])
+        raise ValueError, "Illegal connector id <%s>"%id
 
     def connectorsExternalizationStateChanged(self, connector):
         if self.parent:

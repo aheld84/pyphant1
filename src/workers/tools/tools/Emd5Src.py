@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2008, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,12 +37,37 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-import wx
+import numpy
+from pyphant.core import (Worker, Connectors,
+                          Param, DataContainer, KnowledgeManager)
 
-class OLSF(wx.TextCtrl):
-    def __init__(self, parent, param, validator):
-        wx.TextCtrl.__init__(self, parent, size=(175,-1), validator=validator)
-        self.SetValue(param.value)
+import scipy.interpolate
+from pyphant.quantities import PhysicalQuantities
+import logging, copy, math
 
-    def getValue(self):
-        return self.GetValue()
+def getDirectory():
+    km = KnowledgeManager.KnowledgeManager.getInstance()
+    directory = []
+    for id in km._refs.iterkeys():
+        dc = km.getDataContainer(id)
+        directory.append((dc.id, dc.longname, dc.shortname))
+    return directory
+
+class Emd5Src(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "Emd5Src"
+
+    _params = [("dc", u"Data Container", [u"None"], None)]
+
+    def refreshParams(self, subscriber=None):
+        self.paramDc.possibleValues = getDirectory()
+
+    @Worker.plug(Connectors.TYPE_IMAGE)
+    def load(self, subscriber=0):
+        v = self.paramDc.value
+        if isinstance(v, tuple):
+            v = v[0]
+        km = KnowledgeManager.KnowledgeManager.getInstance()
+        return km.getDataContainer(v)

@@ -43,7 +43,47 @@ import CheckBox
 import ListSelect
 import FileButton
 
-from pyphant.core import Connectors
+from pyphant.core import Connectors, Param
+
+import wx
+class NullVal(wx.PyValidator):
+    def Clone(self):
+        return NullVal()
+
+    def Validate(self, win):
+        return True
+
+
+class ParamValidator(wx.PyValidator):
+    def __init__(self, param):
+        wx.PyValidator.__init__(self)
+        self.param = param
+
+    def Clone(self):
+        return ParamValidator(self.param)
+    
+    def Validate(self, win):
+        ctrl = self.GetWindow()
+        newValue = ctrl.getValue()
+        try:
+            self.param.value = newValue
+        except Param.VetoParamChange, e:
+            wx.MessageBox("%s"%str(e), "Invalid Parameter %s"%self.param.name)
+            ctrl.SetFocus()
+            ctrl.Refresh()
+            return False
+        return True
+
+    def TransferToWindow(self):
+        ctrl = self.GetWindow()
+        ctrl.SetValue(self.param.value)
+        True
+
+    def TransferFromWindow(self):
+        ctrl = self.GetWindow()
+        self.param.value = ctrl.getValue()
+        True
+
 
 class ParamVisReg:
     def __init__(self):
@@ -62,5 +102,7 @@ class ParamVisReg:
             self._visualizers[type]=typedict
         typedict[subtype]=visualizer
 
-    def createVisualizerFor(self, parent, param):
-        return self._visualizers[param.valueType][param.subtype](parent, param)
+    def createVisualizerFor(self, parent, param, validator=None):
+        if validator==None:
+            validator=ParamValidator(param)
+        return self._visualizers[param.valueType][param.subtype](parent, param, validator=validator)

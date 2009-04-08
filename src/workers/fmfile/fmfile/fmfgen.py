@@ -101,8 +101,8 @@ RPAREN_DEPEND = ')'
 
 DEFAULT_EOL = '\r\n'
 
-DEFAULT_OUT_ENCODING = 'cp1252' # Windows ANSI encoding, Western Europe
-DEFAULT_IN_ENCODING = 'cp1252' # Windows ANSI encoding, Western Europe
+DEFAULT_OUT_ENCODING = 'utf-8' # Windows ANSI encoding, Western Europe
+DEFAULT_IN_ENCODING = 'utf-8' # Windows ANSI encoding, Western Europe
 
 DEFAULT_TABLE_LONGNAME_PATTERN = 'table %d'
 DEFAULT_TABLE_SHORTNAME_PATTERN = 'T_{%d}'
@@ -214,7 +214,7 @@ class _Item(_FMFElement):
         self._value = value
 
     def unicode(self):
-        return u"%s:%s%s" % (self._metatag, self._value, self._eol)
+        return u"%s: %s%s" % (self._metatag, self._value, self._eol)
 
     metatag = _AutoProperty('_metatag')
     value = _AutoProperty('_value')
@@ -222,7 +222,7 @@ class _Item(_FMFElement):
 
 class _ColumnDef(_Item):
     def __init__(self, longname, shortname, unit=None,
-                 deps=[], format=DEFAULT_COL_FORMAT, *args, **kwds):
+                 deps=[], error = None,format=DEFAULT_COL_FORMAT, *args, **kwds):
         """Column definition as item for a data definition section.
 
          longname  --  long name for the column, human-readable
@@ -230,6 +230,7 @@ class _ColumnDef(_Item):
          unit      --  unit like 'm/s' (optional, default: None)
          deps      --  list of dependencies, which are themselves short names
                        of other columns (optional, default: [])
+         error     --  Reference to the column symbol listing the respective error
          format    --  format specifier used for column values (optional)
 
         The instances given for 'longname', 'shortname', 'deps' items and 'unit'
@@ -244,17 +245,21 @@ class _ColumnDef(_Item):
             value += deps[-1]+RPAREN_DEPEND
         if unit is not None:
             value += u" [%s]" % (unit,)
+        if error is not None:
+            value += u" +- %s" % (error,)
         super(_ColumnDef,self).__init__( longname, value, *args, **kwds)
 
         self._shortname = shortname
         self._unit = unit
         self._deps = deps
+        self._error = error
         self._format = format
 
     longname = _AutoProperty('_metatag')
     shortname = _AutoProperty('_shortname')
     unit = _AutoProperty('_unit')
     deps = _AutoProperty('_deps')
+    error = _AutoProperty('_error')
     format = _AutoProperty('_format')
 
 class _Section(_FMFElement):
@@ -400,6 +405,7 @@ class _Table(_FMFElement):
                                     % (self._shortname,))
 
     def add_column_def(self, longname, shortname, unit=None, dependencies=[],
+                       error = None,
                        format=DEFAULT_COL_FORMAT, arg_coding=None): # , data=None):
         """Add a column definition to the table.
 
@@ -417,7 +423,7 @@ class _Table(_FMFElement):
         #         data      --  sequence with references to data items; length must be
         #                       equal to current number of rows in the table; data
         #                       is joined to the current table (optional)
-        coldef = self._factory._gen_column_def(longname, shortname, unit, dependencies,
+        coldef = self._factory._gen_column_def(longname, shortname, unit, dependencies,error,
                                                format, arg_coding)
         self._coldefs.append(coldef)
         #if not data is None:
@@ -635,7 +641,7 @@ class _FMFElementFactory(object):
         kwds.update(self._element_kwds) # mix in the coding and line marker information
         return _Item(metatag, value, *args, **kwds)
 
-    def _gen_column_def(self, longname, shortname, unit=None, dependencies=[],
+    def _gen_column_def(self, longname, shortname, unit=None, dependencies=[], error = None,
                        format=DEFAULT_COL_FORMAT, arg_coding=None, *args, **kwds):
         """Generate a column definition.
 
@@ -664,7 +670,7 @@ class _FMFElementFactory(object):
         for i,d in enumerate(dependencies):
             dependencies[i] = assure_unicode(d, arg_coding)
         kwds.update(self._element_kwds) # mix in the coding and line marker information
-        return _ColumnDef(longname, shortname, unit, dependencies, format, *args, **kwds)
+        return _ColumnDef(longname, shortname, unit, dependencies, error, format, *args, **kwds)
 
     def gen_section(self, tag, arg_coding=None, *args, **kwds):
         """Generate a section for latter inclusion in a FMF file.
