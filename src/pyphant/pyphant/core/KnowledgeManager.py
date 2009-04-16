@@ -108,9 +108,10 @@ import traceback
 
 from SocketServer import ThreadingMixIn
 import threading
-from BaseHTTPServer import HTTPServer #, BaseHTTPRequestHandler
+from BaseHTTPServer import HTTPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 from uuid import uuid1
+import HTMLParser
 
 WAITING_SECONDS_HTTP_SERVER_STOP = 5
 HTTP_REQUEST_DC_URL_PATH="/request_dc_url"
@@ -153,17 +154,21 @@ class KnowledgeManager(Singleton):
         """
         return self._server_id
 
-    def startServer(self, host, port):
-        """Start the HTTP server.
+    def startServer(self, host, port=8000):
+        """Start the HTTP server. When the server was running already, it is restartet with the new parameters.
 
           host -- full qualified domain name or IP address under which
                   server can be contacted via HTTP
-          port -- port of HTTP server (integer)
+          port -- port of HTTP server (integer), default: 8000
 
           A temporary directory is generated in order to
           save temporary HDF5 files.
           The data may be announced to other KnowledgeManagers.
         """
+        logger = self._logger
+        if self.isServerRunning():
+            logger.warn("Server is running at host %s, port %d already. Stopping server...", self._http_host, self._http_port)
+            self.stopServer()
         self._http_host = host
         self._http_port = port
         self._http_dir = tempfile.mkdtemp(prefix='pyphant-knowledgemanager')
@@ -217,24 +222,35 @@ class KnowledgeManager(Singleton):
         """Return whether HTTP server is running."""
         return self._server is not None
 
-    def registerKnowledgeManager(self, km_url):
+    def registerKnowledgeManager(self, host, port=8000, share_knowledge=False):
         """Register a knowledge manager.
 
-        km_url -- url where another KnowledgeManager can be contacted,
-                  form:  http://<hostname>:<port>
+        host -- full qualified domain name or IP address under which
+                server can be contacted via HTTP
+
+        port -- port of HTTP server (integer), default: 8000
+
+        share_knowledge -- local knowledge is made available to the remote KM when set to True and the HTTP server is running at the local KM, default: False
 
         The remote KnowledgeManager is contacted immediately in order
         to save its unique ID.
         """
         logger = self._logger
         try:
+            km_url = "http://%s:%d"%(host, port)
             # get unique id from KM via HTTP
             logger.debug("Requesting ID from Knowledgemanager with URL '%s'...", km_url)
             # request url for given id over http
-            dummy_data = urllib.urlencode({'dummykey':'dummyvalue'})
-            answer = urllib.urlopen(km_url+HTTP_REQUEST_KM_ID_PATH, dummy_data)
+            local_km_host = ''
+            local_km_port = ''
+            if self.isServerRunning() and share_knowledge:
+                local_km_host = self._http_host
+                local_km_port = str(self._http_port)
+            post_data = urllib.urlencode({'kmhost':local_km_host, 'kmport':local_km_port})
+            answer = urllib.urlopen(km_url+HTTP_REQUEST_KM_ID_PATH, post_data)
             logger.debug("Info from HTTP answer: %s", answer.info())
             km_id = answer.readline().strip()
+            answer.close()
             logger.debug("KM ID read from HTTP answer: %s", km_id)
         except Exception, e:
             raise KnowledgeManagerException(
@@ -336,27 +352,31 @@ class KnowledgeManager(Singleton):
         # ask every remote KnowledgeManager for id
         #
         logger.debug("Requesting knowledge managers for DC id '%s'..." % (dc_id,))
-        found = False
         dc_url = None
         for km_id, km_url in self._remoteKMs.iteritems():
-            if not (found or (km_id in omit_km_ids)):
-                logger.debug(
-                    "Requesting Knowledgemanager with ID '%s' and URL '%s'...", km_id, km_url)
+            if not (km_id in omit_km_ids):
+                logger.debug("Requesting Knowledgemanager with ID '%s' and URL '%s'...", km_id, km_url)
                 # request url for given id over http
-                data = urllib.urlencode(query)
-                logger.debug("URL encoded query: %s", data)
-                answer = urllib.urlopen(km_url+HTTP_REQUEST_DC_URL_PATH, data)
-                tmp = answer.readline().strip()
-                logger.debug("Info from HTTP answer: %s", answer.info())
-                found = not tmp.startswith("Failed") # TODO: check for code 404 instead!
-                if found:
-                    dc_url = tmp
-                    logger.debug("URL for id read from HTTP answer: %s", dc_url)
-                else:
+                try:
+                    data = urllib.urlencode(query)
+                    logger.debug("URL encoded query: %s", data)
+                    answer = urllib.urlopen(km_url+HTTP_REQUEST_DC_URL_PATH, data)
+                    code = answer.headers.dict['code']
+                    if code < 400:
+                        dc_url = answer.headers.dict['location']
+                        logger.debug("URL for id read from HTTP answer: %s", dc_url)
+                        break
+                    else:
+                        # message for everyone: do not ask this KM again
+                        idx += 1
+                        query['kmid%d' % (idx),] = km_id
+                except:
+                    logger.debug("Could not contact KM with ID '%s'", km_id)
                     # message for everyone: do not ask this KM again
                     idx += 1
                     query['kmid%d' % (idx),] = km_id
-
+                finally:
+                    answer.close()
         return dc_url
 
 
@@ -484,34 +504,67 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
 
     _knowledge_manager = KnowledgeManager.getInstance()
     _logger = logging.getLogger("pyphant")
-
+    
+    def send_response(self, code, message=None):
+        self.log_request(code)
+        if message is None:
+            if code in self.responses:
+                message = self.responses[code][0]
+            else:
+                message = ''
+        if self.request_version != 'HTTP/0.9':
+            self.wfile.write("%s %d %s\r\n" % (self.protocol_version, code, message))
+        self.send_header('Server', self.version_string())
+        self.send_header('Date', self.date_time_string())
+        #for older versions of urllib.urlopen which do not support .getcode() method
+        self.send_header('code', code)
+    
     def do_POST(self):
         self._logger.debug("POST request from client (host,port): %s",
                            self.client_address)
         self._logger.debug("POST request path: %s", self.path)
         # self.log_request()
         if self.path==HTTP_REQUEST_DC_URL_PATH:
-            code, answer = self._do_POST_request_dc_url()
+            httpanswer = self._do_POST_request_dc_url()
         elif self.path==HTTP_REQUEST_KM_ID_PATH:
-            code, answer = self._do_POST_request_km_id()
+            httpanswer = self._do_POST_request_km_id()
         else:
-            code = 404
-            answer = "Unknown request path '%s'." % (self.path,)
+            code = 400
+            message = "Unknown request path '%s'." % (self.path,)
+            httpanswer = _HTTPAnswer(code, message)
+        
+        httpanswer.sendTo(self)
 
-        self.send_response(code)
-        self.end_headers()
-        self.wfile.write(answer)
-        self.wfile.write('\n')
-
-
+        
     def _do_POST_request_km_id(self):
         """Return the KnowledgeManager ID."""
-
         km = _HTTPRequestHandler._knowledge_manager
+        if self.headers.has_key('content-length'):
+            length= int( self.headers['content-length'] )
+            query = self.rfile.read(length)
+            query_dict = cgi.parse_qs(query)
+            remote_host = ''
+            remote_port = ''
+            try:
+                remote_host = query_dict['kmhost'][0]
+                remote_port = query_dict['kmport'][0]
+            except:
+                self._logger.warn("Remote knowledge is not being shared.")
+            if remote_host != '' and remote_port != '':
+                km.registerKnowledgeManager(remote_host, int(remote_port), False)
+
         code = 200
         answer = km._server_id
         self._logger.debug("Returning ID '%s'...", answer)
-        return code, answer
+        
+        #TODO
+        htmlheaders = {}
+        httpheaders = {}
+        htmlbody = answer
+        message = answer
+        contenttype = 'text/html'
+        return _HTTPAnswer(code, message, httpheaders, contenttype, htmlheaders, htmlbody)
+
 
     def _do_POST_request_dc_url(self):
         """Return a URL for a given DataContainer ID."""
@@ -528,18 +581,22 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
 
             try:
                 km = _HTTPRequestHandler._knowledge_manager
-                code = 200
-                answer = km._getDataContainerURL(dc_id, omit_km_ids)
-                self._logger.debug("Returning URL '%s'...", answer)
+                redirect_url = km._getDataContainerURL(dc_id, omit_km_ids)
+                if redirect_url != None:
+                    self._logger.debug("Returning URL '%s'...", redirect_url)
+                    httpanswer = _HTTPAnswer(201, None, {'location':redirect_url}, 'text/html', {}, '<a href="%s"></a>'%(redirect_url,))
+                else:
+                    self._logger.debug("Returning Error Code 404: DataContainer ID '%s' not found.", dc_id)
+                    httpanswer = _HTTPAnswer(404, "DataContainer ID '%s' not found." % (dc_id,))
             except Exception, e:
                 self._logger.warn("Catched exception: %s", traceback.format_exc())
-                code = 404
+                code = 404 #file not found
                 answer = "Failed: DC ID '%s' not found." % (dc_id,) # 'Failed' significant!
+                httpanswer = _HTTPAnswer(500, "Internal server error occured durin lookup of DataContainer with ID '%s'"%(dc_id,))   
         else:
-            code = 404
-            answer = "Cannot interpret query."
+            httpanswer = _HTTPAnswer(400, "Cannot interpret query.")
 
-        return code, answer
+        return httpanswer
 
     def do_GET(self):
         """Return a requested HDF5 from temporary directory.
@@ -596,6 +653,74 @@ class _HTTPServer(ThreadingMixIn,HTTPServer):
             self.handle_request()
         self._logger.info("Stopped HTTP server.")
 
+class _HTMLParser(HTMLParser.HTMLParser):
+    def __init__(self):
+        HTMLParser.HTMLParser.__init__(self)
+        self._isinhead = False
+        self._isinbody = False
+        self._headitems = {} #tag : [content, attributes]
+        self._currentheadtag = None
+        self._bodytext = ''
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'head':
+            self._isinhead = True
+        elif tag == 'body':
+            self._isinbody = True
+        elif self._isinhead:
+            self._currentheadtag = tag
+            self._headitems[tag] = ''
+    
+    def handle_endtag(self, tag):
+        if tag == 'head':
+            self._isinhead = False
+        elif self._isinhead:
+            self._currentheadtag = None
+        elif tag == 'body':
+            self._isinbody = False
+    
+    def handle_data(self, data):
+        if self._isinhead and self._currentheadtag != None:
+            self._headitems[self._currentheadtag] += data+", "
+        elif self._isinbody:
+            self._bodytext += data
+        
+class _HTTPAnswer():
+    def __init__(self, code, message=None, httpheaders = {}, contenttype='text/html', htmlheaders={}, htmlbody=''):
+        self._code = code
+        self._message = message
+        self._httpheaders = httpheaders
+        self._htmlheaders = htmlheaders
+        self._htmlbody = htmlbody
+        self._httpheaders['Content-type'] = contenttype
+
+    def sendTo(self, handler):
+        _logger = logging.getLogger("pyphant")
+        if self._code >= 400:
+            #send error response
+            handler.send_error(self._code, self._message)
+        else:
+            #send HTTP headers...
+            handler.send_response(self._code, self._message)
+            for key, value in self._httpheaders.items():
+                handler.send_header(key, value)
+                _logger.debug("key: %s, value: %s\n", key, value)
+            handler.end_headers()
+        
+            #send HTML headers...
+            handler.wfile.write('<head>\n')
+            for key, value in self._htmlheaders.items():
+                handler.wfile.write('<%s>\n'%(key,))
+                handler.wfile.write(value+'\n')
+                handler.wfile.write('</%s>\n'%(key,))
+            handler.wfile.write('</head>\n')
+            
+            #send HTML body...
+            handler.wfile.write('<body>\n')
+            handler.wfile.write(self._htmlbody+'\n')
+            handler.wfile.write('</body>\n')
+            handler.wfile.write('\n')        
+
 def _enableLogging():
     """Enable logging for debug purposes."""
     l = logging.getLogger("pyphant")
@@ -605,3 +730,4 @@ def _enableLogging():
     h.setFormatter(f)
     l.addHandler(h)
     l.info("Logger 'pyphant' has been configured for debug purposes.")
+
