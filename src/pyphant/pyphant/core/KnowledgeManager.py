@@ -74,7 +74,7 @@ Usage:
  Register another KnowledgeManager in order to benefit
  from their knowledge (see arguments of .startServer):
 
-  km.registerKnowledgeManager("http://example.com:8000")
+  km.registerKnowledgeManager("http://example.com", 8000, True)
 
  Request data container by its id:
 
@@ -150,9 +150,9 @@ class KnowledgeManager(Singleton):
         return "http://%s:%d" % (self._http_host, self._http_port)
 
     def getServerId(self):
-        """Return uniqe id of the KnowledgeManager.
+        """Return uniqe id of the KnowledgeManager as uuid URN.
         """
-        return self._server_id
+        return self._server_id.urn
 
     def startServer(self, host, port=8000):
         """Start the HTTP server. When the server was running already, it is restartet with the new parameters.
@@ -206,7 +206,6 @@ class KnowledgeManager(Singleton):
             else:
                 logger.info("HTTP server has been stopped.")
             self._server = None
-            self._server_id = None
             self._http_host = None
             self._http_port = None
             try:
@@ -249,7 +248,10 @@ class KnowledgeManager(Singleton):
             post_data = urllib.urlencode({'kmhost':local_km_host, 'kmport':local_km_port})
             answer = urllib.urlopen(km_url+HTTP_REQUEST_KM_ID_PATH, post_data)
             logger.debug("Info from HTTP answer: %s", answer.info())
-            km_id = answer.readline().strip()
+            htmltext = answer.read()
+            parser = _HTMLParser()
+            parser.feed(htmltext)
+            km_id = parser.headitems['kmid'].strip()
             answer.close()
             logger.debug("KM ID read from HTTP answer: %s", km_id)
         except Exception, e:
@@ -343,7 +345,7 @@ class KnowledgeManager(Singleton):
         for idx,km_id in enumerate(omit_km_ids):
             query['kmid%d' % (idx,)] = km_id
 
-        serverID = self._server_id
+        serverID = self.getServerId()
         if serverID is not None:
             idx += 1
             query['kmid%d' % (idx,)] = serverID
@@ -363,7 +365,11 @@ class KnowledgeManager(Singleton):
                     answer = urllib.urlopen(km_url+HTTP_REQUEST_DC_URL_PATH, data)
                     code = answer.headers.dict['code']
                     if code < 400:
-                        dc_url = answer.headers.dict['location']
+                        parser = _HTMLParser()
+                        htmltext = answer.read()
+                        parser.feed(htmltext)
+                        #dc_url = answer.headers.dict['location']
+                        dc_url = parser.headitems['hdf5url'].strip()
                         logger.debug("URL for id read from HTTP answer: %s", dc_url)
                         break
                     else:
@@ -553,17 +559,8 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
             if remote_host != '' and remote_port != '':
                 km.registerKnowledgeManager(remote_host, int(remote_port), False)
 
-        code = 200
-        answer = km._server_id
-        self._logger.debug("Returning ID '%s'...", answer)
-        
-        #TODO
-        htmlheaders = {}
-        httpheaders = {}
-        htmlbody = answer
-        message = answer
-        contenttype = 'text/html'
-        return _HTTPAnswer(code, message, httpheaders, contenttype, htmlheaders, htmlbody)
+        self._logger.debug("Returning ID '%s'...", km.getServerId())   
+        return _HTTPAnswer(200, None, {}, 'text/html', {'kmid':km.getServerId()}, "Server ID is: %s"%(km.getServerId(),))
 
 
     def _do_POST_request_dc_url(self):
@@ -584,7 +581,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
                 redirect_url = km._getDataContainerURL(dc_id, omit_km_ids)
                 if redirect_url != None:
                     self._logger.debug("Returning URL '%s'...", redirect_url)
-                    httpanswer = _HTTPAnswer(201, None, {'location':redirect_url}, 'text/html', {}, '<a href="%s"></a>'%(redirect_url,))
+                    httpanswer = _HTTPAnswer(201, None, {'location':redirect_url}, 'text/html', {'hdf5url':redirect_url}, "<a href=\"%s\">Download DataContainer with ID '%s' as HDF5</a>"%(redirect_url, dc_id))
                 else:
                     self._logger.debug("Returning Error Code 404: DataContainer ID '%s' not found.", dc_id)
                     httpanswer = _HTTPAnswer(404, "DataContainer ID '%s' not found." % (dc_id,))
@@ -658,9 +655,9 @@ class _HTMLParser(HTMLParser.HTMLParser):
         HTMLParser.HTMLParser.__init__(self)
         self._isinhead = False
         self._isinbody = False
-        self._headitems = {} #tag : [content, attributes]
+        self.headitems = {} # tag : content
         self._currentheadtag = None
-        self._bodytext = ''
+        self.bodytext = ''
 
     def handle_starttag(self, tag, attrs):
         if tag == 'head':
@@ -669,7 +666,7 @@ class _HTMLParser(HTMLParser.HTMLParser):
             self._isinbody = True
         elif self._isinhead:
             self._currentheadtag = tag
-            self._headitems[tag] = ''
+            self.headitems[tag] = ''
     
     def handle_endtag(self, tag):
         if tag == 'head':
@@ -681,9 +678,9 @@ class _HTMLParser(HTMLParser.HTMLParser):
     
     def handle_data(self, data):
         if self._isinhead and self._currentheadtag != None:
-            self._headitems[self._currentheadtag] += data+", "
+            self.headitems[self._currentheadtag] += data
         elif self._isinbody:
-            self._bodytext += data
+            self.bodytext += data
         
 class _HTTPAnswer():
     def __init__(self, code, message=None, httpheaders = {}, contenttype='text/html', htmlheaders={}, htmlbody=''):
