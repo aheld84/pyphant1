@@ -510,7 +510,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
 
     _knowledge_manager = KnowledgeManager.getInstance()
     _logger = logging.getLogger("pyphant")
-    
+
     def send_response(self, code, message=None):
         self.log_request(code)
         if message is None:
@@ -524,7 +524,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
         self.send_header('Date', self.date_time_string())
         #for older versions of urllib.urlopen which do not support .getcode() method
         self.send_header('code', code)
-    
+
     def do_POST(self):
         self._logger.debug("POST request from client (host,port): %s",
                            self.client_address)
@@ -538,10 +538,10 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
             code = 400
             message = "Unknown request path '%s'." % (self.path,)
             httpanswer = _HTTPAnswer(code, message)
-        
+
         httpanswer.sendTo(self)
 
-        
+
     def _do_POST_request_km_id(self):
         """Return the KnowledgeManager ID."""
         km = _HTTPRequestHandler._knowledge_manager
@@ -559,7 +559,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
             if remote_host != '' and remote_port != '':
                 km.registerKnowledgeManager(remote_host, int(remote_port), False)
 
-        self._logger.debug("Returning ID '%s'...", km.getServerId())   
+        self._logger.debug("Returning ID '%s'...", km.getServerId())
         return _HTTPAnswer(200, None, {}, 'text/html', {'kmid':km.getServerId()}, "Server ID is: %s"%(km.getServerId(),))
 
 
@@ -589,7 +589,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
                 self._logger.warn("Catched exception: %s", traceback.format_exc())
                 code = 404 #file not found
                 answer = "Failed: DC ID '%s' not found." % (dc_id,) # 'Failed' significant!
-                httpanswer = _HTTPAnswer(500, "Internal server error occured durin lookup of DataContainer with ID '%s'"%(dc_id,))   
+                httpanswer = _HTTPAnswer(500, "Internal server error occured durin lookup of DataContainer with ID '%s'"%(dc_id,))
         else:
             httpanswer = _HTTPAnswer(400, "Cannot interpret query.")
 
@@ -667,7 +667,7 @@ class _HTMLParser(HTMLParser.HTMLParser):
         elif self._isinhead:
             self._currentheadtag = tag
             self.headitems[tag] = ''
-    
+
     def handle_endtag(self, tag):
         if tag == 'head':
             self._isinhead = False
@@ -675,13 +675,13 @@ class _HTMLParser(HTMLParser.HTMLParser):
             self._currentheadtag = None
         elif tag == 'body':
             self._isinbody = False
-    
+
     def handle_data(self, data):
         if self._isinhead and self._currentheadtag != None:
             self.headitems[self._currentheadtag] += data
         elif self._isinbody:
             self.bodytext += data
-        
+
 class _HTTPAnswer():
     def __init__(self, code, message=None, httpheaders = {}, contenttype='text/html', htmlheaders={}, htmlbody=''):
         self._code = code
@@ -703,7 +703,7 @@ class _HTTPAnswer():
                 handler.send_header(key, value)
                 _logger.debug("key: %s, value: %s\n", key, value)
             handler.end_headers()
-        
+
             #send HTML headers...
             handler.wfile.write('<head>\n')
             for key, value in self._htmlheaders.items():
@@ -711,12 +711,12 @@ class _HTTPAnswer():
                 handler.wfile.write(value+'\n')
                 handler.wfile.write('</%s>\n'%(key,))
             handler.wfile.write('</head>\n')
-            
+
             #send HTML body...
             handler.wfile.write('<body>\n')
             handler.wfile.write(self._htmlbody+'\n')
             handler.wfile.write('</body>\n')
-            handler.wfile.write('\n')        
+            handler.wfile.write('\n')
 
 def _enableLogging():
     """Enable logging for debug purposes."""
