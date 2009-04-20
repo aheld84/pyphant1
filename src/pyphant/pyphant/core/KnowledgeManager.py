@@ -112,6 +112,7 @@ from BaseHTTPServer import HTTPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 from uuid import uuid1
 import HTMLParser
+from types import DictType
 
 WAITING_SECONDS_HTTP_SERVER_STOP = 5
 HTTP_REQUEST_DC_URL_PATH="/request_dc_url"
@@ -154,12 +155,13 @@ class KnowledgeManager(Singleton):
         """
         return self._server_id.urn
 
-    def startServer(self, host, port=8000):
+    def startServer(self, host, port=8000, provide_web_frontend=True):
         """Start the HTTP server. When the server was running already, it is restartet with the new parameters.
 
           host -- full qualified domain name or IP address under which
                   server can be contacted via HTTP
           port -- port of HTTP server (integer), default: 8000
+          provide_web_frontend -- whether to provide web frontend
 
           A temporary directory is generated in order to
           save temporary HDF5 files.
@@ -169,6 +171,7 @@ class KnowledgeManager(Singleton):
         if self.isServerRunning():
             logger.warn("Server is running at host %s, port %d already. Stopping server...", self._http_host, self._http_port)
             self.stopServer()
+        self._provide_web_frontend = provide_web_frontend
         self._http_host = host
         self._http_port = port
         self._http_dir = tempfile.mkdtemp(prefix='pyphant-knowledgemanager')
@@ -251,7 +254,7 @@ class KnowledgeManager(Singleton):
             htmltext = answer.read()
             parser = _HTMLParser()
             parser.feed(htmltext)
-            km_id = parser.headitems['kmid'].strip()
+            km_id = parser.headitems['pyphant']['kmid'].strip()
             answer.close()
             logger.debug("KM ID read from HTTP answer: %s", km_id)
         except Exception, e:
@@ -355,7 +358,7 @@ class KnowledgeManager(Singleton):
                         htmltext = answer.read()
                         parser.feed(htmltext)
                         #dc_url = answer.headers.dict['location']
-                        dc_url = parser.headitems['hdf5url'].strip()
+                        dc_url = parser.headitems['pyphant']['hdf5url'].strip()
                         logger.debug("URL for id read from HTTP answer: %s", dc_url)
                         break
                     elif code == 404:
@@ -364,8 +367,8 @@ class KnowledgeManager(Singleton):
                         htmltext = answer.read()
                         parser.feed(htmltext)
                         query_dict.clear()
-                        for k in parser.headitems:
-                            query_dict[k] = parser.headitems[k].strip()
+                        for k in parser.headitems['pyphant']:
+                            query_dict[k] = parser.headitems['pyphant'][k].strip()
                         query_dict['lastkmidindex'] = int(query_dict['lastkmidindex'])
                         logger.debug("Code 404 from '%s', updated query: %s", km_url, str(query_dict))
                     else:
@@ -562,7 +565,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
                 km.registerKnowledgeManager(remote_host, int(remote_port), False)
 
         self._logger.debug("Returning ID '%s'...", km.getServerId())
-        return _HTTPAnswer(200, None, {}, 'text/html', {'kmid':km.getServerId()}, "Server ID is: %s"%(km.getServerId(),))
+        return _HTTPAnswer(200, None, {}, 'text/html', {'pyphant':{'kmid':km.getServerId()}}, "Server ID is: %s"%(km.getServerId(),))
 
 
     def _do_POST_request_dc_url(self):
@@ -577,18 +580,17 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
 
             try:
                 km = _HTTPRequestHandler._knowledge_manager
-                #TODO: BUG: No pass by reference????
                 redirect_url = km._getDataContainerURL(query_dict)
                 if redirect_url != None:
                     self._logger.debug("Returning URL '%s'...", redirect_url)
-                    httpanswer = _HTTPAnswer(201, None, {'location':redirect_url}, 'text/html', {'hdf5url':redirect_url}, "<a href=\"%s\">Download DataContainer with ID '%s' as HDF5</a>"%(redirect_url, query_dict['dcid']))
+                    httpanswer = _HTTPAnswer(201, None, {'location':redirect_url}, 'text/html', {'pyphant':{'hdf5url':redirect_url}, 'title':"DC ID '%s'"%(query_dict['dcid'],)}, "Download DataContainer with ID '%s' as <a href=\"%s\">HDF5</a>"%(query_dict['dcid'], redirect_url))
                 else:
                     self._logger.debug("Returning Error Code 404: DataContainer ID '%s' not found.", query_dict['dcid'])
                     message = "DataContainer ID '%s' not found. Returning updated query in HTML head." % (query_dict['dcid'],)
-                    htmlheaders = dict(query_dict)
-                    htmlheaders['lastkmidindex'] = str(htmlheaders['lastkmidindex'])
+                    htmlheaders = {'pyphant':dict(query_dict)}
+                    htmlheaders['pyphant']['lastkmidindex'] = str(htmlheaders['pyphant']['lastkmidindex'])
                     self._logger.debug('Returning html header: %s', str(htmlheaders))
-                    htmlbody = "DataContainer ID '%s' not found. Returning updated query in HTML head:\n%s" % (query_dict['dcid'], str(query_dict))
+                    htmlbody = "DataContainer ID '%s' not found." % (query_dict['dcid'],)
                     httpanswer = _HTTPAnswer(404, message, {}, 'text/html', htmlheaders, htmlbody, False)
             except Exception, e:
                 self._logger.warn("Catched exception: %s", traceback.format_exc())
@@ -602,15 +604,25 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
         """Return a requested HDF5 from temporary directory.
         """
         log = self._logger
-        f = self.send_head()
-        if f:
-            self.copyfile(f, self.wfile)
-            f.close()
-            try:
-                log.debug("Trying to remove temporary file '%s'..", f.name)
-                os.remove(f.name)
-            except Exception, e:
-                log.warn("Cannot delete temporary file '%s'.", f.name)
+        km = _HTTPRequestHandler._knowledge_manager
+        if self.path == '/' or self.path.startswith('/../'):
+            if km._provide_web_frontend:
+                htmlbody = '<h1>Pyphant Web Frontend</h1><form action="%s" method="post" enctype="text/plain">DataContainer emd5: <input type="text" size="50" maxlength="1000" name="dcid"><input type="hidden" name="lastkmidindex" value="-1"><input type="submit" name="submitbutton" value="GO"></form>' % (HTTP_REQUEST_DC_URL_PATH,)
+                httpanswer = _HTTPAnswer(200, None, {}, 'text/html', {'title':'Pyphant Web Frontend'}, htmlbody)
+                httpanswer.sendTo(self)
+            else:
+                httpanswer = _HTTPAnswer(200, None, {}, 'text/html', {}, 'The web frontend has not been started!')
+                httpanswer.sendTo(self)
+        else:
+            f = self.send_head()
+            if f:
+                self.copyfile(f, self.wfile)
+                f.close()
+                try:
+                    log.debug("Trying to remove temporary file '%s'..", f.name)
+                    os.remove(f.name)
+                except Exception, e:
+                    log.warn("Cannot delete temporary file '%s'.", f.name)
 
 
 
@@ -658,8 +670,7 @@ class _HTMLParser(HTMLParser.HTMLParser):
         HTMLParser.HTMLParser.__init__(self)
         self._isinhead = False
         self._isinbody = False
-        self.headitems = {} # tag : content
-        self._currentheadtag = None
+        self.headitems = {} # tag : attributes
         self.bodytext = ''
 
     def handle_starttag(self, tag, attrs):
@@ -667,22 +678,18 @@ class _HTMLParser(HTMLParser.HTMLParser):
             self._isinhead = True
         elif tag == 'body':
             self._isinbody = True
-        elif self._isinhead:
-            self._currentheadtag = tag
-            self.headitems[tag] = ''
+    def handle_startendtag(self, tag, attrs):
+        if self._isinhead:
+            self.headitems[tag] = attrs
 
     def handle_endtag(self, tag):
         if tag == 'head':
             self._isinhead = False
-        elif self._isinhead:
-            self._currentheadtag = None
         elif tag == 'body':
             self._isinbody = False
 
     def handle_data(self, data):
-        if self._isinhead and self._currentheadtag != None:
-            self.headitems[self._currentheadtag] += data
-        elif self._isinbody:
+        if self._isinbody:
             self.bodytext += data
 
 class _HTTPAnswer():
@@ -709,17 +716,21 @@ class _HTTPAnswer():
             handler.end_headers()
 
             #send HTML headers...
-            handler.wfile.write('<head>\n')
-            for key, value in self._htmlheaders.items():
-                handler.wfile.write('<%s>\n'%(key,))
-                handler.wfile.write(value+'\n')
-                handler.wfile.write('</%s>\n'%(key,))
+            handler.wfile.write('<html>\n<head>\n')
+            for tag, attrs in self._htmlheaders.items():
+                if isinstance(attrs, DictType):
+                    handler.wfile.write('<%s '%(tag,))
+                    for key, value in attrs.items():
+                        handler.wfile.write('%s="%s" '% (key, value))
+                    handler.wfile.write('>\n')
+                else:
+                    handler.wfile.write('<%s>%s</%s>\n'%(tag, attrs, tag))
             handler.wfile.write('</head>\n')
 
             #send HTML body...
             handler.wfile.write('<body>\n')
             handler.wfile.write(self._htmlbody+'\n')
-            handler.wfile.write('</body>\n')
+            handler.wfile.write('</body></html>\n')
             handler.wfile.write('\n')
 
 def _enableLogging():
