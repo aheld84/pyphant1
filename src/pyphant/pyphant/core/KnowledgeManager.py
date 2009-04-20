@@ -118,6 +118,18 @@ WAITING_SECONDS_HTTP_SERVER_STOP = 5
 HTTP_REQUEST_DC_URL_PATH="/request_dc_url"
 HTTP_REQUEST_KM_ID_PATH="/request_km_id"
 
+HTML_BODY_index = """<h1>Pyphant Web Frontend</h1>
+<form action="%s" method="post" enctype="text/plain">
+Get DataContainer by emd5: <input type="text" size="50" maxlength="1000" name="dcid">
+<input type="hidden" name="lastkmidindex" value="-1">
+<input type="submit" name="submitbutton" value="GO">
+</form>
+<hr>
+<h2>Registered DataContainers:</h2>
+%s
+<h2>Registered KnowledgeManagers:</h2>
+%s
+"""
 
 class KnowledgeManagerException(Exception):
     def __init__(self, message, parent_excep=None, *args, **kwds):
@@ -288,6 +300,22 @@ class KnowledgeManager(Singleton):
             raise KnowledgeManagerException("Invalid id for DataContainer '" +\
                                                 datacontainer.longname+"'", e)
 
+    def getSummary(self, dcid = None, browse_remote = False):
+        """Returns information about a DataContainer as a dictionary
+        dcid -- ID of DataContainer. If set to None, a dict of id:getSummary(id) of all available DCs is returned. Default: None
+        browse_remote -- whether to ask remote KMs for summary information. Not yet implemented!
+        """
+        if dcid == None:
+            dict = {}
+            for id in self._refs:
+                dict[id] = self.getSummary(id)
+            return dict
+        else:
+            try:
+                dc = self.getDataContainer(dcid, True, False)
+            except Exception, e:
+                raise KnowledgeManagerException("DataContainer with ID '%s' could not be found." %(dcid,), e)
+            return getDCSummary(dc)
 
     def _retrieveURL(self, url):
         """Retrieve HDF5 file from a given URL.
@@ -607,7 +635,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
         km = _HTTPRequestHandler._knowledge_manager
         if self.path == '/' or self.path.startswith('/../'):
             if km._provide_web_frontend:
-                htmlbody = '<h1>Pyphant Web Frontend</h1><form action="%s" method="post" enctype="text/plain">DataContainer emd5: <input type="text" size="50" maxlength="1000" name="dcid"><input type="hidden" name="lastkmidindex" value="-1"><input type="submit" name="submitbutton" value="GO"></form>' % (HTTP_REQUEST_DC_URL_PATH,)
+                htmlbody = HTML_BODY_index % (HTTP_REQUEST_DC_URL_PATH, 'TODO', _dict_to_HTML(km._remoteKMs, 'ID', 'URL'))
                 httpanswer = _HTTPAnswer(200, None, {}, 'text/html', {'title':'Pyphant Web Frontend'}, htmlbody)
                 httpanswer.sendTo(self)
             else:
@@ -678,9 +706,19 @@ class _HTMLParser(HTMLParser.HTMLParser):
             self._isinhead = True
         elif tag == 'body':
             self._isinbody = True
+        elif self._isinhead:
+            attrsdict = {}
+            for pairs in attrs:
+                attrsdict[pairs[0]] = pairs[1]
+            self.headitems[tag] = attrsdict
+
     def handle_startendtag(self, tag, attrs):
         if self._isinhead:
-            self.headitems[tag] = attrs
+            attrsdict = {}
+            for pairs in attrs:
+                attrsdict[pairs[0]] = pairs[1]
+            self.headitems[tag] = attrsdict
+
 
     def handle_endtag(self, tag):
         if tag == 'head':
@@ -743,3 +781,22 @@ def _enableLogging():
     l.addHandler(h)
     l.info("Logger 'pyphant' has been configured for debug purposes.")
 
+def getDCSummary(dc):
+    emd5info = re.split(r'/', dc.id)
+    host = emd5info[2]
+    user = emd5info[3]
+    date = emd5info[4] #TODO
+    hash, type = re.split(r'.', emd5info[5])
+    summary = {'longname':dc.longname, 'shortname':dc.shortname, 'attributes':dc.attributes, 'id':dc.id, 'host':host, 'user':user, 'date':date, 'hash':hash, 'type':type}
+    if type == 'field':
+        pass #TODO
+    if type == 'sample':
+        pass #TODO
+    return summary
+
+def _dict_to_HTML(d, label_keys, label_values):
+    output = '<table border="2"><tr><th>%s</th><th>%s</th></tr>\n'%(label_keys, label_values)
+    for k, v in d.items():
+        output += '<tr><td>%s</td><td>%s</td></tr>\n'%(str(k), str(v))
+    output += '</table>\n'
+    return output
