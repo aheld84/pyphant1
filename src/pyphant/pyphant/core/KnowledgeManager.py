@@ -113,6 +113,7 @@ from SimpleHTTPServer import SimpleHTTPRequestHandler
 from uuid import uuid1
 import HTMLParser
 from types import DictType
+import re
 
 WAITING_SECONDS_HTTP_SERVER_STOP = 5
 HTTP_REQUEST_DC_URL_PATH="/request_dc_url"
@@ -130,6 +131,36 @@ Get DataContainer by emd5: <input type="text" size="50" maxlength="1000" name="d
 <h2>Registered KnowledgeManagers:</h2>
 %s
 """
+
+class HTMLDict(dict):
+    def __init__(self, keylabel, valuelabel):
+        self.keylabel = keylabel
+        self.valuelabel = valuelabel
+    def getHTML(self, printkeys = True):
+        if printkeys:
+            output = '<table border="2" width="100%%"><tr><th>%s</th><th>%s</th></tr>\n'%(self.keylabel, self.valuelabel)
+        else:
+            output = '<table border="2" width="100%%"><tr><th>%s</th></tr>\n'%(self.valuelabel, )
+        for k, v in self.items():
+            if hasattr(k, 'getHTML'):
+                kout = k.getHTML()
+            else:
+                kout = str(k)
+            if hasattr(v, 'getHTML'):
+                vout = v.getHTML()
+            else:
+                vout = str(v)
+            if printkeys:
+                output += '<tr width="100%%"><td>%s</td><td>%s</td></tr>\n'%(kout, vout)
+            else:
+                output += '<tr width="100%%"><td>%s</td></tr>\n'%(vout,)
+        output += '</table>\n'
+        return output
+
+    def setDict(self, d):
+        self.clear()
+        for k in d:
+            self[k] = d[k]
 
 class KnowledgeManagerException(Exception):
     def __init__(self, message, parent_excep=None, *args, **kwds):
@@ -149,7 +180,7 @@ class KnowledgeManager(Singleton):
         super(KnowledgeManager, self).__init__()
         self._logger = logging.getLogger("pyphant")
         self._refs = {}
-        self._remoteKMs = {} # key:id, value:url
+        self._remoteKMs = HTMLDict('ID', 'URL') # key:id, value:url
         self._server = None
         self._server_id = uuid1()
 
@@ -306,7 +337,7 @@ class KnowledgeManager(Singleton):
         browse_remote -- whether to ask remote KMs for summary information. Not yet implemented!
         """
         if dcid == None:
-            dict = {}
+            dict = HTMLDict('ID', 'Summary')
             for id in self._refs:
                 dict[id] = self.getSummary(id)
             return dict
@@ -635,7 +666,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
         km = _HTTPRequestHandler._knowledge_manager
         if self.path == '/' or self.path.startswith('/../'):
             if km._provide_web_frontend:
-                htmlbody = HTML_BODY_index % (HTTP_REQUEST_DC_URL_PATH, 'TODO', _dict_to_HTML(km._remoteKMs, 'ID', 'URL'))
+                htmlbody = HTML_BODY_index % (HTTP_REQUEST_DC_URL_PATH, km.getSummary().getHTML(False), km._remoteKMs.getHTML())
                 httpanswer = _HTTPAnswer(200, None, {}, 'text/html', {'title':'Pyphant Web Frontend'}, htmlbody)
                 httpanswer.sendTo(self)
             else:
@@ -782,21 +813,27 @@ def _enableLogging():
     l.info("Logger 'pyphant' has been configured for debug purposes.")
 
 def getDCSummary(dc):
+    l = logging.getLogger("pyphant")
+    #l.debug("Trying to split emd5 '%s'", dc.id)
     emd5info = re.split(r'/', dc.id)
+    #l.debug("splitted: %s", emd5info)
     host = emd5info[2]
     user = emd5info[3]
     date = emd5info[4] #TODO
-    hash, type = re.split(r'.', emd5info[5])
-    summary = {'longname':dc.longname, 'shortname':dc.shortname, 'attributes':dc.attributes, 'id':dc.id, 'host':host, 'user':user, 'date':date, 'hash':hash, 'type':type}
+    hash, type = re.split(r'\.', emd5info[5])
+    summary = HTMLDict('key', 'value')
+    summary['longame'] = dc.longname
+    summary['shortname'] = dc.shortname
+    summary['attributes'] = HTMLDict('key', 'value')
+    summary['attributes'].setDict(dc.attributes)
+    summary['host'] = host
+    summary['user'] = user
+    summary['date'] = date
+    summary['hash'] = hash
+    summary['type'] =  type
+    summary['id'] = dc.id
     if type == 'field':
         pass #TODO
     if type == 'sample':
         pass #TODO
     return summary
-
-def _dict_to_HTML(d, label_keys, label_values):
-    output = '<table border="2"><tr><th>%s</th><th>%s</th></tr>\n'%(label_keys, label_values)
-    for k, v in d.items():
-        output += '<tr><td>%s</td><td>%s</td></tr>\n'%(str(k), str(v))
-    output += '</table>\n'
-    return output
