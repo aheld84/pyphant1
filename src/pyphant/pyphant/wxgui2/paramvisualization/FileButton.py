@@ -59,6 +59,10 @@ class FileButton(wx.Button):
             self.dir, self.filename=os.path.split(self.path)
             self.SetLabel(self.filename)
 
-
     def getValue(self):
         return self.path
+
+    def SetValue(self, path):
+        self.path=path
+        self.dir, self.filename=os.path.split(self.path)
+        self.SetLabel(self.filename)
