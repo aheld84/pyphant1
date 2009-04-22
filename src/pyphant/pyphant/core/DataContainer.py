@@ -68,7 +68,7 @@ __id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 
-import scipy, copy, md5, threading, numpy, StringIO
+import scipy, copy, hashlib, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse
 from pyphant.quantities.PhysicalQuantities import (isPhysicalQuantity, PhysicalQuantity,_prefixes)
 
@@ -220,7 +220,7 @@ class SampleContainer(DataContainer):
     label=property(_getLabel)
 
     def generateHash(self):
-        m = md5.new()
+        m = hashlib.md5()
         m.update(u''.join([c.hash for c in self.columns]))
         m.update(str(self.attributes))
         m.update(self.longname)

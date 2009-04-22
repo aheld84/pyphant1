@@ -37,32 +37,3 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-import wx, os.path
-
-class FileButton(wx.Button):
-    def __init__(self, parent, param, validator):
-        self.path=os.path.abspath(param.value)
-        self.dir, self.filename=os.path.split(self.path)
-        wx.Button.__init__(self, parent, label=self.filename, validator=validator)
-        self.Bind(wx.EVT_BUTTON, self.selectFile)
-
-    def selectFile(self, event):
-        dir = filename = wx.EmptyString
-        if os.path.exists(self.dir):
-            dir = self.dir
-            if os.path.exists(os.path.join(self.dir, self.filename)):
-                filename = self.filename
-        dlg=wx.FileDialog(self, message="Choose a file", defaultDir=dir,
-                          defaultFile=filename, style=wx.OPEN)
-        if dlg.ShowModal() == wx.ID_OK:
-            self.path=os.path.abspath(dlg.GetPath())
-            self.dir, self.filename=os.path.split(self.path)
-            self.SetLabel(self.filename)
-
-    def getValue(self):
-        return self.path
-
-    def SetValue(self, path):
-        self.path=path
-        self.dir, self.filename=os.path.split(self.path)
-        self.SetLabel(self.filename)

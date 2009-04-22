@@ -182,7 +182,7 @@ class wxPyphantFrame(wx.Frame):
                 recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File(self._wxPyphantApp.pathToRecipe)
                 from pyphant.core import KnowledgeManager
                 KnowledgeManager.KnowledgeManager.getInstance().registerURL(
-                    "file://"+os.path.realpath(self._wxPyphantApp.pathToRecipe)
+                    "file:///"+os.path.realpath(self._wxPyphantApp.pathToRecipe)
                     )
             else:
                 raise IOError("Unknown file format in file \""+self._wxPyphantApp.pathToRecipe+"\"")
