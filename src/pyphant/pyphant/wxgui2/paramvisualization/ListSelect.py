@@ -50,3 +50,6 @@ class ListSelect(wx.Choice):
             raise ValueError("Invalid value")
         else:
             return self.data[self.GetStringSelection()]
+
+    def SetValue(self, value):
+        self.SetStringSelection(str(value))
