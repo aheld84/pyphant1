@@ -55,3 +55,6 @@ class BoundedIntegerTextField(wx.lib.masked.NumCtrl):
             return self.GetValue()
         else:
             raise ValueError, "Invalid value"
+
+    def SetValue(self, value):
+        return super(BoundedIntegerTextField, self).SetValue(int(value))
