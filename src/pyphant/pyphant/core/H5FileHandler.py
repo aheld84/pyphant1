@@ -169,7 +169,8 @@ class H5FileHandler(object):
         return result
 
     def __del__(self):
-        self.handle.close()
+        if hasattr(self, 'handle'):
+            self.handle.close()
 
 ##########################################################################
 # Saving Part
