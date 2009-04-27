@@ -29,37 +29,12 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""
-This module provides the facilities to persist a Recipe including any
-generated data into a PyTables structure or a HDF5 file.
-A rudimentary description of the used file-format follows:
-.:Attribut
-+:group
-#:table
-*:array
-
-/results/resId
-.longname
-.shortname
-[field|sample]
-
-sample:
-.desc = sample.desc [pickled scipy.dtype]
-#data(descDict["col_"+name.encode("utf-8")]=Col(dtype=str(desc.fields[name][0]).capitalize()))
-#units(unit,name)
-
-field:
-*data
-*error
-.unit = repr(field.unit)
-UNLESS field.dimensions==INDEX:
-#dimensions(hash, id)
-"""
+u"""TODO"""
 
 __id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
-# $Source: /home/obi/Projekte/pyphant/sourceforge/pyphant/pyphant/devel/trunk/src/pyphant/core/PyTablesPersister.py,v $
+# $Source$:
 
 import tables, datetime
 import sys
@@ -78,17 +53,16 @@ class Connection(tables.IsDescription):
     destinationSocket = tables.StringCol(64)
 
 class H5FileHandler(object):
-    def __init__(self, filename, readOnly=False):
-        if readOnly and not os.path.isfile(filename):
+    def __init__(self, filename, mode = 'a'):
+        assert mode in ['r', 'w', 'a']
+        exists = os.path.isfile(filename)
+        if mode == 'r' and not exists:
             raise IOError("File '%s' does not exist!"%(filename,))
         self.filename = filename
-        if readOnly:
-            self.mode = 'r'
-        else:
-            self.mode = 'a'
-        self.handle = tables.openFile(filename, self.mode)
+        self.mode = mode
+        self.handle = tables.openFile(self.filename, self.mode)
 
-    def getDataContainer(self, dcId):
+    def loadDataContainer(self, dcId):
         hash, uriType = DataContainer.parseId(dcId)
         try:
             resNode = self.handle.getNode("/results/result_"+hash)
@@ -167,6 +141,80 @@ class H5FileHandler(object):
         result.columns = columns
         result.seal(resNode._v_title)
         return result
+
+    def saveDataContainer(self, result):
+        hash, uriType = DataContainer.parseId(result.id)
+        resId = u"result_"+hash
+        try:
+            resultGroup = self.handle.getNode("/results/"+resId)
+        except tables.NoSuchNodeError, e:
+            try:
+                resultGroup = self.handle.createGroup("/results", resId, result.id.encode("utf-8"))
+            except tables.NoSuchNodeError, e:
+                self.handle.createGroup('/', 'results')
+                resultGroup = self.handle.createGroup("/results", resId, result.id.encode("utf-8"))
+            if uriType=='field':
+                self.saveField(resultGroup, result)
+            elif uriType=='sample':
+                self.saveSample(resultGroup, result)
+            else:
+                raise KeyError, "Unknown UriType %s in saving result %s." % (uriType, result.id)
+        return resId
+
+    def saveSample(self, resultGroup, result):
+        self.handle.setNodeAttr(resultGroup, "longname", result.longname.encode("utf-8"))
+        self.handle.setNodeAttr(resultGroup, "shortname", result.shortname.encode("utf-8"))
+        for key,value in result.attributes.iteritems():
+            if key in _reservedAttributes:
+                raise ValueError, "Attribute should not be named %s!" % _reservedAttributes
+            self.handle.setNodeAttr(resultGroup,key,value)
+        #Store fields of sample Container and gather list of field IDs
+        columns = []
+        for column in result.columns:
+            columns.append(self.saveDataContainer(column))
+        self.handle.setNodeAttr(resultGroup, "columns", columns)
+
+    def saveField(self, resultGroup, result):
+        def dump(inputList):
+            def conversion(arg):
+                if type(arg) == type(u' '):
+                    return arg.encode('utf-8')
+                else:
+                    return arg.__repr__()
+            if type(inputList)==type([]):
+                return map(conversion,inputList)
+            else:
+                return map(dump,inputList)
+        if result.data.dtype.char in ['U','O']:
+            unicodeData = scipy.array(dump(result.data.tolist()))
+            self.handle.createArray(resultGroup, "data", unicodeData, result.longname.encode("utf-8"))
+        else:
+            self.handle.createArray(resultGroup, "data", result.data, result.longname.encode("utf-8"))
+        for key,value in result.attributes.iteritems():
+            self.handle.setNodeAttr(resultGroup.data,key,value)
+        self.handle.setNodeAttr(resultGroup, "longname", result.longname.encode("utf-8"))
+        self.handle.setNodeAttr(resultGroup, "shortname", result.shortname.encode("utf-8"))
+
+        if result.error != None:
+            self.handle.createArray(resultGroup, "error", result.error,
+                           (u"Error of "+result.longname).encode("utf-8"))
+        if result.mask != None:
+            self.handle.createArray(resultGroup, "mask", result.mask,
+                           (u"Mask of "+result.longname).encode("utf-8"))
+        self.handle.setNodeAttr(resultGroup, "unit", repr(result.unit).encode("utf-8"))
+        if result.dimensions!=DataContainer.INDEX:
+            idLen=max([len(dim.id.encode("utf-8")) for dim in result.dimensions])
+            dimTable = self.handle.createTable(resultGroup, "dimensions",
+                                      {"hash":StringCol(32), "id":StringCol(idLen)},
+                                      (u"Dimensions of "+result.longname).encode("utf-8"),
+                                      expectedrows=len(result.dimensions))
+            for dim in result.dimensions:
+                d = dimTable.row
+                d["hash"]=dim.hash.encode("utf-8")
+                d["id"]=dim.id.encode("utf-8")
+                d.append()
+                self.saveDataContainer(dim)
+            dimTable.flush()
 
     def __del__(self):
         if hasattr(self, 'handle'):

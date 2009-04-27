@@ -42,36 +42,149 @@ import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
 from pyphant.quantities.PhysicalQuantities import PhysicalQuantity as PQ
-from pyphant.core.DataContainer import FieldContainer,SampleContainer,assertEqual
+from pyphant.core.DataContainer import FieldContainer, SampleContainer,\
+    assertEqual
 from pyphant.core.H5FileHandler import H5FileHandler as H5FH
 from numpy import array as NPArray
 import os
 from tempfile import mkstemp
 
-class TestData(unittest.TestCase):
+
+class BasicTestCase(unittest.TestCase):
+    def testReadOnlyFileNotFound(self):
+        try:
+            handler = H5FH('', 'r')
+            assert False
+        except IOError:
+            pass
+
+
+class FieldContainerTestCase(unittest.TestCase):
     def setUp(self):
         data = NPArray([10.0, -103.5, 1000.43, 0.0, 10.0])
         unit = PQ('3s')
         error = NPArray([0.1, 0.2, 4.5, 0.1, 0.2])
         longname = u'Test: FieldContainer H5FileHandler'
-        shortname = u'TestH5'
+        shortname = u'TestH5FC'
         attributes = {u'custom1':u'testing1...', u'custom2':'testing2...'}
-        self.fc = FieldContainer(data, unit, error, None, None, longname, shortname, attributes)
+        self.fc = FieldContainer(data, unit, error, None, None, longname,
+                                 shortname, attributes)
         self.fc.seal()
-        osHandle, self.tmpFilename = mkstemp(prefix='pyphantH5FileHandlerTest')
+
+
+class FCSaveLoadTestCase(FieldContainerTestCase):
+    def setUp(self):
+        FieldContainerTestCase.setUp(self)
+        osHandle, self.fcFilename = mkstemp(suffix = '.h5',
+                                            prefix = 'pyphantH5FileHandlerTest')
         os.close(osHandle)
 
     def tearDown(self):
-        os.remove(self.tmpFilename)
+        os.remove(self.fcFilename)
+
+    def testSaveLoad(self):
+        handler = H5FH(self.fcFilename, 'w')
+        handler.saveDataContainer(self.fc)
+        fcLoaded = handler.loadDataContainer(self.fc.id)
+        self.assertEqual(self.fc, fcLoaded)
 
 
-class BasicTestCase(unittest.TestCase):
-    def testReadOnlyFileNotFound(self):
-        try:
-            handler = H5FH('', True)
-            assert False
-        except IOError:
-            pass
+class FCReadOnlyTestCase(FieldContainerTestCase):
+    def setUp(self):
+        FieldContainerTestCase.setUp(self)
+        osHandle, self.rofcFilename = mkstemp(suffix = '.h5',
+                                            prefix = 'pyphantH5FileHandlerTest')
+        os.close(osHandle)
+        handler = H5FH(self.rofcFilename, 'w')
+        handler.saveDataContainer(self.fc)
+
+    def tearDown(self):
+        os.remove(self.rofcFilename)
+
+    def testReadOnly(self):
+        handler = H5FH(self.rofcFilename, 'r')
+        fcLoaded = handler.loadDataContainer(self.fc.id)
+        self.assertEqual(self.fc, fcLoaded)
+
+
+class SampleContainerTestCase(unittest.TestCase):
+    def setUp(self):
+        data = NPArray([10.0, -103.5, 1000.43, 0.0, 10.0])
+        unit = PQ('3s')
+        error = NPArray([0.1, 0.2, 4.5, 0.1, 0.2])
+        longname = u'Test: FieldContainer H5FileHandler'
+        shortname = u'TestH5FC'
+        attributes = {u'custom1':u'testing1...', u'custom2':'testing2...'}
+        self.fc = FieldContainer(data, unit, error, None, None, longname,
+                                 shortname, attributes)
+        self.fc.seal()
+        fc2 = FieldContainer(NPArray([4003.2, 5.3, 600.9]), PQ('0.2m'), None,
+                             None, None, 'FieldContainer 2', 'FC2')
+        fc2.seal()
+        columns = [self.fc, fc2]
+        longname = u'Test: SampleContainer H5FileHandler'
+        shortname = u'TestH5SC'
+        self.sc = SampleContainer(columns, longname, shortname, attributes)
+        self.sc.seal()
+
+
+class SCSaveLoadTestCase(SampleContainerTestCase):
+    def setUp(self):
+        SampleContainerTestCase.setUp(self)
+        osHandle, self.scFilename = mkstemp(suffix = '.h5',
+                                            prefix = 'pyphantH5FileHandlerTest')
+        os.close(osHandle)
+
+
+    def tearDown(self):
+        os.remove(self.scFilename)
+
+    def testSaveLoad(self):
+        handler = H5FH(self.scFilename, 'w')
+        handler.saveDataContainer(self.sc)
+        scLoaded = handler.loadDataContainer(self.sc.id)
+        self.assertEqual(self.sc, scLoaded)
+
+
+class SCReadOnlyTestCase(SampleContainerTestCase):
+    def setUp(self):
+        SampleContainerTestCase.setUp(self)
+        osHandle, self.roscFilename = mkstemp(suffix = '.h5',
+                                            prefix = 'pyphantH5FileHandlerTest')
+        os.close(osHandle)
+
+        handler = H5FH(self.roscFilename, 'w')
+        handler.saveDataContainer(self.sc)
+
+    def tearDown(self):
+        os.remove(self.roscFilename)
+
+    def testReadOnly(self):
+        handler = H5FH(self.roscFilename, 'r')
+        scLoaded = handler.loadDataContainer(self.sc.id)
+        self.assertEqual(self.sc, scLoaded)
+
+
+class MixedAppendTestCase(SampleContainerTestCase):
+    def setUp(self):
+        SampleContainerTestCase.setUp(self)
+        osHandle, self.appscFilename = mkstemp(suffix = '.h5',
+                                            prefix = 'pyphantH5FileHandlerTest')
+        os.close(osHandle)
+
+        handler = H5FH(self.appscFilename, 'w')
+        handler.saveDataContainer(self.fc)
+
+    def tearDown(self):
+        os.remove(self.appscFilename)
+
+    def testAppend(self):
+        handler = H5FH(self.appscFilename, 'a')
+        handler.saveDataContainer(self.sc)
+        fcLoaded = handler.loadDataContainer(self.fc.id)
+        scLoaded = handler.loadDataContainer(self.sc.id)
+        self.assertEqual(self.fc, fcLoaded)
+        self.assertEqual(self.sc, scLoaded)
 
 
 if __name__ == "__main__":
@@ -79,5 +192,6 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         unittest.main()
     else:
-        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
+        suite = unittest.TestLoader().loadTestsFromTestCase(
+            eval(sys.argv[1:][0]))
         unittest.TextTestRunner().run(suite)
