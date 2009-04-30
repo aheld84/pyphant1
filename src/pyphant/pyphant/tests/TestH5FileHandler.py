@@ -66,7 +66,7 @@ class FieldContainerTestCase(unittest.TestCase):
         error = NPArray([0.1, 0.2, 4.5, 0.1, 0.2])
         longname = u'Test: FieldContainer H5FileHandler'
         shortname = u'TestH5FC'
-        attributes = {u'custom1':u'testing1...', u'custom2':'testing2...'}
+        attributes = {'custom1':u'testing1...', 'custom2':u'testing2...'}
         self.fc = FieldContainer(data, unit, error, None, None, longname,
                                  shortname, attributes)
         self.fc.seal()
@@ -114,7 +114,7 @@ class SampleContainerTestCase(unittest.TestCase):
         error = NPArray([0.1, 0.2, 4.5, 0.1, 0.2])
         longname = u'Test: FieldContainer H5FileHandler'
         shortname = u'TestH5FC'
-        attributes = {u'custom1':u'testing1...', u'custom2':'testing2...'}
+        attributes = {'custom1':u'testing1...', 'custom2':u'testing2...'}
         self.fc = FieldContainer(data, unit, error, None, None, longname,
                                  shortname, attributes)
         self.fc.seal()
@@ -152,7 +152,6 @@ class SCReadOnlyTestCase(SampleContainerTestCase):
         osHandle, self.roscFilename = mkstemp(suffix = '.h5',
                                             prefix = 'pyphantH5FileHandlerTest')
         os.close(osHandle)
-
         handler = H5FH(self.roscFilename, 'w')
         handler.saveDataContainer(self.sc)
 
@@ -171,7 +170,6 @@ class MixedAppendTestCase(SampleContainerTestCase):
         osHandle, self.appscFilename = mkstemp(suffix = '.h5',
                                             prefix = 'pyphantH5FileHandlerTest')
         os.close(osHandle)
-
         handler = H5FH(self.appscFilename, 'w')
         handler.saveDataContainer(self.fc)
 
@@ -185,6 +183,37 @@ class MixedAppendTestCase(SampleContainerTestCase):
         scLoaded = handler.loadDataContainer(self.sc.id)
         self.assertEqual(self.fc, fcLoaded)
         self.assertEqual(self.sc, scLoaded)
+
+
+class SummaryTestCase(SampleContainerTestCase):
+    def setUp(self):
+        SampleContainerTestCase.setUp(self)
+        osHandle, self.summFilename = mkstemp(suffix = '.h5',
+                                            prefix = 'pyphantH5FileHandlerTest')
+        os.close(osHandle)
+        handler = H5FH(self.summFilename, 'w')
+        handler.saveDataContainer(self.sc)
+
+    def tearDown(self):
+        os.remove(self.summFilename)
+
+    def testSummary(self):
+        handler = H5FH(self.summFilename, 'r')
+        summarydict = handler.loadSummary()
+        scsummary = summarydict[self.sc.id]
+        fcsummary = summarydict[self.fc.id]
+        self.assertEqual(scsummary['id'], self.sc.id)
+        self.assertEqual(fcsummary['id'], self.fc.id)
+        self.assertEqual(scsummary['longname'], self.sc.longname)
+        self.assertEqual(fcsummary['longname'], self.fc.longname)
+        self.assertEqual(scsummary['shortname'], self.sc.shortname)
+        self.assertEqual(fcsummary['shortname'], self.fc.shortname)
+        self.assertEqual(scsummary['attributes'], self.sc.attributes)
+        self.assertEqual(fcsummary['attributes'], self.fc.attributes)
+        self.assertEqual(fcsummary['unit'], self.fc.unit)
+        self.assertEqual(scsummary['columns'][0]['dimensions'][0],
+                         summarydict[self.fc.dimensions[0].id])
+        self.assertEqual(scsummary['columns'][0], fcsummary)
 
 
 if __name__ == "__main__":

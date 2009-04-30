@@ -44,8 +44,9 @@ import os
 _logger = logging.getLogger("pyphant")
 _reservedAttributes = ('longname','shortname','columns')
 
-"""This class is used to handle IO operations on HDF5 files."""
+
 class H5FileHandler(object):
+    """This class is used to handle IO operations on HDF5 files."""
     def __init__(self, filename, mode = 'a'):
         assert mode in ['r', 'w', 'a']
         exists = os.path.isfile(filename)
@@ -55,26 +56,35 @@ class H5FileHandler(object):
         self.mode = mode
         self.handle = tables.openFile(self.filename, self.mode)
 
-    """Loads a DataContainer from the HDF5 file and returns it as a
-    DataContainer instance.
-    dcId -- emd5 of the DC to be returned"""
-    def loadDataContainer(self, dcId):
-        hash, uriType = DataContainer.parseId(dcId)
+    def getNodeAndTypeFromId(self, dcId):
+        """Returns a tuple (HDF5 node, uriType) for the given
+        DataContainer emd5.
+        dcId -- emd5 of the DataContainer"""
+        dcHash, uriType = DataContainer.parseId(dcId)
         try:
-            resNode = self.handle.getNode("/results/result_"+hash)
+            resNode = self.handle.getNode("/results/result_" + dcHash)
         except (AttributeError, tables.NoSuchNodeError), e:
             raise AttributeError("Container %s not found in file %s."
                                  % (dcId, self.filename))
-        if uriType == u'field':
-            _logger.info("Trying to load field data from node %s..."%resNode)
+        if isinstance(uriType, unicode):
+            uriType = uriType.encode('utf-8')
+        return (resNode, uriType)
+
+    def loadDataContainer(self, dcId):
+        """Loads a DataContainer from the HDF5 file and returns it as a
+        DataContainer instance.
+        dcId -- emd5 of the DC to be returned"""
+        resNode, uriType = self.getNodeAndTypeFromId(dcId)
+        if uriType == 'field':
+            _logger.info("Trying to load field data from node %s..." % resNode)
             result = self.loadField(resNode)
             _logger.info("...successfully loaded.")
-        elif uriType == u'sample':
-            _logger.info("Trying to load sample data from node %s..."%resNode)
+        elif uriType == 'sample':
+            _logger.info("Trying to load sample data from node %s..." % resNode)
             result = self.loadSample(resNode)
             _logger.info("...successfully loaded.")
         else:
-            raise TypeError, "Unknown result uriType in <%s>"%resNode._v_title
+            raise TypeError, "Unknown result uriType in <%s>" % resNode._v_title
         return result
 
     def loadField(self, resNode):
@@ -148,12 +158,72 @@ class H5FileHandler(object):
         result.seal(resNode._v_title)
         return result
 
-    """Saves a given DataContainer instance to the HDF5 file. The DataContainer
-    has to be sealed or at least provide a valid emd5 in its '.id' attribute.
-    A HDF5 group path that points to the location the DC was stored at
-    is returned.
-    result -- sealed DC instance"""
+    def loadSummary(self, dcId = None):
+        """Extracts meta data about a given DataContainer and returns it
+        as a dictionary.
+        dcId -- emd5 of the DC to summarize. If dcId == None, a dictionary
+                that maps emd5s to summaries is returned."""
+        if dcId == None:
+            summary = {}
+            for group in self.handle.walkGroups(where = "/results"):
+                currDcId = group._v_attrs.TITLE
+                if len(currDcId) > 0:
+                    summary[currDcId] = self.loadSummary(currDcId)
+        else:
+            summary = {}
+            summary['id'] = dcId
+            resNode, uriType = self.getNodeAndTypeFromId(dcId)
+            summary['longname'] = unicode(self.handle.getNodeAttr(resNode,
+                                                                  "longname"),
+                                          'utf-8')
+            summary['shortname'] = unicode(self.handle.getNodeAttr(resNode,
+                                                                   "shortname"),
+                                           'utf-8')
+            attributes = {}
+            if uriType == 'field':
+                for key in resNode.data._v_attrs._v_attrnamesuser:
+                    attributes[key]=self.handle.getNodeAttr(resNode.data, key)
+                unit = eval(unicode(self.handle.getNodeAttr(resNode, "unit"),
+                                    'utf-8'))
+                try:
+                    if isinstance(unit, (str, unicode)):
+                        unit = unit.replace('^', '**')
+                    if isinstance(unit, unicode):
+                        unit = unit.encode('utf-8')
+                    summary['unit'] = PhysicalQuantity(unit)
+                except:
+                    try:
+                        summary['unit'] = PhysicalQuantity("1" + unit)
+                    except:
+                        summary['unit'] = unit
+                try:
+                    dimTable = resNode.dimensions
+                    dimensions = [self.loadSummary(row['id'])
+                                  for row in dimTable.iterrows()]
+                except tables.NoSuchNodeError, e:
+                    dimensions = u'INDEX'
+                summary['dimensions'] = dimensions
+
+            elif uriType == 'sample':
+                for key in resNode._v_attrs._v_attrnamesuser:
+                    if key not in _reservedAttributes:
+                        attributes[key]=self.handle.getNodeAttr(resNode, key)
+                columns = []
+                for resId in self.handle.getNodeAttr(resNode, "columns"):
+                    nodename = "/results/" + resId
+                    columnId = self.handle.getNodeAttr(nodename, "TITLE")
+                    columns.append(self.loadSummary(columnId))
+                summary['columns'] = columns
+            summary['attributes'] = attributes
+        return summary
+
     def saveDataContainer(self, result):
+        """Saves a given DataContainer instance to the HDF5 file.
+        The DataContainer has to be sealed or at least provide a valid
+        emd5 in its '.id' attribute.
+        A HDF5 group path that points to the location the DC was stored at
+        is returned.
+        result -- sealed DC instance"""
         hash, uriType = DataContainer.parseId(result.id)
         resId = u"result_"+hash
         try:
