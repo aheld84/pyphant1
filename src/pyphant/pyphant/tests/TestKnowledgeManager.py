@@ -72,7 +72,7 @@ class KnowledgeManagerTestCase(unittest.TestCase):
 
         km = KnowledgeManager.getInstance()
 
-        km.registerURL('file://'+h5name, True)
+        km.registerURL('file://'+h5name)
 
         km_fc = km.getDataContainer(self._fc.id)
 

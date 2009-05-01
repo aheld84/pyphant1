@@ -115,6 +115,8 @@ import HTMLParser
 from types import DictType
 import re
 import time
+from urlparse import urlparse
+from pyphant.core.H5FileHandler import H5FileHandler
 
 WAITING_SECONDS_HTTP_SERVER_STOP = 5
 HTTP_REQUEST_DC_URL_PATH="/request_dc_url"
@@ -142,37 +144,41 @@ CACHE_SIZE = 50
 CACHE_TIMEOUT = 3600
 # Number of hits a DC has to have at least in order to be cached:
 CACHE_THRESHHOLD = 2
+KM_PATH = '/KMstorage/'
+REHDF5 = re.compile(r'..*\.h5$|..*\.hdf$|..*\.hdf5$')
 
+def getPyphantPath(subdir = '/'):
+    """returns full pyphant path with optional subdirectory
+    subdir -- subdirectory that is created if it does not exist already,
+              recursive creation of directories is supported also."""
+    homedir = os.path.expanduser('~')
+    if not subdir.startswith('/'):
+        subdir = '/' + subdir
+    if not subdir.endswith('/'):
+        subdir = subdir + '/'
+    if homedir == '~':
+        homedir = os.getcwdu()
+    plist = ('/.pyphant' + subdir).split('/')
+    makedir = homedir
+    path = homedir + '/.pyphant' + subdir
+    for p in plist:
+        if p != '':
+            makedir += "/%s" % (p, )
+            if not os.path.isdir(makedir):
+                os.mkdir(makedir)
+    return path
 
-class _HTMLDict(dict):
-    def __init__(self, keylabel, valuelabel):
-        self.keylabel = keylabel
-        self.valuelabel = valuelabel
-    def getHTML(self, printkeys = True):
-        if printkeys:
-            output = '<table border="2" width="100%%"><tr><th>%s</th><th>%s</th></tr>\n'%(self.keylabel, self.valuelabel)
-        else:
-            output = '<table border="2" width="100%%"><tr><th>%s</th></tr>\n'%(self.valuelabel, )
-        for k, v in self.items():
-            if hasattr(k, 'getHTML'):
-                kout = k.getHTML()
-            else:
-                kout = str(k)
-            if hasattr(v, 'getHTML'):
-                vout = v.getHTML()
-            else:
-                vout = str(v)
-            if printkeys:
-                output += '<tr width="100%%"><td>%s</td><td>%s</td></tr>\n'%(kout, vout)
-            else:
-                output += '<tr width="100%%"><td>%s</td></tr>\n'%(vout,)
-        output += '</table>\n'
-        return output
+def getFilenameFromDcId(dcId):
+    """Returns a unique filename for the given emd5."""
+    emd5list = urlparse(dcId + '.h5')[2][2:].split('/')
+    emd5path = ''
+    for p in emd5list:
+        emd5path += (p + '/')
+    emd5path = emd5path[:-1]
+    directory = os.path.dirname(emd5path)
+    filename = os.path.basename(emd5path)
+    return getPyphantPath(KM_PATH + 'by_emd5/' + directory) + filename
 
-    def setDict(self, d):
-        self.clear()
-        for k in d:
-            self[k] = d[k]
 
 class KnowledgeManagerException(Exception):
     def __init__(self, message, parent_excep=None, *args, **kwds):
@@ -186,6 +192,7 @@ class KnowledgeManagerException(Exception):
     def getParentException(self):
         return self._parent_excep
 
+
 class KnowledgeManager(Singleton):
 
     def __init__(self):
@@ -193,36 +200,90 @@ class KnowledgeManager(Singleton):
         self._logger = logging.getLogger("pyphant")
         self._storage = {}
         self._cache = {}
+        self.H5FileHandlers = {}
         self._remoteKMs = {} # key:id, value:url
         self._server = None
         self._server_id = uuid1()
-        self._pyphantdir = os.path.expanduser('~')
-        self._filecount = 0
-        if self._pyphantdir=='~':
-            self._pyphantdir = os.getcwdu()
-        self._pyphantdir += '/.pyphant/'
-        if not os.path.isdir(self._pyphantdir):
-            os.mkdir(self._pyphantdir)
-            os.mkdir(self._pyphantdir+'KMstorage')
-        elif not os.path.isdir(self._pyphantdir+'KMstorage'):
-            os.mkdir(self._pyphantdir+'KMstorage')
-        else:
-            # load existing knowledge:
-            def walkfiles(arg, dirname, fnames):
-                re_storage = re.compile(r'\d\d\d\d\d\d\d\d\d\d\.h5')
-                for fname in fnames:
-                    m = re_storage.match(fname)
-                    if m != None:
-                        arg.registerURL('file://%sKMstorage/%s'%(arg._pyphantdir, m.group()), True)
-                        filenumber = int(m.group()[:-3])
-                        if filenumber > arg._filecount:
-                            arg._filecount = filenumber
-
-            os.path.walk(self._pyphantdir+'KMstorage', walkfiles, self)
+        self.restoreKnowledge()
 
     def __del__(self):
         if self.isServerRunning():
             self.stopServer()
+        for handler in self.H5FileHandlers.itervalues():
+            del handler
+
+    def registerH5(self, filename, mode = 'a', registerContents = True):
+        """Adds the given HDF5 file to the pool and handles all
+        further IO operations on the given file in a save way. If you want the
+        knowledge to be stored permanently, use registerURL.
+        Possible usage: Register a file that does not exist (setting
+        registerContents to False). It then is created.
+        Get its H5FileHandler using the getH5FileHandler method.
+        Use this FileHandler to write some Data to the file.
+        Use the refreshH5 method to import the new contents into the
+        KnowledgeManager.
+        filename -- path to the HDF5 file to be registered.
+        mode -- see H5FileHandler
+        registerContents -- whether to register contents of the file as well."""
+        if self.H5FileHandlers.has_key(filename):
+            raise KnowledgeManagerException("'%s' has already been registered."\
+                                                % (filename,))
+        self.H5FileHandlers[filename] = H5FileHandler(filename, mode)
+        if registerContents:
+            self.refreshH5(filename)
+
+    def getH5FileHandler(self, filename):
+        """Returns a H5FileHandler for the given filename to perform IO
+        operations on the file in a save way. The file has
+        to be registered first using registerH5.
+        As soon as you are done with your IO operations, use refreshH5
+        in order to update the changes.
+        filename -- path to the HDF5 file"""
+        if self.H5FileHandlers.has_key(filename):
+            return self.H5FileHandlers[filename]
+        else:
+            raise KnowledgeManagerException("'%s' has not been registered.")
+
+    def refreshH5(self, filename):
+        """Refreshes the contents of the given file. The file has to be
+        registered first using registerH5. If a DC emd5 is found that is
+        already known to the KnownledgeManager, it is not updated, following
+        the principle that emd5s are unique and DCs that have been given a emd5
+        should not me modified any more in any way.
+        filename -- path to the HDF5 file"""
+        h5fh = self.getH5FileHandler(filename)
+        summaryDict = h5fh.loadSummary()
+        for dcId, summary in summaryDict.items():
+            if not self._storage.has_key(dcId):
+                self._storage[dcId] = {'lasthit':None,
+                                       'hitcount':0,
+                                       'filehandler':h5fh,
+                                       'summary':summary}
+
+    def restoreKnowledge(self):
+        """Restores knowledge from pyphant path"""
+        def walkfiles(arg, dirname, fnames):
+            for fname in fnames:
+                if REHDF5.match(fname.lower()) != None:
+                    if dirname.endswith('/'):
+                        dirname = dirname[:-1]
+                    self.registerH5(dirname + '/' + fname)
+        os.path.walk(getPyphantPath(KM_PATH), walkfiles, None)
+
+    def getSummary(self, dcId = None):
+        """Behaves like H5FileHandler.loadSummary(dcId) except that for
+        dcId == None all DataContainers that are stored locally are browsed."""
+        if dcId == None:
+            summary = {}
+            for emd5, dcInfo in self._storage.iteritems():
+                summary[emd5] = dcInfo['summary']
+        else:
+            if not self._storage.has_key(dcId):
+                raise KnowledgeManagerException("DC with ID '%s' is unknown."\
+                                                    % (dcId, ))
+            dcInfo = self._storage[dcId]
+            summary = dcInfo['summary']
+        return summary
 
     def _getServerURL(self):
         if self._server is None:
@@ -342,121 +403,58 @@ class KnowledgeManager(Singleton):
 
         self._remoteKMs[km_id] = km_url
 
-    def registerURL(self, url, islocalfile=False):
-        """Register an HDF5 file downloadable from given URL and store it permanently.
-
-        url -- URL of the HDF5 file
-        islocalfile -- set this to True when url is of type 'file:///...' and you don't want to store it in .pyphant dir
-
-        The HDF5 file is downloaded and all DataContainers
-        in the file are registered with their identifiers.
-        """
-        filename = None
-        if not islocalfile:
-            self._filecount += 1
-            filenumber = self._filecount
-            while filenumber < sys.maxint:
-                filename = self._pyphantdir+'KMstorage/'+str(filenumber).zfill(10)+'.h5'
-                if not os.path.exists(filename):
+    def registerURL(self, url):
+        """Register an HDF5 file downloadable from given URL and store it
+        permanently in the .pyphant directory. The files content is made
+        available to the KnowledgeManager.
+        url -- URL of the HDF5 file"""
+        parsed = urlparse(url)
+        filename = KM_PATH + 'registered/' + parsed[1] + '/'\
+            + os.path.basename(parsed[2])
+        directory = os.path.dirname(filename)
+        filename = getPyphantPath(directory) + os.path.basename(filename)
+        if REHDF5.match(filename) == None:
+            filename += '.h5'
+        if os.path.exists(filename):
+            i = 0
+            directory = os.path.dirname(filename)
+            basename = os.path.basename(filename)
+            split = basename.split('.')
+            ext = split.pop()
+            fnwoext = ''
+            for part in split:
+                fnwoext += (part + '.')
+            while i < sys.maxint:
+                fill = str(i).zfill(10)
+                tryfn = "%s/%s%s.%s" % (directory, fnwoext, fill, ext)
+                if os.path.exists(tryfn):
+                    i += 1
+                else:
+                    filename = tryfn
                     break
-                filenumber += 1
-            self._filecount = filenumber
-            self._logger.info("Retrieving url '%s'..." % (url,))
-            self._logger.info("Using local file '%s'." % (filename,))
-            savedto, headers = urllib.urlretrieve(url, filename)
-            self._logger.info("Header information: %s", (str(headers),))
-        else:
-            assert url.lower().startswith('file:///'), "If 'islocalfile' is set to 'True', url hast to be of 'file:///...' type."
-            filename = url[7:]
-            self._logger.info("Loading data from '%s'"%(filename,))
-
-        # Look inside h5 and register all DataContainers
-        h5 = tables.openFile(filename)
-        for group in h5.walkGroups(where="/results"):
-            dc_id = group._v_attrs.TITLE
-            if len(dc_id)>0:
-                self._logger.debug("Registering DC ID '%s'.." % (dc_id,))
-                self._storage[dc_id] = {'lasthit':None, 'hitcount':0, 'filename':filename, 'h5group':group._v_pathname}
-                self._storage[dc_id]['summary'] = self._createSummary(dc_id)
-        h5.close()
+        self._logger.info("Retrieving url '%s'..." % (url,))
+        self._logger.info("Using local file '%s'." % (filename,))
+        savedto, headers = urllib.urlretrieve(url, filename)
+        self._logger.info("Header information: %s", (str(headers),))
+        self.registerH5(filename)
 
     def registerDataContainer(self, dc):
-        """Register a DataContainer located in memory using a given reference and store it permanently.
-
-        dc -- reference to the DataContainer object
-
+        """Register a DataContainer located in memory using a given
+        reference and store it permanently.
         The DataContainer must have an .id attribute,
         which could be generated by the datacontainer.seal() method.
-        """
-        try:
-            assert dc.id is not None
-        except Exception, e:
+        If the DCs emd5 is already known to the KnowledgeManager,
+        the DC is not registered again since emd5s are unique.
+        dc -- reference to the DataContainer object"""
+        if dc.id == None:
             raise KnowledgeManagerException("Invalid id for DataContainer '" +\
-                                                datacontainer.longname+"'", e)
+                                                dc.longname + "'")
         if not self._storage.has_key(dc.id):
-            self._filecount += 1
-            filenumber = self._filecount
-            while filenumber < sys.maxint:
-                filename = self._pyphantdir+'KMstorage/'+str(filenumber).zfill(10)+'.h5'
-                if not os.path.exists(filename):
-                    break
-                filenumber += 1
-            self._filecount = filenumber
-            h5 = tables.openFile(filename,'w')
-            resultsGroup = h5.createGroup("/", "results")
-            ptp.saveResult(dc, h5)
-            for group in h5.walkGroups(where="/results"):
-                if dc.id == group._v_attrs.TITLE:
-                    break
-            h5group = group._v_pathname
-            h5.close()
-            self._storage[dc.id] = {'lasthit':None, 'hitcount':0, 'filename':filename, 'h5group':h5group, 'summary':self._createSummary(dc)}
-
-    def _createSummary(self, dcid):
-        if isinstance(dcid, StringTypes):
-            dc = self.getDataContainer(dcid, False, False)
-        else:
-            dc = dcid
-
-        l = logging.getLogger("pyphant")
-        emd5info = re.split(r'/', dc.id)
-        host = emd5info[2]
-        user = emd5info[3]
-        date = emd5info[4] #TODO
-        hash, type = re.split(r'\.', emd5info[5])
-        summary = _HTMLDict('Property', 'Value')
-        summary['longname'] = dc.longname
-        summary['shortname'] = dc.shortname
-        summary['attributes'] = _HTMLDict('Attribute', 'Value')
-        summary['attributes'].setDict(dc.attributes)
-        summary['host'] = host
-        summary['user'] = user
-        summary['date'] = date
-        summary['hash'] = hash
-        summary['type'] =  type
-        summary['id'] = dc.id
-        if type == 'field':
-            pass #TODO
-        if type == 'sample':
-            pass #TODO
-        return summary
-
-    def getSummary(self, dcid = None, browse_remote = False):
-        """Returns information about a DataContainer as a dictionary
-        dcid -- ID of DataContainer. If set to None, a dict of id:getSummary(id) of all available DCs is returned. Default: None
-        browse_remote -- whether to ask remote KMs for summary information. Not yet implemented!
-        """
-        if dcid == None:
-            dict = {}
-            for id in self._storage:
-                dict[id] = self.getSummary(id)
-            return dict
-        else:
-            try:
-                summary =  self._storage[dcid]['summary']
-            except:
-                raise KnowledgeManagerException("Could not find DataContainer with ID '%s'"%(dcid,))
-            return summary
+            filename = getFilenameFromDcId(dc.id)
+            self.registerH5(filename, 'w', False)
+            handler = self.getH5FileHandler(filename)
+            handler.saveDataContainer(dc)
+            self.refreshH5(filename)
 
     def _getDCURLFromRemoteKMs(self, query_dict):
         """Return URL for a DataContainer by requesting remote KnowledgeManagers.
@@ -516,33 +514,28 @@ class KnowledgeManager(Singleton):
 
     def _getDataContainerURL(self, query_dict):
         """Return a URL from which a DataContainer can be downloaded.
-
-        query_dict -- dict of DC ID to get and KnowledgeManager IDs which shouldn't be
-                       asked.
-                       e.g.: {'dcid':'somedcid', 'lastkmidindex:1', 'kmid0':'someid', 'kmid1':'anotherid'}
-                       query_dict is extended by this method in order to exclude KMs recursively.
-
-        The DataContainer can be downloaded as HDF5 file.
         The server must be running before calling this method.
-        """
+        query_dict -- dict of DC ID to get and KnowledgeManager IDs
+                      which shouldn't be asked.
+                      e.g.: {'dcid':'somedcid',
+                             'lastkmidindex:1',
+                             'kmid0':'someid',
+                             'kmid1':'anotherid'}
+                      query_dict is extended by this method in order to
+                      exclude KMs recursively."""
         assert self.isServerRunning(), "Server is not running."
         dc_id = query_dict['dcid']
         if self._storage.has_key(dc_id):
             dc = self.getDataContainer(dc_id, True, False)
-
-            #
             # Wrap data container in temporary HDF5 file
-            #
-            h5fileid, h5name = tempfile.mkstemp(suffix='.h5',
-                                                prefix='dcrequest-',
-                                                dir=self._http_dir)
-            os.close(h5fileid)
-
-            h5 = tables.openFile(h5name,'w')
-            resultsGroup = h5.createGroup("/", "results")
-            ptp.saveResult(dc, h5)
-            h5.close()
-            dc_url = self._getServerURL()+"/"+os.path.basename(h5name)
+            osFileId, filename = tempfile.mkstemp(suffix = '.h5',
+                                                prefix = 'dcrequest-',
+                                                dir = self._http_dir)
+            os.close(osFileId)
+            handler = H5FileHandler(filename, 'w')
+            handler.saveDataContainer(dc)
+            del handler
+            dc_url = self._getServerURL() + "/" + os.path.basename(filename)
         else:
             try:
                 dc_url = self._getDCURLFromRemoteKMs(query_dict)
@@ -553,11 +546,10 @@ class KnowledgeManager(Singleton):
 
     def getDataContainer(self, dc_id, use_cache=True, try_remote=True):
         """Returns DataContainer matching the given id.
-
-        dc_id       -- Unique ID of the DataContainer (emd5)
-        use_cache   -- Try local cache first and cache DC for further lookups (default: True)
-        try_remote -- Try to get DC from remote KMs (default: True)
-        """
+        dc_id -- Unique ID of the DataContainer (emd5)
+        use_cache -- Try local cache first and cache DC for further
+                     lookups (default: True)
+        try_remote -- Try to get DC from remote KMs (default: True)"""
         dc = None
         found_in_cache = False
         islocal = self._storage.has_key(dc_id)
@@ -575,25 +567,16 @@ class KnowledgeManager(Singleton):
                     found_in_cache = True
                     self._logger.debug("DC with ID '%s' found in cache.", dc_id)
                 else:
-                    self._logger.debug("DC with ID '%s' not found in cache.", dc_id)
+                    self._logger.debug("DC with ID '%s' not found in cache.",
+                                       dc_id)
             if not found_in_cache:
-                h5 = tables.openFile(dcinfo['filename'])
-                hash, type = parseId(dc_id)
-                if type=='sample':
-                    loader = ptp.loadSample
-                elif type=='field':
-                    loader = ptp.loadField
-                else:
-                    raise KnowledgeManagerException("Unknown result type '%s'" \
-                                                % (type,))
                 try:
-                    self._logger.debug("Loading data from '%s' in group '%s'.." % (dcinfo['filename'], dcinfo['h5group']))
-                    dc = loader(h5, h5.getNode(dcinfo['h5group']))
+                    dc = dcinfo['filehandler'].loadDataContainer(dc_id)
                 except Exception, e:
-                    raise KnowledgeManagerException("DC ID '%s' known, but cannot be read from file '%s'."% (dc_id,localfilename), e)
-                finally:
-                    h5.close()
-
+                    raise KnowledgeManagerException("DC ID '%s' known, but \
+                                                     cannot be read from file \
+                                                     '%s'."
+                                                    % (dc_id,localfilename), e)
                 if use_cache and dcinfo['hitcount'] >= CACHE_THRESHHOLD:
                     docache = False
                     if len(self._cache) >= CACHE_SIZE:
@@ -606,23 +589,26 @@ class KnowledgeManager(Singleton):
                                 break
                             elif cacheddcinfo['hitcount'] < minhitcount:
                                 minhitcount = cacheddcinfo['hitcount']
-                        if docache == False and dcinfo['hitcount'] > minhitcount:
+                        if docache == False \
+                                and dcinfo['hitcount'] > minhitcount:
                             docache == True
                     else:
                         docache = True
                     if docache:
                         self._cache[dc_id] = dc
                         self._logger.debug("Cached DC with ID '%s'", dc_id)
-
         elif try_remote:
-            dc_url = self._getDCURLFromRemoteKMs()
+            dc_url = self._getDCURLFromRemoteKMs({'dcid':dc_id,
+                                                  'lastkmidindex':-1})
             if dc_url == None:
-                raise KnowledgeManagerException("DC ID '%s' is unknown."%(dc_id,))
-            self.registerURL(dc_url)
-            dc = self._getDataContainer(dc_id, True, False)
-
+                raise KnowledgeManagerException("DC ID '%s' is unknown."\
+                                                    %(dc_id,))
+            filename = getFilenameFromDcId(dc_id)
+            savedto, headers = urllib.urlretrieve(dc_url, filename)
+            self.registerH5(filename)
+            dc = self.H5FileHandlers[filename].loadDataContainer(dc_id)
         else:
-            raise KnowledgeManagerException("DC ID '%s' is unknown."%(dc_id,))
+            raise KnowledgeManagerException("DC ID '%s' is unknown." % (dc_id,))
         return dc
 
 class _HTTPRequestHandler(SimpleHTTPRequestHandler):
@@ -784,6 +770,38 @@ class _HTTPServer(ThreadingMixIn,HTTPServer):
         while not self.stop_server:
             self.handle_request()
         self._logger.info("Stopped HTTP server.")
+
+
+class _HTMLDict(dict):
+    def __init__(self, keylabel, valuelabel):
+        self.keylabel = keylabel
+        self.valuelabel = valuelabel
+    def getHTML(self, printkeys = True):
+        if printkeys:
+            output = '<table border="2" width="100%%"><tr><th>%s</th><th>%s</th></tr>\n'%(self.keylabel, self.valuelabel)
+        else:
+            output = '<table border="2" width="100%%"><tr><th>%s</th></tr>\n'%(self.valuelabel, )
+        for k, v in self.items():
+            if hasattr(k, 'getHTML'):
+                kout = k.getHTML()
+            else:
+                kout = str(k)
+            if hasattr(v, 'getHTML'):
+                vout = v.getHTML()
+            else:
+                vout = str(v)
+            if printkeys:
+                output += '<tr width="100%%"><td>%s</td><td>%s</td></tr>\n'%(kout, vout)
+            else:
+                output += '<tr width="100%%"><td>%s</td></tr>\n'%(vout,)
+        output += '</table>\n'
+        return output
+
+    def setDict(self, d):
+        self.clear()
+        for k in d:
+            self[k] = d[k]
+
 
 class _HTMLParser(HTMLParser.HTMLParser):
     def __init__(self):
