@@ -207,6 +207,12 @@ class H5FileHandler(object):
             summary['shortname'] = unicode(self.handle.getNodeAttr(resNode,
                                                                    "shortname"),
                                            'utf-8')
+            emd5_split = dcId.split('/')
+            summary['host'] = unicode(emd5_split[2], 'utf-8')
+            summary['user'] = unicode(emd5_split[3], 'utf-8')
+            summary['date'] = unicode(emd5_split[4], 'utf-8')
+            summary['hash'] = emd5_split[5].split('.')[0]
+            summary['type'] = unicode(emd5_split[5].split('.')[1], 'utf-8')
             attributes = {}
             if uriType == 'field':
                 for key in resNode.data._v_attrs._v_attrnamesuser:
@@ -230,8 +236,8 @@ class H5FileHandler(object):
                                   for row in dimTable.iterrows()]
                 except tables.NoSuchNodeError:
                     dimensions = u'INDEX'
+                    summary['type'] = u'index'
                 summary['dimensions'] = dimensions
-
             elif uriType == 'sample':
                 for key in resNode._v_attrs._v_attrnamesuser:
                     if key not in _reservedAttributes:

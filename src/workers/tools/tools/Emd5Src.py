@@ -29,7 +29,9 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""
+"""
+This module provides a worker for importing DataConainers from the
+KnowledgeManager into wxPyphant.
 """
 
 __id__ = "$Id$"
@@ -37,37 +39,75 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-import numpy
 from pyphant.core import (Worker, Connectors,
-                          Param, DataContainer, KnowledgeManager)
+                          Param)
+from pyphant.core.KnowledgeManager import KnowledgeManager as KM
 
-import scipy.interpolate
-from pyphant.quantities import PhysicalQuantities
-import logging, copy, math
 
-def getDirectory():
-    km = KnowledgeManager.KnowledgeManager.getInstance()
-    directory = []
-    for id in km._refs.iterkeys():
-        dc = km.getDataContainer(id)
-        directory.append((dc.id, dc.longname, dc.shortname))
-    return directory
+class HiddenValue(unicode):
+    def setHiddenValue(self, hiddenvalue):
+        self.hiddenvalue = hiddenvalue
+
 
 class Emd5Src(Worker.Worker):
+    """
+    This worker provides dropdown lists for selecting a DataContainer from
+    the KnowledgeManaer.
+    """
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "Emd5Src"
 
-    _params = [("dc", u"Data Container", [u"None"], None)]
+    _params = [("selectby", u"select by:", [u"emd5",
+                                            u"longname",
+                                            u"shortname",
+                                            u"enter emd5"], None),
+               ("emd5", u"emd5:", [u"None"], None),
+               ("longname", u"longname:", [u"None"], None),
+               ("shortname", u"shortname:", [u"None"], None),
+               ("enteremd5", u"enter emd5:", "", None)]
 
-    def refreshParams(self, subscriber=None):
-        self.paramDc.possibleValues = getDirectory()
+    def refreshParams(self, subscriber = None):
+        km = KM.getInstance()
+        summary_dict = km.getSummary()
+        emd5list = []
+        lnlist = []
+        snlist = []
+        for emd5, summary in summary_dict.iteritems():
+            if summary['type'] != u'index':
+                emd5list.append(unicode(emd5, 'utf-8'))
+                info = u"%s '%s' (user: %s, date: %s)"
+                lnitem = HiddenValue(info\
+                                         % (summary['type'],
+                                            summary['longname'],
+                                            summary['user'],
+                                            summary['date']))
+                lnitem.setHiddenValue(emd5)
+                lnlist.append(lnitem)
+                snitem = HiddenValue(info\
+                                         % (summary['type'],
+                                            summary['shortname'],
+                                            summary['user'],
+                                            summary['date']))
+                snitem.setHiddenValue(emd5)
+                snlist.append(snitem)
+        emd5list.sort()
+        lnlist.sort()
+        snlist.sort()
+        self.paramEmd5.possibleValues = emd5list
+        self.paramLongname.possibleValues = lnlist
+        self.paramShortname.possibleValues = snlist
 
     @Worker.plug(Connectors.TYPE_IMAGE)
-    def load(self, subscriber=0):
-        v = self.paramDc.value
-        if isinstance(v, tuple):
-            v = v[0]
-        km = KnowledgeManager.KnowledgeManager.getInstance()
-        return km.getDataContainer(v)
+    def load(self, subscriber = 0):
+        km = KM.getInstance()
+        if self.paramSelectby.value == u'emd5':
+            emd5 = self.paramEmd5.value.encode('utf-8')
+        elif self.paramSelectby.value == u'longname':
+            emd5 = self.paramLongname.value.hiddenvalue
+        elif self.paramSelectby.value == u'shortname':
+            emd5 = self.paramShortname.value.hiddenvalue
+        elif self.paramSelectby.value == u'enter emd5':
+            emd5 = self.paramEnteremd5.value.encode('utf-8')
+        return km.getDataContainer(emd5)
