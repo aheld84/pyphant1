@@ -66,6 +66,7 @@ import pyphant.core.PyTablesPersister
 import WorkerRepository
 import ConfigureFrame
 import platform
+from pyphant.core.KnowledgeManager import KnowledgeManager as KM
 pltform = platform.system()
 
 class wxPyphantApplication(wx.PySimpleApp):
@@ -207,6 +208,7 @@ class wxPyphantFrame(wx.Frame):
         #self._fileMenu.Append( wx.ID_OPEN, "&Open\tCTRL+o")
         self._fileMenu.Append( wx.ID_SAVE, "&Save\tCTRL+s")
         self._fileMenu.Append( wx.ID_EXIT, "E&xit" )
+        self._fileMenu.Append( wx.ID_FILE1, "&Import HDF5" )
         self._menuBar.Append( self._fileMenu, "&File" )
         self._closeCompositeWorker = wx.Menu()
         self._closeCompositeWorker.Append(self.ID_CLOSE_COMPOSITE_WORKER, "&Close Composite Worker")
@@ -221,6 +223,7 @@ class wxPyphantFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.onClose)
         self.Bind(wx.EVT_MENU, self.onQuit, id=wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.onCloseCompositeWorker, id=self.ID_CLOSE_COMPOSITE_WORKER)
+        self.Bind(wx.EVT_MENU, self.onImportHDF5, id=wx.ID_FILE1)
 
     def createUpdateMenu(self):
         updateMenu = wx.Menu()
@@ -268,6 +271,30 @@ class wxPyphantFrame(wx.Frame):
         self._remainingSpace=self.compositeWorkerStack.pop()
         if len(self.compositeWorkerStack)==0:
             self._menuBar.EnableTop(1, False)
+
+    def onImportHDF5(self, event):
+        cpt = "Import HDF5 from URL"
+        msg = "Enter an URL to a valid HDF5 file \
+(e.g. file:///home/someuser/data.h5).\n\
+The file is stored permanently in your home directory in the \
+.pyphant directory\nand all DataContainers contained in that file are \
+available by using the\nEmd5Src Worker even after restarting wxPyphant."
+        dlg = wx.TextEntryDialog(self, msg, cpt)
+        dlgid = dlg.ShowModal()
+        if dlgid != wx.ID_CANCEL:
+            url = dlg.GetValue()
+            cpt2 = "Info"
+            msg2 = "Successfully imported DataContainers from\n'%s'"\
+                   % (url ,)
+            km = KM.getInstance()
+            try:
+                km.registerURL(url)
+            except Exception:
+                cpt2 = "Error"
+                msg2 = "'%s' is not a valid URL to a HDF5 file." % (url, )
+            finally:
+                dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
+                dlgid2 = dlg2.ShowModal()
 
 
 import optparse
