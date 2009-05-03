@@ -257,6 +257,8 @@ class wxPyphantFrame(wx.Frame):
                 self.onSaveCompositeWorker()
             dlg.Destroy()
         if dlgid != wx.ID_CANCEL:
+            km = KM.getInstance()
+            km.__del__()
             self.Destroy()
 
     def editCompositeWorker(self, worker):
