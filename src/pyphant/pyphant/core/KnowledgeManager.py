@@ -41,48 +41,28 @@ __version__ = "$Revision$"
 # $Source: $
 
 from pyphant.core.singletonmixin import Singleton
-from pyphant.core.DataContainer import parseId
-import pyphant.core.PyTablesPersister as ptp
-from types import TupleType, StringTypes
 import urllib
 import cgi
 import tempfile
-import tables
 import sys
 import os, os.path
 import logging
-import traceback
-from SocketServer import ThreadingMixIn
 import threading
-from BaseHTTPServer import HTTPServer
-from SimpleHTTPServer import SimpleHTTPRequestHandler
 from uuid import uuid1
-import HTMLParser
-from types import DictType
 import re
 import time
 from urlparse import urlparse
+from SimpleHTTPServer import SimpleHTTPRequestHandler
 from pyphant.core.H5FileHandler import H5FileHandler
+from pyphant.core.WebInterface import (HTTPAnswer,
+                                       WebInterface,
+                                       KMHTMLParser,
+                                       ThreadedHTTPServer)
 
 WAITING_SECONDS_HTTP_SERVER_STOP = 5
 HTTP_REQUEST_DC_URL_PATH = "/request_dc_url"
 HTTP_REQUEST_KM_ID_PATH = "/request_km_id"
 HTTP_REQUEST_DC_SUMMARY_PATH = "/request_dc_summary"
-HTML_BODY_INDEX = """<h1>Pyphant Web Frontend at %s</h1>
-<form action="%s" method="post" enctype="text/plain" target="_blank">
-Get DataContainer by emd5:
- <input type="text" size="50" maxlength="1000" name="dcid">
-<input type="hidden" name="lastkmidindex" value="-1">
-<input type="submit" name="submitbutton" value="GO">
-</form>
-<hr>
-<h2>Registered KnowledgeManagers:</h2>
-%s
-<hr>
-<h2>Registered DataContainers:</h2>
-%s
-<hr>
-"""
 # Maximum number of DCs to store in cache:
 CACHE_SIZE = 50
 # Timeout for cached DCs in seconds:
@@ -203,6 +183,7 @@ class KnowledgeManager(Singleton):
         self._server = None
         self._server_id = uuid1()
         self.restoreKnowledge()
+        self.web_interface = WebInterface(self, True)
 
     def __del__(self):
         """
@@ -311,7 +292,7 @@ class KnowledgeManager(Singleton):
         return self._server_id.urn
 
     def startServer(self, host = '127.0.0.1', port = 8000,
-                    provide_web_frontend = True):
+                    provide_web_frontend = False):
         """
         Starts the HTTP server. When the server was running already,
         it is restartet with the new parameters.
@@ -321,18 +302,17 @@ class KnowledgeManager(Singleton):
         host -- full qualified domain name or IP address under which
                 server can be contacted via HTTP, default: '127.0.0.1'
         port -- port of HTTP server (integer), default: 8000
-        provide_web_frontend -- whether to provide web frontend
+        provide_web_frontend -- whether to provide web frontend, default: False
         """
         logger = self._logger
         if self.isServerRunning():
             logger.warn("Server is running at host %s, port %d already. \
 Stopping server...", self._http_host, self._http_port)
             self.stopServer()
-        self._provide_web_frontend = provide_web_frontend
         self._http_host = host
         self._http_port = port
         self._http_dir = tempfile.mkdtemp(prefix = 'pyphant-knowledgemanager')
-        self._server = _HTTPServer((host, port), _HTTPRequestHandler)
+        self._server = ThreadedHTTPServer((host, port), KMHTTPRequestHandler)
         class _HTTPServerThread(threading.Thread):
             def run(other):
                 self._server.start()
@@ -340,6 +320,7 @@ Stopping server...", self._http_host, self._http_port)
         self._http_server_thread.start()
         self._logger.debug("Started HTTP server. Host: %s, port: %d, \
 temp dir: %s", host, port, self._http_dir)
+        self.web_interface.disabled = not provide_web_frontend
 
     def stopServer(self):
         """
@@ -347,6 +328,7 @@ temp dir: %s", host, port, self._http_dir)
         """
         logger = self._logger
         if self.isServerRunning():
+            self.web_interface.disabled = True
             self._server.stop_server = True
             # do fake request
             try:
@@ -410,7 +392,7 @@ running.")
             answer = urllib.urlopen(km_url + HTTP_REQUEST_KM_ID_PATH, post_data)
             logger.debug("Info from HTTP answer: %s", answer.info())
             htmltext = answer.read()
-            parser = _HTMLParser()
+            parser = KMHTMLParser()
             parser.feed(htmltext)
             km_id = parser.headitems['pyphant']['kmid'].strip()
             answer.close()
@@ -487,7 +469,7 @@ running.")
         logger = self._logger
         # add this KM to query
         query_dict['lastkmidindex'] += 1
-        query_dict['kmid%d'%(query_dict['lastkmidindex'], )] =\
+        query_dict['kmid%d' % (query_dict['lastkmidindex'], )] =\
             self.getServerId()
         # ask every remote KnowledgeManager for id
         logger.debug("Requesting knowledge managers for DC id '%s'..."\
@@ -505,7 +487,7 @@ URL '%s'...", km_id, km_url)
                                             data)
                     code = int(answer.headers.dict['code'])
                     if code < 400:
-                        parser = _HTMLParser()
+                        parser = KMHTMLParser()
                         htmltext = answer.read()
                         parser.feed(htmltext)
                         dc_url = parser.headitems['pyphant']['hdf5url'].strip()
@@ -514,7 +496,7 @@ URL '%s'...", km_id, km_url)
                         break
                     elif code == 404:
                         # update query_dict:
-                        parser = _HTMLParser()
+                        parser = KMHTMLParser()
                         htmltext = answer.read()
                         parser.feed(htmltext)
                         query_dict.clear()
@@ -634,7 +616,7 @@ cannot be read from file '%s'." % (dc_id, localfilename), excep)
                 raise KnowledgeManagerException("DC ID '%s' is unknown."\
                                                     %(dc_id,))
             filename = getFilenameFromDcId(dc_id)
-            savedto, headers = urllib.urlretrieve(dc_url, filename)
+            urllib.urlretrieve(dc_url, filename)
             self.registerH5(filename)
             dc = self.H5FileHandlers[filename].loadDataContainer(dc_id)
         else:
@@ -643,13 +625,12 @@ cannot be read from file '%s'." % (dc_id, localfilename), excep)
         return dc
 
 
-class _HTTPRequestHandler(SimpleHTTPRequestHandler):
+class KMHTTPRequestHandler(SimpleHTTPRequestHandler):
     """
     Helper class for KnowledgeManager that handles HTTP requests.
     """
-    _knowledge_manager = KnowledgeManager.getInstance()
+    _km = KnowledgeManager.getInstance()
     _logger = logging.getLogger("pyphant")
-
     def send_response(self, code, message = None):
         """
         Sends HTTP status code and an optional message via HTTP headers.
@@ -685,7 +666,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
         else:
             code = 400
             message = "Unknown request path '%s'." % (self.path, )
-            httpanswer = _HTTPAnswer(code, message)
+            httpanswer = HTTPAnswer(code, message)
         httpanswer.sendTo(self)
 
     def _do_POST_request_km_id(self):
@@ -693,7 +674,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
         Returns the KnowledgeManager ID via HTTP in the HTML head as
         "<pyphant kmid = '...'>".
         """
-        km = _HTTPRequestHandler._knowledge_manager
+        km = KMHTTPRequestHandler._km
         if self.headers.has_key('content-length'):
             length = int( self.headers['content-length'] )
             query = self.rfile.read(length)
@@ -710,9 +691,7 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
                 km.registerKnowledgeManager(remote_host, int(remote_port),
                                             False)
         self._logger.debug("Returning ID '%s'...", km.getServerId())
-        return _HTTPAnswer(200, None, {}, 'text/html',
-                           {'pyphant':{'kmid':km.getServerId()}},
-                           "Server ID is: %s" % (km.getServerId(), ))
+        return km.web_interface.get_kmid(km.getServerId())
 
     def _do_POST_request_dc_url(self):
         """
@@ -729,47 +708,21 @@ class _HTTPRequestHandler(SimpleHTTPRequestHandler):
             query_dict['lastkmidindex'] = int(query_dict['lastkmidindex'])
             self._logger.debug("Query dict: %s", str(query_dict))
             try:
-                km = _HTTPRequestHandler._knowledge_manager
+                km = KMHTTPRequestHandler._km
                 redirect_url = km._getDataContainerURL(query_dict)
                 if redirect_url != None:
                     self._logger.debug("Returning URL '%s'...", redirect_url)
-                    httpanswer\
-                        = _HTTPAnswer(201,
-                                      None,
-                                      {'location':redirect_url},
-                                      'text/html',
-                                      {'pyphant':{'hdf5url':redirect_url},
-                                       'title':"DC ID '%s'"\
-                                               % (query_dict['dcid'], )},
-                                      "Download DataContainer with ID '%s' as \
-<a href=\"%s\">HDF5</a>" % (query_dict['dcid'], redirect_url))
+                    httpanswer = km.web_interface.get_kmurl(redirect_url,
+                                                            query_dict['dcid'])
                 else:
                     self._logger.debug("Returning Error Code 404: \
 DataContainer ID '%s' not found.", query_dict['dcid'])
-                    message = "DataContainer ID '%s' not found. Returning \
-updated query in HTML head." % (query_dict['dcid'], )
-                    htmlheaders = {'pyphant':dict(query_dict)}
-                    htmlheaders['pyphant']['lastkmidindex']\
-                        = str(htmlheaders['pyphant']['lastkmidindex'])
-                    self._logger.debug('Returning html header: %s',
-                                       str(htmlheaders))
-                    htmlbody = "DataContainer ID '%s' not found."\
-                               % (query_dict['dcid'], )
-                    httpanswer = _HTTPAnswer(404,
-                                             message,
-                                             {},
-                                             'text/html',
-                                             htmlheaders,
-                                             htmlbody,
-                                             False)
-            except Exception:
-                self._logger.warn("Catched exception: %s",
-                                  traceback.format_exc())
-                httpanswer = _HTTPAnswer(500,
-                                         "Internal server error occured during \
-lookup of DataContainer with ID '%s'" % (query_dict['dcid'], ))
+                    httpanswer = km.web_interface.get_updatequery(query_dict)
+            except Exception, excep:
+                self._logger.warn("Caught exception: %s", excep.message)
+                httpanswer = km.web_interface.get_internalerror(excep)
         else:
-            httpanswer = _HTTPAnswer(400, "Cannot interpret query.")
+            httpanswer = HTTPAnswer(400, "Cannot interpret query.")
         return httpanswer
 
     def do_GET(self):
@@ -778,39 +731,9 @@ lookup of DataContainer with ID '%s'" % (query_dict['dcid'], ))
         if the given request path was located outside the servers tmp directory.
         """
         log = self._logger
-        km = _HTTPRequestHandler._knowledge_manager
+        km = KMHTTPRequestHandler._km
         if self.path == '/' or self.path.startswith('/../'):
-            if km._provide_web_frontend:
-                rKMshtmldict = _HTMLDict("URL", "ID")
-                for id, url in km._remoteKMs.iteritems():
-                    rKMshtmldict[_HTMLLink(url, url, "_blank")] = id
-                shtmldict = _HTMLDict("Longname", "Summary")
-                summarydict = km.getSummary()
-                for summary in summarydict.values():
-                    shtmldict[_HTMLLink("NOTIMPLEMENTED",
-                                        summary['longname'],
-                                        "_blank")] = summary
-                htmlbody = HTML_BODY_INDEX % (km._getServerURL(),
-                                              HTTP_REQUEST_DC_URL_PATH,
-                                              rKMshtmldict.getHTML(),
-                                              shtmldict.getHTML())
-                httpanswer = _HTTPAnswer(200,
-                                         None,
-                                         {},
-                                         'text/html',
-                                         {'title':'Pyphant Web Frontend at %s'\
-                                                  %(km._getServerURL(), )},
-                                         htmlbody)
-                httpanswer.sendTo(self)
-            else:
-                httpanswer = _HTTPAnswer(200,
-                                         None,
-                                         {},
-                                         'text/html',
-                                         {},
-                                         'The web frontend has not been \
-started!')
-                httpanswer.sendTo(self)
+            km.web_interface.get_frontpage().sendTo(self)
         else:
             f = self.send_head()
             if f:
@@ -827,7 +750,7 @@ started!')
         Sends HTTP headers for HDF5 file requests.
         """
         log = self._logger
-        km = _HTTPRequestHandler._knowledge_manager
+        km = KMHTTPRequestHandler._km
         source_dir = km._http_dir # this is intended
         log.debug("HTTP GET request: Reading files from directory '%s'..",
                   source_dir)
@@ -848,227 +771,6 @@ started!')
         self.end_headers()
         return f
 
-
-class _HTTPServer(ThreadingMixIn, HTTPServer):
-    """
-    Threaded HTTP Server for the KnowledgeManager.
-    """
-    stop_server = False
-    _logger = logging.getLogger("pyphant")
-
-    def start(self):
-        """
-        Servers forever until stop_server is set to True.
-        """
-        while not self.stop_server:
-            self.handle_request()
-        self._logger.info("Stopped HTTP server.")
-
-
-class _HTMLDict(dict):
-    """
-    Helper class for KnowledgeManager. Behaves like a dictionary but provides
-    HTML output via the getHTML method.
-    """
-    def __init__(self, keylabel, valuelabel):
-        """
-        Creates an empty dictionary.
-        keylabel -- label for the keys
-        valuelabel -- label for the values
-        """
-        self.keylabel = keylabel
-        self.valuelabel = valuelabel
-
-    def getHTML(self, printkeys = True):
-        """
-        Returns HTML code representing the dictionary as a HTML table. If the
-        dictionary contains instances that provide a getHTML method themselves,
-        then it is used instead of str().
-        printkeys -- whether to generate a column for the keys as well
-        """
-        if printkeys:
-            output = '<table border="2" width="100%%"><tr><th>%s</th>\
-<th>%s</th></tr>\n'%(self.keylabel, self.valuelabel)
-        else:
-            output = '<table border="2" width="100%%"><tr><th>%s</th>\
-</tr>\n'%(self.valuelabel, )
-        for k, v in self.items():
-            if hasattr(k, 'getHTML'):
-                kout = k.getHTML()
-            else:
-                kout = str(k)
-            if hasattr(v, 'getHTML'):
-                vout = v.getHTML()
-            else:
-                vout = str(v)
-            if printkeys:
-                output += '<tr width="100%%"><td>%s</td><td>%s</td></tr>\n'\
-                          % (kout, vout)
-            else:
-                output += '<tr width="100%%"><td>%s</td></tr>\n' % (vout, )
-        output += '</table>\n'
-        return output
-
-    def setDict(self, d):
-        """
-        Copies the content of the given dictionary to this one.
-        All keys are deleted first.
-        """
-        self.clear()
-        for k in d:
-            self[k] = d[k]
-
-
-class _HTMLParser(HTMLParser.HTMLParser):
-    """
-    Helper class for the KnowledgeManager. This class provides HTML parsing for
-    KnowledgeManager HTML anwsers.
-    """
-    def __init__(self):
-        """
-        Initializes the parser.
-        """
-        HTMLParser.HTMLParser.__init__(self)
-        self._isinhead = False
-        self._isinbody = False
-        self.headitems = {} # tag : attributes
-        self.bodytext = ''
-
-    def handle_starttag(self, tag, attrs):
-        """
-        Handles the beginning of an HTML tag.
-        """
-        if tag == 'head':
-            self._isinhead = True
-        elif tag == 'body':
-            self._isinbody = True
-        elif self._isinhead:
-            attrsdict = {}
-            for pairs in attrs:
-                attrsdict[pairs[0]] = pairs[1]
-            self.headitems[tag] = attrsdict
-
-    def handle_startendtag(self, tag, attrs):
-        """
-        Handles XHTML style tags.
-        """
-        if self._isinhead:
-            attrsdict = {}
-            for pairs in attrs:
-                attrsdict[pairs[0]] = pairs[1]
-            self.headitems[tag] = attrsdict
-
-    def handle_endtag(self, tag):
-        """
-        Handles the end of an HTML tag.
-        """
-        if tag == 'head':
-            self._isinhead = False
-        elif tag == 'body':
-            self._isinbody = False
-
-    def handle_data(self, data):
-        """
-        Handles data between tags
-        """
-        if self._isinbody:
-            self.bodytext += data
-
-
-class _HTTPAnswer():
-    """
-    Helper class for the KnowledgeManager. This class provides the possibility
-    to send HTML answers via HTTP.
-    """
-    def __init__(self,
-                 code,
-                 message = None,
-                 httpheaders = {},
-                 contenttype = 'text/html',
-                 htmlheaders = {},
-                 htmlbody = '',
-                 senddefaulterrors = True):
-        """
-        Initializes the HTTP answer.
-        code -- HTTP status code
-        message -- human readable reason for the HTTP status code
-        httpheaders -- dictionary of HTTP headers
-        contenttype -- self explanatory
-        htmlheaders -- dictionary of HTML headers, e.g.
-                       {'pyphant':{'test':'Testing'}} translates to
-                       '<pyphant test = "Testing">'
-        htmlbody -- HTML body text
-        senddefaulterrors -- if set to True and code >= 400, all arguments
-                             except code and message are ignored and a standard
-                             error message is sent. Set this to false if you
-                             want to provide your own HTML body instead.
-        """
-        self._code = code
-        self._message = message
-        self._httpheaders = httpheaders
-        self._htmlheaders = htmlheaders
-        self._htmlbody = htmlbody
-        self._httpheaders['Content-type'] = contenttype
-        self._senddefaulterrors = senddefaulterrors
-
-    def sendTo(self, handler):
-        """
-        Sends the HTML answer via HTTP through a given HTTP handler.
-        handler -- HTTP handler
-        """
-        _logger = logging.getLogger("pyphant")
-        if self._code >= 400 and self._senddefaulterrors:
-            #send error response
-            handler.send_error(self._code, self._message)
-        else:
-            #send HTTP headers...
-            handler.send_response(self._code, self._message)
-            for key, value in self._httpheaders.items():
-                handler.send_header(key, value)
-                _logger.debug("key: %s, value: %s\n", key, value)
-            handler.end_headers()
-            #send HTML headers...
-            handler.wfile.write('<html>\n<head>\n')
-            for tag, attrs in self._htmlheaders.items():
-                if isinstance(attrs, DictType):
-                    handler.wfile.write('<%s '%(tag, ))
-                    for key, value in attrs.items():
-                        handler.wfile.write('%s="%s" '% (key, value))
-                    handler.wfile.write('>\n')
-                else:
-                    handler.wfile.write('<%s>%s</%s>\n'%(tag, attrs, tag))
-            handler.wfile.write('</head>\n')
-            #send HTML body...
-            handler.wfile.write('<body>\n')
-            handler.wfile.write(self._htmlbody + '\n')
-            handler.wfile.write('</body></html>\n')
-            handler.wfile.write('\n')
-
-
-class _HTMLLink():
-    """
-    Helper class for the KnowledgeManager. This class provides HTML code for
-    hyperlinks.
-    """
-    def __init__(self, url, linktext, target = None):
-        """
-        url -- self explanatory
-        linktext -- text the user sees to click on
-        target -- link target, e.g. '_blank'
-        """
-        self._url = url
-        self._linktext = linktext
-        self._target = target
-
-    def getHTML(self):
-        """
-        Returns the hyperlink as HTML code.
-        """
-        targetstring = ""
-        if self._target != None:
-            targetstring = ' target="%s"'%(self._target, )
-        return '<a href="%s"%s>%s</a>'\
-               % (self._url, targetstring, self._linktext)
 
 def _enableLogging():
     """
