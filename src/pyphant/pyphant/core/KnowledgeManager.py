@@ -732,8 +732,9 @@ DataContainer ID '%s' not found.", query_dict['dcid'])
         """
         log = self._logger
         km = KMHTTPRequestHandler._km
-        if self.path == '/' or self.path.startswith('/../'):
-            km.web_interface.get_frontpage().sendTo(self)
+        if self.path == '/' or self.path.startswith('/../') or \
+                self.path.startswith('/?'):
+            km.web_interface.get_frontpage(self.path).sendTo(self)
         else:
             f = self.send_head()
             if f:

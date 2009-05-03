@@ -44,7 +44,8 @@ from BaseHTTPServer import HTTPServer
 import HTMLParser
 import logging
 from types import DictType
-
+from cgi import parse_qs
+ALLSTRING = "*****ALL*****"
 
 class HTTPAnswer():
     """
@@ -193,6 +194,75 @@ class HTMLLink():
                % (self._url, targetstring, self._linktext)
 
 
+class HTMLDropdown(object):
+    def __init__(self, name, options, select = None):
+        self.name = name
+        self.options = options
+        self.select = select
+
+    def getHTML(self):
+        htmlopt = '    <option value="%s"%s>%s</option>\n'
+        html = '<select name="%s" size="1">\n' % (self.name, )
+        for item in self.options:
+            try:
+                value, label = item
+            except ValueError:
+                value = item
+                label = item
+            selected = ""
+            if value == self.select:
+                selected = " selected"
+            html += (htmlopt % (value, selected, label))
+        html += '</select>\n'
+        return html
+
+
+class HTMLDnldForm(object):
+    def __init__(self, dc_id):
+        self.dc_id = dc_id
+        self.html = \
+"""
+<form action="/request_dc_url" method="post">
+    <input type="hidden" name="lastkmidindex" value="-1">
+    <input type="hidden" name="dcid" value="%s">
+    <input type="hidden" name="mode" value="enduser">
+    <input type="submit" value=" Download ">
+</form>
+"""
+
+    def getHTML(self):
+        return self.html % (self.dc_id, )
+
+
+class HTMLTable(object):
+    def __init__(self, rows, border = 1, headings = True):
+        self.rows = rows
+        self.border = border
+        self.headings = headings
+
+    def getHTML(self):
+        if self.rows == []:
+            return ""
+        html = '<table border="%d">\n' % (self.border, )
+        rowcount = 0
+        for row in self.rows:
+            html += '<tr>\n'
+            tag = 'td'
+            if rowcount == 0 and self.headings:
+                tag = 'th'
+            for cell in row:
+                html += '<%s>' % (tag, )
+                if hasattr(cell, 'getHTML'):
+                    html += cell.getHTML()
+                else:
+                    html += str(cell)
+                html += '</%s>\n' % (tag, )
+            html += '</tr>\n'
+            rowcount += 1
+        html += '</table>\n'
+        return html
+
+
 class WebInterface(object):
     """
     Provides the web frontend and backend for the KM web interface.
@@ -208,10 +278,41 @@ class WebInterface(object):
         self.title['frontpage'] = "Pyphant Web Interface"
         self.html = {}
         self.html['disabled'] = "The Pyphant web interface is disabled."
-        self.html['frontpage'] = "<h1>Pyphant Web Interface</h1>"
+        self.html['frontpage'] = """<h1>Pyphant Web Interface</h1>
+<h2>Registered KnowledgeManagers</h2>
+%s
+<hr>
+<h2>Find DataContainers</h2>
+%s
+<hr>
+<h2>Result</h2>
+%s
+<hr>"""
         self.html['kmurl'] = "Download DataContainer with ID '%s' as \
-<a href=\"%s\">HDF5</a>"
+<a href=\"%s\">HDF5</a><hr>Use the 'back' funtion of your browser to return."
         self.html['kmid'] = "KnowledgeManager server ID is: '%s'"
+        self.html['findform'] = """<form action="/" method="get">
+    %s
+    <br>
+    %s
+    <br>
+    %s
+    <br>
+    <input type="submit" value=" Find! ">
+</form>"""
+
+    def cmplower(self, left, right):
+        return cmp(left.lower(), right.lower())
+
+    def extract_values(self, dictionary, key):
+        values = set()
+        for subdict in dictionary.itervalues():
+            try:
+                value = subdict[key]
+                values.add(value)
+            except KeyError:
+                pass
+        return list(values)
 
     def get_disabled(self):
         """
@@ -221,28 +322,82 @@ class WebInterface(object):
                           htmlheaders = {'title':self.title['frontpage']},
                           htmlbody = self.html['disabled'])
 
-    def get_frontpage(self):
+    def get_frontpage(self, path):
         """
         Returns an HTTP answer for the front page.
+        path -- GET request path
         """
         if self.disabled:
             return self.get_disabled()
-        #TODO:
+        findrows = [['longname', 'shortname', 'user', 'host']]
+        if path.startswith('/?'):
+            query = parse_qs(path[2:])
+        else:
+            query = {}
+            for key in findrows[0]:
+                query[key] = [ALLSTRING]
+            query['sortby'] = [findrows[0][0]]
+            query['revert'] = ['False']
+        #Registered KMs
+        kmrows = [['URL', 'ID']]
+        for kmid, kmurl in self.km._remoteKMs.iteritems():
+            kmrows.append([HTMLLink(kmurl, kmurl, "_blank"), kmid])
+        kmtable = HTMLTable(kmrows)
+        htmlregkm = kmtable.getHTML()
+        #Find DCs
+        summarydict = self.km.getSummary()
+        tmprow = [self.extract_values(summarydict, key) for key in findrows[0]]
+        dropdownrow = []
+        for index, unsorted in enumerate(tmprow):
+            unsorted.sort(self.cmplower)
+            unsorted.insert(0, ALLSTRING)
+            select = query[findrows[0][index]][0]
+            dropdownrow.append(HTMLDropdown(findrows[0][index],
+                                            unsorted, select))
+        findrows.append(dropdownrow)
+        findtable = HTMLTable(findrows)
+        htmlfindform = self.html['findform'] % (findtable.getHTML(),
+                                                "Date: Not implemented.",
+                                                "Type: Not implemented.")
+        #Search Result
+        resrows = [['data', 'type', 'longname', 'shortname',
+                    'user', 'host', 'date', 'hash']]
+        for summary in summarydict.itervalues():
+            add = True
+            for key in findrows[0]:
+                if query[key][0] != ALLSTRING:
+                    add = add and summary[key] == query[key][0]
+            if add:
+                row = [HTMLDnldForm(summary['id']),
+                       summary['type'],
+                       summary['longname'],
+                       summary['shortname'],
+                       summary['user'],
+                       summary['host'],
+                       summary['date'],
+                       summary['hash']]
+                resrows.append(row)
+        htmlresult = HTMLTable(resrows).getHTML()
+        html = self.html['frontpage'] % (htmlregkm, htmlfindform, htmlresult)
         return HTTPAnswer(200,
                           htmlheaders = {'title':self.title['frontpage']},
-                          htmlbody = self.html['frontpage'])
+                          htmlbody = html)
 
-    def get_kmurl(self, url, dc_id):
+    def get_kmurl(self, url, dc_id, enduser = False):
         """
         Returns an HTTP answer for DC url requests.
         url -- URL where to download the DC
         dc_id -- emd5 of the DC
+        enduser -- Whether the answer is to be send to an end user.
+                   In that case the answer is a redirect to 'url'.
         """
-        if self.disabled:
-            htmlbody = ""
+        if enduser:
+            code = 303
+            htmlbody = self.html['kmurl'] % (dc_id, url)
         else:
-            htmlbody =  self.html['kmurl'] % (dc_id, url)
-        return HTTPAnswer(201,
+            code = 201
+            htmlbody = self.html['kmurl'] % (dc_id, url)
+        return HTTPAnswer(code,
                           None,
                           {'location':url},
                           'text/html',
