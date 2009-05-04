@@ -62,7 +62,7 @@ from pyphant.core.WebInterface import (HTTPAnswer,
 WAITING_SECONDS_HTTP_SERVER_STOP = 5
 HTTP_REQUEST_DC_URL_PATH = "/request_dc_url"
 HTTP_REQUEST_KM_ID_PATH = "/request_km_id"
-HTTP_REQUEST_DC_SUMMARY_PATH = "/request_dc_summary"
+HTTP_REQUEST_DC_DETAILS_PATH = "/request_dc_details?dcid="
 # Maximum number of DCs to store in cache:
 CACHE_SIZE = 50
 # Timeout for cached DCs in seconds:
@@ -735,6 +735,8 @@ DataContainer ID '%s' not found.", query_dict['dcid'])
         if self.path == '/' or self.path.startswith('/../') or \
                 self.path.startswith('/?'):
             km.web_interface.get_frontpage(self.path).sendTo(self)
+        elif self.path.startswith(HTTP_REQUEST_DC_DETAILS_PATH):
+            km.web_interface.get_details(self.path).sendTo(self)
         else:
             f = self.send_head()
             if f:
