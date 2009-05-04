@@ -120,11 +120,15 @@ class column2Field:
             return numpy.NaN
 
     def __call__(self,longname,column):
-        if type(column[0])==type((0,)):
-            if len(column[0])==2:
+        tupples = filter(lambda c: type(c)==type((0,)),column)
+        hasTupples = len(tupples)>0
+        if hasTupples:
+            tuppleLength = max(map(len,tupples))
+        if hasTupples:
+            if tuppleLength==2:
                 indexDatum = 0
                 indexError = 1
-                if isPhysicalQuantity(column[0][1]) and column[0][1].isCompatible('s'):
+                if isPhysicalQuantity(tupples[0][1]) and tupples[0][1].isCompatible('s'):
                     shortname = 't_%i' % self.Nt
                     self.Nt += 1
                 else:
@@ -133,8 +137,8 @@ class column2Field:
                 for i,element in enumerate(column):
                     if not type(element)==type((0,)):
                         column[i]=(numpy.NaN,None)
-            elif len(column[0])==3:
-                shortname = column[0][0]
+            elif tuppleLength==3:
+                shortname = tupples[0][0]
                 indexDatum = 1
                 indexError = 2
                 for i,element in enumerate(column):
