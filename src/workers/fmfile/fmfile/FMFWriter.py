@@ -174,3 +174,7 @@ class FMFWriter(object):
         frame = TextFrame(self.text)
         frame.Show()
         app.MainLoop()
+
+    def OnExit(self):
+        self.ExitMainLoop()
+        wx.Exit()
