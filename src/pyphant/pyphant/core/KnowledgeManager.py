@@ -257,7 +257,11 @@ class KnowledgeManager(Singleton):
                 if REHDF5.match(fname.lower()) != None:
                     if dirname.endswith('/'):
                         dirname = dirname[:-1]
-                    self.registerH5(dirname + '/' + fname)
+                    filename = dirname + '/' + fname
+                    try:
+                        self.registerH5(filename)
+                    except Exception:
+                        self._logger.warn("Could not import '%s'.", filename)
         os.path.walk(getPyphantPath(KM_PATH), walkfiles, None)
 
     def getSummary(self, dcId = None):
