@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2008, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""
+u"""Provides unittest classes TestMRA and TestMRADiscontinuousDiscretisation.
 """
 
 __id__ = "$Id$"
@@ -37,32 +37,39 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-import wx, os.path
 
-class FileButton(wx.Button):
-    def __init__(self, parent, param, validator):
-        self.path=os.path.abspath(param.value)
-        self.dir, self.filename=os.path.split(self.path)
-        wx.Button.__init__(self, parent, label=self.filename, validator=validator)
-        self.Bind(wx.EVT_BUTTON, self.selectFile)
+import sys,copy
+import unittest
 
-    def selectFile(self, event):
-        dir = filename = wx.EmptyString
-        if os.path.exists(self.dir):
-            dir = self.dir
-            if os.path.exists(os.path.join(self.dir, self.filename)):
-                filename = self.filename
-        dlg=wx.FileDialog(self, message="Choose a file", defaultDir=dir,
-                          defaultFile=filename, style=wx.OPEN)
-        if dlg.ShowModal() == wx.ID_OK:
-            self.path=os.path.abspath(dlg.GetPath())
-            self.dir, self.filename=os.path.split(self.path)
-            self.SetLabel(self.filename)
+import pkg_resources
+pkg_resources.require("pyphant")
+pkg_resources.require("pyphant.tools")
 
-    def getValue(self):
-        return self.path
+import os.path
 
-    def SetValue(self, path):
-        self.path=path
-        self.dir, self.filename=os.path.split(self.path)
-        self.SetLabel(self.filename)
+import numpy, scipy, scipy.optimize
+import pyphant.quantities.PhysicalQuantities as pq
+from pyphant.core import DataContainer as DC
+
+
+class TestEmd5Source(unittest.TestCase):
+    """Sets up a random FieldContainer and ragisters it with the
+    knowledge manager."""
+    def setUp(self):
+        self.V = DC.FieldContainer(numpy.random.randn(10,10))
+        self.V.seal()
+        from pyphant.core import KnowledgeManager
+        KnowledgeManager.KnowledgeManager.getInstance().registerDataContainer(self.V)
+
+    def testEmd5Source(self):
+        """Retrieves the previously registered FieldContainer via the
+        Emd5Source and checks for equality."""
+        #Predict result
+        from tools import Emd5Src
+        s = Emd5Src.Emd5Src()
+        s.paramDc.value = self.V.id
+        result = s.plugLoad.getResult()
+        self.assertEqual(result, self.V)
+
+if __name__ == '__main__':
+    unittest.main()

@@ -57,7 +57,7 @@ __id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 
-import scipy, copy, md5, threading, numpy, StringIO
+import scipy, copy, hashlib, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse
 from pyphant.quantities.PhysicalQuantities import (isPhysicalQuantity, PhysicalQuantity,_prefixes)
 from DataContainer import DataContainer, enc, _logger
@@ -71,7 +71,7 @@ PREFIXES = copy.deepcopy(PREFIXES_METER)
 map(lambda r: PREFIXES.remove(r),[('d',  1.e-1),('c',  1.e-2)])
 
 class IndexMarker(object):
-    hash=md5.new().hexdigest()
+    hash = hashlib.md5().hexdigest()
     shortname=u"i"
     longname=u"index"
     def seal(self, id=None):
@@ -270,7 +270,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         return res
 
     def generateHash(self):
-        m = md5.new()
+        m = hashlib.md5()
         m.update(str(self.data.tolist()))
         m.update(str(self.unit))
         if self.error!=None:

@@ -25,5 +25,5 @@ setuptools.setup(
     entry_points = """
     [pyphant.workers]
     myeentry = tools
-    """)
-    #test_suite='OSC.tests')
+    """,
+    test_suite='tools.tests')
