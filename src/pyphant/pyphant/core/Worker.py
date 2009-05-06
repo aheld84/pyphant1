@@ -118,7 +118,8 @@ class Worker(object):
     def initPlugs(self, plugs):
         self._plugs={}
         for (name, func) in plugs:
-            p = Connectors.CalculatingPlug(getattr(self, func.func_name), name, func.returnType)
+            p = Connectors.CalculatingPlug(getattr(self, func.func_name),
+                                           name, func.returnType)
             setattr(self, 'plug'+self.upperFirstLetter(name), p)
             self._plugs[name]=p
 
@@ -141,10 +142,10 @@ class Worker(object):
     def initParams(self, params):
         self._params={}
         self._order=[]
-        self.addParam('name',Param.ParamFactory.createParam(self,'name','Name',
-                                                            self.__class__.__name__))
+        self.addParam('name',Param.createParam(self,'name','Name',
+                                               self.__class__.__name__))
         for (name, displayName, value, subtype) in params:
-            p=Param.ParamFactory.createParam(self, name, displayName, value, subtype)
+            p=Param.createParam(self, name, displayName, value, subtype)
             setattr(self, 'param'+self.upperFirstLetter(name), p)
             self.addParam(name, p)
 

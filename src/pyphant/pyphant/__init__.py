@@ -29,6 +29,10 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+u"""
+This is the main pyphant package.
+"""
+
 __id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"

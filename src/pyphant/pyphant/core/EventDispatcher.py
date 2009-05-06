@@ -51,14 +51,15 @@ class EventDispatcher:
         if eventType:
             self._listeners[eventType].remove( listener )
         else:
-            for listeners in self._listeners.value():
+            for listeners in self._listeners.values():
                 try:
                     listeners.remove(listener)
-                except KeyError, e:
+                except KeyError:
                     pass
 
     def dispatchEvent(self, event):
-        queues=filter(lambda eventType: isinstance(event, eventType), self._listeners.keys())
+        queues = filter(lambda eventType: isinstance(event, eventType),
+                        self._listeners.keys())
         for key in queues:
             #if key in self._listeners:
             for listener in self._listeners[key]:
