@@ -39,13 +39,12 @@ __version__ = "$Revision$"
 
 import Connectors, EventDispatcher
 
-class ParamFactory(object):
-    @classmethod
-    def createParam(cls, worker, paramName, displayName, values, subtype=None):
-        if isinstance(values, list):
-            return SelectionParam(worker, paramName, displayName, values, subtype)
-        else:
-            return Param(worker, paramName, displayName, values, subtype)
+def createParam(worker, paramName, displayName, values, subtype=None):
+    if isinstance(values, list):
+        return SelectionParam(worker, paramName, displayName,
+                              values, subtype)
+    else:
+        return Param(worker, paramName, displayName, values, subtype)
 
 
 class ParamChangeRequested(object):
@@ -62,8 +61,10 @@ class ParamChanged(object):
 
 class VetoParamChange(ValueError):
     def __init__(self, paramChangeEvent):
-        ValueError.__init__(self, "Veto: change %s from %s to %s." % 
-                            (paramChangeEvent.param.name, paramChangeEvent.oldValue, paramChangeEvent.newValue))
+        ValueError.__init__(self, "Veto: change %s from %s to %s." %
+                            (paramChangeEvent.param.name,
+                             paramChangeEvent.oldValue,
+                             paramChangeEvent.newValue))
         self.paramChangeEvent = paramChangeEvent
 
 class Param(Connectors.Socket):
@@ -74,27 +75,30 @@ class Param(Connectors.Socket):
             return self._value
 
     def overrideValue(self, value):
-        self._value=value
+        self._value = value
 
     def __setValue(self, value):
-        oldValue=self.value
-        if oldValue==value: return
-        self._eventDispatcher.dispatchEvent(ParamChangeRequested(self, oldValue, value))
-#        if self._validator: ##reintroduce with appropriate subtype validator lookup
-#            self._validator(oldValue, value)
+        oldValue = self.value
+        if oldValue == value:
+            return
+        self._eventDispatcher.dispatchEvent(
+            ParamChangeRequested(self, oldValue, value)
+            )
         self._value = value
-        self._eventDispatcher.dispatchEvent(ParamChanged(self, oldValue, value))
+        self._eventDispatcher.dispatchEvent(
+            ParamChanged(self, oldValue, value)
+            )
         self.invalidate()
 
-    value=property(__getValue, __setValue)
+    value = property(__getValue, __setValue)
 
     def __init__(self, worker, name, displayName, value, subtype=None):
         Connectors.Socket.__init__(self, worker, name, type(value))
-        self.isExternal=False
-        self.valueType=type(value)
-        self.displayName=displayName
-        self._value=value
-        self.subtype=subtype
+        self.isExternal = False
+        self.valueType = type(value)
+        self.displayName = displayName
+        self._value = value
+        self.subtype = subtype
         self._eventDispatcher = EventDispatcher.EventDispatcher()
 
     def registerListener(self, vetoer, eventType):
@@ -105,16 +109,17 @@ class Param(Connectors.Socket):
 
     #pickle
     def __getstate__(self):
-        pdict=copy.copy(self.__dict__)
-        pdict['_eventDispatcher']=EventDispatcher.EventDispatcher()
+        import copy
+        pdict = copy.copy(self.__dict__)
+        pdict['_eventDispatcher'] = EventDispatcher.EventDispatcher()
         return pdict
 
 
 class SelectionParam(Param):
     def __init__(self, worker, name, displayName, values, subtype=None):
         Param.__init__(self, worker, name, displayName, values[0], subtype)
-        self.valueType=type(values)
-        self._possibleValues=values
+        self.valueType = type(values)
+        self._possibleValues = values
 
     def getPossibleValues(self):
         return self._possibleValues
@@ -123,15 +128,13 @@ class SelectionParam(Param):
         return self.getPossibleValues()
 
     def setPossibleValues(self, values):
-        self._possibleValues=values
+        self._possibleValues = values
 
     def __setPossibleValues(self, values):
-        oldValues=self.possibleValues
-        if oldValues==values:
+        oldValues = self.possibleValues
+        if oldValues == values:
             return
-#        if self._validator: ##see Param
-#            self._validator(oldValues, values)
         self.setPossibleValues(values)
         self.invalidate()
 
-    possibleValues=property(__getPossibleValues,__setPossibleValues)
+    possibleValues = property(__getPossibleValues, __setPossibleValues)
