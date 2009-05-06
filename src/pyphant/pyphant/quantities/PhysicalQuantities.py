@@ -836,6 +836,12 @@ _addUnit('oz', '28.349523125*g', 'ounce')
 _addUnit('lb', '16*oz', 'pound')
 _addUnit('ton', '2000*lb', 'ton')
 
+# Concentration units
+_help.append('Concentration units:')
+_addUnit('M','mol/m**3','molar concentration')
+_addUnit('mM','0.001*mol/m**3','millimolar')
+_addUnit('muM','10**-6*mol/m**3','micromolar')
+
 # Force units
 _help.append('Force units:')
 
