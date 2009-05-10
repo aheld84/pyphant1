@@ -44,7 +44,10 @@ from BaseHTTPServer import HTTPServer
 import HTMLParser
 import logging
 from types import DictType
-
+from cgi import parse_qs
+import re
+from types import (DictType, ListType)
+ALLSTRING = "*****ALL*****"
 
 class HTTPAnswer():
     """
@@ -193,6 +196,88 @@ class HTMLLink():
                % (self._url, targetstring, self._linktext)
 
 
+class HTMLDropdown(object):
+    def __init__(self, name, options, select = None):
+        self.name = name
+        self.options = options
+        self.select = select
+
+    def getHTML(self):
+        htmlopt = '    <option value="%s"%s>%s</option>\n'
+        html = '<select name="%s" size="1">\n' % (self.name, )
+        for item in self.options:
+            try:
+                value, label = item
+            except ValueError:
+                value = item
+                label = item
+            selected = ""
+            if value == self.select:
+                selected = " selected"
+            html += (htmlopt % (value, selected, label))
+        html += '</select>\n'
+        return html
+
+
+class HTMLDnldForm(object):
+    def __init__(self, dc_id):
+        self.dc_id = dc_id
+        self.html = \
+"""
+<form action="/request_dc_url" method="post">
+    <input type="hidden" name="lastkmidindex" value="-1">
+    <input type="hidden" name="dcid" value="%s">
+    <input type="hidden" name="mode" value="enduser">
+    <input type="submit" value=" Download ">
+</form>
+"""
+
+    def getHTML(self):
+        return self.html % (self.dc_id, )
+
+
+class HTMLTextForm(object):
+    def __init__(self, name, size, maxlength, value):
+        self.name = name
+        self.size = size
+        self.maxlength = maxlength
+        self.value = value
+        self.html = '<input name="%s" type="text" size="%d" \
+maxlength="%d" value="%s">'
+
+    def getHTML(self):
+        return self.html % (self.name, self.size, self.maxlength, self.value)
+
+
+class HTMLTable(object):
+    def __init__(self, rows, border = 1, headings = True):
+        self.rows = rows
+        self.border = border
+        self.headings = headings
+
+    def getHTML(self):
+        if self.rows == []:
+            return ""
+        html = '<table border="%d">\n' % (self.border, )
+        rowcount = 0
+        for row in self.rows:
+            html += '<tr>\n'
+            tag = 'td'
+            if rowcount == 0 and self.headings:
+                tag = 'th'
+            for cell in row:
+                html += '<%s>' % (tag, )
+                if hasattr(cell, 'getHTML'):
+                    html += cell.getHTML()
+                else:
+                    html += str(cell)
+                html += '</%s>\n' % (tag, )
+            html += '</tr>\n'
+            rowcount += 1
+        html += '</table>\n'
+        return html
+
+
 class WebInterface(object):
     """
     Provides the web frontend and backend for the KM web interface.
@@ -204,14 +289,53 @@ class WebInterface(object):
         """
         self.disabled = disabled
         self.km = knowledge_manager
+        self.redt = re.compile(r'(\d{4,4})-(\d\d)-(\d\d)_(\d\d):(\d\d):(\d\d)')
         self.title = {}
         self.title['frontpage'] = "Pyphant Web Interface"
+        self.title['details'] = "Details for DC with ID '%s'"
         self.html = {}
         self.html['disabled'] = "The Pyphant web interface is disabled."
-        self.html['frontpage'] = "<h1>Pyphant Web Interface</h1>"
+        self.html['frontpage'] = """<h1>Pyphant Web Interface</h1>
+Server ID is '%s'
+<hr>
+<h2>Registered KnowledgeManagers</h2>
+%s
+<hr>
+<h2>Find DataContainers</h2>
+%s
+<hr>
+<h2>Search matched %d out of %d DataContainers</h2>
+%s
+<hr>"""
         self.html['kmurl'] = "Download DataContainer with ID '%s' as \
-<a href=\"%s\">HDF5</a>"
+<a href=\"%s\">HDF5</a><hr>Use the 'back' funtion of your browser to return."
         self.html['kmid'] = "KnowledgeManager server ID is: '%s'"
+        self.html['findform'] = """<form action="/" method="get">
+    Specify constraints for "and" search:
+    <br>
+    <br>
+    %s
+    <br>
+    %s
+    <br>
+    <input type="submit" value=" Find! ">
+</form>"""
+        self.html['datedescr'] = 'Specify constraints for the date. All input \
+after YYYY is optional.<br>If any of the fields is left blank, this is \
+interpreted as "no boundary"'
+
+    def cmplower(self, left, right):
+        return cmp(left.lower(), right.lower())
+
+    def extract_values(self, dictionary, key):
+        values = set()
+        for subdict in dictionary.itervalues():
+            try:
+                value = subdict[key]
+                values.add(value)
+            except KeyError:
+                pass
+        return list(values)
 
     def get_disabled(self):
         """
@@ -221,28 +345,187 @@ class WebInterface(object):
                           htmlheaders = {'title':self.title['frontpage']},
                           htmlbody = self.html['disabled'])
 
-    def get_frontpage(self):
+    def get_detailslink(self, dc_id, text):
+        return HTMLLink('/request_dc_details?dcid=%s' % (dc_id, ),
+                        text,
+                        '_blank')
+
+    def get_frontpage(self, path):
         """
         Returns an HTTP answer for the front page.
+        path -- GET request path
         """
         if self.disabled:
             return self.get_disabled()
-        #TODO:
+        findrows = [['type', 'longname', 'shortname', 'user', 'host']]
+        if path.startswith('/?'):
+            query = parse_qs(path[2:])
+        else:
+            query = {}
+        for key in findrows[0]:
+            if not query.has_key(key):
+                query[key] = [ALLSTRING]
+        if not query.has_key('datefrom'):
+            query['datefrom'] = ['']
+        if not query.has_key('dateto'):
+            query['dateto'] = ['']
+        datelimit = [query['datefrom'][0], query['dateto'][0]]
+        completestr = '-01-01_00:00:00'
+        for index, date in enumerate(datelimit):
+            if len(date) in [4, 7, 10, 13, 16]:
+                date += completestr[len(date) - 4:]
+                if index == 0:
+                    query['datefrom'] = [date]
+                else:
+                    query['dateto'] = [date]
+        #Registered KMs
+        if len(self.km._remoteKMs) != 0:
+            kmrows = [['URL', 'ID']]
+            for kmid, kmurl in self.km._remoteKMs.iteritems():
+                kmrows.append([HTMLLink(kmurl, kmurl, "_blank"), kmid])
+            kmtable = HTMLTable(kmrows)
+            htmlregkm = kmtable.getHTML()
+        else:
+            htmlregkm = "None"
+        #Find DCs
+        summarydict = self.km.getSummary()
+        tmprow = [self.extract_values(summarydict, key) for key in findrows[0]]
+        dropdownrow = []
+        for index, unsorted in enumerate(tmprow):
+            unsorted.sort(self.cmplower)
+            unsorted.insert(0, ALLSTRING)
+            select = query[findrows[0][index]][0]
+            dropdownrow.append(HTMLDropdown(findrows[0][index],
+                                            unsorted, select))
+        findrows.append(dropdownrow)
+        findtable = HTMLTable(findrows)
+        daterows = [['date', 'YYYY-MM-DD_hh:mm:ss'],
+                    ['from', HTMLTextForm('datefrom', 19, 19,
+                                          query['datefrom'][0])],
+                    ['to', HTMLTextForm('dateto', 19, 19, query['dateto'][0])]]
+        datetable = HTMLTable(daterows)
+        descriptiontable = HTMLTable([[datetable, self.html['datedescr']]],
+                                     0, False)
+        htmlfindform = self.html['findform'] % (findtable.getHTML(),
+                                                descriptiontable.getHTML())
+        #Search Result
+        results = 0
+        sharpdc = len(summarydict)
+        datefrom = self.redt.match(query['datefrom'][0])
+        if datefrom != None:
+            datefrom = datefrom.groups()
+        dateto = self.redt.match(query['dateto'][0])
+        if dateto != None:
+            dateto = dateto.groups()
+        resrows = [['details', 'type', 'longname', 'shortname',
+                    'user', 'host', 'date', 'data']]
+        for summary in summarydict.itervalues():
+            add = True
+            for key in findrows[0]:
+                if query[key][0] != ALLSTRING:
+                    add = add and summary[key] == query[key][0]
+            dcdate = self.redt.match(summary['date'][:19])
+            if dcdate == None:
+                add = False
+            else:
+                dcdate = dcdate.groups()
+                if datefrom != None:
+                    adddate = True
+                    for index in range(len(datefrom)):
+                        if int(datefrom[index]) < int(dcdate[index]):
+                            adddate = True
+                            break
+                        elif int(datefrom[index]) > int(dcdate[index]):
+                            adddate = False
+                            break
+                    add = add and adddate
+                if dateto != None:
+                    adddate = True
+                    for index in range(len(dateto)):
+                        if int(dateto[index]) > int(dcdate[index]):
+                            adddate = True
+                            break
+                        elif int(dateto[index]) < int(dcdate[index]):
+                            adddate = False
+                            break
+                    add = add and adddate
+            if add:
+                results += 1
+                row = [self.get_detailslink(summary['id'], 'show'),
+                       summary['type'],
+                       summary['longname'],
+                       summary['shortname'],
+                       summary['user'],
+                       summary['host'],
+                       summary['date'],
+                       HTMLDnldForm(summary['id'])]
+                resrows.append(row)
+        htmlresult = HTMLTable(resrows).getHTML()
+        html = self.html['frontpage'] % (self.km.getServerId(),
+                                         htmlregkm, htmlfindform,
+                                         results, sharpdc, htmlresult)
         return HTTPAnswer(200,
                           htmlheaders = {'title':self.title['frontpage']},
-                          htmlbody = self.html['frontpage'])
+                          htmlbody = html)
 
-    def get_kmurl(self, url, dc_id):
+    def get_details(self, path):
+        """
+        Returns an HTTP answer for a detailed view of a DataContainer.
+        path -- GET request path
+        """
+        dc_id = parse_qs(path.split('?')[1])['dcid'][0]
+        html = "Details for DC with ID '%s'\n<hr>\n" % (dc_id, )
+        try:
+            summary = self.km.getSummary(dc_id).copy()
+        except:
+            msg = "DC ID '%s' not found." % (dc_id, )
+            return HTTPAnswer(200,
+                              htmlheaders = {'title':msg},
+                              htmlbody = msg)
+        def makeHTML(summ):
+            if summ.has_key('attributes'):
+                tmp = HTMLDict('attribute', 'value')
+                tmp.setDict(summ['attributes'])
+                summ['attributes'] = tmp
+            if summ.has_key('columns'):
+                tmp = HTMLTable([[self.get_detailslink(col['id'], \
+col['longname']) for col in summ['columns']]], headings = False)
+                summ['columns'] = tmp
+            if summ.has_key('dimensions'):
+                if isinstance(summ['dimensions'], ListType):
+                    rows = []
+                    for dim in summ['dimensions']:
+                        try:
+                            lnkid = dim['id']
+                            row = [self.get_detailslink(lnkid, dim['longname'])]
+                        except Exception:
+                            row = [dim]
+                        rows.append(row)
+                    summ['dimensions'] = HTMLTable(rows, headings = False)
+            tmp = HTMLDict('key', 'value')
+            tmp.setDict(summ)
+            return tmp
+        summary = makeHTML(summary)
+        html += summary.getHTML()
+        return HTTPAnswer(200,
+                          htmlheaders = {'title':self.title['details'] % dc_id},
+                          htmlbody = html)
+
+    def get_kmurl(self, url, dc_id, enduser = False):
         """
         Returns an HTTP answer for DC url requests.
         url -- URL where to download the DC
         dc_id -- emd5 of the DC
+        enduser -- Whether the answer is to be send to an end user.
+                   In that case the answer is a redirect to 'url'.
         """
-        if self.disabled:
-            htmlbody = ""
+        if enduser:
+            code = 303
+            htmlbody = self.html['kmurl'] % (dc_id, url)
         else:
-            htmlbody =  self.html['kmurl'] % (dc_id, url)
-        return HTTPAnswer(201,
+            code = 201
+            htmlbody = self.html['kmurl'] % (dc_id, url)
+        return HTTPAnswer(code,
                           None,
                           {'location':url},
                           'text/html',

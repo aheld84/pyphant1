@@ -208,7 +208,8 @@ class wxPyphantFrame(wx.Frame):
         #self._fileMenu.Append( wx.ID_OPEN, "&Open\tCTRL+o")
         self._fileMenu.Append( wx.ID_SAVE, "&Save\tCTRL+s")
         self._fileMenu.Append( wx.ID_EXIT, "E&xit" )
-        self._fileMenu.Append( wx.ID_FILE1, "&Import HDF5" )
+        self._fileMenu.Append( wx.ID_FILE1, "Import HDF5 from &URL" )
+        self._fileMenu.Append( wx.ID_FILE2, "&Import local HDF5 file")
         self._menuBar.Append( self._fileMenu, "&File" )
         self._closeCompositeWorker = wx.Menu()
         self._closeCompositeWorker.Append(self.ID_CLOSE_COMPOSITE_WORKER, "&Close Composite Worker")
@@ -223,7 +224,8 @@ class wxPyphantFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.onClose)
         self.Bind(wx.EVT_MENU, self.onQuit, id=wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.onCloseCompositeWorker, id=self.ID_CLOSE_COMPOSITE_WORKER)
-        self.Bind(wx.EVT_MENU, self.onImportHDF5, id=wx.ID_FILE1)
+        self.Bind(wx.EVT_MENU, self.onImportHDF5URL, id=wx.ID_FILE1)
+        self.Bind(wx.EVT_MENU, self.onImportHDF5Local, id=wx.ID_FILE2)
 
     def createUpdateMenu(self):
         updateMenu = wx.Menu()
@@ -274,10 +276,10 @@ class wxPyphantFrame(wx.Frame):
         if len(self.compositeWorkerStack)==0:
             self._menuBar.EnableTop(1, False)
 
-    def onImportHDF5(self, event):
+    def onImportHDF5URL(self, event):
         cpt = "Import HDF5 from URL"
         msg = "Enter an URL to a valid HDF5 file \
-(e.g. file:///home/someuser/data.h5).\n\
+(e.g. http://www.example.org/data.h5).\n\
 The file is stored permanently in your home directory in the \
 .pyphant directory\nand all DataContainers contained in that file are \
 available by using the\nEmd5Src Worker even after restarting wxPyphant."
@@ -297,6 +299,30 @@ available by using the\nEmd5Src Worker even after restarting wxPyphant."
             finally:
                 dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
                 dlgid2 = dlg2.ShowModal()
+
+    def onImportHDF5Local(self, event):
+        msg = "Select HDF5 file to import DataContainers from."
+        wc = "Pyphant HDF5 (*.h5)|*.h5|All files (*.*)|*.*"
+        dlg = wx.FileDialog(self, message = msg, defaultDir = os.getcwd(),
+                            defaultFile = "", wildcard = wc, style = wx.OPEN)
+        if dlg.ShowModal() == wx.ID_OK:
+            filename = dlg.GetPath()
+            url = 'file://' + os.path.realpath(filename)
+            km = KM.getInstance()
+            cpt2 = "Info"
+            msg2 = "Successfully imported DataContainers from\n'%s'"\
+                   % (filename ,)
+            try:
+                km.registerURL(url)
+            except Exception:
+                cpt2 = "Error"
+                msg2 = "'%s' is not a valid HDF5 file.\n(Tried to import \
+from '%s')" % (filename, url)
+            finally:
+                dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
+                dlgid2 = dlg2.ShowModal()
+        else:
+            dlg.Destroy()
 
 
 import optparse
