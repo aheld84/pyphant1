@@ -62,7 +62,7 @@ from pyphant.core.WebInterface import (HTTPAnswer,
 WAITING_SECONDS_HTTP_SERVER_STOP = 5
 HTTP_REQUEST_DC_URL_PATH = "/request_dc_url"
 HTTP_REQUEST_KM_ID_PATH = "/request_km_id"
-HTTP_REQUEST_DC_SUMMARY_PATH = "/request_dc_summary"
+HTTP_REQUEST_DC_DETAILS_PATH = "/request_dc_details?dcid="
 # Maximum number of DCs to store in cache:
 CACHE_SIZE = 50
 # Timeout for cached DCs in seconds:
@@ -257,7 +257,11 @@ class KnowledgeManager(Singleton):
                 if REHDF5.match(fname.lower()) != None:
                     if dirname.endswith('/'):
                         dirname = dirname[:-1]
-                    self.registerH5(dirname + '/' + fname)
+                    filename = dirname + '/' + fname
+                    try:
+                        self.registerH5(filename)
+                    except Exception:
+                        self._logger.warn("Could not import '%s'.", filename)
         os.path.walk(getPyphantPath(KM_PATH), walkfiles, None)
 
     def getSummary(self, dcId = None):
@@ -732,8 +736,11 @@ DataContainer ID '%s' not found.", query_dict['dcid'])
         """
         log = self._logger
         km = KMHTTPRequestHandler._km
-        if self.path == '/' or self.path.startswith('/../'):
-            km.web_interface.get_frontpage().sendTo(self)
+        if self.path == '/' or self.path.startswith('/../') or \
+                self.path.startswith('/?'):
+            km.web_interface.get_frontpage(self.path).sendTo(self)
+        elif self.path.startswith(HTTP_REQUEST_DC_DETAILS_PATH):
+            km.web_interface.get_details(self.path).sendTo(self)
         else:
             f = self.send_head()
             if f:
