@@ -838,21 +838,32 @@ class SampleContainer(DataContainer):
                         if d.data != None:
                             md.data = d.data[numpymask]
 
+                        #mask mask of dimensions
+                        if d.mask != None:
+                            md.mask = d.mask[numpymask]
+
                     mdims.append(md)
 
                 #mask errors:
                 cerr = None
-                if c.error != None: cerr = c.error[numpymask]
+                if c.error != None:
+                    cerr = c.error[numpymask]
+
+                #mask errors:
+                cmask = None
+                if c.mask != None:
+                    cmask = c.mask[numpymask]
 
                 #mask data:
                 cdata = None
-                if c.data != None: cdata = c.data[numpymask]
+                if c.data != None:
+                    cdata = c.data[numpymask]
 
                 maskedcolumns.append(
                     FieldContainer(cdata,
                                    copy.deepcopy(c.unit),
                                    cerr,
-                                   copy.deepcopy(c.mask),
+                                   cmask,
                                    mdims,
                                    longname=c.longname,
                                    shortname=c.shortname,
