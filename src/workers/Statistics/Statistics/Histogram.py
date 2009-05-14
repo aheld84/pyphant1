@@ -59,7 +59,8 @@ class Histogram(Worker.Worker):
         bins=self.paramBins.value
         histo= numpy.histogram(vector.data, bins, range=(numpy.floor(vector.data.min()),
                                                          numpy.ceil(vector.data.max())))
-        xdim = DataContainer.FieldContainer(histo[1], vector.unit,
+        binCenters = histo[1][:-1]+((histo[1][1:]-histo[1][:-1])/2.0)
+        xdim = DataContainer.FieldContainer(binCenters, vector.unit,
                                             longname=vector.longname,
                                             shortname=vector.shortname)
         result = DataContainer.FieldContainer(histo[0], dimensions=[xdim],
