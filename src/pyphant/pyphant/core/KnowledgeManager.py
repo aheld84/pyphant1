@@ -58,6 +58,7 @@ from pyphant.core.WebInterface import (HTTPAnswer,
                                        WebInterface,
                                        KMHTMLParser,
                                        ThreadedHTTPServer)
+from fmfile import FMFLoader
 
 WAITING_SECONDS_HTTP_SERVER_STOP = 5
 HTTP_REQUEST_DC_URL_PATH = "/request_dc_url"
@@ -71,6 +72,7 @@ CACHE_TIMEOUT = 3600
 CACHE_THRESHHOLD = 2
 KM_PATH = '/KMstorage/'
 REHDF5 = re.compile(r'..*\.h5$|..*\.hdf$|..*\.hdf5$')
+REFMF = re.compile(r'..*\.fmf$')
 
 def getPyphantPath(subdir = '/'):
     """
@@ -409,18 +411,18 @@ running.")
 
     def registerURL(self, url):
         """
-        Registers an HDF5 file downloadable from given URL and store it
-        permanently in the .pyphant directory. The files content is made
+        Registers an HDF5 or FMF file downloadable from given URL and store it
+        permanently in the .pyphant directory. The content of the file is made
         available to the KnowledgeManager.
-        url -- URL of the HDF5 file
+        HTTP redirects are resolved. The filetype is determined by the
+        extension.
+        url -- URL of the HDF5 or FMF file
         """
         parsed = urlparse(url)
         filename = KM_PATH + 'registered/' + parsed[1] + '/'\
             + os.path.basename(parsed[2])
         directory = os.path.dirname(filename)
         filename = getPyphantPath(directory) + os.path.basename(filename)
-        if REHDF5.match(filename) == None:
-            filename += '.h5'
         if os.path.exists(filename):
             i = 0
             directory = os.path.dirname(filename)
@@ -442,7 +444,13 @@ running.")
         self._logger.info("Using local file '%s'." % (filename, ))
         savedto, headers = urllib.urlretrieve(url, filename)
         self._logger.info("Header information: %s", (str(headers), ))
-        self.registerH5(filename)
+        if REFMF.match(filename.lower()) != None:
+            self.registerFMF(filename)
+        elif REHDF5.match(filename.lower()) != None:
+            self.registerH5(filename)
+        else:
+            raise KnowledgeManagerException('Filetype unknown: %s'
+                                            % (filename, ))
 
     def registerDataContainer(self, dc):
         """
@@ -463,6 +471,17 @@ running.")
             handler = self.getH5FileHandler(filename)
             handler.saveDataContainer(dc)
             self.refreshH5(filename)
+
+    def registerFMF(self, filename):
+        """
+        Extracts a SampleContainer from a given FMF file and stores it
+        permanently. The emd5 of the SampleContainer that has been generated
+        is returned.
+        filename -- path to the FMF file
+        """
+        sc = FMFLoader.loadFMFFromFile(filename)
+        self.registerDataContainer(sc)
+        return sc.id
 
     def _getDCURLFromRemoteKMs(self, query_dict):
         """

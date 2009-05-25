@@ -125,6 +125,32 @@ class KnowledgeManagerTestCase(unittest.TestCase):
 
         #Register empty hdf
 
+    def testRegisterFMF(self):
+        km = KnowledgeManager.getInstance()
+        fileid, filename = tempfile.mkstemp(suffix='.fmf', prefix='test-')
+        os.close(fileid)
+        handler = open(filename, 'w')
+        fmfstring = """; -*- fmf-version: 1.0 -*-
+[*reference]
+title: Knowledge Manager FMF Test
+creator: Alexander Held
+created: 2009-05-25 08:45:00+02:00
+place: Uni Freiburg
+[*data definitions]
+voltage: V [V]
+current: I(V) [A]
+[*data]
+1.0\t0.5
+2.0\t1.0
+3.0\t1.5
+"""
+        handler.write(fmfstring)
+        handler.close()
+        dc_id = km.registerFMF(filename)
+        os.remove(filename)
+        km.getDataContainer(dc_id)
+
+
 if __name__ == "__main__":
     import sys
 
