@@ -41,14 +41,12 @@ __version__ = "$Revision$".replace('$','')
 import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
-
 from pyphant.core.KnowledgeManager import KnowledgeManager
 import pyphant.core.PyTablesPersister as ptp
 from pyphant.core.FieldContainer import FieldContainer
 import numpy as N
 import tables
 import urllib
-
 import tempfile
 import os
 import logging
@@ -61,31 +59,22 @@ class KnowledgeManagerTestCase(unittest.TestCase):
         self._fc.seal()
 
     def testGetLocalFile(self):
-
         h5fileid, h5name = tempfile.mkstemp(suffix='.h5',prefix='test-')
         os.close(h5fileid)
-
         h5 = tables.openFile(h5name,'w')
         resultsGroup = h5.createGroup("/", "results")
         ptp.saveResult(self._fc, h5)
         h5.close()
-
         km = KnowledgeManager.getInstance()
-
         km.registerURL('file://'+h5name)
-
         km_fc = km.getDataContainer(self._fc.id)
-
         self.assertEqual(self._fc, km_fc)
-
         os.remove(h5name)
 
     def testGetHTTPFile(self):
-
         host = "omnibus.uni-freiburg.de"
         remote_dir = "/~mr78/pyphant-test"
-        url = "http://"+host+remote_dir+"/knowledgemanager-http-test.h5"
-
+        url = "http://" + host + remote_dir + "/knowledgemanager-http-test.h5"
         # Get remote file and load DataContainer
         filename, headers = urllib.urlretrieve(url)
         h5 = tables.openFile(filename)
@@ -94,35 +83,24 @@ class KnowledgeManagerTestCase(unittest.TestCase):
                     and (r"\Psi" in g._v_attrs.shortname):
                 http_fc = ptp.loadField(h5,g)
         h5.close()
-
         km = KnowledgeManager.getInstance()
-
         km.registerURL(url)
-
         km_fc = km.getDataContainer(http_fc.id)
-
         self.assertEqual(http_fc, km_fc)
-
         os.remove(filename)
 
     def testGetDataContainer(self):
         km = KnowledgeManager.getInstance()
-
         km.registerDataContainer(self._fc)
-
         km_fc = km.getDataContainer(self._fc.id)
-
         self.assertEqual(self._fc, km_fc)
 
     def testExceptions(self):
         km = KnowledgeManager.getInstance()
-
+        #TODO:
         #invalid id
-
         #DataContainer not sealed
-
         #Local file not readable
-
         #Register empty hdf
 
     def testRegisterFMF(self):
@@ -153,19 +131,15 @@ current: I(V) [A]
 
 if __name__ == "__main__":
     import sys
-
     logger = logging.getLogger('pyphant')
-
-
     hdlr = logging.StreamHandler(sys.stderr)
     formatter = logging.Formatter('[%(name)s|%(levelname)s] %(message)s')
     hdlr.setFormatter(formatter)
-
     logger.addHandler(hdlr)
     logger.setLevel(logging.DEBUG)
-
     if len(sys.argv) == 1:
         unittest.main()
     else:
-        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
+        suite = unittest.TestLoader().loadTestsFromTestCase(
+            eval(sys.argv[1:][0]))
         unittest.TextTestRunner().run(suite)
