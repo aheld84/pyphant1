@@ -725,61 +725,20 @@ class SampleContainer(DataContainer):
             elif cmds[0] == 'NOT':
                 return numpy.logical_not(getMaskFromCommands(cmds[1]))
         numpymask = getMaskFromCommands(commands)
-        #the following code is a bit longish whereas time consuming
-        #copy.deepcopy operations with subsequent masking are avoided
-        #wherever possible
-        #generate new columns with the boolean mask applied to them using
-        #fast numpy slicing
         maskedcolumns = []
-        for c in self.columns:
-            #mask dimension
-            mdims = []
+        for col in self.columns:
+            maskedcol = None
             try:
-                for d in c.dimensions:
-                    #The next line could be avoided too, but creating a new
-                    #FieldContainer always ends up with standard dimensions
-                    #whereas dimensions are not supposed to bear dimensions
-                    #themselves
-                    md = copy.deepcopy(d)
-                    #only primary axis has to be masked:
-                    if mdims == []:
-                        #mask errors of dimensions if there are any
-                        if d.error != None:
-                            md.error = d.error[numpymask]
-                        #mask data of dimensions
-                        if d.data != None:
-                            md.data = d.data[numpymask]
-                        #mask mask of dimensions
-                        if d.mask != None:
-                            md.mask = d.mask[numpymask]
-                    mdims.append(md)
-                #mask errors:
-                cerr = None
-                if c.error != None:
-                    cerr = c.error[numpymask]
-                #mask errors:
-                cmask = None
-                if c.mask != None:
-                    cmask = c.mask[numpymask]
-                #mask data:
-                cdata = None
-                if c.data != None:
-                    cdata = c.data[numpymask]
-                maskedcolumns.append(
-                    FieldContainer(cdata,
-                                   copy.deepcopy(c.unit),
-                                   cerr,
-                                   cmask,
-                                   mdims,
-                                   longname=c.longname,
-                                   shortname=c.shortname,
-                                   attributes=copy.deepcopy(c.attributes),
-                                   rescale=False)
-                    )
+                maskedcol = col.getMaskedFC(numpymask)
             except ValueError:
                 raise ValueError(
-                    'Column "' + c.longname + '" has not enough rows!'
+                    'Column "' + col.longname + '" has not enough rows!'
                     )
+            except AttributeError:
+                raise AttributeError(
+                    "Masking of SampleContainers as columns is not supported."
+                    )
+            maskedcolumns.append(maskedcol)
         #build new SampleContainer from masked columns and return it
         result = SampleContainer(maskedcolumns,
                                  longname=self.longname,
