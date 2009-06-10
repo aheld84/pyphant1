@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The ImageProcessing toolbox holds workers to process data resulting from scalar fields.
+Preliminary gradient worker
 """
 
 __id__ = "$Id$"
@@ -38,28 +38,30 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-BACKGROUND_COLOR=255
-FEATURE_COLOR=0
+from pyphant.core import Worker, Connectors,\
+                         Param, DataContainer
+import ImageProcessing
+import numpy, copy
 
-workers=[
-    "ApplyMask",
-    "CoverageWorker",
-    "DiffWorker",
-    "DistanceMapper",
-    "EdgeFillWorker",
-    "EdgeTouchingFeatureRemover",
-    "FilterWorker",
-    "Gradient",
-    "ImageLoaderWorker",
-    "InvertWorker",
-    "Medianiser",
-    "SkeletonizeFeature",
-    "ThresholdingWorker",
-    "UltimatePointsCalculator",
-    ]
+class Gradient(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "Gradient"
+    _sockets = [("image", Connectors.TYPE_IMAGE)]
+    #_params = [("threshold", "Threshold", 160, None),
+#               ("mode", "Mode(absolute/coverage)", ["absolute", "coverage"], None)
+     #          ]
 
-def isFeature(point):
-    if point == FEATURE_COLOR:
-        return True
-    else:
-        return False
+    @Worker.plug(Connectors.TYPE_IMAGE)
+    def gradient(self, image, subscriber=0):
+        #th=self.paramThreshold.value
+        #resultArray = scipy.where( image.data < th,
+        #                           ImageProcessing.FEATURE_COLOR,
+        #                           ImageProcessing.BACKGROUND_COLOR )
+        result = DataContainer.FieldContainer(
+            numpy.array(numpy.gradient(image.data)),
+            #dimensions=[1, copy.deepcopy(image.dimensions)],
+            longname=u"Binary Image", shortname=u"B")
+        result.seal()
+        return result
