@@ -50,6 +50,7 @@ workers=[
     "EdgeTouchingFeatureRemover",
     "FilterWorker",
     "Gradient",
+    "GreyScaleErosion",
     "ImageLoaderWorker",
     "InvertWorker",
     "Medianiser",

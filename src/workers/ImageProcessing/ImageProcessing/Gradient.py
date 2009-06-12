@@ -60,8 +60,14 @@ class Gradient(Worker.Worker):
         #                           ImageProcessing.FEATURE_COLOR,
         #                           ImageProcessing.BACKGROUND_COLOR )
         result = DataContainer.FieldContainer(
-            numpy.array(numpy.gradient(image.data)),
-            #dimensions=[1, copy.deepcopy(image.dimensions)],
-            longname=u"Binary Image", shortname=u"B")
+            sum(numpy.square(numpy.array(numpy.gradient(image.data)))),
+            copy.deepcopy(image.unit), #TODO
+            copy.deepcopy(image.error), #TODO
+            copy.deepcopy(image.mask),
+            copy.deepcopy(image.dimensions),
+            image.longname,
+            image.shortname,
+            copy.deepcopy(image.attributes),
+            False)
         result.seal()
         return result
