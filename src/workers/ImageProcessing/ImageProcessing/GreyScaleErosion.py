@@ -53,24 +53,19 @@ class GreyScaleErosion(Worker.Worker):
     _bgbright = "bright"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("iterations", "Iterations", 1, None),
-               ("background",
-                "Background(dark/bright)",
-                [_bgdark, _bgbright],
-                None),
                ("nbhsize", "Neighborhood size in pixels", 5, None)]
 
-    def erode(self, data, background, nbhsize):
+    def erode(self, data, nbhsize):
         return ndimage.grey_erosion(data, size=nbhsize)
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def even_background(self, image, subscriber=0):
         iterations = self.paramIterations.value
-        background = self.paramBackground.value
         nbhsize = self.paramNbhsize.value
         i = 0
         olddata = image.data
         while i < iterations:
-            newdata = self.erode(olddata, background, nbhsize)
+            newdata = self.erode(olddata, nbhsize)
             olddata = newdata
             i += 1
         result = DataContainer.FieldContainer(
