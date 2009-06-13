@@ -49,14 +49,14 @@ class GreyScaleErosion(Worker.Worker):
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "GreyScaleErosion"
-    _bgdark = "dark"
-    _bgbright = "bright"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("iterations", "Iterations", 1, None),
                ("nbhsize", "Neighborhood size in pixels", 5, None)]
 
     def erode(self, data, nbhsize):
-        return ndimage.grey_erosion(data, size=nbhsize)
+        return ndimage.grey_erosion(data,
+                                    size=nbhsize,
+                                    mode='nearest')
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def even_background(self, image, subscriber=0):
