@@ -51,6 +51,7 @@ workers=[
     "FilterWorker",
     "Gradient",
     "GreyScaleErosion",
+    "FitBackground",
     "ImageLoaderWorker",
     "InvertWorker",
     "Medianiser",
