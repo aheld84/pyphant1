@@ -57,40 +57,54 @@ class FitBackground(Worker.Worker):
                 [_bgdark, _bgbright],
                 None),
                ("poldegree", "Polynomial degree (1 to 5)", 3, None),
-               ("samples", "#samples per dimension", 30, None)]
+               ("swidth", "sample width", 100, None),
+               ("sheight", "sample height", 100, None),
+               ("threshold", "Background threshold", 60, None)]
 
-    def fit(self, data, background, poldegree, samples):
+    def fit(self, data, background, poldegree, swidth, sheight, threshold):
         dims = data.shape
-        windowWidth, windowHeight = [ d/samples for d in dims ]
         xList = []
         yList = []
         zList = []
-        for x in xrange(samples):
-            for y in xrange(samples):
-                xOffset = x * windowWidth
-                yOffset = y * windowHeight
-                view = data[xOffset:xOffset + windowWidth,
-                            yOffset:yOffset + windowHeight]
+        for y in xrange(0, dims[0] - 1, sheight):
+            for x in xrange(0, dims[1] - 1, swidth):
+                view = data[y:y + sheight, x:x + swidth]
                 if background == self._bgbright:
                     flatIndex = numpy.argmax(view)
-                else:
+                elif background == self._bgdark:
                     flatIndex = numpy.argmin(view)
-                xIdx, yIdx = numpy.unravel_index(flatIndex, view.shape)
-                xList.append(xOffset + xIdx)
-                yList.append(yOffset + yIdx)
-                zList.append(view[xIdx, yIdx])
-        #print zip(xList, yList, zList)
-        tck = interpolate.bisplrep(xList, yList, zList,
-                                   kx=poldegree, ky=poldegree)
-        return interpolate.bisplev(range(dims[0]), range(dims[1]), tck)
+                else:
+                    raise ValueError("Parameter 'background' not set.")
+                yIdx, xIdx = numpy.unravel_index(flatIndex, view.shape)
+                zValue = view[yIdx, xIdx]
+                if (background == self._bgdark and zValue <= threshold) or\
+                        (background == self._bgbright and zValue >= threshold):
+                    xList.append(x + xIdx)
+                    yList.append(y + yIdx)
+                    zList.append(zValue)
+        if len(xList) < (poldegree + 1) * (poldegree + 1):
+            raise ValueError("Not enough reference points.")
+        tck = interpolate.bisplrep(yList, xList, zList,
+                                   kx=poldegree, ky=poldegree,
+                                   xb=0, yb=0,
+                                   xe=int(dims[0]), ye=int(dims[1]))
+        if background == self._bgbright:
+            clipmin, clipmax = threshold, data.max()
+        elif background == self._bgdark:
+            clipmin, clipmax = data.min(), threshold
+        return interpolate.bisplev(range(dims[0]), range(dims[1]),
+                                   tck).clip(clipmin, clipmax)
 
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def fit_background(self, image, subscriber=0):
         background = self.paramBackground.value
         poldegree = self.paramPoldegree.value
-        samples = self.paramSamples.value
-        newdata = self.fit(image.data, background, poldegree, samples)
+        swidth = self.paramSwidth.value
+        sheight = self.paramSheight.value
+        threshold = self.paramThreshold.value
+        newdata = self.fit(image.data, background,
+                           poldegree, swidth, sheight, threshold)
         result = DataContainer.FieldContainer(
             newdata,
             copy.deepcopy(image.unit),
