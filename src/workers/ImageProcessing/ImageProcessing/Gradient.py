@@ -49,16 +49,9 @@ class Gradient(Worker.Worker):
     REVISION = "$Revision$"[11:-1]
     name = "Gradient"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
-    #_params = [("threshold", "Threshold", 160, None),
-#               ("mode", "Mode(absolute/coverage)", ["absolute", "coverage"], None)
-     #          ]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def gradient(self, image, subscriber=0):
-        #th=self.paramThreshold.value
-        #resultArray = scipy.where( image.data < th,
-        #                           ImageProcessing.FEATURE_COLOR,
-        #                           ImageProcessing.BACKGROUND_COLOR )
         result = DataContainer.FieldContainer(
             sum(numpy.square(numpy.array(numpy.gradient(image.data)))),
             copy.deepcopy(image.unit), #TODO
