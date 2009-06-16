@@ -103,8 +103,15 @@ class FitBackground(Worker.Worker):
         swidth = self.paramSwidth.value
         sheight = self.paramSheight.value
         threshold = self.paramThreshold.value
-        newdata = self.fit(image.data, background,
-                           poldegree, swidth, sheight, threshold)
+        if image.data.ndim == 2:
+            newdata = self.fit(image.data, background,
+                               poldegree, swidth, sheight, threshold)
+        elif image.data.ndim == 3:
+            newdata = [self.fit(data, background, poldegree, swidth, sheight,
+                                threshold) for data in image.data]
+            newdata = numpy.array(newdata)
+        else:
+            raise ValueError("Expected dimension 2 or 3 for image data.")
         result = DataContainer.FieldContainer(
             newdata,
             copy.deepcopy(image.unit),
