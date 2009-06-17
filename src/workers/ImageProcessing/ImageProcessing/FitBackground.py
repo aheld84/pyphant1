@@ -49,19 +49,20 @@ class FitBackground(Worker.Worker):
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "FitBackground"
-    _bgdark = "dark"
-    _bgbright = "bright"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
-    _params = [("background",
-                "Background(dark/bright)",
-                [_bgdark, _bgbright],
-                None),
-               ("poldegree", "Polynomial degree (1 to 5)", 3, None),
+    _params = [("poldegree", "Polynomial degree (1 to 5)", 3, None),
                ("swidth", "sample width", 100, None),
                ("sheight", "sample height", 100, None),
-               ("threshold", "Background threshold", 60, None)]
+               ("threshold", "Background threshold", 200, None),
+               ("mediansize", "Median kernel size", 5, None),
+               ("medianruns", "Median runs", 4, None),
+               ("darksize", "Erosion kernel size", 3, None),
+               ("darkruns", "Erosion runs", 2, None),
+               ("brightsize", "Inverted erosion size", 6, None),
+               ("brightruns", "Inverted erosion runs", 6, None),
+               ("dopreview", "Preview fit input", False, None)]
 
-    def fit(self, data, background, poldegree, swidth, sheight, threshold):
+    def fit(self, data, poldegree, swidth, sheight, threshold):
         dims = data.shape
         xList = []
         yList = []
@@ -69,16 +70,10 @@ class FitBackground(Worker.Worker):
         for y in xrange(0, dims[0] - 1, sheight):
             for x in xrange(0, dims[1] - 1, swidth):
                 view = data[y:y + sheight, x:x + swidth]
-                if background == self._bgbright:
-                    flatIndex = numpy.argmax(view)
-                elif background == self._bgdark:
-                    flatIndex = numpy.argmin(view)
-                else:
-                    raise ValueError("Parameter 'background' not set.")
+                flatIndex = numpy.argmax(view)
                 yIdx, xIdx = numpy.unravel_index(flatIndex, view.shape)
                 zValue = view[yIdx, xIdx]
-                if (background == self._bgdark and zValue <= threshold) or\
-                        (background == self._bgbright and zValue >= threshold):
+                if zValue <= threshold:
                     xList.append(x + xIdx)
                     yList.append(y + yIdx)
                     zList.append(zValue)
@@ -88,30 +83,49 @@ class FitBackground(Worker.Worker):
                                    kx=poldegree, ky=poldegree,
                                    xb=0, yb=0,
                                    xe=int(dims[0]), ye=int(dims[1]))
-        if background == self._bgbright:
-            clipmin, clipmax = threshold, data.max()
-        elif background == self._bgdark:
-            clipmin, clipmax = data.min(), threshold
+        clipmin, clipmax = data.min(), threshold
         return interpolate.bisplev(range(dims[0]), range(dims[1]),
                                    tck).clip(clipmin, clipmax)
 
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def fit_background(self, image, subscriber=0):
-        background = self.paramBackground.value
         poldegree = self.paramPoldegree.value
         swidth = self.paramSwidth.value
         sheight = self.paramSheight.value
         threshold = self.paramThreshold.value
+        mediansize = self.paramMediansize.value
+        medianruns = self.paramMedianruns.value
+        darksize = self.paramDarksize.value
+        darkruns = self.paramDarkruns.value
+        brightsize = self.paramBrightsize.value
+        brightruns = self.paramBrightruns.value
+        dopreview = self.paramDopreview.value
+        assert image.data.ndim in [2, 3]
         if image.data.ndim == 2:
-            newdata = self.fit(image.data, background,
-                               poldegree, swidth, sheight, threshold)
-        elif image.data.ndim == 3:
-            newdata = [self.fit(data, background, poldegree, swidth, sheight,
-                                threshold) for data in image.data]
-            newdata = numpy.array(newdata)
+            pile = [image.data]
         else:
-            raise ValueError("Expected dimension 2 or 3 for image data.")
+            pile = image.data
+        #Median
+        for run in xrange(medianruns):
+            pile = [ndimage.median_filter(data,
+                                          size=mediansize) for data in pile]
+        #Suspend dark spots:
+        for run in xrange(darkruns):
+            pile = [255 - ndimage.grey_erosion(255 - data,
+                                         size=darksize) for data in pile]
+        #Suspend features:
+        for run in xrange(brightruns):
+            pile = [ndimage.median_filter(data,
+                                          size=brightsize) for data in pile]
+        #Fit background:
+        if not dopreview:
+            pile = [self.fit(data, poldegree, swidth, sheight,
+                             threshold) for data in pile]
+        if image.data.ndim == 2:
+            newdata = pile[0]
+        else:
+            newdata = numpy.array(pile)
         result = DataContainer.FieldContainer(
             newdata,
             copy.deepcopy(image.unit),
