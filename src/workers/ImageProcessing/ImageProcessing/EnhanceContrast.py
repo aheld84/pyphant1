@@ -30,7 +30,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The ImageProcessing toolbox holds workers to process data resulting from scalar fields.
+The Thresholding Worker is a class of Pyphant's image Processing
+Toolbox. The threshold can be edited in the worker's configuration. It
+returns a binary image where pixels that comprise features are set to
+0x00 whereas background pixels are set to 0xFF.
 """
 
 __id__ = "$Id$"
@@ -38,32 +41,50 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-BACKGROUND_COLOR=255
-FEATURE_COLOR=0
+from pyphant.core import Worker, Connectors,\
+                         Param, DataContainer
 
-workers=[
-    "ApplyMask",
-    "CoverageWorker",
-    "DiffWorker",
-    "DistanceMapper",
-    "EdgeFillWorker",
-    "EdgeTouchingFeatureRemover",
-    "EnhanceContrast",
-    "FilterWorker",
-    "Gradient",
-    #"GreyScaleErosion",
-    "GSInverter",
-    "FitBackground",
-    "ImageLoaderWorker",
-    "InvertWorker",
-    "Medianiser",
-    "SkeletonizeFeature",
-    "ThresholdingWorker",
-    "UltimatePointsCalculator",
-    ]
+import ImageProcessing
 
-def isFeature(point):
-    if point == FEATURE_COLOR:
-        return True
-    else:
-        return False
+import scipy, copy
+
+def normalizeHistogram(data):
+    histogram = scipy.ndimage.histogram(data.astype("f"), 0, 255, 256)
+    cumulatedHistogram = scipy.cumsum(histogram)
+    nch = cumulatedHistogram.astype("f")/len(data.flat)
+    inch = (nch*255).astype("i")
+    normalize = scipy.vectorize(lambda i: inch[i])
+    return normalize(data)
+    #return data
+
+class EnhanceContrast(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "EnhanceContrast"
+    _sockets = [("image", Connectors.TYPE_IMAGE)]
+
+    @Worker.plug(Connectors.TYPE_IMAGE)
+    def enhance(self, image, subscriber=0):
+        assert image.data.ndim in [2, 3]
+        if image.data.ndim == 2:
+            pile = [image.data]
+        else:
+            pile = image.data
+        pile = [normalizeHistogram(data) for data in pile]
+        if image.data.ndim == 2:
+            newdata = pile[0]
+        else:
+            newdata = scipy.array(pile)
+        result = DataContainer.FieldContainer(
+            newdata,
+            copy.deepcopy(image.unit),
+            copy.deepcopy(image.error),
+            copy.deepcopy(image.mask),
+            copy.deepcopy(image.dimensions),
+            image.longname,
+            image.shortname,
+            copy.deepcopy(image.attributes),
+            False)
+        result.seal()
+        return result
