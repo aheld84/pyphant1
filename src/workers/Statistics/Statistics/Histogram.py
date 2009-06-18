@@ -57,8 +57,9 @@ class Histogram(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def calculateHistogram(self, vector, subscriber=0):
         bins=self.paramBins.value
-        histo= numpy.histogram(vector.data, bins, range=(numpy.floor(vector.data.min()),
-                                                         numpy.ceil(vector.data.max())))
+        histo= numpy.histogram(vector.data, bins, new=True,
+                               range=(numpy.floor(vector.data.min()),
+                                      numpy.ceil(vector.data.max())))
         binCenters = histo[1][:-1]+((histo[1][1:]-histo[1][:-1])/2.0)
         xdim = DataContainer.FieldContainer(binCenters, vector.unit,
                                             longname=vector.longname,
