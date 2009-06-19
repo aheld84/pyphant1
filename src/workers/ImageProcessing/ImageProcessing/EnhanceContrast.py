@@ -58,9 +58,9 @@ def normalizeHistogram(data):
     #return data
 
 def normalizeLinear(data):
-    res = data.astype("f")-data.min()
-    res = res*(255.0/res.max())
-    return res.astype("i")
+    res = data - data.min()
+    res = (res * 255) / res.max()
+    return res
 
 class EnhanceContrast(Worker.Worker):
     API = 2
@@ -83,4 +83,5 @@ class EnhanceContrast(Worker.Worker):
             copy.deepcopy(image.attributes),
             False)
         result.seal()
+        #print newdata.shape
         return result
