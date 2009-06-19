@@ -52,8 +52,12 @@ class Gradient(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def gradient(self, image, subscriber=0):
+        res = numpy.sqrt(sum(
+                numpy.square(numpy.array(numpy.gradient(image.data)))
+                ))
+        res = (res/360.63*255).astype("i")
         result = DataContainer.FieldContainer(
-            sum(numpy.square(numpy.array(numpy.gradient(image.data)))),
+            res,
             copy.deepcopy(image.unit), #TODO
             copy.deepcopy(image.error), #TODO
             copy.deepcopy(image.mask),
