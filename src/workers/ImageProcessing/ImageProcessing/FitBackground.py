@@ -51,18 +51,20 @@ class FitBackground(Worker.Worker):
     name = "FitBackground"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("poldegree", "Polynomial degree (1 to 5)", 3, None),
-               ("swidth", "sample width", 100, None),
-               ("sheight", "sample height", 100, None),
-               ("threshold", "Background threshold", 200, None),
-               ("mediansize", "Median kernel size", 5, None),
-               ("medianruns", "Median runs", 4, None),
+               ("swidth", "sample width", 150, None),
+               ("sheight", "sample height", 150, None),
+               ("threshold", "Background threshold", 255, None),
+               ("mediansize", "Median kernel size", 3, None),
+               ("medianruns", "Median runs", 3, None),
                ("darksize", "Erosion kernel size", 3, None),
-               ("darkruns", "Erosion runs", 2, None),
+               ("darkruns", "Erosion runs", 4, None),
                ("brightsize", "Inverted erosion size", 6, None),
-               ("brightruns", "Inverted erosion runs", 6, None),
+               ("brightruns", "Inverted erosion runs", 10, None),
                ("dopreview", "Preview fit input", False, None)]
 
     def fit(self, data, poldegree, swidth, sheight, threshold):
+        if int(threshold) == -1:
+            threshold = (int(data.mean()) * 10) / 7
         dims = data.shape
         xList = []
         yList = []
@@ -116,8 +118,8 @@ class FitBackground(Worker.Worker):
                                          size=darksize) for data in pile]
         #Suspend features:
         for run in xrange(brightruns):
-            pile = [ndimage.median_filter(data,
-                                          size=brightsize) for data in pile]
+            pile = [ndimage.grey_erosion(data,
+                                         size=brightsize) for data in pile]
         #Fit background:
         if not dopreview:
             pile = [self.fit(data, poldegree, swidth, sheight,
