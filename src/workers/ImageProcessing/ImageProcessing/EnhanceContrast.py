@@ -45,7 +45,7 @@ from pyphant.core import Worker, Connectors,\
                          Param, DataContainer
 
 import ImageProcessing
-
+from ImageProcessing.NDImageWorker import pile
 import scipy, copy
 
 def normalizeHistogram(data):
@@ -57,6 +57,11 @@ def normalizeHistogram(data):
     return normalize(data)
     #return data
 
+def normalizeLinear(data):
+    res = data.astype("f")-data.min()
+    res = res*(255.0/res.max())
+    return res.astype("i")
+
 class EnhanceContrast(Worker.Worker):
     API = 2
     VERSION = 1
@@ -66,16 +71,7 @@ class EnhanceContrast(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def enhance(self, image, subscriber=0):
-        assert image.data.ndim in [2, 3]
-        if image.data.ndim == 2:
-            pile = [image.data]
-        else:
-            pile = image.data
-        pile = [normalizeHistogram(data) for data in pile]
-        if image.data.ndim == 2:
-            newdata = pile[0]
-        else:
-            newdata = scipy.array(pile)
+        newdata = pile(normalizeLinear, image.data)
         result = DataContainer.FieldContainer(
             newdata,
             copy.deepcopy(image.unit),
