@@ -50,6 +50,7 @@ workers=[
     "EdgeTouchingFeatureRemover",
     "EnhanceContrast",
     "FilterWorker",
+    "FindLocalExtrema",
     "FitBackground",
     "Gradient",
     #"GreyScaleErosion",
@@ -61,6 +62,7 @@ workers=[
     "SkeletonizeFeature",
     "ThresholdingWorker",
     "UltimatePointsCalculator",
+    "Watershed"
     ]
 
 def isFeature(point):
