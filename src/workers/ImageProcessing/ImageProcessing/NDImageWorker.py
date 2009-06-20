@@ -71,6 +71,8 @@ class NDImage(Worker.Worker):
     _filters = {"binary_closing":("iterations", ),
                 "binary_opening":("iterations", ),
                 "binary_fill_holes":(),
+                "binary_erosion":("iterations", ),
+                "binary_dilation":("iterations", ),
                 #"watershed_ift":(None, ),
                 "maximum_filter":("size", "mode", "cval"),
                 "median_filter":("size", "mode", "cval"),
@@ -103,8 +105,11 @@ class NDImage(Worker.Worker):
                 ))
         return (res * 255.0).astype(int) / 361
 
-    def grey_dilation(self, data, size, mode):
-        return 255 - ndimage.grey_erosion(255 - data, size=size, mode=mode)
+    def grey_dilation(self, data, size, mode, cval):
+        return 255 - ndimage.grey_erosion(255 - data,
+                                          size=size,
+                                          mode=mode,
+                                          cval=cval)
 
     def label(self, data, connectivity):
         structure = ndimage.morphology.generate_binary_structure(data.ndim,
