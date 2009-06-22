@@ -73,7 +73,6 @@ class NDImage(Worker.Worker):
                 "binary_fill_holes":(),
                 "binary_erosion":("iterations", ),
                 "binary_dilation":("iterations", ),
-                #"watershed_ift":(None, ),
                 "maximum_filter":("size", "mode", "cval"),
                 "median_filter":("size", "mode", "cval"),
                 "grey_closing":("size", "mode", "cval"),
