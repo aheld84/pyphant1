@@ -54,21 +54,26 @@ class FindLocalExtrema(Worker.Worker):
     name = "FindLocalExtrema"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("maxmin", "max/min", ["max", "min"], None),
-               ("domn", "dominates neighbours by", 0, None)]
+               ("domn", "dominates #n neighbours", 0, None),
+               ("excolor", "marker color (-1 for labeling)", 255, None),
+               ("tolerance", "tolerance in %", 20, None)]
 
-    def compare(self, pvalue, nhood):
+    def compare(self, pvalue, nhood, viewmax):
         if self.paramMaxmin.value == "max":
             c1 = pvalue >= nhood
-            c2 = pvalue - nhood
+            c2 = pvalue > nhood
+            c3 = pvalue >= (viewmax * (100 - self.paramTolerance.value)) / 100
         else:
             c1 = pvalue <= nhood
-            c2 = nhood - pvalue
-        return alltrue(c1) and c2.sum() >= self.paramDomn.value
+            c2 = pvalue < nhood
+            c3 = True
+        return c3 and alltrue(c1) and c2.sum() >= self.paramDomn.value
 
     def getPoints(self, data, sl):
         if sl[0].stop - sl[0].start < 3 or sl[1].stop - sl[1].start < 3:
             return []
         points = []
+        viewmax = data[sl].max()
         for y in xrange(sl[0].start, sl[0].stop):
             ydiff = 1
             if y == 0:
@@ -81,8 +86,12 @@ class FindLocalExtrema(Worker.Worker):
                              x - xdiff:x + 2]
                 pvalue = data[y, x]
                 if not alltrue(pvalue == nhood):
-                    if self.compare(pvalue, nhood):
-                        points.append(((y, x), self.nextlabel))
+                    if self.compare(pvalue, nhood, viewmax):
+                        if self.paramExcolor.value == -1:
+                            color = self.nextlabel
+                        else:
+                            color = self.paramExcolor.value
+                        points.append(((y, x), color))
                         self.nextlabel += 1
         return points
 
