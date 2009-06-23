@@ -58,6 +58,7 @@ workers=[
     "ImageLoaderWorker",
     "InvertWorker",
     "Medianiser",
+    "MeasureFocus",
     "NDImageWorker",
     "SkeletonizeFeature",
     "ThresholdingWorker",
