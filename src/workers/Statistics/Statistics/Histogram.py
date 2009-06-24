@@ -56,15 +56,23 @@ class Histogram(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def calculateHistogram(self, vector, subscriber=0):
-        bins=self.paramBins.value
-        histo= numpy.histogram(vector.data, bins, range=(numpy.floor(vector.data.min()),
-                                                         numpy.ceil(vector.data.max())))
-        binCenters = histo[1][:-1]+((histo[1][1:]-histo[1][:-1])/2.0)
+        bins = self.paramBins.value
+        try:
+            histo = numpy.histogram(vector.data.flat, bins, new=True,
+                                    range=(numpy.floor(vector.data.min()),
+                                           numpy.ceil(vector.data.max())))
+            binCenters = histo[1][:-1]+(numpy.diff(histo[1])/2.0)
+        except TypeError:
+            histo = numpy.histogram(vector.data.flat, bins,
+                                    range=(numpy.floor(vector.data.min()),
+                                           numpy.ceil(vector.data.max())))
+            binCenters = histo[1]+((histo[1][1]-histo[1][0])/2.0)
         xdim = DataContainer.FieldContainer(binCenters, vector.unit,
                                             longname=vector.longname,
                                             shortname=vector.shortname)
         result = DataContainer.FieldContainer(histo[0], dimensions=[xdim],
-                                              longname=u"Histogram of %s"%vector.longname,
+                                              longname=u"Histogram of %s"
+                                              % vector.longname,
                                               shortname=u"h")
         result.seal()
         return result

@@ -63,14 +63,16 @@ class TestHistogram(unittest.TestCase):
         self.dim = dim
         self.worker = S.Histogram(None)
         self.accuracyLevel = -3
-        self.uniform = DataContainer.FieldContainer( uniformSample,
-                                                     unit = '1 V',
-                                                     longname='Uniform noise',
-                                                     shortname='g')
-        self.norm = DataContainer.FieldContainer( normalSample,
-                                                  unit = '1 V',
-                                                  longname='Gaussian white noise',
-                                                  shortname='w')
+        self.uniform = DataContainer.FieldContainer(
+            uniformSample,
+            unit = '1 V',
+            longname='Uniform noise',
+            shortname='g' )
+        self.norm = DataContainer.FieldContainer(
+            normalSample,
+            unit = '1 V',
+            longname='Gaussian white noise',
+            shortname='w' )
         self.uniform.seal()
 
     def testUniform(self):
@@ -85,7 +87,9 @@ class TestHistogram(unittest.TestCase):
                                           result.data,
                                           decimal=self.accuracyLevel)
         self.failUnless(result.dimensions[0].unit == self.uniform.unit,
-                        "Unit of result's dimension [%s] has to match the unit of the input data [%s]." % (result.dimensions[0].unit, self.uniform.unit))
+                        "Unit of result's dimension [%s] has to match "
+                        "the unit of the input data [%s]."
+                        % (result.dimensions[0].unit, self.uniform.unit))
 
     def testNormal(self):
         """Tests the correct evaluation of a Gaussian white noise sample."""
@@ -107,7 +111,9 @@ class TestHistogram(unittest.TestCase):
                                           result.data,
                                           decimal=self.accuracyLevel)
         self.failUnless(result.dimensions[0].unit == self.norm.unit,
-                        "Unit of result's dimension [%s] has to match the unit of the input data [%s]." % (result.dimensions[0].unit, self.norm.unit))
+                        "Unit of result's dimension [%s] has to match "
+                        "the unit of the input data [%s]."
+                        % (result.dimensions[0].unit, self.norm.unit))
 
 if __name__ == '__main__':
     unittest.main()
