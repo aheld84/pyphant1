@@ -210,8 +210,8 @@ class KnowledgeManager(Singleton):
         registerContents -- whether to register contents of the file as well.
         """
         if self.H5FileHandlers.has_key(filename):
-            raise KnowledgeManagerException("'%s' has already been registered."\
-                                                % (filename, ))
+            raise KnowledgeManagerException("'%s' has already been registered."
+                                            % filename)
         self.H5FileHandlers[filename] = H5FileHandler(filename, mode)
         if registerContents:
             self.refreshH5(filename)
@@ -310,8 +310,8 @@ class KnowledgeManager(Singleton):
         """
         logger = self._logger
         if self.isServerRunning():
-            logger.warn("Server is running at host %s, port %d already. \
-Stopping server...", self._http_host, self._http_port)
+            logger.warn("Server is running at host %s, port %d already. "
+                        "Stopping server...", self._http_host, self._http_port)
             self.stopServer()
         self._http_host = host
         self._http_port = port
@@ -322,8 +322,8 @@ Stopping server...", self._http_host, self._http_port)
                 self._server.start()
         self._http_server_thread = _HTTPServerThread()
         self._http_server_thread.start()
-        self._logger.debug("Started HTTP server. Host: %s, port: %d, \
-temp dir: %s", host, port, self._http_dir)
+        self._logger.debug("Started HTTP server. Host: %s, port: %d, "
+                           "temp dir: %s", host, port, self._http_dir)
         self.web_interface.disabled = not provide_web_frontend
 
     def stopServer(self):
@@ -338,8 +338,8 @@ temp dir: %s", host, port, self._http_dir)
             try:
                 urllib.urlopen(self._getServerURL())
             except:
-                logger.warn("Fake HTTP request failed when stopping HTTP \
-server.")
+                logger.warn("Fake HTTP request failed when stopping HTTP "
+                            "server.")
             logger.info("Waiting for HTTP server thread to die...")
             self._http_server_thread.join(WAITING_SECONDS_HTTP_SERVER_STOP)
             if self._http_server_thread.isAlive():
@@ -358,8 +358,8 @@ server.")
                             self._http_dir)
             self._http_dir = None
         else:
-            self._logger.warn("HTTP server should be stopped but isn't \
-running.")
+            self._logger.warn("HTTP server should be stopped but isn't "
+                              "running.")
 
     def isServerRunning(self):
         """
@@ -403,8 +403,8 @@ running.")
             logger.debug("KM ID read from HTTP answer: %s", km_id)
         except Exception, excep:
             raise KnowledgeManagerException(
-                "Couldn't get ID for knowledge manager under URL %s."\
-                    % (km_url, ), excep)
+                "Couldn't get ID for knowledge manager under URL %s."
+                % (km_url, ), excep)
         self._remoteKMs[km_id] = km_url
 
     def registerURL(self, url):
@@ -415,8 +415,8 @@ running.")
         url -- URL of the HDF5 file
         """
         parsed = urlparse(url)
-        filename = KM_PATH + 'registered/' + parsed[1] + '/'\
-            + os.path.basename(parsed[2])
+        filename = KM_PATH + 'registered/' + parsed[1] + '/'
+        filename += os.path.basename(parsed[2])
         directory = os.path.dirname(filename)
         filename = getPyphantPath(directory) + os.path.basename(filename)
         if REHDF5.match(filename) == None:
@@ -473,10 +473,9 @@ running.")
         logger = self._logger
         # add this KM to query
         query_dict['lastkmidindex'] += 1
-        query_dict['kmid%d' % (query_dict['lastkmidindex'], )] =\
-            self.getServerId()
+        query_dict['kmid%d' % query_dict['lastkmidindex']] = self.getServerId()
         # ask every remote KnowledgeManager for id
-        logger.debug("Requesting knowledge managers for DC id '%s'..."\
+        logger.debug("Requesting knowledge managers for DC id '%s'..."
                      % (query_dict['dcid'], ))
         dc_url = None
         for km_id, km_url in self._remoteKMs.iteritems():
@@ -591,8 +590,11 @@ URL '%s'...", km_id, km_url)
                 try:
                     dc = dcinfo['filehandler'].loadDataContainer(dc_id)
                 except Exception, excep:
-                    raise KnowledgeManagerException("DC ID '%s' known, but \
-cannot be read from file '%s'." % (dc_id, localfilename), excep)
+                    raise KnowledgeManagerException("DC ID '%s' known, but "
+                                                    "cannot be read from file "
+                                                    "'%s'." % (dc_id,
+                                                               localfilename),
+                                                    excep)
                 if use_cache and dcinfo['hitcount'] >= CACHE_THRESHHOLD:
                     docache = False
                     if len(self._cache) >= CACHE_SIZE:
@@ -617,8 +619,8 @@ cannot be read from file '%s'." % (dc_id, localfilename), excep)
             dc_url = self._getDCURLFromRemoteKMs({'dcid':dc_id,
                                                   'lastkmidindex':-1})
             if dc_url == None:
-                raise KnowledgeManagerException("DC ID '%s' is unknown."\
-                                                    %(dc_id,))
+                raise KnowledgeManagerException("DC ID '%s' is unknown."
+                                                % (dc_id,))
             filename = getFilenameFromDcId(dc_id)
             urllib.urlretrieve(dc_url, filename)
             self.registerH5(filename)
