@@ -37,7 +37,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$:
 import tables
-from pyphant.core import DataContainer
+from pyphant.core import (DataContainer, FieldContainer)
 from tables import StringCol
 from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 import scipy
@@ -143,7 +143,7 @@ class H5FileHandler(object):
                             + DataContainer.parseId(row['id'])[0]))
                           for row in dimTable.iterrows()]
         except tables.NoSuchNodeError:
-            dimensions = DataContainer.INDEX
+            dimensions = FieldContainer.INDEX
         result = DataContainer.FieldContainer(data, unit, error, mask,
                                               dimensions, longname, shortname,
                                               attributes)
@@ -343,7 +343,7 @@ class H5FileHandler(object):
                            (u"Mask of "+result.longname).encode("utf-8"))
         self.handle.setNodeAttr(resultGroup, "unit",
                                 repr(result.unit).encode("utf-8"))
-        if result.dimensions != DataContainer.INDEX:
+        if result.dimensions != FieldContainer.INDEX:
             idLen = max([len(dim.id.encode("utf-8"))
                        for dim in result.dimensions])
             dimTable = self.handle.createTable(resultGroup, "dimensions",

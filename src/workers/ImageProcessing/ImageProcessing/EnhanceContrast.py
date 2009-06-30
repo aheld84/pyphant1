@@ -30,7 +30,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The ImageProcessing toolbox holds workers to process data resulting from scalar fields.
+The Thresholding Worker is a class of Pyphant's image Processing
+Toolbox. The threshold can be edited in the worker's configuration. It
+returns a binary image where pixels that comprise features are set to
+0x00 whereas background pixels are set to 0xFF.
 """
 
 __id__ = "$Id$"
@@ -38,34 +41,48 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-BACKGROUND_COLOR=255
-FEATURE_COLOR=0
+from pyphant.core import Worker, Connectors,\
+                         Param, DataContainer
 
-workers=[
-    "ApplyMask",
-    "CoverageWorker",
-    "DiffWorker",
-    "DistanceMapper",
-    "EdgeFillWorker",
-    "EdgeTouchingFeatureRemover",
-    "EnhanceContrast",
-    "FilterWorker",
-    "FindLocalExtrema",
-    "FitBackground",
-    "Gradient",
-    "ImageLoaderWorker",
-    "InvertWorker",
-    "Medianiser",
-    "MeasureFocus",
-    "NDImageWorker",
-    "SkeletonizeFeature",
-    "ThresholdingWorker",
-    "UltimatePointsCalculator",
-    "Watershed"
-    ]
+import ImageProcessing
+from ImageProcessing.NDImageWorker import pile
+import scipy, copy
 
-def isFeature(point):
-    if point == FEATURE_COLOR:
-        return True
-    else:
-        return False
+def normalizeHistogram(data):
+    histogram = scipy.ndimage.histogram(data.astype("f"), 0, 255, 256)
+    cumulatedHistogram = scipy.cumsum(histogram)
+    nch = cumulatedHistogram.astype("f")/len(data.flat)
+    inch = (nch*255).astype("i")
+    normalize = scipy.vectorize(lambda i: inch[i])
+    return normalize(data)
+    #return data
+
+def normalizeLinear(data):
+    res = data - data.min()
+    res = (res * 255) / res.max()
+    return res
+
+class EnhanceContrast(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "EnhanceContrast"
+    _sockets = [("image", Connectors.TYPE_IMAGE)]
+
+    @Worker.plug(Connectors.TYPE_IMAGE)
+    def enhance(self, image, subscriber=0):
+        newdata = pile(normalizeLinear, image.data)
+        longname = "Normalize"
+        result = DataContainer.FieldContainer(
+            newdata,
+            1,
+            None,
+            copy.deepcopy(image.mask),
+            copy.deepcopy(image.dimensions),
+            longname,
+            image.shortname,
+            copy.deepcopy(image.attributes),
+            False)
+        result.seal()
+        #print newdata.shape
+        return result
