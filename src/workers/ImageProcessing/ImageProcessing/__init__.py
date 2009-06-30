@@ -52,8 +52,6 @@ workers=[
     "FilterWorker",
     "FindLocalExtrema",
     "FitBackground",
-    "Gradient",
-    #"GreyScaleErosion",
     "GSInverter",
     "ImageLoaderWorker",
     "InvertWorker",
