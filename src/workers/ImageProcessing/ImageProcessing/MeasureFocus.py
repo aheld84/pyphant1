@@ -80,13 +80,14 @@ class MeasureFocus(Worker.Worker):
     def measure_focus(self, image, labels, subscriber=0):
         self._labels = labels.data
         newdata = pile(self.sliceAndMeasure, image.data)
+        longname = "MeasureFocus"
         result = DataContainer.FieldContainer(
             newdata,
             copy.deepcopy(image.unit),
             copy.deepcopy(image.error),
             copy.deepcopy(image.mask),
             copy.deepcopy(image.dimensions),
-            image.longname,
+            longname,
             image.shortname,
             copy.deepcopy(image.attributes),
             False)

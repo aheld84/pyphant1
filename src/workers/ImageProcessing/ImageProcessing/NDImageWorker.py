@@ -145,13 +145,14 @@ class NDImage(Worker.Worker):
         else:
             runs = self.paramIterations.value
         newdata = pile(self.applyfilter, image.data, runs, self.paramPile.value)
+        longname = "%s" % (self.paramNdfilter.value, )
         result = DataContainer.FieldContainer(
             newdata,
             copy.deepcopy(image.unit),
             copy.deepcopy(image.error),
             copy.deepcopy(image.mask),
             copy.deepcopy(image.dimensions),
-            image.longname,
+            longname,
             image.shortname,
             copy.deepcopy(image.attributes),
             False)

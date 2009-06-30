@@ -55,7 +55,8 @@ class FindLocalExtrema(Worker.Worker):
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("maxmin", "max/min", ["max", "min"], None),
                ("excolor", "marker color (-1 for labeling)", 255, None),
-               ("tolerance", "tolerance in %", 20, None)]
+               ("tolerance", "tolerance in %", 20, None),
+               ("domn", "This parameter is no longer in use", 0, None)]
 
     def compare(self, pvalue, nhood, viewextr):
         if self.paramMaxmin.value == "max":
@@ -107,13 +108,14 @@ class FindLocalExtrema(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def find(self, image, subscriber=0):
         newdata = pile(self.findExtrema, image.data)
+        longname = "FindLocalExtrema"
         result = DataContainer.FieldContainer(
             newdata,
             copy.deepcopy(image.unit),
             copy.deepcopy(image.error),
             copy.deepcopy(image.mask),
             copy.deepcopy(image.dimensions),
-            image.longname,
+            longname,
             image.shortname,
             copy.deepcopy(image.attributes),
             False)

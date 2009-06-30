@@ -128,13 +128,14 @@ class FitBackground(Worker.Worker):
             newdata = pile[0]
         else:
             newdata = numpy.array(pile)
+        longname = "FitBackground"
         result = DataContainer.FieldContainer(
             newdata,
             copy.deepcopy(image.unit),
             copy.deepcopy(image.error),
             copy.deepcopy(image.mask),
             copy.deepcopy(image.dimensions),
-            image.longname,
+            longname,
             image.shortname,
             copy.deepcopy(image.attributes),
             False)

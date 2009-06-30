@@ -94,13 +94,14 @@ class Watershed(Worker.Worker):
     def wsworker(self, image, markers, subscriber=0):
         self._markers = markers.data
         newdata = pile(self.watershed, image.data)
+        longname = "Watershed"
         result = DataContainer.FieldContainer(
             newdata,
             copy.deepcopy(image.unit),
             copy.deepcopy(image.error),
             copy.deepcopy(image.mask),
             copy.deepcopy(image.dimensions),
-            image.longname,
+            longname,
             image.shortname,
             copy.deepcopy(image.attributes),
             False)

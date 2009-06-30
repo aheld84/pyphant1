@@ -53,13 +53,14 @@ class GSInverter(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def invert(self, image, subscriber=0):
+        longname = "Invert"
         result = DataContainer.FieldContainer(
             255 - image.data,
             copy.deepcopy(image.unit),
             copy.deepcopy(image.error),
             copy.deepcopy(image.mask),
             copy.deepcopy(image.dimensions),
-            image.longname,
+            longname,
             image.shortname,
             copy.deepcopy(image.attributes),
             False)
