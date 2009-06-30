@@ -80,7 +80,6 @@ class NDImage(Worker.Worker):
                 "grey_opening":("size", "mode", "cval"),
                 "grey_invert":(None, ),
                 "cut_histogram":(None, "tolerance"),
-                "gradient":(None, ),
                 "label":(None, "connectivity")}
     _ndparams = {"iterations":1,
                  "size":5,
@@ -94,12 +93,6 @@ class NDImage(Worker.Worker):
     _params = [("pile", "Treat 3d images as pile of 2d images", True, None),
                ("ndfilter", "Filter", _filters.keys(), None)]
     _params += [(pn, pn, dflt, None) for pn, dflt in _ndparams.iteritems()]
-
-    def gradient(self, data):
-        res = numpy.sqrt(sum(
-                numpy.square(numpy.array(numpy.gradient(data)))
-                ))
-        return (res * 255.0).astype(int) / 361
 
     def grey_invert(self, data):
         return 255 - data
