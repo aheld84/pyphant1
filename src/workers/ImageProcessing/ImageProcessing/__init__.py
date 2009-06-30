@@ -52,7 +52,6 @@ workers=[
     "FilterWorker",
     "FindLocalExtrema",
     "FitBackground",
-    "GSInverter",
     "ImageLoaderWorker",
     "InvertWorker",
     "Medianiser",

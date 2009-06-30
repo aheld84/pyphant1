@@ -78,6 +78,7 @@ class NDImage(Worker.Worker):
                 "grey_closing":("size", "mode", "cval"),
                 "grey_erosion":("size", "mode", "cval"),
                 "grey_opening":("size", "mode", "cval"),
+                "grey_invert":(None, ),
                 "cut_histogram":(None, "tolerance"),
                 "gradient":(None, ),
                 "label":(None, "connectivity")}
@@ -99,6 +100,9 @@ class NDImage(Worker.Worker):
                 numpy.square(numpy.array(numpy.gradient(data)))
                 ))
         return (res * 255.0).astype(int) / 361
+
+    def grey_invert(self, data):
+        return 255 - data
 
     def label(self, data, connectivity):
         structure = ndimage.morphology.generate_binary_structure(data.ndim,
@@ -139,7 +143,7 @@ class NDImage(Worker.Worker):
         result = DataContainer.FieldContainer(
             newdata,
             copy.deepcopy(image.unit),
-            copy.deepcopy(image.error),
+            None,
             copy.deepcopy(image.mask),
             copy.deepcopy(image.dimensions),
             longname,
