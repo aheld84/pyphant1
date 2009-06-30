@@ -42,7 +42,7 @@ from pyphant.core import Worker, Connectors,\
                          Param, DataContainer
 import ImageProcessing
 import numpy, copy
-from scipy import (ndimage, interpolate, vectorize)
+from scipy import ndimage
 
 def pile(func, imagedata, runs=1, dopile=True):
     assert imagedata.ndim in [2, 3]
@@ -106,15 +106,15 @@ class NDImage(Worker.Worker):
         return ndimage.label(data, structure=structure)[0]
 
     def cut_histogram(self, data, tolerance):
-        h = ndimage.histogram(data, 0, 256, 256)
-        cs = numpy.cumsum(h)
-        cut = cs[255] / tolerance
-        for i in xrange(len(cs)):
-            if cs[i] > cut:
+        hist = ndimage.histogram(data, 0, 256, 256)
+        csum = numpy.cumsum(hist)
+        cut = csum[255] / tolerance
+        for i in xrange(len(csum)):
+            if csum[i] > cut:
                 newmin = i
                 break
-        m = data.mean()
-        return numpy.where(data < newmin, m, data)
+        meanvalue = data.mean()
+        return numpy.where(data < newmin, meanvalue, data)
 
     def applyfilter(self, data):
         if None in self._filters[self.paramNdfilter.value]:
