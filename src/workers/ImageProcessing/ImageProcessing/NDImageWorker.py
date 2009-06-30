@@ -76,7 +76,6 @@ class NDImage(Worker.Worker):
                 "maximum_filter":("size", "mode", "cval"),
                 "median_filter":("size", "mode", "cval"),
                 "grey_closing":("size", "mode", "cval"),
-                "grey_dilation":(None, "size", "mode", "cval"),
                 "grey_erosion":("size", "mode", "cval"),
                 "grey_opening":("size", "mode", "cval"),
                 "cut_histogram":(None, "tolerance"),
@@ -95,20 +94,11 @@ class NDImage(Worker.Worker):
                ("ndfilter", "Filter", _filters.keys(), None)]
     _params += [(pn, pn, dflt, None) for pn, dflt in _ndparams.iteritems()]
 
-    #def watershed_ift(self, data):
-        #return ndimage.watershed_ift(data, data)
-
     def gradient(self, data):
         res = numpy.sqrt(sum(
                 numpy.square(numpy.array(numpy.gradient(data)))
                 ))
         return (res * 255.0).astype(int) / 361
-
-    def grey_dilation(self, data, size, mode, cval):
-        return 255 - ndimage.grey_erosion(255 - data,
-                                          size=size,
-                                          mode=mode,
-                                          cval=cval)
 
     def label(self, data, connectivity):
         structure = ndimage.morphology.generate_binary_structure(data.ndim,
