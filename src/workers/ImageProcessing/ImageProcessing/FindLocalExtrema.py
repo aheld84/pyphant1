@@ -55,8 +55,7 @@ class FindLocalExtrema(Worker.Worker):
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("maxmin", "max/min", ["max", "min"], None),
                ("excolor", "marker color (-1 for labeling)", 255, None),
-               ("tolerance", "tolerance in %", 20, None),
-               ("domn", "This parameter is no longer in use", 0, None)]
+               ("tolerance", "tolerance in %", 20, None)]
 
     def compare(self, pvalue, nhood, viewextr):
         if self.paramMaxmin.value == "max":
