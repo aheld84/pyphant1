@@ -75,8 +75,8 @@ class EnhanceContrast(Worker.Worker):
         longname = "Normalize"
         result = DataContainer.FieldContainer(
             newdata,
-            copy.deepcopy(image.unit),
-            copy.deepcopy(image.error),
+            1,
+            None,
             copy.deepcopy(image.mask),
             copy.deepcopy(image.dimensions),
             longname,
