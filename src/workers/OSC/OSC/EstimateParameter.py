@@ -64,13 +64,17 @@ class EstimateParameter(Worker.Worker):
         if len(row)==0:
             return numpy.nan
         data = model.data.transpose()
-        data = data[:,:-1]*(numpy.diff(data)**2)
         def calc(row, col, error):
             if error:
-                return sum([
-                        col[numpy.argmin(((model.dimensions[0].data-c)/e)**2)]
-                        for c,e in zip(row, error)
-                        ])
+                weight=0
+                for c,e in zip(row, error):
+                    if e>0:
+                        weight += col[numpy.argmin(
+                                ((model.dimensions[0].data-c)/e)**2)]
+                    else:
+                        weight += col[numpy.argmin(
+                                (model.dimensions[0].data-c)**2)]
+                return weight
             else:
                 return sum([col[numpy.argmin((model.dimensions[0].data-c)**2)]
                             for c in row])
