@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The ImageProcessing toolbox holds workers to process data resulting from scalar fields.
+TODO
 """
 
 __id__ = "$Id$"
@@ -38,34 +38,40 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-BACKGROUND_COLOR=255
-FEATURE_COLOR=0
+from pyphant.core import Worker, Connectors,\
+                         Param, DataContainer
+import ImageProcessing
+import numpy, copy
+from ImageProcessing.NDImageWorker import pile
 
-workers=[
-    "ApplyMask",
-    "CoverageWorker",
-    "DiffWorker",
-    "DistanceMapper",
-    "EdgeFillWorker",
-    "EdgeTouchingFeatureRemover",
-    "EnhanceContrast",
-    "FilterWorker",
-    "FindLocalExtrema",
-    "FitBackground",
-    "Gradient",
-    "ImageLoaderWorker",
-    "InvertWorker",
-    "Medianiser",
-    "MeasureFocus",
-    "NDImageWorker",
-    "SkeletonizeFeature",
-    "ThresholdingWorker",
-    "UltimatePointsCalculator",
-    "Watershed"
-    ]
+def gradient(data):
+        res = numpy.sqrt(sum(
+                numpy.square(numpy.array(numpy.gradient(data)))
+                ))
+        return (res * 255.0).astype(int) / 361
 
-def isFeature(point):
-    if point == FEATURE_COLOR:
-        return True
-    else:
-        return False
+
+class Gradient(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "Gradient"
+    _sockets = [("image", Connectors.TYPE_IMAGE)]
+
+    @Worker.plug(Connectors.TYPE_IMAGE)
+    def gradientWorker(self, image, subscriber=0):
+        #TODO: Check whether all dimensions have same unit
+        newdata = gradient(image.data)
+        longname = "Gradient"
+        result = DataContainer.FieldContainer(
+            newdata,
+            (361.0 / 255.0) * (image.unit / image.dimensions[0].unit),
+            None,
+            copy.deepcopy(image.mask),
+            copy.deepcopy(image.dimensions),
+            longname,
+            image.shortname,
+            copy.deepcopy(image.attributes),
+            False)
+        result.seal()
+        return result
