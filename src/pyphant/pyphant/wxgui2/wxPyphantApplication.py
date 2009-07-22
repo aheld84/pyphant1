@@ -181,10 +181,10 @@ class wxPyphantFrame(wx.Frame):
         if self._wxPyphantApp.pathToRecipe[-3:] == '.h5':
             if os.path.exists(self._wxPyphantApp.pathToRecipe):
                 recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File(self._wxPyphantApp.pathToRecipe)
-                from pyphant.core import KnowledgeManager
-                KnowledgeManager.KnowledgeManager.getInstance().registerURL(
-                    "file:///"+os.path.realpath(self._wxPyphantApp.pathToRecipe)
-                    )
+                #from pyphant.core import KnowledgeManager
+                #KnowledgeManager.KnowledgeManager.getInstance().registerURL(
+                #    "file:///"+os.path.realpath(self._wxPyphantApp.pathToRecipe)
+                 #   )
                 self._remainingSpace=PyphantCanvas.PyphantCanvas(self, recipe)
             else:
                 self._remainingSpace=PyphantCanvas.PyphantCanvas(self)
