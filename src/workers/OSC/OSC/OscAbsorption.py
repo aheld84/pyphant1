@@ -223,7 +223,7 @@ class OscMapper(Worker.Worker):
         xf, yf, h = tuple([ con.data for con in cons ])
         result = self.calcNormal(osc, xCon, yCon, fCon, xf, yf, h)
         if self.paramOverrideV.value:
-            vs = self.paramVmin.value, self.paramVmax.value
+            vs = str(self.paramVmin.value), str(self.paramVmax.value)
             from pyphant.quantities.PhysicalQuantities import (
                 isPhysicalQuantity, PhysicalQuantity)
             try:
