@@ -75,15 +75,17 @@ class ImageVisualizer(object):
             yc=event.ydata
             xi = numpy.abs(x.data-xc).argmin()
             yi = numpy.abs(y.data-yc).argmin()
-            if (self.fieldContainer.mask != None) and self.fieldContainer.mask[yi, xi]:
+            if ((self.fieldContainer.mask != None)
+                and self.fieldContainer.mask[yi, xi]):
                 val = "n/a"
             else:
                 try:
-                    val = self.fieldContainer.data[yi, xi]*self.fieldContainer.unit
+                    val = self.fieldContainer.data[yi, xi]
+                    val *= self.fieldContainer.unit
                 except IndexError:
                     val = "nan"
-            xval = xc*x.unit
-            yval = yc*y.unit
+            xval = xc * x.unit
+            yval = yc * y.unit
             def format(val):
                 if not isPhysicalQuantity(val):
                     if type(val) in (type(' '),type(u' ')):
@@ -95,7 +97,8 @@ class ImageVisualizer(object):
                 return valstr
             labels = map(format,[xval,yval,val])
             labels.insert(0,zLabel)
-            self.figure.canvas.toolbar.set_message("%s(%s,%s) = %s" % tuple(labels))
+            self.figure.canvas.toolbar.set_message("%s(%s,%s) = %s"
+                                                   % tuple(labels))
         else:
             self.figure.canvas.toolbar.set_message("outside axis")
 
@@ -109,7 +112,8 @@ class ImageVisualizer(object):
         xmax=scipy.amax(x)
         ymin=scipy.amin(y)
         ymax=scipy.amax(y)
-        #Support for images with non uniform axes adapted from python-matplotlib-doc/examples/pcolor_nonuniform.py
+        #Support for images with non uniform axes adapted
+        #from python-matplotlib-doc/examples/pcolor_nonuniform.py
         ax = self.figure.add_subplot(111)
         vmin = self.fieldContainer.attributes.get('vmin', None)
         vmax = self.fieldContainer.attributes.get('vmax', None)
