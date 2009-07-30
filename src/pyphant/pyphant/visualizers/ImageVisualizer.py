@@ -48,7 +48,8 @@ import pylab, scipy, numpy
 from pyphant.core.Connectors import TYPE_IMAGE
 from pyphant.wxgui2.DataVisReg import DataVisReg
 from pyphant.quantities.PhysicalQuantities import isPhysicalQuantity
-from NonUniformImage import NonUniformImage
+#from NonUniformImage import NonUniformImage
+from matplotlib.image import NonUniformImage
 
 class F(pylab.Formatter):
     def __init__(self, container, *args, **kwargs):
