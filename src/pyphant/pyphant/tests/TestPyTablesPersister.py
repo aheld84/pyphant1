@@ -74,6 +74,7 @@ class ContainerTestCase(unittest.TestCase):
 
 class FieldContainerTestCase(ContainerTestCase):
     def testSaveRestore(self):
+        self.field.creator=u"Klaus"
         self.field.seal()
         self.eln.createGroup(self.eln.root,'testSaveRestoreField')
         saveField(self.eln,self.eln.root.testSaveRestoreField,self.field)
