@@ -44,6 +44,7 @@ import ImageProcessing
 import numpy, copy
 from scipy import ndimage
 from ImageProcessing.NDImageWorker import pile
+from ImageProcessing.AutoFocus import FocusSlice
 
 class MeasureFocus(Worker.Worker):
     API = 2
@@ -52,7 +53,8 @@ class MeasureFocus(Worker.Worker):
     name = "MeasureFocus"
     _sockets = [("image", Connectors.TYPE_IMAGE),
                 ("labels", Connectors.TYPE_IMAGE)]
-    _params = [("grow", "grow slices by #n pixels:", 3, None)]
+    _params = [("grow", "grow slices by #n pixels:", 3, None),
+               ("humanOutput", "Human output", True, None)]
 
     def getFocus(self, data):
         #return numpy.sum(numpy.sqrt(numpy.sum(numpy.square(
@@ -60,9 +62,13 @@ class MeasureFocus(Worker.Worker):
         return numpy.sum(data) / data.size
 
     def sliceAndMeasure(self, data):
+        human_output = self.paramHumanOutput.value
         grow = self.paramGrow.value
         slices = ndimage.find_objects(self._labels)
-        res = numpy.zeros(data.shape)
+        if human_output:
+            res = numpy.zeros(data.shape)
+        else:
+            res = numpy.zeros(len(slices))
         label = 0
         for sl in slices:
             label += 1
@@ -73,7 +79,16 @@ class MeasureFocus(Worker.Worker):
                 if start[1] < 0: start[1] = 0
                 bigsl = (slice(start[0], stop[0]), slice(start[1], stop[1]))
                 focus = self.getFocus(data[bigsl])
-                res[sl] = numpy.where(self._labels[sl] == label, focus, res[sl])
+                if human_output:
+                    res[sl] = numpy.where(self._labels[sl] == label,
+                                          focus, res[sl])
+                else:
+                    zvalue = 1 # TODO !!!
+                    fsmask = numpy.where(self._labels[sl] == label,
+                                         1, 0)
+                    #TODO: change to zslice bla ...
+                    res[label - 1] = FocusSlice(sl, zvalue, focus,
+                                                fsmask, label)
         return res
 
     @Worker.plug(Connectors.TYPE_IMAGE)
@@ -81,15 +96,20 @@ class MeasureFocus(Worker.Worker):
         self._labels = labels.data
         newdata = pile(self.sliceAndMeasure, image.data)
         longname = "MeasureFocus"
-        result = DataContainer.FieldContainer(
-            newdata,
-            copy.deepcopy(image.unit),
-            copy.deepcopy(image.error),
-            copy.deepcopy(image.mask),
-            copy.deepcopy(image.dimensions),
-            longname,
-            image.shortname,
-            copy.deepcopy(image.attributes),
-            False)
+        if self.paramHumanOutput:
+            result = DataContainer.FieldContainer(
+                newdata,
+                copy.deepcopy(image.unit),
+                copy.deepcopy(image.error),
+                copy.deepcopy(image.mask),
+                copy.deepcopy(image.dimensions),
+                longname,
+                image.shortname,
+                copy.deepcopy(image.attributes),
+                False)
+        else:
+            result = DataContainer.FieldContainer(
+                data=newdata,
+                longname=longname)
         result.seal()
         return result
