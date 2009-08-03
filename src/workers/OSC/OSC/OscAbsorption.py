@@ -162,7 +162,10 @@ class OscMapper(Worker.Worker):
                ("yAxis", u"y-Axis", [u"vertical_table_position"], None),
                ("field", u"Field", [u"thickness"], None),
                ("extentX", u"Extension of x-axis [%%]", 10, None),
-               ("extentY", u"Extension of y-axis [%%]", 10, None)]
+               ("extentY", u"Extension of y-axis [%%]", 10, None),
+               ("overrideV", u"Override value limits", False, None),
+               ("vmin", u"Minimal value", "0 nm", None),
+               ("vmax", u"Maximal value", "100 nm", None)]
 
     def inithook(self):
         self._logger = logging.getLogger("pyphant")
@@ -180,23 +183,31 @@ class OscMapper(Worker.Worker):
         yOff, yStep, yInd = grid2Index(yf, self.paramExtentY.value)
         xMax = xInd.maxV
         yMax = yInd.maxV
-        xDim = DataContainer.FieldContainer( numpy.linspace(xInd.minV,xInd.maxV,xInd.stepCount)-0.5*xStep, xCon.unit,
-                                             longname = xCon.longname, shortname = xCon.shortname )
-        yDim = DataContainer.FieldContainer( numpy.linspace(yInd.minV,yInd.maxV,yInd.stepCount)-0.5*yStep, yCon.unit,
-                                             longname = yCon.longname, shortname = yCon.shortname )
-        img = numpy.ones((yInd.stepCount, xInd.stepCount), dtype='float')*numpy.NaN
+        xDim = DataContainer.FieldContainer(
+            numpy.linspace(xInd.minV,xInd.maxV,xInd.stepCount)-0.5*xStep,
+            xCon.unit,
+            longname = xCon.longname, shortname = xCon.shortname )
+        yDim = DataContainer.FieldContainer(
+            numpy.linspace(yInd.minV,yInd.maxV,yInd.stepCount)-0.5*yStep,
+            yCon.unit,
+            longname = yCon.longname, shortname = yCon.shortname )
+        img = numpy.ones((yInd.stepCount, xInd.stepCount),
+                         dtype='float')*numpy.NaN
         mask = numpy.ones((yInd.stepCount, xInd.stepCount), dtype='bool')
         for i in xrange(xf.size):
             xi = xInd[xf[i]]
             yi = yInd[yf[i]]
             if not mask[yi, xi]:
-                self._logger.warning("Duplicate data for pixel (%.4g,%.4g). Using first found value. Is your data corrupt?"%(xf[i],yf[i]))
+                self._logger.warning("Duplicate data for pixel (%.4g,%.4g). "
+                                     "Using first found value. "
+                                     "Is your data corrupt?"%(xf[i],yf[i]))
             else:
                 img[yi, xi] = h[i]
                 if h[i]>0:
                     mask[yi, xi] = False
-        result = DataContainer.FieldContainer( img, fCon.unit, mask=mask, dimensions=[yDim, xDim],
-                                               longname=u'Map of %s'%fCon.longname, shortname=fCon.shortname)
+        result = DataContainer.FieldContainer(
+            img, fCon.unit, mask=mask, dimensions=[yDim, xDim],
+            longname=u'Map of %s'%fCon.longname, shortname=fCon.shortname)
         return result
 
     @Worker.plug(Connectors.TYPE_IMAGE)
@@ -211,5 +222,15 @@ class OscMapper(Worker.Worker):
             con.data = con.data.astype('float')
         xf, yf, h = tuple([ con.data for con in cons ])
         result = self.calcNormal(osc, xCon, yCon, fCon, xf, yf, h)
+        if self.paramOverrideV.value:
+            vs = str(self.paramVmin.value), str(self.paramVmax.value)
+            from pyphant.quantities.PhysicalQuantities import (
+                isPhysicalQuantity, PhysicalQuantity)
+            try:
+                vs = [PhysicalQuantity(v) for v in vs]
+            except SyntaxError:
+                vs = [float(v) for v in vs]
+            result.attributes['vmin'] = vs[0]
+            result.attributes['vmax'] = vs[1]
         result.seal()
         return result

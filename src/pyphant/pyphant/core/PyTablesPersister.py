@@ -70,7 +70,7 @@ import scipy
 import logging
 _logger = logging.getLogger("pyphant")
 
-_reservedAttributes = ('longname','shortname','columns')
+_reservedAttributes = ('longname', 'shortname', 'columns', 'creator', 'machine')
 
 class Connection(tables.IsDescription):
     destinationWorker = tables.StringCol(len("worker_"+str(sys.maxint))+1)
@@ -167,6 +167,8 @@ def saveResult(result, h5):
 def saveSample(h5, resultGroup, result):
     h5.setNodeAttr(resultGroup, "longname", result.longname.encode("utf-8"))
     h5.setNodeAttr(resultGroup, "shortname", result.shortname.encode("utf-8"))
+    h5.setNodeAttr(resultGroup, "creator", result.creator.encode("utf-8"))
+    h5.setNodeAttr(resultGroup, "machine", result.machine.encode("utf-8"))
     for key,value in result.attributes.iteritems():
         if key in _reservedAttributes:
             raise ValueError, "Attribute should not be named %s!" % _reservedAttributes
@@ -197,6 +199,8 @@ def saveField(h5, resultGroup, result):
         h5.setNodeAttr(resultGroup.data,key,value)
     h5.setNodeAttr(resultGroup, "longname", result.longname.encode("utf-8"))
     h5.setNodeAttr(resultGroup, "shortname", result.shortname.encode("utf-8"))
+    h5.setNodeAttr(resultGroup, "creator", result.creator.encode("utf-8"))
+    h5.setNodeAttr(resultGroup, "machine", result.machine.encode("utf-8"))
 
     if result.error != None:
         h5.createArray(resultGroup, "error", result.error,
@@ -284,6 +288,13 @@ def restoreResultsToWorkers(recipeGroup, workers, h5):
 def loadField(h5, resNode):
     longname = unicode(h5.getNodeAttr(resNode, "longname"), 'utf-8')
     shortname = unicode(h5.getNodeAttr(resNode, "shortname"), 'utf-8')
+    try:
+        creator = unicode(h5.getNodeAttr(resNode, "creator"), 'utf-8')
+        machine = unicode(h5.getNodeAttr(resNode, "machine"), 'utf-8')
+    except:
+        import Helpers
+        creator = Helpers.getUsername()
+        machine = Helpers.getMachine()
     data = scipy.array(resNode.data.read())
     def loads(inputList):
         if type(inputList)==type([]):
@@ -316,6 +327,8 @@ def loadField(h5, resNode):
     result = DataContainer.FieldContainer(data, unit, error, mask,
                                           dimensions, longname, shortname,
                                           attributes)
+    result.creator = creator
+    result.machine = machine
     result.seal(resNode._v_title)
     return result
 
@@ -323,6 +336,8 @@ def loadSample(h5, resNode):
     result = DataContainer.SampleContainer.__new__(DataContainer.SampleContainer)
     result.longname = unicode(h5.getNodeAttr(resNode, "longname"), 'utf-8')
     result.shortname = unicode(h5.getNodeAttr(resNode, "shortname"), 'utf-8')
+    result.creator = unicode(h5.getNodeAttr(resNode, "creator"), 'utf-8')
+    result.machine = unicode(h5.getNodeAttr(resNode, "machine"), 'utf-8')
     result.attributes = {}
     for key in resNode._v_attrs._v_attrnamesuser:
         if key not in _reservedAttributes:

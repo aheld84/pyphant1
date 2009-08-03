@@ -72,29 +72,14 @@ import copy, hashlib, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse
 from pyphant.quantities.PhysicalQuantities import (isPhysicalQuantity,
                                                    PhysicalQuantity)
-
+import Helpers
 
 import logging
 _logger = logging.getLogger("pyphant")
 
 
-
 #Default string encoding
 enc = lambda s: unicode(s, "utf-8")
-
-#Set USER variable used for the emd5 tag
-pltform = platform.system()
-if pltform == 'Linux' or pltform == 'Darwin':
-    USER = enc(os.environ['LOGNAME'])
-elif pltform == 'Windows':
-    try:
-        USER = enc(os.environ['USERNAME'])
-    except:
-        USER = u"Unidentified User"
-else:
-    raise NotImplementedError, "Unsupported Platform %s" %pltform
-
-
 
 def parseId(id):
     u"""Returns tupple (HASH, TYPESTRING) from given .id attribute."""
@@ -123,6 +108,8 @@ class DataContainer(object):
     def __init__(self, longname, shortname, attributes=None):
         self.longname = longname
         self.shortname = shortname
+        self.machine = Helpers.getMachine()
+        self.creator = Helpers.getUsername()
         if type(attributes) == type({}):
             self.attributes = attributes
         else:
@@ -167,6 +154,16 @@ class DataContainer(object):
                 "be modified anymore.")
         self.lock.release()
 
+    def generateHash(self, m=None):
+        if m == None:
+            m = hashlib.md5()
+        m.update(self.longname)
+        m.update(self.shortname)
+        m.update(self.machine)
+        m.update(self.creator)
+        m.update(str(self.attributes))
+        return enc(m.hexdigest())
+
     def seal(self, id=None):
         with self.lock:
             if self.id:
@@ -178,10 +175,10 @@ class DataContainer(object):
                 self.id = id
             else:
                 self.hash = self.generateHash()
-                now = enc(datetime.datetime.utcnow().isoformat('_'))
-                self.id = u"emd5://%s/%s/%s/%s.%s" % (enc(socket.getfqdn()),
-                                                      USER,
-                                                      now,
+                self.timestamp = datetime.datetime.utcnow()
+                self.id = u"emd5://%s/%s/%s/%s.%s" % (self.machine,
+                                                      self.creator,
+                                                      enc(self.timestamp.isoformat('_')),
                                                       self.hash,
                                                       self.typeString)
 
@@ -232,12 +229,11 @@ class SampleContainer(DataContainer):
         return u"%s %s" % (self.longname, self.shortname)
     label = property(_getLabel)
 
-    def generateHash(self):
-        m = hashlib.md5()
+    def generateHash(self, m=None):
+        if m == None:
+            m = hashlib.md5()
+        super(SampleContainer, self).generateHash(m)
         m.update(u''.join([c.hash for c in self.columns]))
-        m.update(str(self.attributes))
-        m.update(self.longname)
-        m.update(self.shortname)
         return enc(m.hexdigest())
 
     def __deepcopy__(self, memo):
@@ -246,6 +242,8 @@ class SampleContainer(DataContainer):
         res.columns = copy.deepcopy(self.columns, memo)
         res.longname = copy.deepcopy(self.longname, memo)
         res.shortname = copy.deepcopy(self.shortname, memo)
+        res.creator = copy.deepcopy(self.creator, memo)
+        res.machine = copy.deepcopy(self.machine, memo)
         res.attributes = copy.deepcopy(self.attributes, memo)
         self.lock.release()
         return res

@@ -40,18 +40,8 @@ __version__ = "$Revision$"
 enc=lambda s: unicode(s, "utf-8")
 
 import platform,os,socket,datetime
-pltform=platform.system()
-if pltform=='Linux' or pltform=='Darwin':
-    USER=enc(os.environ['LOGNAME'])
-elif pltform=='Windows':
-    try:
-        USER=enc(os.environ['USERNAME'])
-    except:
-        USER=u"Unidentified User"
-else:
-    raise NotImplementedError, "Unsupported Platform %s" %pltform
-
 import fmfgen, numpy
+import pyphant.core.Helpers
 
 def dtype2colFormat(dtype):
     if dtype.name.startswith('float'):
@@ -65,7 +55,7 @@ def dtype2colFormat(dtype):
 def field2fmf(fieldContainer):
     factory = fmfgen.gen_factory(out_coding='utf-8', eol='\n')
     fc = factory.gen_fmf()
-    fc.add_reference_item('author', USER)
+    fc.add_reference_item('author', pyphant.core.Helpers.getUsername())
     fc.add_reference_item('title',fieldContainer.longname)
     fc.add_reference_item('place',socket.getfqdn())
     fc.add_reference_item('created',datetime.datetime.utcnow().isoformat())

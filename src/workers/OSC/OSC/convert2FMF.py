@@ -94,17 +94,7 @@ import datetime
 import StringIO
 from optparse import OptionParser
 import platform,os
-
-#Set USER variable
-pltform=platform.system()
-if pltform=='Linux':
-    import pwd
-    USER=pwd.getpwuid(os.getuid())[0]
-elif pltform=='Windows':
-    try:
-        USER=os.environ['USERNAME']
-    except:
-        USER=u"Unidentified User"
+import pyphant.core.Helpers
 
 parser= OptionParser(__doc__)
 parser.add_option("-i", "--input-format", dest="iniFormat",default='RiedeINI',
@@ -150,7 +140,7 @@ zip = zipfile.ZipFile(archiveName[:-4]+'_patched.zip','w')
 def annotation():
     stream = ''
     stream += 'patched date: %s\n' % modDate
-    stream += 'patched by: %s\n' % USER
+    stream += 'patched by: %s\n' % pyphant.core.Helpers.getUsername()
     stream += 'place: Freiburg i. Brsg.\n'
     stream += 'organization: Freiburger Materialforschungszentrum (FMF)\n'
     return stream
