@@ -448,10 +448,21 @@ def data2table(longname, shortname, preParsedData, config):
                 f.error = numpy.ones(f.data.shape)*error
             except:
                 f.error = fields_by_name[error].inUnitsOf(f).data
-    fields = [ reshapeField(field) for field in fields ]
+    reshapedFields = []
+    for field in fields:
+        try:
+            newField = reshapeField(field)
+        except TypeError,e:
+            if field.data.dtype.name.startswith('string'):
+                _logger.warning('Warning: Cannot reshape numpy.array of string: %s' % field)
+                newField = field
+            else:
+                _logger.error('Error: Cannot reshape numpy.array: %s' % field)
+                sys.exit(0)
+        reshapedFields.append(newField)
     if shortname==None:
         shortname='T'
-    return DataContainer.SampleContainer(fields,
+    return DataContainer.SampleContainer(reshapedFields,
                                          longname=longname,
                                          shortname=shortname)
 
