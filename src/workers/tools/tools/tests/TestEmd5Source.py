@@ -67,7 +67,8 @@ class TestEmd5Source(unittest.TestCase):
         #Predict result
         from tools import Emd5Src
         s = Emd5Src.Emd5Src()
-        s.paramDc.value = self.V.id
+        s.paramEmd5.value = self.V.id
+        s.paramSelectby.value = u'emd5'
         result = s.plugLoad.getResult()
         self.assertEqual(result, self.V)
 

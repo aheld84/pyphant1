@@ -63,14 +63,16 @@ class TestHistogram(unittest.TestCase):
         self.dim = dim
         self.worker = S.Histogram(None)
         self.accuracyLevel = -3
-        self.uniform = DataContainer.FieldContainer( uniformSample,
-                                                     unit = '1 V',
-                                                     longname='Uniform noise',
-                                                     shortname='g')
-        self.norm = DataContainer.FieldContainer( normalSample,
-                                                  unit = '1 V',
-                                                  longname='Gaussian white noise',
-                                                  shortname='w')
+        self.uniform = DataContainer.FieldContainer(
+            uniformSample,
+            unit = '1 V',
+            longname='Uniform noise',
+            shortname='g' )
+        self.norm = DataContainer.FieldContainer(
+            normalSample,
+            unit = '1 V',
+            longname='Gaussian white noise',
+            shortname='w' )
         self.uniform.seal()
 
     def testUniform(self):
@@ -85,21 +87,23 @@ class TestHistogram(unittest.TestCase):
                                           result.data,
                                           decimal=self.accuracyLevel)
         self.failUnless(result.dimensions[0].unit == self.uniform.unit,
-                        "Unit of result's dimension [%s] has to match the unit of the input data [%s]." % (result.dimensions[0].unit, self.uniform.unit))
+                        "Unit of result's dimension [%s] has to match "
+                        "the unit of the input data [%s]."
+                        % (result.dimensions[0].unit, self.uniform.unit))
 
     def testNormal(self):
         """Tests the correct evaluation of a Gaussian white noise sample."""
         self.worker.getParam('bins').value=20
         result = self.worker.calculateHistogram(self.norm)
-        sample = result.dimensions[0].data
+        sample = numpy.linspace(numpy.floor(self.norm.data.min()),
+                                numpy.ceil(self.norm.data.max()),
+                                result.data.size+1)
         bins = self.worker.getParam('bins').value
         def GaussErrInt(x):
             return 0.5*(1.0+scipy.special.erf(x/numpy.sqrt(2.0)))
         erf = GaussErrInt(sample)
         afoot = numpy.zeros((bins,)).astype('d')
-        afoot[0:-1] = erf[1:]-erf[:-1]
-        delta = sample[-1]-sample[-2]
-        afoot[-1]   = GaussErrInt(sample[-1]+delta)-erf[-1]
+        afoot = erf[1:]-erf[:-1]
         afoot *= self.dim
         self.assertEqual(result.data.sum(),self.dim,
                          'Number of counts has to match number of samples.')
@@ -107,7 +111,9 @@ class TestHistogram(unittest.TestCase):
                                           result.data,
                                           decimal=self.accuracyLevel)
         self.failUnless(result.dimensions[0].unit == self.norm.unit,
-                        "Unit of result's dimension [%s] has to match the unit of the input data [%s]." % (result.dimensions[0].unit, self.norm.unit))
+                        "Unit of result's dimension [%s] has to match "
+                        "the unit of the input data [%s]."
+                        % (result.dimensions[0].unit, self.norm.unit))
 
 if __name__ == '__main__':
     unittest.main()

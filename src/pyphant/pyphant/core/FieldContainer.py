@@ -89,6 +89,13 @@ class IndexMarker(object):
     def isValid(self):
         return True
 
+    def getMaskedFC(self, numpymask):
+        """
+        This method is used to terminate the recursion in
+        FieldContainer.getMaskedFC
+        """
+        return IndexMarker()
+
 
 #INDEX must be a list of objects providing a .seal(self) method.
 #It is used as a marker to terminate the recursive inclusion of FieldContainers.
@@ -631,6 +638,38 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             if not numpy.alltrue(numpy.logical_not(d-d[0])):
                 return False
         return True
+
+    def getMaskedFC(self, numpymask):
+        """
+        Returns a new FieldContainer instance that emerges from this instance
+        by clipping along the primary axis according to the
+        entries in the parameter numpymask, i.e. all entries where numpymask
+        is set to False are discarded.
+        numpymask -- Numpy array with Boolean values
+        """
+        mdims = []
+        for dim in self.dimensions:
+            if mdims == []:
+                # only primary axis has to be masked:
+                mdims.append(dim.getMaskedFC(numpymask))
+            else:
+                mdims.append(copy.deepcopy(dim))
+        to_mask = [self.data, self.error, self.mask]
+        masked = []
+        for item in to_mask:
+            if item != None:
+                masked.append(item[numpymask])
+            else:
+                masked.append(None)
+        return FieldContainer(masked[0],
+                              copy.deepcopy(self.unit),
+                              masked[1],
+                              masked[2],
+                              mdims,
+                              longname=self.longname,
+                              shortname=self.shortname,
+                              attributes=copy.deepcopy(self.attributes),
+                              rescale=False)
 
     maskedData = property( lambda self: numpy.ma.array(self.data, mask=self.mask) )
     maskedError = property( lambda self: numpy.ma.array(self.error, mask=self.mask) )

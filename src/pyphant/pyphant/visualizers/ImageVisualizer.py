@@ -111,8 +111,20 @@ class ImageVisualizer(object):
         ymax=scipy.amax(y)
         #Support for images with non uniform axes adapted from python-matplotlib-doc/examples/pcolor_nonuniform.py
         ax = self.figure.add_subplot(111)
+        vmin = self.fieldContainer.attributes.get('vmin', None)
+        vmax = self.fieldContainer.attributes.get('vmax', None)
+        if vmin is not None:
+            vmin /= self.fieldContainer.unit
+        if vmax is not None:
+            vmax /= self.fieldContainer.unit
         if MPL_LT_0_98_1 or self.fieldContainer.isLinearlyDiscretised():
-            pylab.imshow(self.fieldContainer.maskedData, extent=(xmin, xmax, ymin, ymax), origin='lower', interpolation='nearest',aspect='auto')
+            pylab.imshow(self.fieldContainer.maskedData,
+                         aspect='auto',
+                         interpolation='nearest',
+                         vmin=vmin,
+                         vmax=vmax,
+                         origin='lower',
+                         extent=(xmin, xmax, ymin, ymax))
             pylab.colorbar(format=F(self.fieldContainer), ax=ax)
         else:
             im = NonUniformImage(ax, extent=(xmin,xmax,ymin,ymax))
@@ -120,6 +132,10 @@ class ImageVisualizer(object):
             ax.images.append(im)
             ax.set_xlim(xmin,xmax)
             ax.set_ylim(ymin,ymax)
+            if vmin is not None or vmax is not None:
+                im.set_clim(vmin, vmax)
+            else:
+                im.autoscale_None()
             pylab.colorbar(im,format=F(self.fieldContainer), ax=ax)
         pylab.xlabel(self.fieldContainer.dimensions[-1].shortlabel)
         pylab.ylabel(self.fieldContainer.dimensions[-2].shortlabel)

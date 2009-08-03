@@ -47,7 +47,7 @@ from pyphant.quantities import PhysicalQuantities
 import copy
 
 
-class ExtremumFinder(Worker.Worker):
+class ComputeFunctional(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]

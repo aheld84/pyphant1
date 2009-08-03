@@ -30,6 +30,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+The Composite worker acts as a container for graphs of workers.
+At the moment these can only be entire recipes, but it is planned
+that they can be subgraphs, too.
 """
 
 __id__ = "$Id$"
@@ -37,8 +40,8 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import EventDispatcher, Worker, Connectors, Param
-import copy, pkg_resources
+import EventDispatcher, Worker, Connectors, Param
+import copy
 
 class CompositeWorkerChangedEvent(object):
     def __init__(self, worker, message, data=None):
@@ -48,27 +51,34 @@ class CompositeWorkerChangedEvent(object):
 
 class WorkerAddedEvent(CompositeWorkerChangedEvent):
     def __init__(self, worker, data=None):
-        CompositeWorkerChangedEvent.__init__(self, worker, "Worker Added", data)
+        CompositeWorkerChangedEvent.__init__(self, worker,
+                                             "Worker Added", data)
 
 class WorkerRemovedEvent(CompositeWorkerChangedEvent):
     def __init__(self, worker, data=None):
-        CompositeWorkerChangedEvent.__init__(self, worker, "Worker Removed", data)
+        CompositeWorkerChangedEvent.__init__(self, worker,
+                                             "Worker Removed", data)
 
 class ConnectionEvent(CompositeWorkerChangedEvent):
     def __init__(self, plug, socket, message, data=None):
-        CompositeWorkerChangedEvent.__init__(self, socket.worker, message, data)
-        self.plug=plug
-        self.socket=socket
+        CompositeWorkerChangedEvent.__init__(self, socket.worker,
+                                             message, data)
+        self.plug = plug
+        self.socket = socket
 class ConnectionCreatedEvent(ConnectionEvent):
     def __init__(self, plug, socket, data=None):
-        ConnectionEvent.__init__(self, plug, socket, "Connection created", data)
+        ConnectionEvent.__init__(self, plug, socket,
+                                 "Connection created", data)
 class ConnectionDestroyedEvent(ConnectionEvent):
     def __init__(self, plug, socket, data=None):
-        ConnectionEvent.__init__(self, plug, socket, "Connection destroyed", data)
+        ConnectionEvent.__init__(self, plug, socket,
+                                 "Connection destroyed", data)
 class ConnectorsExternalizationStateChangedEvent(CompositeWorkerChangedEvent):
     def __init__(self, worker, connector, data=None):
-        CompositeWorkerChangedEvent.__init__(self,worker,"Connectors externalization state changed",data)
-        self.connector=connector
+        CompositeWorkerChangedEvent.__init__(
+            self, worker, "Connectors externalization state changed", data
+            )
+        self.connector = connector
 
 class CompositeWorker(Worker.Worker):
     API = 2
@@ -92,23 +102,24 @@ class CompositeWorker(Worker.Worker):
         self._eventDispatcher = EventDispatcher.EventDispatcher()
         for i in xrange(self.paramNoSockets.value):
             name = "socket%i" % i
-            s = Connectors.ConnectorProxy(self, True, name)
-            setattr(self, 'socket'+self.upperFirstLetter(name), s)
-            self._sockets[name]=s
+            socketProxy = Connectors.ConnectorProxy(self, True, name)
+            setattr(self, 'socket'+self.upperFirstLetter(name), socketProxy)
+            self._sockets[name] = socketProxy
         for i in xrange(self.paramNoPlugs.value):
             name = "plug%i" % i
-            s = Connectors.ConnectorProxy(self, False, name)
-            setattr(self, 'plug'+self.upperFirstLetter(name), s)
-            self._plugs[name]=s
+            plugProxy = Connectors.ConnectorProxy(self, False, name)
+            setattr(self, 'plug'+self.upperFirstLetter(name), plugProxy)
+            self._plugs[name] = plugProxy
 
     def addWorker(self, worker, data=None):
         if not self.checkWorkerName(worker, worker.getParam('name').value):
             raise ValueError(u'Duplicate worker name')
-        worker.registerParamListener(self.vetoWorkerName, 'name', Param.ParamChangeRequested)
+        worker.registerParamListener(self.vetoWorkerName,
+                                     'name', Param.ParamChangeRequested)
         self._workers.append(worker)
-        if len(worker.getPlugs())==0:
+        if len(worker.getPlugs()) == 0:
             self._sinks.append(worker)
-        if len(worker.getSockets())==0:
+        if len(worker.getSockets()) == 0:
             self._sources.append(worker)
         self._notifyListeners(WorkerAddedEvent(worker, data))
 
@@ -121,26 +132,33 @@ class CompositeWorker(Worker.Worker):
         self._notifyListeners(WorkerRemovedEvent(worker, data))
 
     def getWorker(self, name):
-        cands = [w for w in self._workers if w.getParam('name').value==name]
-        if len(cands)>1:
-            raise RuntimeError, "Ambiguous worker name <%s> in CompositeWorker <%s>."%(name, self)
-        if len(cands)==0:
+        cands = [w for w in self._workers if w.getParam('name').value == name]
+        if len(cands) > 1:
+            raise RuntimeError(
+                "Ambiguous worker name <%s> in CompositeWorker <%s>."
+                % (name, self)
+                )
+        if len(cands) == 0:
             return None
         return cands[0]
 
-    def getWorkers(self,desiredWorker=''):
+    def getWorkers(self, desiredWorker=''):
         if desiredWorker == '':
             result = self._workers
         else:
-            result = [w for w in self._workers if w.__class__.__name__ == desiredWorker]
+            result = [w for w in self._workers
+                      if w.__class__.__name__ == desiredWorker]
             if result == []:
-                raise ValueError, "Recipe does not contain Worker %s" % desiredWorker
+                raise ValueError("Recipe does not contain Worker %s"
+                                 % desiredWorker)
         return result
 
     def findConnectorForId(self, id):
-        splittedId = id.split('.',1)
-        if len(splittedId)==1:
-            return super(CompositeWorker, self).findConnectorForId(splittedId[0])
+        splittedId = id.split('.', 1)
+        if len(splittedId) == 1:
+            return super(CompositeWorker, self).findConnectorForId(
+                splittedId[0]
+                )
         else:
             w = self.getWorker(splittedId[0])
             return w.findConnectorForId(splittedId[1])
@@ -150,7 +168,11 @@ class CompositeWorker(Worker.Worker):
 
     def getOpenSocketsForPlug(self, plug):
         walker = self.createCompositeWorkerWalker()
-        return sum(walker.visit(lambda w: [s for s in w.getSockets() if not s.isFull()], [plug.worker]), []) 
+        return sum(walker.visit(lambda w:
+                                [s for s in w.getSockets()
+                                 if not s.isFull()],
+                                [plug.worker]),
+                   [])
 
     def getSources(self):
         return self._sources
@@ -160,29 +182,32 @@ class CompositeWorker(Worker.Worker):
 
     #pickle
     def __getstate__(self):
-        pdict=copy.copy(self.__dict__)
-        pdict['_eventDispatcher']=EventDispatcher.EventDispatcher()
+        pdict = copy.copy(self.__dict__)
+        pdict['_eventDispatcher'] = EventDispatcher.EventDispatcher()
         return pdict
 
     def generateEvents(self, listenerDict):
-        map(lambda worker: listenerDict[WorkerAddedEvent](WorkerAddedEvent(worker)), self._workers)
-        ##walker=self.createCompositeWorkerWalker()
+        map(lambda worker: listenerDict[WorkerAddedEvent](
+                WorkerAddedEvent(worker)
+                ), self._workers)
         def connectionInformer(worker):
             for socket in worker.getSockets():
                 if socket.isFull():
-                    [(issubclass(ConnectionCreatedEvent, x) and l(ConnectionCreatedEvent(socket.getPlug(), socket))) for (x,l) in listenerDict.items() ]
-                    #listenerDict[ConnectionCreatedEvent](ConnectionCreatedEvent(socket.getPlug(), socket))
+                    [ (issubclass(ConnectionCreatedEvent, x)
+                       and l(ConnectionCreatedEvent(socket.getPlug(), socket)))
+                      for (x, l) in listenerDict.items() ]
         connectionInformer(self)
         map(connectionInformer, self._workers)
-        ##walker.visit(connectionInformer)
 
     def createCompositeWorkerWalker(self):
         return CompositeWorkerWalker(self)
 
-    def registerListener(self, listener, eventType=CompositeWorkerChangedEvent):
+    def registerListener(self, listener,
+                         eventType=CompositeWorkerChangedEvent):
         self._eventDispatcher.registerListener( listener, eventType)
 
-    def unregisterListener(self, listener, eventType=CompositeWorkerChangedEvent):
+    def unregisterListener(self, listener,
+                           eventType=CompositeWorkerChangedEvent):
         self._eventDispatcher.unregisterListener( listener, eventType )
 
     def _notifyListeners(self, event):
@@ -199,10 +224,13 @@ class CompositeWorker(Worker.Worker):
         self._notifyListeners(ConnectionDestroyedEvent(plug, socket))
 
     def workersConnectorStateChanged(self, worker, connector):
-        self._notifyListeners(ConnectorsExternalizationStateChangedEvent(worker,connector))
+        self._notifyListeners(
+            ConnectorsExternalizationStateChangedEvent(worker, connector)
+            )
 
     def vetoWorkerName(self, paramChangeEvent):
-        if not self.checkWorkerName(paramChangeEvent.param.worker, paramChangeEvent.newValue):
+        if not self.checkWorkerName(paramChangeEvent.param.worker,
+                                    paramChangeEvent.newValue):
             raise Param.VetoParamChange(paramChangeEvent)
 
     def checkWorkerName(self, worker, name):
@@ -215,19 +243,19 @@ class CompositeWorker(Worker.Worker):
 
 class CompositeWorkerWalker(object):
     def __init__(self, compositeWorker):
-        self._compositeWorker=compositeWorker
+        self._compositeWorker = compositeWorker
 
     def visit(self, visitor, start):
-        visited=[]
-        toVisit=start
+        visited = []
+        toVisit = start
         while toVisit:
-            worker=toVisit.pop(0)
+            worker = toVisit.pop(0)
             yield visitor(worker)
             visited.append(worker)
             for socket in worker.getSockets():
-                plug=socket.getPlug()
+                plug = socket.getPlug()
                 if plug:
-                    worker=plug.worker
+                    worker = plug.worker
                     if worker not in visited:
                         toVisit.append(worker)
 

@@ -45,44 +45,53 @@ pkg_resources.require("pyphant")
 import scipy
 import copy
 from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
-from pyphant.core.DataContainer import (INDEX, generateIndex,
-                                        FieldContainer,SampleContainer,DataContainer,
+from pyphant.core.DataContainer import (INDEX,
+                                        generateIndex,
+                                        FieldContainer,
+                                        SampleContainer,
+                                        DataContainer,
                                         assertEqual)
 import numpy.testing as nt
 import numpy
 
 class DataContainerTestCase(unittest.TestCase):
     def setUp(self):
-        self.dc = DataContainer('variable','v')
-        self.dc0 = DataContainer('variable','v_0')
+        self.dc = DataContainer('variable', 'v')
+        self.dc0 = DataContainer('variable', 'v_0')
 
     def testNoSubscriptPersistent(self):
         result = self.dc.appendSubscript('i')
-        self.assertEqual(result,'v_{i}')
-        self.assertEqual(self.dc.shortname,'v_{i}')
+        self.assertEqual(result, 'v_{i}')
+        self.assertEqual(self.dc.shortname, 'v_{i}')
 
     def testSubscriptPersistent(self):
         result = self.dc0.appendSubscript('i')
-        self.assertEqual(result,'v_{0,i}')
-        self.assertEqual(self.dc0.shortname,'v_{0,i}')
+        self.assertEqual(result, 'v_{0,i}')
+        self.assertEqual(self.dc0.shortname, 'v_{0,i}')
 
     def testNoSubscriptNotPersistent(self):
-        result = self.dc.appendSubscript('i',persistent=False)
-        self.assertEqual(result,'v_{i}')
-        self.assertEqual(self.dc.shortname,'v')
+        result = self.dc.appendSubscript('i', persistent=False)
+        self.assertEqual(result, 'v_{i}')
+        self.assertEqual(self.dc.shortname, 'v')
 
     def testSubscriptNotPersistent(self):
-        result = self.dc0.appendSubscript('i',persistent=False)
-        self.assertEqual(result,'v_{0,i}')
-        self.assertEqual(self.dc0.shortname,'v_0')
+        result = self.dc0.appendSubscript('i', persistent=False)
+        self.assertEqual(result, 'v_{0,i}')
+        self.assertEqual(self.dc0.shortname, 'v_0')
 
     def testDefaultAttribute(self):
-        "Checking if the default attribute has correctly been set to an empty dictionary."
-        self.assertEqual(self.dc.attributes,{},'Expected an empty dictionary as attribute, but found %s.' % self.dc.attributes )
+        """
+        Checking if the default attribute has correctly been set to an empty
+        dictionary.
+        """
+        self.assertEqual(self.dc.attributes,
+                         {},
+                         'Expected an empty dictionary as attribute, \
+but found %s.' % self.dc.attributes )
 
 class FieldContainerTestCase(unittest.TestCase):
     def setUp(self):
-        self.testData = scipy.array([[0.,1.,2.],[3.,4.,5.],[6.,7.,8.]])
+        self.testData = scipy.array([[0., 1., 2.], [3., 4., 5.], [6., 7., 8.]])
         self.testMask = self.testData > 5
         self.longname = u"Sampled Data"
         self.shortname = u"I\\omega"
@@ -100,34 +109,49 @@ class FieldContainerTestCase(unittest.TestCase):
         self.assertTrue(scipy.alltrue(index.data == scipy.arange(0,n)))
 
     def testLabeling(self):
-        field = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
-        self.assertEqual(field.label,"%s $%s(i,j)$ / a.u." % (self.longname,self.shortname))
-        field = FieldContainer(self.testData,self.unit,longname=self.longname,shortname=self.shortname)
-        self.assertEqual(field.label,"%s $%s(i,j)$ / %s" % (self.longname,self.shortname,self.unit))
+        field = FieldContainer(self.testData,
+                               1,
+                               longname=self.longname,
+                               shortname=self.shortname)
+        self.assertEqual(field.label,"%s $%s(i,j)$ / a.u." % (self.longname,
+                                                              self.shortname))
+        field = FieldContainer(self.testData,
+                               self.unit,
+                               longname=self.longname,
+                               shortname=self.shortname)
+        self.assertEqual(field.label,"%s $%s(i,j)$ / %s" % (self.longname,
+                                                            self.shortname,
+                                                            self.unit))
 
     def testSeal(self):
-        field = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
+        field = FieldContainer(self.testData,
+                               1,
+                               longname=self.longname,
+                               shortname=self.shortname)
         field.seal()
         self.assertNotEqual(field.id, None)
         self.assertNotEqual(field.hash, None)
         try:
-            field.data=scipy.array([1,2,3])
+            field.data = scipy.array([1, 2, 3])
         except TypeError, e:
             pass
         else:
-            self.fail("Modification of sealed FieldContainer was not prohibited.")
+            self.fail("Modification of sealed FieldContainer was not \
+prohibited.")
         try:
-            field.data[1]=4
+            field.data[1] = 4
         except RuntimeError, e:
             pass
         else:
-            self.fail("Modification of sealed FieldContainer was not prohibited.")
+            self.fail("Modification of sealed FieldContainer was not \
+prohibited.")
         try:
-            field.dimensions[0]=copy.deepcopy(field)
+            field.dimensions[0] = copy.deepcopy(field)
         except TypeError, e:
             pass
         else:
-            self.fail("Modification of sealed FieldContainer's dimension was not prohibited.")
+            self.fail("Modification of sealed FieldContainer's dimension \
+was not prohibited.")
 
 #This test is broken since it produces an invalid FieldContainer.
 #I am not sure how to fix it or what its intent is.
@@ -141,130 +165,303 @@ class FieldContainerTestCase(unittest.TestCase):
 #            self.fail("Direct setting of attribute .dimensions has not instantiated a dimensionList object: %s"%e)
 
     def testDeepcopy(self):
-        field = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
+        field = FieldContainer(self.testData,
+                               1,
+                               longname=self.longname,
+                               shortname=self.shortname)
         copiedField=copy.deepcopy(field)
         self.assertEqual(field, copiedField)
         field.seal()
         copiedField.seal()
         self.assertEqual(field, copiedField)
-        self.assertEqual(field.hash, copiedField.hash) #equal because only real data is considered
-        self.assertNotEqual(field.id, copiedField.id) #unique due to timestamp in dimension ids
+        #equal because only real data is considered:
+        self.assertEqual(field.hash, copiedField.hash)
+        #unique due to timestamp in dimension ids:
+        self.assertNotEqual(field.id, copiedField.id)
 
     def testEqual(self):
-        field1 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
-        self.assertEqual( field1, field2 )
-        field1 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,1,longname=self.longname+"bu",shortname=self.shortname)
-        self.assertEqual( field1, field2 )
-        field1 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname+'a')
-        self.assertEqual( field1, field2 )
-        field1 = FieldContainer(self.testData,"1 km",longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,"1000 m",longname=self.longname,shortname=self.shortname)
-        self.assertEqual( field1, field2 )
-        assert( not (field1 != field2) ) #necessary to test the != operator (__ne__)
-        field1 = FieldContainer(self.testData,"1 km",longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,longname=self.longname,shortname=self.shortname)
-        self.assertNotEqual( field1, field2 )
-        field1 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,"1 m",longname=self.longname,shortname=self.shortname)
-        self.assertNotEqual( field1, field2 )
-        field1 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,"1 m",longname=self.longname+"bu",shortname=self.shortname)
-        self.assertNotEqual( field1, field2 )
+        field1 = FieldContainer(self.testData,
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        self.assertEqual(field1, field2)
+        field1 = FieldContainer(self.testData,
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                1,
+                                longname=self.longname + "bu",
+                                shortname=self.shortname)
+        self.assertEqual(field1, field2)
+        field1 = FieldContainer(self.testData,
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname + 'a')
+        self.assertEqual(field1, field2)
+        field1 = FieldContainer(self.testData,
+                                "1 km",
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                "1000 m",
+                                longname=self.longname,
+                                shortname=self.shortname)
+        self.assertEqual(field1, field2)
+        #necessary to test the != operator (__ne__):
+        assert(not (field1 != field2))
+        field1 = FieldContainer(self.testData,
+                                "1 km",
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        self.assertNotEqual(field1, field2)
+        field1 = FieldContainer(self.testData,
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                "1 m",
+                                longname=self.longname,
+                                shortname=self.shortname)
+        self.assertNotEqual(field1, field2)
+        field1 = FieldContainer(self.testData,
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                "1 m",
+                                longname=self.longname + "bu",
+                                shortname=self.shortname)
+        self.assertNotEqual(field1, field2)
         #Test inequality of attributes
-        field1 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname,attributes={'set':True})
-        field2 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
-        self.assertNotEqual( field1, field2 )
+        field1 = FieldContainer(self.testData,
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname,
+                                attributes={'set':True})
+        field2 = FieldContainer(self.testData,
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        self.assertNotEqual(field1, field2)
         #Test inequality of dimensions
-        field1 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
+        field1 = FieldContainer(self.testData,
+                                1,longname=self.longname,
+                                shortname=self.shortname)
         field1.dimensions[0].data *= 10
-        field2 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
-        self.assertNotEqual( field1, field2 )
+        field2 = FieldContainer(self.testData,
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        self.assertNotEqual(field1, field2)
 
     def testEqualMasked(self):
-        field1 = FieldContainer(self.testData,1,mask=self.testMask,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,1,mask=self.testMask,longname=self.longname,shortname=self.shortname)
-        self.assertEqual( field1, field2 )
-        field1 = FieldContainer(self.testData,1,mask=self.testMask,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,1,mask=self.testMask,longname=self.longname+"bu",shortname=self.shortname)
-        self.assertEqual( field1, field2 )
-        field1 = FieldContainer(self.testData,"1 km",mask=self.testMask,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,"1000 m",mask=self.testMask,longname=self.longname,shortname=self.shortname)
-        self.assertEqual( field1, field2 )
-        assert( not (field1 != field2) ) #necessary to test the != operator (__ne__)
+        field1 = FieldContainer(self.testData,
+                                1,
+                                mask=self.testMask,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                1,mask=self.testMask,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        self.assertEqual(field1, field2)
+        field1 = FieldContainer(self.testData,
+                                1,
+                                mask=self.testMask,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                1,
+                                mask=self.testMask,
+                                longname=self.longname + "bu",
+                                shortname=self.shortname)
+        self.assertEqual(field1, field2)
+        field1 = FieldContainer(self.testData,
+                                "1 km",
+                                mask=self.testMask,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                "1000 m",
+                                mask=self.testMask,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        self.assertEqual(field1, field2)
+        #necessary to test the != operator (__ne__)
+        assert(not (field1 != field2))
         testMask2 = self.testMask.copy()
-        testMask2[0,2] = not self.testMask[0,2]
-        field1 = FieldContainer(self.testData,1,mask=self.testMask,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,1,mask=testMask2,longname=self.longname,shortname=self.shortname)
-        self.assertNotEqual( field1, field2 )
-        field1 = FieldContainer(self.testData,1,mask=self.testMask,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,1,mask=testMask2,longname=self.longname+"bu",shortname=self.shortname)
-        self.assertNotEqual( field1, field2 )
-        field1 = FieldContainer(self.testData,"1 km",mask=self.testMask,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,"1000 m",mask=testMask2,longname=self.longname,shortname=self.shortname)
-        self.assertNotEqual( field1, field2 )
-        assert( field1 != field2 ) #necessary to test the != operator (__ne__)
-        field1 = FieldContainer(self.testData,"1 km",mask=self.testMask,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,mask=self.testMask,longname=self.longname,shortname=self.shortname)
-        self.assertNotEqual( field1, field2 )
-        field1 = FieldContainer(self.testData,1,mask=self.testMask,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,"1 m",mask=self.testMask,longname=self.longname,shortname=self.shortname)
-        self.assertNotEqual( field1, field2 )
-        field1 = FieldContainer(self.testData,1,mask=self.testMask,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,"1 m",mask=self.testMask,longname=self.longname+"bu",shortname=self.shortname)
-        self.assertNotEqual( field1, field2 )
+        testMask2[0, 2] = not self.testMask[0, 2]
+        field1 = FieldContainer(self.testData,
+                                1,
+                                mask=self.testMask,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                1,
+                                mask=testMask2,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        self.assertNotEqual(field1, field2)
+        field1 = FieldContainer(self.testData,
+                                1,
+                                mask=self.testMask,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                1,
+                                mask=testMask2,
+                                longname=self.longname + "bu",
+                                shortname=self.shortname)
+        self.assertNotEqual(field1, field2)
+        field1 = FieldContainer(self.testData,
+                                "1 km",
+                                mask=self.testMask,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                "1000 m",
+                                mask=testMask2,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        self.assertNotEqual(field1, field2)
+        assert(field1 != field2) #necessary to test the != operator (__ne__)
+        field1 = FieldContainer(self.testData,
+                                "1 km",
+                                mask=self.testMask,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                mask=self.testMask,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        self.assertNotEqual(field1, field2)
+        field1 = FieldContainer(self.testData,
+                                1,
+                                mask=self.testMask,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                "1 m",
+                                mask=self.testMask,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        self.assertNotEqual(field1, field2)
+        field1 = FieldContainer(self.testData,
+                                1,
+                                mask=self.testMask,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                "1 m",
+                                mask=self.testMask,
+                                longname=self.longname + "bu",
+                                shortname=self.shortname)
+        self.assertNotEqual(field1, field2)
 
     def testAddition(self):
-        field1 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,1,longname=self.longname,shortname=self.shortname)
+        field1 = FieldContainer(self.testData,
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname)
         sumField = field1 + field2
-        nt.assert_array_almost_equal( sumField.data, field1.data+field2.data )
+        nt.assert_array_almost_equal(sumField.data, field1.data + field2.data)
         self.assertEqual(1, sumField.unit)
-        self.assertEqual(sumField.shortname, u"%s + %s" % (self.shortname, self.shortname))
-        field1 = FieldContainer(self.testData,'1 m',longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,'2 m',longname=self.longname,shortname=self.shortname)
+        self.assertEqual(sumField.shortname,
+                         u"%s + %s" % (self.shortname, self.shortname))
+        field1 = FieldContainer(self.testData,
+                                '1 m',
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                '2 m',
+                                longname=self.longname,
+                                shortname=self.shortname)
         sumField = field1 + field2
-        nt.assert_array_almost_equal( sumField.data, field1.data/2+field2.data )
+        nt.assert_array_almost_equal(sumField.data, field1.data / 2+field2.data)
         self.assertEqual(sumField.unit, PhysicalQuantity('2 m'))
-        self.assertEqual(sumField.shortname, u"%s + %s" % (self.shortname, self.shortname))
+        self.assertEqual(sumField.shortname, u"%s + %s" \
+                             % (self.shortname, self.shortname))
         sumField = field2 + field1
-        nt.assert_array_almost_equal( sumField.data, field1.data/2+field2.data )
+        nt.assert_array_almost_equal(sumField.data,
+                                     field1.data / 2 + field2.data)
         self.assertEqual(sumField.unit, PhysicalQuantity('2 m'))
-        self.assertEqual(sumField.shortname, u"%s + %s" % (self.shortname, self.shortname))
-        field1 = FieldContainer(self.testData,'1 mm',longname=self.longname,shortname=self.shortname)
+        self.assertEqual(sumField.shortname,
+                         u"%s + %s" % (self.shortname, self.shortname))
+        field1 = FieldContainer(self.testData,
+                                '1 mm',
+                                longname=self.longname,
+                                shortname=self.shortname)
         sumField = field1 + field2
-        nt.assert_array_almost_equal( sumField.data, field1.data/2000+field2.data )
+        nt.assert_array_almost_equal(sumField.data,
+                                     field1.data / 2000 + field2.data)
         self.assertEqual(sumField.unit, PhysicalQuantity('2 m'))
-        self.assertEqual(sumField.shortname, u"%s + %s" % (self.shortname, self.shortname))
+        self.assertEqual(sumField.shortname,
+                         u"%s + %s" % (self.shortname, self.shortname))
 
     def testSubtraction(self):
-        field1 = FieldContainer(numpy.random.randn(7,13),1,longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(numpy.random.randn(7,13),1,longname=self.longname,shortname=self.shortname)
+        field1 = FieldContainer(numpy.random.randn(7, 13),
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(numpy.random.randn(7, 13),
+                                1,
+                                longname=self.longname,
+                                shortname=self.shortname)
         sumField = field1 - field2
-        nt.assert_array_almost_equal( sumField.data, field1.data-field2.data)
+        nt.assert_array_almost_equal(sumField.data, field1.data - field2.data)
         self.assertEqual(1, sumField.unit)
-        self.assertEqual(sumField.shortname, u"%s - %s" % (self.shortname, self.shortname))
-        field1 = FieldContainer(self.testData,'1 m',longname=self.longname,shortname=self.shortname)
-        field2 = FieldContainer(self.testData,'2 m',longname=self.longname,shortname=self.shortname)
+        self.assertEqual(sumField.shortname,
+                         u"%s - %s" % (self.shortname, self.shortname))
+        field1 = FieldContainer(self.testData,
+                                '1 m',
+                                longname=self.longname,
+                                shortname=self.shortname)
+        field2 = FieldContainer(self.testData,
+                                '2 m',
+                                longname=self.longname,
+                                shortname=self.shortname)
         sumField = field1 - field2
-        nt.assert_array_almost_equal( sumField.data, field1.data/2-field2.data )
+        nt.assert_array_almost_equal(sumField.data,
+                                     field1.data / 2 - field2.data)
         self.assertEqual(sumField.unit, PhysicalQuantity('2 m'))
-        self.assertEqual(sumField.shortname, u"%s - %s" % (self.shortname, self.shortname))
+        self.assertEqual(sumField.shortname,
+                         u"%s - %s" % (self.shortname, self.shortname))
         sumField = field2 - field1
-        nt.assert_array_almost_equal( sumField.data, field2.data-field1.data/2 )
+        nt.assert_array_almost_equal(sumField.data,
+                                     field2.data - field1.data / 2)
         self.assertEqual(sumField.unit, PhysicalQuantity('2 m'))
-        self.assertEqual(sumField.shortname, u"%s - %s" % (self.shortname, self.shortname))
-        field1 = FieldContainer(self.testData,'1 mm',longname=self.longname,shortname=self.shortname)
+        self.assertEqual(sumField.shortname,
+                         u"%s - %s" % (self.shortname, self.shortname))
+        field1 = FieldContainer(self.testData,
+                                '1 mm',
+                                longname=self.longname,
+                                shortname=self.shortname)
         sumField = field1 - field2
-        nt.assert_array_almost_equal( sumField.data, field1.data/2000-field2.data )
+        nt.assert_array_almost_equal(sumField.data,
+                                     field1.data / 2000 - field2.data)
         self.assertEqual(sumField.unit, PhysicalQuantity('2 m'))
-        self.assertEqual(sumField.shortname, u"%s - %s" % (self.shortname, self.shortname))
+        self.assertEqual(sumField.shortname,
+                         u"%s - %s" % (self.shortname, self.shortname))
 
 class IsValidFieldContainer(unittest.TestCase):
     def setUp(self):
-        self.field = FieldContainer(numpy.random.randn(7,13),
+        self.field = FieldContainer(numpy.random.randn(7, 13),
                                     longname="voltage",
                                     shortname="U",
                                     unit="1V")
@@ -283,7 +480,7 @@ class IsValidFieldContainer(unittest.TestCase):
         shape = list(self.field.data.shape)
         self.field.mask = numpy.ones(shape)
         self.assertTrue(self.field.isValid())
-        shape[0] = shape[0]+1
+        shape[0] = shape[0] + 1
         self.field.mask = numpy.ones(shape)
         self.assertFalse(self.field.isValid())
 
@@ -291,7 +488,7 @@ class IsValidFieldContainer(unittest.TestCase):
         shape = list(self.field.data.shape)
         self.field.error = numpy.zeros(shape)
         self.assertTrue(self.field.isValid())
-        shape[0] = shape[0]+1
+        shape[0] = shape[0] + 1
         self.field.error = numpy.ones(shape)
         self.assertFalse(self.field.isValid())
 
@@ -306,40 +503,52 @@ class IsValidFieldContainer(unittest.TestCase):
 
 class SampleContainerTest(unittest.TestCase):
     def setUp(self):
-        self.rows=100
-        self.intSample = FieldContainer(scipy.arange(0,self.rows),
+        self.rows = 100
+        self.intSample = FieldContainer(scipy.arange(0, self.rows),
                                         PhysicalQuantity('1m'),
                                         #dimensions=INDEX,
                                         longname=u"Integer sample",
                                         shortname=u"i")
-        self.floatSample = FieldContainer(scipy.arange(self.rows/2,self.rows,0.5),
+        self.floatSample = FieldContainer(scipy.arange(self.rows / 2,
+                                                       self.rows,
+                                                       0.5),
                                           PhysicalQuantity('1s'),
                                           longname=u"Float sample",
                                           shortname=u"t")
-        self.desc = scipy.dtype({'names':[u'i', u't'], 'formats':[self.intSample.data.dtype,
-                                                                  self.floatSample.data.dtype],
-                                 'titles':[self.intSample.longname, self.floatSample.longname]})
-        self.data=scipy.rec.fromarrays([self.intSample.data, self.floatSample.data], dtype=self.desc)
-        self.longname=u"Toller Sample"
-        self.shortname=u"phi"
-        self.sampleContainer=SampleContainer([self.intSample, self.floatSample], self.longname, self.shortname)
+        self.desc = scipy.dtype({'names':[u'i', u't'],
+                                 'formats':[self.intSample.data.dtype,
+                                            self.floatSample.data.dtype],
+                                 'titles':[self.intSample.longname,
+                                           self.floatSample.longname]})
+        self.data = scipy.rec.fromarrays([self.intSample.data,
+                                        self.floatSample.data],
+                                       dtype=self.desc)
+        self.longname = u"Toller Sample"
+        self.shortname = u"phi"
+        self.sampleContainer = SampleContainer([self.intSample,
+                                                self.floatSample],
+                                               self.longname,
+                                               self.shortname)
 
     def runTest(self):
         return
 
 class CommonSampleContainerTests(SampleContainerTest):
     def testLabeling(self):
-        self.assertEqual(self.sampleContainer.label,"%s %s" % (self.longname,self.shortname))
+        self.assertEqual(self.sampleContainer.label,
+                         "%s %s" % (self.longname,self.shortname))
 
     def testDeepcopy(self):
         sample = self.sampleContainer
-        copiedSample=copy.deepcopy(sample)
+        copiedSample = copy.deepcopy(sample)
         self.assertEqual(sample, copiedSample)
         sample.seal()
         copiedSample.seal()
         self.assertEqual(sample, copiedSample)
-        self.assertEqual(sample.hash, copiedSample.hash) #equal because only real data is considered
-        self.assertNotEqual(sample.id, copiedSample.id) #unique due to timestamp in dimension ids
+        #equal because only real data is considered:
+        self.assertEqual(sample.hash, copiedSample.hash)
+        #unique due to timestamp in dimension ids:
+        self.assertNotEqual(sample.id, copiedSample.id)
 
     def testSeal(self):
         sample = self.sampleContainer
@@ -347,49 +556,73 @@ class CommonSampleContainerTests(SampleContainerTest):
         self.assertNotEqual(sample.id, None)
         self.assertNotEqual(sample.hash, None)
         try:
-            sample.data=scipy.array([1,2,3])
+            sample.data=scipy.array([1, 2, 3])
         except TypeError, e:
             pass
         else:
-            self.fail("Modification of sealed FieldContainer was not prohibited.")
+            self.fail("Modification of sealed FieldContainer was not \
+prohibited.")
         try:
-            sample['i'].data[0]=4
+            sample['i'].data[0] = 4
         except RuntimeError, e:
             pass
         else:
-            self.fail("Modification of sealed FieldContainer was not prohibited.")
+            self.fail("Modification of sealed FieldContainer was not \
+prohibited.")
 
     def testSingleSample(self):
         #string = numpy.rec.fromrecords([(s,) for s in [u'Hello',u'World!',u'Bäh!']])
 #        strings =
-        uField = FieldContainer(scipy.array([u'Hello',u'World!',u'Bäh!']),longname=u'Text',shortname='\gamma')
-        table  = SampleContainer([uField]) #was: table  = SampleContainer([uField]). Intent unclear
+        uField = FieldContainer(scipy.array([u'Hello', u'World!', u'Bäh!']),
+                                longname=u'Text',
+                                shortname='\gamma')
+        #was: table  = SampleContainer([uField]). Intent unclear:
+        table = SampleContainer([uField])
 
     def testStringSample(self):
         #string = numpy.rec.fromrecords([(s,) for s in [u'Hello',u'World!',u'Bäh!']])
 #        strings =
-        uField = FieldContainer(scipy.array([u'Hello',u'World!',u'Bäh!']),longname=u'Text',shortname='\gamma')
+        uField = FieldContainer(scipy.array([u'Hello', u'World!', u'Bäh!']),
+                                longname=u'Text',
+                                shortname='\gamma')
         sample = SampleContainer([uField])
         sample.seal()
         #print sample,sample.data
 
     def testEqual(self):
         #Test Equality
-        sample1 = SampleContainer([self.intSample,self.floatSample],longname=self.longname,shortname=self.shortname)
-        sample2 = SampleContainer([self.intSample,self.floatSample],longname=self.longname,shortname=self.shortname)
-        self.assertEqual( sample1, sample2 )
+        sample1 = SampleContainer([self.intSample, self.floatSample],
+                                  longname=self.longname,
+                                  shortname=self.shortname)
+        sample2 = SampleContainer([self.intSample, self.floatSample],
+                                  longname=self.longname,
+                                  shortname=self.shortname)
+        self.assertEqual(sample1, sample2)
         #Test inequality due to different longnames
-        sample1 = SampleContainer([self.intSample,self.floatSample],longname=self.longname,shortname=self.shortname)
-        sample2 = SampleContainer([self.intSample,self.floatSample],longname=self.longname+'bu',shortname=self.shortname)
-        self.assertNotEqual( sample1, sample2 )
+        sample1 = SampleContainer([self.intSample, self.floatSample],
+                                  longname=self.longname,
+                                  shortname=self.shortname)
+        sample2 = SampleContainer([self.intSample, self.floatSample],
+                                  longname=self.longname + 'bu',
+                                  shortname=self.shortname)
+        self.assertNotEqual(sample1, sample2)
         #Test inequality to due different shortnames
-        sample1 = SampleContainer([self.intSample,self.floatSample],longname=self.longname,shortname=self.shortname)
-        sample2 = SampleContainer([self.intSample,self.floatSample],longname=self.longname,shortname=self.shortname+'a')
-        self.assertNotEqual( sample1, sample2 )
+        sample1 = SampleContainer([self.intSample, self.floatSample],
+                                  longname=self.longname,
+                                  shortname=self.shortname)
+        sample2 = SampleContainer([self.intSample, self.floatSample],
+                                  longname=self.longname,
+                                  shortname=self.shortname + 'a')
+        self.assertNotEqual(sample1, sample2)
         #Test inequality of attributes
-        sample1 = SampleContainer([self.intSample,self.floatSample],longname=self.longname,shortname=self.shortname)
-        sample2 = SampleContainer([self.intSample,self.floatSample],longname=self.longname,shortname=self.shortname,attributes={'set':True})
-        self.assertNotEqual( sample1, sample2)
+        sample1 = SampleContainer([self.intSample, self.floatSample],
+                                  longname=self.longname,
+                                  shortname=self.shortname)
+        sample2 = SampleContainer([self.intSample, self.floatSample],
+                                  longname=self.longname,
+                                  shortname=self.shortname,
+                                  attributes={'set':True})
+        self.assertNotEqual(sample1, sample2)
 
 
 class SampleContainerSlicingTests(SampleContainerTest):
@@ -398,14 +631,17 @@ class SampleContainerSlicingTests(SampleContainerTest):
         time_data = numpy.array([10.0, 20.0, 30.0, 5.0, 9000.0])
         time_error = numpy.array([1.0, 2.0, 3.0, .5, 900.0])
         time_unit = PhysicalQuantity('2s')
-        time_FC = FieldContainer(time_data, time_unit, time_error, None, None, "Zeit", "t", None, False)
-
+        time_FC = FieldContainer(time_data, time_unit, time_error,
+                                 None, None,
+                                 "Zeit", "t",
+                                 None, False)
         length_data = numpy.array([-20.0, 0.0, 20.0, 10.0, 5.5])
         length_error = numpy.array([2.0, 0.1, 2.0, 1.0, .5])
         length_unit = PhysicalQuantity('1000m')
-        length_FC = FieldContainer(length_data, length_unit, length_error, None, None, "Strecke", "l", None, False)
-
-
+        length_FC = FieldContainer(length_data, length_unit, length_error,
+                                   None, None,
+                                   "Strecke", "l",
+                                   None, False)
         temperature_data = numpy.array([[10.1, 10.2, 10.3],
                                         [20.1, 20.2, 20.3],
                                         [30.1, 30.2, 30.3],
@@ -417,22 +653,22 @@ class SampleContainerSlicingTests(SampleContainerTest):
                                          [3.1, 3.2, 3.3],
                                          [4.1, 4.2, 4.3]])
         temperature_unit = PhysicalQuantity('1mK')
-
-        temperature_FC = FieldContainer(temperature_data, temperature_unit, temperature_error, None, None, "Temperatur", "T", None, False)
-
-        self.sc2d = SampleContainer([length_FC, temperature_FC, time_FC], "Test Container", "TestC")
-
+        temperature_FC = FieldContainer(temperature_data,
+                                        temperature_unit,
+                                        temperature_error,
+                                        None, None,
+                                        "Temperatur", "T",
+                                        None, False)
+        self.sc2d = SampleContainer([length_FC, temperature_FC, time_FC],
+                                    "Test Container", "TestC")
         self.sc2d["t"].dimensions[0].unit = PhysicalQuantity('5m')
         self.sc2d["t"].dimensions[0].data = numpy.array([-20, -10, 0, 10, 20])
-
         self.sc2d["l"].dimensions[0].unit = PhysicalQuantity('2mm')
         self.sc2d["l"].dimensions[0].data = numpy.array([-1, -0.5, 0, 0.5, 1])
-
         self.sc2d["T"].dimensions[0].unit = PhysicalQuantity('0.5mm')
         self.sc2d["T"].dimensions[0].data = numpy.array([-3, -1.5, 0, 1.5, 3])
         self.sc2d["T"].dimensions[1].unit = PhysicalQuantity('10nm')
         self.sc2d["T"].dimensions[1].data = numpy.array([-1, 0, 1])
-
 
     #purely one dimensional Tests:
     def testConsistancy(self):
@@ -484,34 +720,54 @@ class SampleContainerSlicingTests(SampleContainerTest):
         self.assertEqual(result, self.sc2d)
 
     def testAtomar2dExpressions(self):
-        self._compareExpected('"t" <= 40.0s', [True, True, False, True, False])
-        self._compareExpected('"l" < 10000m', [True, True, False, False, True])
-        self._compareExpected('"Zeit" >= 20.0s', [True, True, True, False, True])
-        self._compareExpected('"l" > 5500m', [False, False, True, True, False])
-        self._compareExpected('"t" == 18000s', [False, False, False, False, True])
-        self._compareExpected('"Strecke" != 20000m', [True, True, False, True, True])
+        self._compareExpected('"t" <= 40.0s',
+                              [True, True, False, True, False])
+        self._compareExpected('"l" < 10000m',
+                              [True, True, False, False, True])
+        self._compareExpected('"Zeit" >= 20.0s',
+                              [True, True, True, False, True])
+        self._compareExpected('"l" > 5500m',
+                              [False, False, True, True, False])
+        self._compareExpected('"t" == 18000s',
+                              [False, False, False, False, True])
+        self._compareExpected('"Strecke" != 20000m',
+                              [True, True, False, True, True])
 
     def testNot2dExpression(self):
         self._compareExpected('not "t" == 10s', [True, True, True, False, True])
 
     def testAnd2dExpression(self):
-        self._compareExpected('"Zeit" == 60s and 20000m == "Strecke"', [False, False, True, False, False])
+        self._compareExpected('"Zeit" == 60s and 20000m == "Strecke"',
+                              [False, False, True, False, False])
 
     def testOr2dExpression(self):
-        self._compareExpected('"Zeit" < 60s or "Strecke" == 5500m', [True, True, False, True, True])
+        self._compareExpected('"Zeit" < 60s or "Strecke" == 5500m',
+                              [True, True, False, True, True])
 
     def testPrecedence2dExpression(self):
-        self._compareExpected('0m > "l" or not ("t" == 20s or "t" == 40s) and (("l" == -20000m or "t" == 40s) or "l" == 5500m)', [True, False, False, False, True])
+        self._compareExpected('0m > "l" or not ("t" == 20s or "t" == 40s) and \
+(("l" == -20000m or "t" == 40s) or "l" == 5500m)',
+                              [True, False, False, False, True])
 
     def testNestedTuple2dExpression(self):
-        self._compareExpected(('AND', ('Atomar', ('SCColumn', self.sc2d["t"]), '==',('PhysQuant', PhysicalQuantity('20s'))), ('Atomar', ('SCColumn', self.sc2d["l"]), '==', ('PhysQuant', PhysicalQuantity('-20000m')))), [True, False, False, False, False])
+        self._compareExpected(('AND',
+                               ('Atomar',
+                                ('SCColumn', self.sc2d["t"]), '==',
+                                ('PhysQuant', PhysicalQuantity('20s'))),
+                               ('Atomar',
+                                ('SCColumn', self.sc2d["l"]), '==',
+                                ('PhysQuant', PhysicalQuantity('-20000m')))),
+                              [True, False, False, False, False])
 
     def testMultipleCompareOpPrecedence2dExpression(self):
-        self._compareExpected('not 0m <= "l" <= 10000m', [True, False, True, False, False])
+        self._compareExpected('not 0m <= "l" <= 10000m',
+                              [True, False, True, False, False])
 
     def testColumnToColumn2dExpression(self):
-        self._compareExpected('"l" == "Strecke"', [True, True, True, True, True])
-        self._compareExpected('"t" != "Zeit"', [False, False, False, False, False])
+        self._compareExpected('"l" == "Strecke"',
+                              [True, True, True, True, True])
+        self._compareExpected('"t" != "Zeit"',
+                              [False, False, False, False, False])
 
 
 class FieldContainerRescaling(unittest.TestCase):
@@ -522,89 +778,147 @@ class FieldContainerRescaling(unittest.TestCase):
         self.unit = PhysicalQuantity('3.14 m')
 
     def testRescaleUnitless(self):
-        field = FieldContainer(copy.deepcopy(self.testData),1,longname=self.longname,
+        field = FieldContainer(copy.deepcopy(self.testData),
+                               1,
+                               longname=self.longname,
                                shortname=self.shortname)
-        nt.assert_array_equal(self.testData,field.data,'Unauthorized rescaling.')
-        field = FieldContainer(copy.deepcopy(self.testData),1,longname=self.longname,
-                               shortname=self.shortname,rescale=True)
-        nt.assert_array_equal(self.testData,field.data,
-                              "Rescale option shouldn't do anything for unitless fields.")
+        nt.assert_array_equal(self.testData,
+                              field.data,
+                              'Unauthorized rescaling.')
+        field = FieldContainer(copy.deepcopy(self.testData),
+                               1,
+                               longname=self.longname,
+                               shortname=self.shortname,
+                               rescale=True)
+        nt.assert_array_equal(self.testData,
+                              field.data,
+                              "Rescale option shouldn't do anything for \
+unitless fields.")
 
     def testRescaleBaseUnitsFloats(self):
         field = FieldContainer(copy.deepcopy(self.testData).astype('f'),
-                               '1 cm**2/mm',longname=self.longname,
-                               shortname=self.shortname,rescale=True)
-        nt.assert_array_equal(self.testData,field.data,'Wrong scaling of field.')
-        self.assertEqual(field.unit.unit.name(),'dm','Wrong baseunit: %s.' % field.unit.unit.name())
+                               '1 cm**2/mm',
+                               longname=self.longname,
+                               shortname=self.shortname,
+                               rescale=True)
+        nt.assert_array_equal(self.testData,field.data,
+                              'Wrong scaling of field.')
+        self.assertEqual(field.unit.unit.name(),
+                         'dm',
+                         'Wrong baseunit: %s.' % field.unit.unit.name())
 
     def testRescaleFloats(self):
-        field = FieldContainer(100*copy.deepcopy(self.testData).astype('f'),
-                               '10 muA',longname=self.longname,
-                               shortname=self.shortname,rescale=True)
-        nt.assert_array_almost_equal(self.testData,field.data,5,'Wrong scaling of field.')
-        self.assertEqual(field.unit.unit.name(),'mA','Wrong baseunit: %s.' % field.unit.unit.name())
+        field = FieldContainer(100 * copy.deepcopy(self.testData).astype('f'),
+                               '10 muA',
+                               longname=self.longname,
+                               shortname=self.shortname,
+                               rescale=True)
+        nt.assert_array_almost_equal(self.testData,
+                                     field.data,5,
+                                     'Wrong scaling of field.')
+        self.assertEqual(field.unit.unit.name(),
+                         'mA',
+                         'Wrong baseunit: %s.' % field.unit.unit.name())
 
     def testRescaleFloatsMeter(self):
-        field = FieldContainer(100*copy.deepcopy(self.testData).astype('f'),
-                               '1 cm**2/mm',longname=self.longname,
-                               shortname=self.shortname,rescale=True)
-        nt.assert_array_almost_equal(10*self.testData,field.data,5,'Wrong scaling of field.')
-        self.assertEqual(field.unit.unit.name(),'m','Wrong baseunit: %s.' % field.unit.unit.name())
+        field = FieldContainer(100 * copy.deepcopy(self.testData).astype('f'),
+                               '1 cm**2/mm',
+                               longname=self.longname,
+                               shortname=self.shortname,
+                               rescale=True)
+        nt.assert_array_almost_equal(10 * self.testData,
+                                     field.data,
+                                     5,
+                                     'Wrong scaling of field.')
+        self.assertEqual(field.unit.unit.name(),
+                         'm',
+                         'Wrong baseunit: %s.' % field.unit.unit.name())
 
     def testRescaleBaseUnitsInteger(self):
         field = FieldContainer(copy.deepcopy(self.testData),
-                               '1 cm**2/mm',longname=self.longname,
-                               shortname=self.shortname,rescale=True)
-        nt.assert_array_equal(self.testData,field.data,'Wrong scaling of field.')
-        self.assertEqual(field.unit.unit.name(),'dm','Wrong baseunit: %s.' % field.unit.unit.name())
+                               '1 cm**2/mm',
+                               longname=self.longname,
+                               shortname=self.shortname,
+                               rescale=True)
+        nt.assert_array_equal(self.testData,
+                              field.data,
+                              'Wrong scaling of field.')
+        self.assertEqual(field.unit.unit.name(),
+                         'dm',
+                         'Wrong baseunit: %s.' % field.unit.unit.name())
 
     def testUnitInteger(self):
         field = FieldContainer(copy.deepcopy(self.testData),
-                               unit=self.unit,longname=self.longname,
-                               shortname=self.shortname,rescale=True)
-        self.assertEqual(field.unit,self.unit,"An integer field should not be rescaled, but should hold the normation constant in its unit.")
+                               unit=self.unit,
+                               longname=self.longname,
+                               shortname=self.shortname,
+                               rescale=True)
+        self.assertEqual(field.unit,
+                         self.unit,
+                         "An integer field should not be rescaled, but should \
+hold the normation constant in its unit.")
 
     def testDimensionsRescaling(self):
-        """Option rescale=True should also rescale the dimensions of the FieldContainer."""
-        dim = [FieldContainer(1000*scipy.linspace(0,1,3),unit='1 nm',longname="Axis %s" % axis,shortname=axis) for axis in ['x','y']]
-        field = FieldContainer(copy.deepcopy(self.testData),dimensions=dim,
-                               unit=self.unit,longname=self.longname,
-                               shortname=self.shortname,rescale=True)
+        """
+        Option rescale=True should also rescale the dimensions of the
+        FieldContainer.
+        """
+        dim = [FieldContainer(1000 * scipy.linspace(0, 1, 3),
+                              unit='1 nm',
+                              longname="Axis %s" % axis,
+                              shortname=axis) for axis in ['x','y']]
+        field = FieldContainer(copy.deepcopy(self.testData),
+                               dimensions=dim,
+                               unit=self.unit,
+                               longname=self.longname,
+                               shortname=self.shortname,
+                               rescale=True)
         for dim in [0,1]:
-            axisUnit   = field.dimensions[dim].unit
-            self.assertEqual(axisUnit.unit.name(),'mum')
+            axisUnit = field.dimensions[dim].unit
+            self.assertEqual(axisUnit.unit.name(), 'mum')
 
 class FieldContainerSlicing1d(unittest.TestCase):
     def setUp(self):
-        self.field1d = FieldContainer(numpy.linspace(0.1,1,10), longname="voltage",
-                                      shortname="U", unit="1V")
+        self.field1d = FieldContainer(numpy.linspace(0.1, 1, 10),
+                                      longname="voltage",
+                                      shortname="U",
+                                      unit="1V")
     def testSingleIndex(self):
         section = self.field1d[0]
-        afoot = FieldContainer(numpy.array([0.1]), longname="afoot",
-                               shortname="U", unit="1V", dimensions=[],
-                               attributes={u'Index':(u'i',0)})
-        assertEqual(section,afoot)
+        afoot = FieldContainer(numpy.array([0.1]),
+                               longname="afoot",
+                               shortname="U",
+                               unit="1V",
+                               dimensions=[],
+                               attributes={u'Index':(u'i', 0)})
+        assertEqual(section, afoot)
 
     def testRegionIndex(self):
         section = self.field1d[1:4]
-        afoot = FieldContainer(numpy.linspace(0.2,0.4,3), longname="voltage",
-                                      shortname="U", unit="1V")
-        afoot.dimensions[0].data = numpy.linspace(1,3,3)
-        self.assertEqual(section,afoot)
+        afoot = FieldContainer(numpy.linspace(0.2, 0.4, 3),
+                               longname="voltage",
+                               shortname="U",
+                               unit="1V")
+        afoot.dimensions[0].data = numpy.linspace(1, 3, 3)
+        self.assertEqual(section, afoot)
         section = self.field1d[1:-1]
-        afoot = FieldContainer(numpy.linspace(0.2,0.9,8), longname="voltage",
-                                      shortname="U", unit="1V")
-        afoot.dimensions[0].data = numpy.linspace(1,8,8)
-        self.assertEqual(section,afoot)
+        afoot = FieldContainer(numpy.linspace(0.2, 0.9, 8),
+                               longname="voltage",
+                               shortname="U",
+                               unit="1V")
+        afoot.dimensions[0].data = numpy.linspace(1, 8, 8)
+        self.assertEqual(section, afoot)
 
     def testCommaSeparated(self):
-        section = self.field1d[[1,3,7],]
-        afoot = FieldContainer(numpy.array([0.2,0.4,0.8]), longname="voltage",
-                               shortname="U", unit="1V")
-        afoot.dimensions[0].data = numpy.array([1,3,7])
-        self.assertEqual(section,afoot)
-        section = self.field1d[[[1,3,7]]]
-        self.assertEqual(section,afoot)
+        section = self.field1d[[1, 3, 7], ]
+        afoot = FieldContainer(numpy.array([0.2, 0.4, 0.8]),
+                               longname="voltage",
+                               shortname="U",
+                               unit="1V")
+        afoot.dimensions[0].data = numpy.array([1, 3, 7])
+        self.assertEqual(section, afoot)
+        section = self.field1d[[[1, 3, 7]]]
+        self.assertEqual(section, afoot)
 
     def testRegionIndexUnit(self):
         f = self.field1d.dimensions[0]
@@ -614,7 +928,9 @@ class FieldContainerSlicing1d(unittest.TestCase):
                                longname="voltage",
                                shortname="U",
                                unit="1V")
-        self.assertRaises(NotImplementedError, self.field1d.__getitem__, "0.4:0.6")
+        self.assertRaises(NotImplementedError,
+                          self.field1d.__getitem__,
+                          "0.4:0.6")
         section = self.field1d["3:7"]
         assertEqual(section, afoot)
 
@@ -622,57 +938,79 @@ class FieldContainerSlicing1d(unittest.TestCase):
 class FieldContainerSlicing1dDim(FieldContainerSlicing1d):
     def setUp(self):
         super(FieldContainerSlicing1dDim, self).setUp()
-        self.xDim = FieldContainer(numpy.linspace(0.3,0.7,self.field1d.data.shape[0]), longname="current",
-                                   shortname="I", unit="1A")
+        self.xDim = FieldContainer(numpy.linspace(0.3,
+                                                  0.7,
+                                                  self.field1d.data.shape[0]),
+                                   longname="current",
+                                   shortname="I",
+                                   unit="1A")
         self.field1d.dimensions[0] = self.xDim
 
     def testSingleIndex(self):
         section = self.field1d[0]
-        afoot = FieldContainer(numpy.array([0.1]), longname="afoot",
-                               shortname="U", unit="1V", dimensions=[self.xDim[0]],
-                               attributes={u'current':(u'I',PhysicalQuantity("0.3A"))})
-        assertEqual(section,afoot)
+        afoot = FieldContainer(numpy.array([0.1]),
+                               longname="afoot",
+                               shortname="U",
+                               unit="1V",
+                               dimensions=[self.xDim[0]],
+                               attributes={u'current':\
+                                           (u'I', PhysicalQuantity("0.3A"))})
+        assertEqual(section, afoot)
 
     def testRegionIndex(self):
         section = self.field1d[1:4]
-        afoot = FieldContainer(numpy.linspace(0.2,0.4,3), longname="voltage",
-                               shortname="U", unit="1V")
+        afoot = FieldContainer(numpy.linspace(0.2, 0.4, 3),
+                               longname="voltage",
+                               shortname="U",
+                               unit="1V")
         afoot.dimensions[0] = self.xDim[1:4]
-        self.assertEqual(section,afoot)
+        self.assertEqual(section, afoot)
         section = self.field1d[1:-1]
-        afoot = FieldContainer(numpy.linspace(0.2,0.9,8), longname="voltage",
-                               shortname="U", unit="1V")
+        afoot = FieldContainer(numpy.linspace(0.2, 0.9, 8),
+                               longname="voltage",
+                               shortname="U",
+                               unit="1V")
         afoot.dimensions[0] = self.xDim[1:-1]
-        self.assertEqual(section,afoot)
+        self.assertEqual(section, afoot)
 
     def testCompleteRightOpenIntervall(self):
         dim = self.xDim
-        intStart = dim.data.min()*dim.unit
-        intEnd   = dim.data.max()*dim.unit
+        intStart = dim.data.min() * dim.unit
+        intEnd = dim.data.max() * dim.unit
         unitname = dim.unit.unit.name()
-        section = self.field1d["%.4f%s:%.4f%s"%(intStart.value,unitname,intEnd.value,unitname)]
-        afoot = FieldContainer(numpy.linspace(0.1,0.9,9), longname="voltage",
-                               shortname="U", unit="1V")
+        section = self.field1d["%.4f%s:%.4f%s" % (intStart.value,
+                                                  unitname,
+                                                  intEnd.value,
+                                                  unitname)]
+        afoot = FieldContainer(numpy.linspace(0.1, 0.9, 9),
+                               longname="voltage",
+                               shortname="U",
+                               unit="1V")
         afoot.dimensions[0] = self.xDim[0:-1]
-        self.assertEqual(section,afoot)
+        self.assertEqual(section, afoot)
 
     def testCompleteIntervall(self):
         dim = self.xDim
-        intStart = dim.data.min()*dim.unit
-        intEnd   = dim.data.max()*dim.unit*1.001
+        intStart = dim.data.min() * dim.unit
+        intEnd = dim.data.max() * dim.unit * 1.001
         unitname = dim.unit.unit.name()
-        argument = "%.4f%s:%.4f%s"%(intStart.value,unitname,intEnd.value,unitname)
+        argument = "%.4f%s:%.4f%s" % (intStart.value,
+                                      unitname,
+                                      intEnd.value,
+                                      unitname)
         section = self.field1d[argument]
-        self.assertEqual(section,self.field1d)
+        self.assertEqual(section, self.field1d)
 
     def testCommaSeparated(self):
-        section = self.field1d[[1,3,7],]
-        afoot = FieldContainer(numpy.array([0.2,0.4,0.8]), longname="voltage",
-                               shortname="U", unit="1V")
-        afoot.dimensions[0] = self.xDim[[1,3,7],]
-        self.assertEqual(section,afoot)
-        section = self.field1d[[[1,3,7]]]
-        self.assertEqual(section,afoot)
+        section = self.field1d[[1, 3, 7], ]
+        afoot = FieldContainer(numpy.array([0.2, 0.4, 0.8]),
+                               longname="voltage",
+                               shortname="U",
+                               unit="1V")
+        afoot.dimensions[0] = self.xDim[[1, 3, 7], ]
+        self.assertEqual(section, afoot)
+        section = self.field1d[[[1, 3, 7]]]
+        self.assertEqual(section, afoot)
 
     def testRegionIndexUnit(self):
         f = self.field1d.dimensions[0]
@@ -720,109 +1058,142 @@ class FieldContainerSlicing1dDim(FieldContainerSlicing1d):
 
 class FieldContainerSlicing2d(unittest.TestCase):
     def setUp(self):
-        l = numpy.linspace(0,0.9,10)
-        m = numpy.meshgrid(l, l*10)
-        self.field2d = FieldContainer(m[0]+m[1], longname="voltage",
-                                      shortname="U", unit="1V")
+        l = numpy.linspace(0, 0.9, 10)
+        m = numpy.meshgrid(l, l * 10)
+        self.field2d = FieldContainer(m[0] + m[1],
+                                      longname="voltage",
+                                      shortname="U",
+                                      unit="1V")
 
     def testSingleIndex(self):
         section = self.field2d[0]
-        afoot = FieldContainer(numpy.linspace(0,0.9,10), longname="voltage",
-                               shortname="U", unit="1V",
-                               attributes={u'Index':(u'j',0)})
+        afoot = FieldContainer(numpy.linspace(0, 0.9, 10),
+                               longname="voltage",
+                               shortname="U",
+                               unit="1V",
+                               attributes={u'Index':(u'j', 0)})
         self.assertTrue(section.isValid())
-        self.assertEqual(section,afoot)
+        self.assertEqual(section, afoot)
 
     def testRegionIndex(self):
         section = self.field2d[1:4]
-        afoot = FieldContainer(self.field2d.data[1:4], longname="afoot",
-                               shortname="U", unit="1V")
-        afoot.dimensions[0].data = numpy.linspace(1,3,3)
-        self.assertEqual(section,afoot)
+        afoot = FieldContainer(self.field2d.data[1:4],
+                               longname="afoot",
+                               shortname="U",
+                               unit="1V")
+        afoot.dimensions[0].data = numpy.linspace(1, 3, 3)
+        self.assertEqual(section, afoot)
         section = self.field2d[1:-1]
-        afoot = FieldContainer(self.field2d.data[1:-1], longname="voltage",
-                               shortname="U", unit="1V")
-        afoot.dimensions[0].data = numpy.linspace(1,8,8)
-        self.assertEqual(section,afoot)
+        afoot = FieldContainer(self.field2d.data[1:-1],
+                               longname="voltage",
+                               shortname="U",
+                               unit="1V")
+        afoot.dimensions[0].data = numpy.linspace(1, 8, 8)
+        self.assertEqual(section, afoot)
 
     def testCommaSeparated(self):
-        section = self.field2d[[1,3,7],]
-        afoot = FieldContainer(self.field2d.data[[1,3,7],], longname="voltage",
-                               shortname="U", unit="1V")
-        afoot.dimensions[0].data = numpy.array([1,3,7])
-        self.assertEqual(section,afoot)
-        section = self.field2d[[[1,3,7]]]
-        self.assertEqual(section,afoot)
+        section = self.field2d[[1, 3, 7], ]
+        afoot = FieldContainer(self.field2d.data[[1, 3, 7], ],
+                               longname="voltage",
+                               shortname="U",
+                               unit="1V")
+        afoot.dimensions[0].data = numpy.array([1, 3, 7])
+        self.assertEqual(section, afoot)
+        section = self.field2d[[[1, 3, 7]]]
+        self.assertEqual(section, afoot)
 
 
 class FieldContainerSlicing2dDim(FieldContainerSlicing2d):
     def setUp(self):
         super(FieldContainerSlicing2dDim, self).setUp()
-        self.xDim = FieldContainer(numpy.linspace(0.3,0.7,self.field2d.data.shape[0]), longname="current",
-                                   shortname="I", unit="1A")
-        self.yDim = FieldContainer(numpy.linspace(30,70,self.field2d.data.shape[0]), longname="position",
-                                   shortname="p", unit="1cm")
-        self.field2d.dimensions = [self.yDim,self.xDim]
+        self.xDim = FieldContainer(numpy.linspace(0.3,
+                                                  0.7,
+                                                  self.field2d.data.shape[0]),
+                                   longname="current",
+                                   shortname="I",
+                                   unit="1A")
+        self.yDim = FieldContainer(numpy.linspace(30,
+                                                  70,
+                                                  self.field2d.data.shape[0]),
+                                   longname="position",
+                                   shortname="p",
+                                   unit="1cm")
+        self.field2d.dimensions = [self.yDim, self.xDim]
 
     def testSingleIndex(self):
         section = self.field2d[0]
-        afoot = FieldContainer(numpy.linspace(0,0.9,10), longname="voltage",
-                               shortname="U", unit="1V",
-                               attributes={u'position':(u'p',PhysicalQuantity("30cm"))},
+        afoot = FieldContainer(numpy.linspace(0, 0.9, 10),
+                               longname="voltage",
+                               shortname="U",
+                               unit="1V",
+                               attributes={u'position':\
+                                               (u'p',PhysicalQuantity("30cm"))},
                                dimensions=[self.xDim])
         self.assertTrue(section.isValid())
-        self.assertEqual(section,afoot)
+        self.assertEqual(section, afoot)
 
     def testRegionIndex(self):
         section = self.field2d[1:4]
-        afoot = FieldContainer(self.field2d.data[1:4], longname="afoot",
-                               shortname="U", unit="1V")
+        afoot = FieldContainer(self.field2d.data[1:4],
+                               longname="afoot",
+                               shortname="U",
+                               unit="1V")
         afoot.dimensions[0] = self.yDim[1:4]
         afoot.dimensions[1] = self.xDim
-        self.assertEqual(section,afoot)
+        self.assertEqual(section, afoot)
         section = self.field2d[1:-1]
-        afoot = FieldContainer(self.field2d.data[1:-1], longname="voltage",
-                               shortname="U", unit="1V")
+        afoot = FieldContainer(self.field2d.data[1:-1],
+                               longname="voltage",
+                               shortname="U",
+                               unit="1V")
         afoot.dimensions[0] = self.yDim[1:-1]
         afoot.dimensions[1] = self.xDim
-        self.assertEqual(section,afoot)
+        self.assertEqual(section, afoot)
 
     def testCommaSeparated(self):
-        section = self.field2d[[1,3,7],]
-        afoot = FieldContainer(self.field2d.data[[1,3,7],], longname="voltage",
-                               shortname="U", unit="1V")
-        afoot.dimensions[0] = self.yDim[[1,3,7],]
+        section = self.field2d[[1, 3, 7], ]
+        afoot = FieldContainer(self.field2d.data[[1, 3, 7], ],
+                               longname="voltage",
+                               shortname="U",
+                               unit="1V")
+        afoot.dimensions[0] = self.yDim[[1, 3, 7], ]
         afoot.dimensions[1] = self.xDim
-        self.assertEqual(section,afoot)
-        section = self.field2d[[[1,3,7]]]
-        self.assertEqual(section,afoot)
+        self.assertEqual(section, afoot)
+        section = self.field2d[[[1, 3, 7]]]
+        self.assertEqual(section, afoot)
 
     def testRegionIndexUnit(self):
         section = self.field2d["4:6dm"]
-        afoot = FieldContainer(self.field2d.data[3:7], longname="afoot",
-                               shortname="U", unit="1V")
+        afoot = FieldContainer(self.field2d.data[3:7],
+                               longname="afoot",
+                               shortname="U",
+                               unit="1V")
         afoot.dimensions[0] = self.yDim[3:7]
         afoot.dimensions[1] = self.xDim
-        self.assertEqual(section,afoot)
+        self.assertEqual(section, afoot)
 
     def testRegionIndexWrongUnit(self):
         self.assertRaises(TypeError, self.field2d.__getitem__, "4:6A")
 
     def test2FoldRegionIndexUnit(self):
-        section = self.field2d["4:6dm","4e-1:.6A"]
-        afoot = FieldContainer(self.field2d.data[3:7,3:7], longname="afoot",
-                               shortname="U", unit="1V")
+        section = self.field2d["4:6dm", "4e-1:.6A"]
+        afoot = FieldContainer(self.field2d.data[3:7, 3:7],
+                               longname="afoot",
+                               shortname="U",
+                               unit="1V")
         afoot.dimensions[0] = self.yDim[3:7]
         afoot.dimensions[1] = self.xDim[3:7]
-        self.assertEqual(section,afoot)
+        self.assertEqual(section, afoot)
 
     def test2ndAxisRegionIndexUnit(self):
-        section = self.field2d[:,"4e-1:.6A"]
-        afoot = FieldContainer(self.field2d.data[:,3:7], longname="afoot",
-                               shortname="U", unit="1V")
+        section = self.field2d[:, "4e-1:.6A"]
+        afoot = FieldContainer(self.field2d.data[:, 3:7],
+                               longname="afoot",
+                               shortname="U",
+                               unit="1V")
         afoot.dimensions[0] = self.yDim
         afoot.dimensions[1] = self.xDim[3:7]
-        self.assertEqual(section,afoot)
+        self.assertEqual(section, afoot)
 
 
 if __name__ == "__main__":
@@ -833,7 +1204,8 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         unittest.main()
     else:
-        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
+        suite = unittest.TestLoader().loadTestsFromTestCase(
+            eval(sys.argv[1:][0]))
         unittest.TextTestRunner().run(suite)
 
 

@@ -58,11 +58,12 @@ from pyphant.core.WebInterface import (HTTPAnswer,
                                        WebInterface,
                                        KMHTMLParser,
                                        ThreadedHTTPServer)
+from fmfile import FMFLoader
 
 WAITING_SECONDS_HTTP_SERVER_STOP = 5
 HTTP_REQUEST_DC_URL_PATH = "/request_dc_url"
 HTTP_REQUEST_KM_ID_PATH = "/request_km_id"
-HTTP_REQUEST_DC_SUMMARY_PATH = "/request_dc_summary"
+HTTP_REQUEST_DC_DETAILS_PATH = "/request_dc_details?dcid="
 # Maximum number of DCs to store in cache:
 CACHE_SIZE = 50
 # Timeout for cached DCs in seconds:
@@ -71,6 +72,7 @@ CACHE_TIMEOUT = 3600
 CACHE_THRESHHOLD = 2
 KM_PATH = '/KMstorage/'
 REHDF5 = re.compile(r'..*\.h5$|..*\.hdf$|..*\.hdf5$')
+REFMF = re.compile(r'..*\.fmf$')
 
 def getPyphantPath(subdir = '/'):
     """
@@ -210,8 +212,8 @@ class KnowledgeManager(Singleton):
         registerContents -- whether to register contents of the file as well.
         """
         if self.H5FileHandlers.has_key(filename):
-            raise KnowledgeManagerException("'%s' has already been registered."\
-                                                % (filename, ))
+            raise KnowledgeManagerException("'%s' has already been registered."
+                                            % filename)
         self.H5FileHandlers[filename] = H5FileHandler(filename, mode)
         if registerContents:
             self.refreshH5(filename)
@@ -257,7 +259,11 @@ class KnowledgeManager(Singleton):
                 if REHDF5.match(fname.lower()) != None:
                     if dirname.endswith('/'):
                         dirname = dirname[:-1]
-                    self.registerH5(dirname + '/' + fname)
+                    filename = dirname + '/' + fname
+                    try:
+                        self.registerH5(filename)
+                    except Exception:
+                        self._logger.warn("Could not import '%s'.", filename)
         os.path.walk(getPyphantPath(KM_PATH), walkfiles, None)
 
     def getSummary(self, dcId = None):
@@ -306,8 +312,8 @@ class KnowledgeManager(Singleton):
         """
         logger = self._logger
         if self.isServerRunning():
-            logger.warn("Server is running at host %s, port %d already. \
-Stopping server...", self._http_host, self._http_port)
+            logger.warn("Server is running at host %s, port %d already. "
+                        "Stopping server...", self._http_host, self._http_port)
             self.stopServer()
         self._http_host = host
         self._http_port = port
@@ -318,8 +324,8 @@ Stopping server...", self._http_host, self._http_port)
                 self._server.start()
         self._http_server_thread = _HTTPServerThread()
         self._http_server_thread.start()
-        self._logger.debug("Started HTTP server. Host: %s, port: %d, \
-temp dir: %s", host, port, self._http_dir)
+        self._logger.debug("Started HTTP server. Host: %s, port: %d, "
+                           "temp dir: %s", host, port, self._http_dir)
         self.web_interface.disabled = not provide_web_frontend
 
     def stopServer(self):
@@ -334,8 +340,8 @@ temp dir: %s", host, port, self._http_dir)
             try:
                 urllib.urlopen(self._getServerURL())
             except:
-                logger.warn("Fake HTTP request failed when stopping HTTP \
-server.")
+                logger.warn("Fake HTTP request failed when stopping HTTP "
+                            "server.")
             logger.info("Waiting for HTTP server thread to die...")
             self._http_server_thread.join(WAITING_SECONDS_HTTP_SERVER_STOP)
             if self._http_server_thread.isAlive():
@@ -354,8 +360,8 @@ server.")
                             self._http_dir)
             self._http_dir = None
         else:
-            self._logger.warn("HTTP server should be stopped but isn't \
-running.")
+            self._logger.warn("HTTP server should be stopped but isn't "
+                              "running.")
 
     def isServerRunning(self):
         """
@@ -399,24 +405,24 @@ running.")
             logger.debug("KM ID read from HTTP answer: %s", km_id)
         except Exception, excep:
             raise KnowledgeManagerException(
-                "Couldn't get ID for knowledge manager under URL %s."\
-                    % (km_url, ), excep)
+                "Couldn't get ID for knowledge manager under URL %s."
+                % (km_url, ), excep)
         self._remoteKMs[km_id] = km_url
 
     def registerURL(self, url):
         """
-        Registers an HDF5 file downloadable from given URL and store it
-        permanently in the .pyphant directory. The files content is made
+        Registers an HDF5 or FMF file downloadable from given URL and store it
+        permanently in the .pyphant directory. The content of the file is made
         available to the KnowledgeManager.
-        url -- URL of the HDF5 file
+        HTTP redirects are resolved. The filetype is determined by the
+        extension.
+        url -- URL of the HDF5 or FMF file
         """
         parsed = urlparse(url)
-        filename = KM_PATH + 'registered/' + parsed[1] + '/'\
-            + os.path.basename(parsed[2])
+        filename = KM_PATH + 'registered/' + parsed[1] + '/'
+        filename += os.path.basename(parsed[2])
         directory = os.path.dirname(filename)
         filename = getPyphantPath(directory) + os.path.basename(filename)
-        if REHDF5.match(filename) == None:
-            filename += '.h5'
         if os.path.exists(filename):
             i = 0
             directory = os.path.dirname(filename)
@@ -438,7 +444,13 @@ running.")
         self._logger.info("Using local file '%s'." % (filename, ))
         savedto, headers = urllib.urlretrieve(url, filename)
         self._logger.info("Header information: %s", (str(headers), ))
-        self.registerH5(filename)
+        if REFMF.match(filename.lower()) != None:
+            self.registerFMF(filename)
+        elif REHDF5.match(filename.lower()) != None:
+            self.registerH5(filename)
+        else:
+            raise KnowledgeManagerException('Filetype unknown: %s'
+                                            % (filename, ))
 
     def registerDataContainer(self, dc):
         """
@@ -460,6 +472,17 @@ running.")
             handler.saveDataContainer(dc)
             self.refreshH5(filename)
 
+    def registerFMF(self, filename):
+        """
+        Extracts a SampleContainer from a given FMF file and stores it
+        permanently. The emd5 of the SampleContainer that has been generated
+        is returned.
+        filename -- path to the FMF file
+        """
+        sc = FMFLoader.loadFMFFromFile(filename)
+        self.registerDataContainer(sc)
+        return sc.id
+
     def _getDCURLFromRemoteKMs(self, query_dict):
         """
         Returns URL for a DataContainer by requesting remote
@@ -469,10 +492,9 @@ running.")
         logger = self._logger
         # add this KM to query
         query_dict['lastkmidindex'] += 1
-        query_dict['kmid%d' % (query_dict['lastkmidindex'], )] =\
-            self.getServerId()
+        query_dict['kmid%d' % query_dict['lastkmidindex']] = self.getServerId()
         # ask every remote KnowledgeManager for id
-        logger.debug("Requesting knowledge managers for DC id '%s'..."\
+        logger.debug("Requesting knowledge managers for DC id '%s'..."
                      % (query_dict['dcid'], ))
         dc_url = None
         for km_id, km_url in self._remoteKMs.iteritems():
@@ -587,8 +609,11 @@ URL '%s'...", km_id, km_url)
                 try:
                     dc = dcinfo['filehandler'].loadDataContainer(dc_id)
                 except Exception, excep:
-                    raise KnowledgeManagerException("DC ID '%s' known, but \
-cannot be read from file '%s'." % (dc_id, localfilename), excep)
+                    raise KnowledgeManagerException("DC ID '%s' known, but "
+                                                    "cannot be read from file "
+                                                    "'%s'." % (dc_id,
+                                                               localfilename),
+                                                    excep)
                 if use_cache and dcinfo['hitcount'] >= CACHE_THRESHHOLD:
                     docache = False
                     if len(self._cache) >= CACHE_SIZE:
@@ -613,8 +638,8 @@ cannot be read from file '%s'." % (dc_id, localfilename), excep)
             dc_url = self._getDCURLFromRemoteKMs({'dcid':dc_id,
                                                   'lastkmidindex':-1})
             if dc_url == None:
-                raise KnowledgeManagerException("DC ID '%s' is unknown."\
-                                                    %(dc_id,))
+                raise KnowledgeManagerException("DC ID '%s' is unknown."
+                                                % (dc_id,))
             filename = getFilenameFromDcId(dc_id)
             urllib.urlretrieve(dc_url, filename)
             self.registerH5(filename)
@@ -732,8 +757,11 @@ DataContainer ID '%s' not found.", query_dict['dcid'])
         """
         log = self._logger
         km = KMHTTPRequestHandler._km
-        if self.path == '/' or self.path.startswith('/../'):
-            km.web_interface.get_frontpage().sendTo(self)
+        if self.path == '/' or self.path.startswith('/../') or \
+                self.path.startswith('/?'):
+            km.web_interface.get_frontpage(self.path).sendTo(self)
+        elif self.path.startswith(HTTP_REQUEST_DC_DETAILS_PATH):
+            km.web_interface.get_details(self.path).sendTo(self)
         else:
             f = self.send_head()
             if f:

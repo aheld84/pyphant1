@@ -56,18 +56,29 @@ class EstimateParameter(Worker.Worker):
     _params = [("extentX", u"Extension of x-axis [%%]", 10, None),
                ("extentY", u"Extension of y-axis [%%]", 10, None)]
 
-    def calculateThickness(self, row, model,error=None):
+    def calculateThickness(self, row, model, error=None):
+        """
+        Given a vector of minima (row) and a 2 dimensional model,
+        this estimates the corresponding parameter.
+        """
         if len(row)==0:
             return numpy.nan
         data = model.data.transpose()
-        def calc(row, col,error):
+        def calc(row, col, error):
             if error:
-                return sum([col[numpy.argmin(((model.dimensions[0].data-c)/e)**2)]
-                            for c,e in zip(row,error)])
+                weight=0
+                for c,e in zip(row, error):
+                    if e>0:
+                        weight += col[numpy.argmin(
+                                ((model.dimensions[0].data-c)/e)**2)]
+                    else:
+                        weight += col[numpy.argmin(
+                                (model.dimensions[0].data-c)**2)]
+                return weight
             else:
                 return sum([col[numpy.argmin((model.dimensions[0].data-c)**2)]
                             for c in row])
-        i = numpy.argmin(numpy.array([calc(row, col,error) for col in data]))
+        i = numpy.argmin(numpy.array([calc(row, col, error) for col in data]))
         return model.dimensions[1].data[i]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
@@ -84,17 +95,21 @@ class EstimateParameter(Worker.Worker):
         subscriber %= acc
         for row in minima:
             if error:
-                filteredError = filter(lambda c: not numpy.isnan(c), error.next())
+                filteredError = filter(
+                    lambda c: not numpy.isnan(c), error.next())
             else:
                 filteredError = None
-            parameter.append(self.calculateThickness( filter(lambda c: not numpy.isnan(c), row),
-                                                      model,
-                                                      filteredError))
+            parameter.append(self.calculateThickness(
+                    filter(lambda c: not numpy.isnan(c), row),
+                    model,
+                    filteredError
+                    ))
             acc += inc
             subscriber %= acc
-        result = DataContainer.FieldContainer(numpy.array(parameter),
-                                              longname = model.dimensions[-1].longname,
-                                              shortname = model.dimensions[-1].shortname,
-                                              unit = model.dimensions[-1].unit)
+        result = DataContainer.FieldContainer(
+            numpy.array(parameter),
+            longname = model.dimensions[-1].longname,
+            shortname = model.dimensions[-1].shortname,
+            unit = model.dimensions[-1].unit)
         result.seal()
         return result
