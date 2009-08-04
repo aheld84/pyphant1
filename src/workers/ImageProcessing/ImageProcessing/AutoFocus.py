@@ -49,21 +49,23 @@ class Cube(object):
     def __init__(self, slices):
         self.slices = slices
 
-    def __and__(self, other):
-        andslices = []
+    def _binary(self, other, bifunc1, bifunc2):
+        bislices = []
         for index in xrange(len(self.slices)):
             sli1 = self.slices[index]
             sli2 = other.slices[index]
-            andslice = slice(max(sli1.start, sli2.start),
-                             min(sli1.stop, sli2.stop)))
-            if andslice.stop < andslice.start:
-                andslice = slice(0, 0)
-            andslices.append(andslice)
-        return Cube(andslices)
+            bislice = slice(bifunc1(sli1.start, sli2.start),
+                            bifunc2(sli1.stop, sli2.stop)))
+            if bislice.stop < bislice.start:
+                bislice = slice(0, 0)
+            bislices.append(bislice)
+        return Cube(bislices)
+
+    def __and__(self, other):
+        return self._binary(other, max, min)
 
     def __or__(self, other):
-        # TODO
-        pass
+        return self._binary(other, min, max)
 
     def getVolume(self):
         vol = 1
@@ -82,10 +84,11 @@ class FocusSlice(Cube):
 
 
 class ZTube(list):
-    def __init__(self, fslice, matchRatio):
+    def __init__(self, fslice, boundRatio, featureRatio):
         self.matchCube = Cube(fslice.slices)
         self.append(fslice)
-        self.matchRatio = matchRatio
+        self.boundRatio = boundRatio
+        self.featureRatio = featureRatio
 
     def match(self, fslice):
         ratio = (self.matchCube & fslice).getVolume() / fslice.getVolume()
@@ -95,7 +98,7 @@ class ZTube(list):
             return True
         return False
 
-def autofocus(focusfc, matchRatio):
+def autofocus(focusfc, boundRatio, featureRatio):
     ztubes = []
     for fslice in focusfc.data:
         matched = False
@@ -104,7 +107,7 @@ def autofocus(focusfc, matchRatio):
             if matched:
                 break
         if not matched:
-            ztubes.append(ZTube(fslice, matchRatio))
+            ztubes.append(ZTube(fslice, boundRatio, featureRatio))
     for ztube in ztubes:
         pass
 
@@ -114,12 +117,17 @@ class AutoFocus(Worker.Worker):
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "AutoFocus"
-    _params = [("matchRatio", "Minimal matching ratio", 0.75, False)]
+    _params = [("boundRatio", "Minimal overlap ratio (bounding box)",
+                0.5, False),
+               ("featureRatio", "Minimal overlap ratio (feature area)",
+                0.75, False)]
     _sockets = [("focusfc", Connectors.TYPE_IMAGE)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def AutoFocusWorker(self, focusfc, subscriber=0):
-        newdata = autofocus(focusfc, self.paramMatchRatio.value)
+        newdata = autofocus(focusfc,
+                            self.paramBoundRatio.value,
+                            self.paramFeatureRatio.value)
         longname = "AutoFocus"
         result = DataContainer.FieldContainer(
             data=newdata,
