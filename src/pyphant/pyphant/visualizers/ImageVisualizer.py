@@ -65,12 +65,6 @@ class ImageVisualizer(object):
     def __init__(self, fieldContainer,show=True):
         self.fieldContainer = fieldContainer
         self.show = show
-        #testing only:
-        #print("Enter filename: ")
-        #filename = raw_input()
-        #if filename != "":
-        #    scipy.misc.imsave('/Users/aheld/CiSE/series/output/' + filename,
-        #                      fieldContainer.data)
         self.execute()
 
     def dataPrinter(self,event):
@@ -156,5 +150,17 @@ class ImageVisualizer(object):
             pylab.ion()
             pylab.show()
 
-DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, ImageVisualizer)
+class ImageSaver(object):
+    name = 'Save Greyscale Image'
+    def __init__(self, fieldContainer, show=True):
+        self.fieldContainer = fieldContainer
+        self.show = show
+        #testing only:
+        print("Enter filename: ")
+        filename = raw_input()
+        if filename != "":
+            scipy.misc.imsave('/Users/aheld/CiSE/series/output/' + filename,
+                              fieldContainer.data)
 
+DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, ImageVisualizer)
+DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, ImageSaver)
