@@ -43,7 +43,7 @@ from pyphant.core import Worker, Connectors,\
 import ImageProcessing
 import numpy, copy
 from scipy import ndimage as ndi
-
+from pyphant.quantities.PhysicalQuantities import isPhysicalQuantity
 
 class Cube(object):
     def __init__(self, slices):
@@ -118,8 +118,10 @@ class ZTube(list, FocusSlice):
     def match(self, fslice):
         subCube1 = self.getSubCube([1, 2])
         subCube2 = fslice.getSubCube([1, 2])
-        yxratio = float((subCube1 & subCube2).getVolume()) \
-            / subCube2.getVolume()
+        vol = (subCube1 & subCube2).getVolume()
+        if not isPhysicalQuantity(vol):
+            vol = float(vol)
+        yxratio = vol / subCube2.getVolume()
         zmatch = self.getSubCube([0]) & fslice.getSubCube([0])
         if yxratio >= self.boundRatio and zmatch.getVolume() != 0:
             #TODO: feature matching

@@ -83,8 +83,8 @@ class MeasureFocus(Worker.Worker):
                     res[sl] = numpy.where(self._labels[sl] == label,
                                           focus, res[sl])
                 else:
-                    zvalue = 1 # TODO !!!
-                    ztol = 1 # TODO !!!
+                    zvalue = self._zvalue
+                    ztol = self._ztol
                     fsmask = numpy.where(self._labels[sl] == label,
                                          True, False)
                     fslices = list(sl)
@@ -96,6 +96,8 @@ class MeasureFocus(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def measure_focus(self, image, labels, subscriber=0):
         self._labels = labels.data
+        self._zvalue = image.attributes[u'zvalue'][1]
+        self._ztol = image.attributes[u'ztol'][1]
         newdata = pile(self.sliceAndMeasure, image.data)
         longname = "MeasureFocus"
         if self.paramHumanOutput:
