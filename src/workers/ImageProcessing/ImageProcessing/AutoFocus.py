@@ -51,11 +51,9 @@ class Cube(object):
 
     def _binary(self, other, bifunc1, bifunc2):
         bislices = []
-        for index in xrange(len(self.slices)):
-            sli1 = self.slices[index]
-            sli2 = other.slices[index]
+        for sli1, sli2 in zip(self.slices, other.slices):
             bislice = slice(bifunc1(sli1.start, sli2.start),
-                            bifunc2(sli1.stop, sli2.stop)))
+                            bifunc2(sli1.stop, sli2.stop))
             if bislice.stop < bislice.start:
                 bislice = slice(0, 0)
             bislices.append(bislice)
@@ -67,11 +65,36 @@ class Cube(object):
     def __or__(self, other):
         return self._binary(other, min, max)
 
+    def __eq__(self, other, rtol=1e-5, atol=1e-8):
+        if len(self.slices) != len(other.slices):
+            return False
+        for index in xrange(len(self.slices)):
+            if self.slices[index] != other.slices[index]:
+                return False
+        return True
+
+    def __sub__(self, other):
+        subslices = []
+        for sli1, sli2 in zip(self.slices, other.slices):
+            sub = sli2.start
+            subslices.append(slice(sli1.start - sub, sli1.stop - sub))
+        return Cube(subslices)
+
+    def getSubCube(self, dimlist):
+        subslices = []
+        for dim in xrange(len(self.slices)):
+            if dim in dimlist:
+                subslices.append(self.slices[dim])
+        return Cube(subslices)
+
     def getVolume(self):
         vol = 1
         for sli in self.slices:
             vol *= (sli.stop - sli.start)
         return vol
+
+    def getEdgeLength(self, edgeIndex):
+        return self.slices[edgeIndex].stop - self.slices[edgeIndex].start
 
 
 class FocusSlice(Cube):
@@ -83,18 +106,37 @@ class FocusSlice(Cube):
         self.size = mask.sum()
 
 
-class ZTube(list):
+class ZTube(list, FocusSlice):
     def __init__(self, fslice, boundRatio, featureRatio):
-        self.matchCube = Cube(fslice.slices)
+        FocusSlice.__init__(self, fslice.slices, fslice.focus,
+                            fslice.mask, 1)
         self.append(fslice)
         self.boundRatio = boundRatio
         self.featureRatio = featureRatio
+        self.focusedIndex = 0
 
     def match(self, fslice):
-        ratio = (self.matchCube & fslice).getVolume() / fslice.getVolume()
-        if ratio >= self.matchRatio:
-            self.matchCube = self.matchCube | fslice
+        subCube1 = self.getSubCube([1, 2])
+        subCube2 = fslice.getSubCube([1, 2])
+        yxratio = float((subCube1 & subCube2).getVolume()) \
+            / subCube2.getVolume()
+        zmatch = self.getSubCube([0]) & fslice.getSubCube([0])
+        if yxratio >= self.boundRatio and zmatch.getVolume() != 0:
+            #TODO: feature matching
+            orCube = self | fslice
+            maskSlices1 = (self - orCube).getSubCube([1, 2]).slices
+            maskSlices2 = (fslice - orCube).getSubCube([1, 2]).slices
+            newmask = numpy.zeros((orCube.getEdgeLength(1),
+                                   orCube.getEdgeLength(2)),
+                                  dtype=bool)
+            newmask[maskSlices1] = self.mask
+            newmask[maskSlices2] |= fslice.mask
+            self.mask = newmask
+            self.slices = orCube.slices
             self.append(fslice)
+            if fslice.focus > self.focus:
+                self.focus = fslice.focus
+                self.focusIndex = len(self) - 1
             return True
         return False
 

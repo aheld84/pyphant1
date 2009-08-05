@@ -86,7 +86,7 @@ class MeasureFocus(Worker.Worker):
                     zvalue = 1 # TODO !!!
                     ztol = 1 # TODO !!!
                     fsmask = numpy.where(self._labels[sl] == label,
-                                         1, 0)
+                                         True, False)
                     fslices = list(sl)
                     fslices.instert(0, slice(zvalue - ztol, zvalue + ztol))
                     res[label - 1] = FocusSlice(sl, focus,
