@@ -96,7 +96,7 @@ class MeasureFocus(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def measure_focus(self, image, labels, subscriber=0):
         self._labels = labels.data
-        self._zvalue = image.attributes[u'zAxis'][1]
+        self._zvalue = image.attributes[u'zvalue']
         self._ztol = image.attributes[u'ztol']
         newdata = pile(self.sliceAndMeasure, image.data)
         longname = "MeasureFocus"
