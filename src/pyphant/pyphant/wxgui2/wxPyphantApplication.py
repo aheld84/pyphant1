@@ -67,6 +67,7 @@ import WorkerRepository
 import ConfigureFrame
 import platform
 from pyphant.core.KnowledgeManager import KnowledgeManager as KM
+import webbrowser
 pltform = platform.system()
 
 class wxPyphantApplication(wx.PySimpleApp):
@@ -331,20 +332,23 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
     def onWebInterface(self, event):
         km = KM.getInstance()
         cpt = "Pyphant Web Interface"
+        msg = ""
         if km.web_interface.disabled:
             if not km.isServerRunning():
                 try:
                     km.startServer("127.0.0.1", 8000, True)
-                    msg = "Started web server @ 127.0.0.1:8000"
-
+                    msg += "Started web server @ 127.0.0.1:8000"
+                    url = 'http://%s:%d/' % (km._http_host,
+                                             km._http_port)
+                    webbrowser.open_new(url)
                 except:
-                    msg = "Could not start web server @ 127.0.0.1:8000"
+                    msg += "Could not start web server @ 127.0.0.1:8000"
                     km.web_interface.disabled = True
             else:
                 km.web_interface.disabled = False
         else:
             km.web_interface.disabled = True
-            msg = "Disabled web interface."
+            msg += "Disabled web interface."
             if km.isServerRunning():
                 km.stopServer()
                 msg += "\nStopped web server."
