@@ -137,7 +137,8 @@ class ColumnExtractor(Worker.Worker):
                                                    dimensions = [dim],
                                                    longname=col.longname,
                                                    shortname=col.shortname)
-        result.attributes = osc.attributes
+        #result.attributes = osc.attributes
+        result.attributes = col.attributes
         result.seal()
         return result
 
