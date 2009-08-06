@@ -41,6 +41,7 @@ __version__ = "$Revision$"
 from pyphant.core.Connectors import (TYPE_IMAGE, TYPE_ARRAY)
 from pyphant.wxgui2.DataVisReg import DataVisReg
 from pyphant.core.KnowledgeManager import KnowledgeManager as KM
+import webbrowser
 
 
 class KMVisualizer(object):
@@ -50,8 +51,14 @@ class KMVisualizer(object):
         self.show = show
         km = KM.getInstance()
         km.registerDataContainer(DataContainer)
-        emd5 = DataContainer.id
-        print emd5
+        dc_id = DataContainer.id
+        if km.isServerRunning():
+            url = 'http://%s:%d/request_dc_details?dcid=%s' % (km._http_host,
+                                                               km._http_port,
+                                                               dc_id)
+            webbrowser.open_new_tab(url)
+        else:
+            print "ID of registered DC is: " + dc_id
 
 
 DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, KMVisualizer)
