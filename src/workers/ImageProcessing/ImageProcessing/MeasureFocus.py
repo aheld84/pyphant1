@@ -97,7 +97,7 @@ class MeasureFocus(Worker.Worker):
     def measure_focus(self, image, labels, subscriber=0):
         self._labels = labels.data
         self._zvalue = image.attributes[u'zAxis'][1]
-        self._ztol = image.attributes[u'ztol'][1]
+        self._ztol = image.attributes[u'ztol']
         newdata = pile(self.sliceAndMeasure, image.data)
         longname = "MeasureFocus"
         if self.paramHumanOutput.value:
