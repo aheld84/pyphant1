@@ -210,6 +210,7 @@ class wxPyphantFrame(wx.Frame):
         self._fileMenu.Append( wx.ID_EXIT, "E&xit" )
         self._fileMenu.Append( wx.ID_FILE1, "Import HDF5 or FMF from &URL" )
         self._fileMenu.Append( wx.ID_FILE2, "&Import local HDF5 or FMF file")
+        self._fileMenu.Append( wx.ID_FILE3, "Start/stop &web interface")
         self._menuBar.Append( self._fileMenu, "&File" )
         self._closeCompositeWorker = wx.Menu()
         self._closeCompositeWorker.Append(self.ID_CLOSE_COMPOSITE_WORKER, "&Close Composite Worker")
@@ -226,6 +227,7 @@ class wxPyphantFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onCloseCompositeWorker, id=self.ID_CLOSE_COMPOSITE_WORKER)
         self.Bind(wx.EVT_MENU, self.onImportURL, id=wx.ID_FILE1)
         self.Bind(wx.EVT_MENU, self.onImportLocal, id=wx.ID_FILE2)
+        self.Bind(wx.EVT_MENU, self.onWebInterface, id=wx.ID_FILE3)
 
     def createUpdateMenu(self):
         updateMenu = wx.Menu()
@@ -325,6 +327,29 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
                 dlgid2 = dlg2.ShowModal()
         else:
             dlg.Destroy()
+
+    def onWebInterface(self, event):
+        km = KM.getInstance()
+        cpt = "Pyphant Web Interface"
+        if km.web_interface.disabled:
+            if not km.isServerRunning():
+                try:
+                    km.startServer("127.0.0.1", 8000, True)
+                    msg = "Started web server @ 127.0.0.1:8000"
+
+                except:
+                    msg = "Could not start web server @ 127.0.0.1:8000"
+                    km.web_interface.disabled = True
+            else:
+                km.web_interface.disabled = False
+        else:
+            km.web_interface.disabled = True
+            msg = "Disabled web interface."
+            if km.isServerRunning():
+                km.stopServer()
+                msg += "\nStopped web server."
+        dlg = wx.MessageDialog(self, msg, cpt, wx.OK)
+        dlg.ShowModal()
 
 
 import optparse
