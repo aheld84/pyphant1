@@ -100,7 +100,7 @@ class MeasureFocus(Worker.Worker):
         self._ztol = image.attributes[u'ztol'][1]
         newdata = pile(self.sliceAndMeasure, image.data)
         longname = "MeasureFocus"
-        if self.paramHumanOutput:
+        if self.paramHumanOutput.value:
             result = DataContainer.FieldContainer(
                 newdata,
                 copy.deepcopy(image.unit),
