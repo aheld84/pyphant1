@@ -43,7 +43,8 @@ from pyphant.core import Worker, Connectors,\
 import ImageProcessing
 import numpy, copy
 from scipy import ndimage as ndi
-from pyphant.quantities.PhysicalQuantities import isPhysicalQuantity
+from pyphant.quantities.PhysicalQuantities import (isPhysicalQuantity,
+                                                   PhysicalQuantity)
 
 class Cube(object):
     def __init__(self, slices):
@@ -106,52 +107,58 @@ class FocusSlice(Cube):
         self.size = mask.sum()
 
 
-class ZTube(list, FocusSlice):
-    def __init__(self, fslice, boundRatio, featureRatio):
-        FocusSlice.__init__(self, fslice.slices, fslice.focus,
-                            fslice.mask, 1)
+class ZTube(list):
+    def __init__(self, fslice, zvalue, ztol, boundRatio, featureRatio):
+        self.yxCube = Cube(fslice.slices)
+        self.mask = fslice.mask.copy()
+        self.maxFocus = fslice.focus
         self.append(fslice)
         self.boundRatio = boundRatio
         self.featureRatio = featureRatio
         self.focusedIndex = 0
+        self.zCube = Cube([slice(zvalue - ztol, zvalue + ztol)])
+        self.ztol = ztol
 
-    def match(self, fslice):
-        subCube1 = self.getSubCube([1, 2])
-        subCube2 = fslice.getSubCube([1, 2])
-        vol = (subCube1 & subCube2).getVolume()
+    def match(self, fslice, zvalue):
+        vol = (self.yxCube & fslice).getVolume()
         if not isPhysicalQuantity(vol):
             vol = float(vol)
-        yxratio = vol / subCube2.getVolume()
-        zmatch = self.getSubCube([0]) & fslice.getSubCube([0])
+        yxratio = vol / fslice.getVolume()
+        fszCube = Cube([slice(zvalue - self.ztol, zvalue + self.ztol)])
+        zmatch = self.zCube & fszCube
+        print zmatch.getVolume(), yxratio
         if yxratio >= self.boundRatio and zmatch.getVolume() != 0:
             #TODO: feature matching
-            orCube = self | fslice
-            maskSlices1 = (self - orCube).getSubCube([1, 2]).slices
-            maskSlices2 = (fslice - orCube).getSubCube([1, 2]).slices
-            newmask = numpy.zeros((orCube.getEdgeLength(1),
-                                   orCube.getEdgeLength(2)),
+            orCube = self.yxCube | fslice
+            newmask = numpy.zeros((orCube.getEdgeLength(0),
+                                   orCube.getEdgeLength(1)),
                                   dtype=bool)
-            newmask[maskSlices1] = self.mask
-            newmask[maskSlices2] |= fslice.mask
+            newmask[(self.yxCube - orCube).slices] = self.mask
+            newmask[(fslice - orCube).slices] |= fslice.mask
             self.mask = newmask
-            self.slices = orCube.slices
+            self.yxCube = orCube
+            self.zCube = self.zCube | fszCube
             self.append(fslice)
-            if fslice.focus > self.focus:
-                self.focus = fslice.focus
-                self.focusIndex = len(self) - 1
+            if fslice.focus > self.maxFocus:
+                self.maxFocus = fslice.focus
+                self.focusedIndex = len(self) - 1
             return True
         return False
 
 def autofocus(focusfc, boundRatio, featureRatio):
     ztubes = []
-    for fslice in focusfc.data:
-        matched = False
-        for ztube in ztubes:
-            matched = ztube.match(fslice)
-            if matched:
-                break
-        if not matched:
-            ztubes.append(ZTube(fslice, boundRatio, featureRatio))
+    ztol = focusfc.attributes[u'ztol']
+    for zNumValue, focusData in zip(focusfc.dimensions[0].data, focusfc.data):
+        zvalue = zNumValue * focusfc.dimensions[0].unit
+        for fslice in focusData:
+            matched = False
+            for ztube in ztubes:
+                matched = ztube.match(fslice, zvalue)
+                if matched:
+                    break
+            if not matched:
+                ztubes.append(ZTube(fslice, zvalue, ztol,
+                                    boundRatio, featureRatio))
     for ztube in ztubes:
         pass
 

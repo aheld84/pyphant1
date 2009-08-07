@@ -98,14 +98,14 @@ class CubeTestCase(unittest.TestCase):
 
 class ZTubeTestCase(unittest.TestCase):
     def setUp(self):
-        slices = [slice(0, 3), slice(0, 10), slice(0, 10)]
+        slices = [slice(0, 10), slice(0, 10)]
         mask = numpy.zeros((10, 10), dtype=bool) # TODO
         fslice = AF.FocusSlice(slices, 10.0, mask, 1)
-        self.ztube = AF.ZTube(fslice, 0.5, 0.5)
-        testslices1 = [slice(1, 4), slice(3, 12), slice(2, 9)]
+        self.ztube = AF.ZTube(fslice, 0, 1, 0.5, 0.5)
+        testslices1 = [slice(3, 12), slice(2, 9)]
         testmask1 = numpy.zeros((9, 7), dtype=bool)
         self.testfslice1 = AF.FocusSlice(testslices1, 12.0, testmask1, 2)
-        testslices2 = [slice(1, 4), slice(7, 17), slice(8, 16)]
+        testslices2 = [slice(7, 17), slice(8, 16)]
         testmask2 = numpy.zeros((10, 8), dtype=bool)
         self.testfslice2 = AF.FocusSlice(testslices2, 8.0, testmask2, 3)
 
@@ -113,15 +113,17 @@ class ZTubeTestCase(unittest.TestCase):
         pass
 
     def testMatching(self):
-        assert self.ztube.match(self.testfslice1)
-        assert not self.ztube.match(self.testfslice2)
+        assert self.ztube.match(self.testfslice1, 1)
+        assert not self.ztube.match(self.testfslice2, 1)
         assert self.testfslice1 in self.ztube
         assert self.testfslice2 not in self.ztube
-        expected = AF.Cube([slice(0, 4),
-                            slice(0, 12),
-                            slice(0, 10)])
-        assert self.ztube.slices == expected.slices
+        expectedyx = AF.Cube([slice(0, 12),
+                              slice(0, 10)])
+        expectedz = AF.Cube([slice(-1, 2)])
+        assertEqual(self.ztube.yxCube, expectedyx)
+        assertEqual(self.ztube.zCube, expectedz)
         assert self.ztube.mask.shape == (12, 10)
+        assert self.ztube.focusedIndex == 1
 
 if __name__ == "__main__":
     import sys
