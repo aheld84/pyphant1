@@ -30,6 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os, os.path
+import logging
 
 def getPyphantPath(subdir = '/'):
     """
