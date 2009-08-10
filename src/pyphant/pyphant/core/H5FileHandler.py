@@ -43,8 +43,8 @@ from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 import scipy
 import logging
 import os
+from pyphant.core import PyTablesPersister as PTP
 _logger = logging.getLogger("pyphant")
-_reservedAttributes = ('longname', 'shortname', 'columns')
 
 
 class H5FileHandler(object):
@@ -109,46 +109,7 @@ class H5FileHandler(object):
         instance. This method is intended for internal use only.
         resNode -- node at which the FieldContainer is located in the file.
         """
-        longname = unicode(self.handle.getNodeAttr(resNode, "longname"),
-                           'utf-8')
-        shortname = unicode(self.handle.getNodeAttr(resNode, "shortname"),
-                            'utf-8')
-        data = scipy.array(resNode.data.read())
-        def loads(inputList):
-            if type(inputList) == type([]):
-                try:
-                    return map(lambda s: eval(s), inputList)
-                except:
-                    return map(lambda s: unicode(s, 'utf-8'), inputList)
-            else:
-                return map(loads, inputList)
-        if data.dtype.char == 'S':
-            data = scipy.array(loads(data.tolist()))
-        attributes = {}
-        for key in resNode.data._v_attrs._v_attrnamesuser:
-            attributes[key] = self.handle.getNodeAttr(resNode.data, key)
-        try:
-            error = scipy.array(resNode.error.read())
-        except tables.NoSuchNodeError:
-            error = None
-        try:
-            mask = scipy.array(resNode.mask.read())
-        except tables.NoSuchNodeError:
-            mask = None
-        unit = eval(unicode(self.handle.getNodeAttr(resNode, "unit"), 'utf-8'))
-        try:
-            dimTable = resNode.dimensions
-            dimensions = [self.loadField(self.handle.getNode(
-                        "/results/result_"\
-                            + DataContainer.parseId(row['id'])[0]))
-                          for row in dimTable.iterrows()]
-        except tables.NoSuchNodeError:
-            dimensions = FieldContainer.INDEX
-        result = DataContainer.FieldContainer(data, unit, error, mask,
-                                              dimensions, longname, shortname,
-                                              attributes)
-        result.seal(resNode._v_title)
-        return result
+        return PTP.loadField(self.handle, resNode)
 
     def loadSample(self, resNode):
         """
@@ -156,33 +117,7 @@ class H5FileHandler(object):
         instance. This method is intended for internal use only.
         resNode -- node at which the SampleContainer is located in the file.
         """
-        result = DataContainer.SampleContainer.__new__(
-            DataContainer.SampleContainer)
-        result.longname = unicode(self.handle.getNodeAttr(resNode, "longname"),
-                                  'utf-8')
-        result.shortname = unicode(self.handle.getNodeAttr(resNode,
-                                                           "shortname"),
-                                   'utf-8')
-        result.attributes = {}
-        for key in resNode._v_attrs._v_attrnamesuser:
-            if key not in _reservedAttributes:
-                result.attributes[key] = self.handle.getNodeAttr(resNode, key)
-        columns = []
-        for resId in self.handle.getNodeAttr(resNode, "columns"):
-            nodename = "/results/" + resId
-            dcHash, uriType = DataContainer.parseId(self.handle.getNodeAttr(
-                    nodename, "TITLE"))
-            if uriType == 'sample':
-                loader = self.loadSample
-            elif uriType == 'field':
-                loader = self.loadField
-            else:
-                raise KeyError, "Unknown UriType %s in saving result %s."\
-                    % (uriType, result.id)
-            columns.append(loader(self.handle.getNode(nodename)))
-        result.columns = columns
-        result.seal(resNode._v_title)
-        return result
+        return PTP.loadSample(self.handle, resNode)
 
     def loadSummary(self, dcId = None):
         """
@@ -240,7 +175,7 @@ class H5FileHandler(object):
                 summary['dimensions'] = dimensions
             elif uriType == 'sample':
                 for key in resNode._v_attrs._v_attrnamesuser:
-                    if key not in _reservedAttributes:
+                    if key not in PTP._reservedAttributes:
                         attributes[key] = self.handle.getNodeAttr(resNode, key)
                 columns = []
                 for resId in self.handle.getNodeAttr(resNode, "columns"):
@@ -289,20 +224,7 @@ class H5FileHandler(object):
                        in the file.
         result -- SampleContainer instance to be saved
         """
-        self.handle.setNodeAttr(resultGroup, "longname",
-                                result.longname.encode("utf-8"))
-        self.handle.setNodeAttr(resultGroup, "shortname",
-                                result.shortname.encode("utf-8"))
-        for key, value in result.attributes.iteritems():
-            if key in _reservedAttributes:
-                raise ValueError, "Attribute should not be named %s!"\
-                    % _reservedAttributes
-            self.handle.setNodeAttr(resultGroup, key, value)
-        #Store fields of sample Container and gather list of field IDs
-        columns = []
-        for column in result.columns:
-            columns.append(self.saveDataContainer(column))
-        self.handle.setNodeAttr(resultGroup, "columns", columns)
+        PTP.saveSample(self.handle, resultGroup, result)
 
     def saveField(self, resultGroup, result):
         """
@@ -312,55 +234,7 @@ class H5FileHandler(object):
                        in the file.
         result -- FieldContainer instance to be saved
         """
-        def dump(inputList):
-            def conversion(arg):
-                if type(arg) == type(u' '):
-                    return arg.encode('utf-8')
-                else:
-                    return arg.__repr__()
-            if type(inputList) == type([]):
-                return map(conversion, inputList)
-            else:
-                return map(dump, inputList)
-        if result.data.dtype.char in ['U', 'O']:
-            unicodeData = scipy.array(dump(result.data.tolist()))
-            self.handle.createArray(resultGroup, "data", unicodeData,
-                                    result.longname.encode("utf-8"))
-        else:
-            self.handle.createArray(resultGroup, "data", result.data,
-                                    result.longname.encode("utf-8"))
-        for key, value in result.attributes.iteritems():
-            self.handle.setNodeAttr(resultGroup.data, key, value)
-        self.handle.setNodeAttr(resultGroup, "longname",
-                                result.longname.encode("utf-8"))
-        self.handle.setNodeAttr(resultGroup, "shortname",
-                                result.shortname.encode("utf-8"))
-        if result.error != None:
-            self.handle.createArray(resultGroup, "error", result.error,
-                           (u"Error of " + result.longname).encode("utf-8"))
-        if result.mask != None:
-            self.handle.createArray(resultGroup, "mask", result.mask,
-                           (u"Mask of "+result.longname).encode("utf-8"))
-        self.handle.setNodeAttr(resultGroup, "unit",
-                                repr(result.unit).encode("utf-8"))
-        if result.dimensions != FieldContainer.INDEX:
-            idLen = max([len(dim.id.encode("utf-8"))
-                       for dim in result.dimensions])
-            dimTable = self.handle.createTable(resultGroup, "dimensions",
-                                               {"hash":StringCol(32),
-                                                "id":StringCol(idLen)},
-                                               (u"Dimensions of "\
-                                                    + result.longname).encode(
-                                                       "utf-8"),
-                                               expectedrows =\
-                                                   len(result.dimensions))
-            for dim in result.dimensions:
-                d = dimTable.row
-                d["hash"] = dim.hash.encode("utf-8")
-                d["id"] = dim.id.encode("utf-8")
-                d.append()
-                self.saveDataContainer(dim)
-            dimTable.flush()
+        PTP.saveField(self.handle, resultGroup, result)
 
     def __del__(self):
         """
