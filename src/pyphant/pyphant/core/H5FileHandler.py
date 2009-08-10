@@ -37,13 +37,13 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$:
 import tables
-from pyphant.core import (DataContainer, FieldContainer)
+from pyphant.core import DataContainer
 from tables import StringCol
 from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 import scipy
 import logging
 import os
-from pyphant.core import PyTablesPersister as PTP
+from pyphant.core import PyTablesPersister # as PyTablesPersister
 _logger = logging.getLogger("pyphant")
 
 
@@ -109,7 +109,7 @@ class H5FileHandler(object):
         instance. This method is intended for internal use only.
         resNode -- node at which the FieldContainer is located in the file.
         """
-        return PTP.loadField(self.handle, resNode)
+        return PyTablesPersister.loadField(self.handle, resNode)
 
     def loadSample(self, resNode):
         """
@@ -117,7 +117,7 @@ class H5FileHandler(object):
         instance. This method is intended for internal use only.
         resNode -- node at which the SampleContainer is located in the file.
         """
-        return PTP.loadSample(self.handle, resNode)
+        return PyTablesPersister.loadSample(self.handle, resNode)
 
     def loadSummary(self, dcId = None):
         """
@@ -175,7 +175,7 @@ class H5FileHandler(object):
                 summary['dimensions'] = dimensions
             elif uriType == 'sample':
                 for key in resNode._v_attrs._v_attrnamesuser:
-                    if key not in PTP._reservedAttributes:
+                    if key not in PyTablesPersister._reservedAttributes:
                         attributes[key] = self.handle.getNodeAttr(resNode, key)
                 columns = []
                 for resId in self.handle.getNodeAttr(resNode, "columns"):
@@ -224,7 +224,7 @@ class H5FileHandler(object):
                        in the file.
         result -- SampleContainer instance to be saved
         """
-        PTP.saveSample(self.handle, resultGroup, result)
+        PyTablesPersister.saveSample(self.handle, resultGroup, result)
 
     def saveField(self, resultGroup, result):
         """
@@ -234,7 +234,7 @@ class H5FileHandler(object):
                        in the file.
         result -- FieldContainer instance to be saved
         """
-        PTP.saveField(self.handle, resultGroup, result)
+        PyTablesPersister.saveField(self.handle, resultGroup, result)
 
     def __del__(self):
         """
