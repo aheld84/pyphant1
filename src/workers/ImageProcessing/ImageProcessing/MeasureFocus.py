@@ -68,7 +68,7 @@ class MeasureFocus(Worker.Worker):
         if human_output:
             res = numpy.zeros(data.shape)
         else:
-            res = numpy.zeros(len(slices))
+            res = numpy.zeros(len(slices), dtype=object)
         label = 0
         for sl in slices:
             label += 1
@@ -92,7 +92,7 @@ class MeasureFocus(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def measure_focus(self, image, labels, subscriber=0):
         self._labels = labels.data
-        newdata = pile(self.sliceAndMeasure, image.data)
+        newdata = self.sliceAndMeasure(image.data)
         longname = "MeasureFocus"
         if self.paramHumanOutput.value:
             result = DataContainer.FieldContainer(
