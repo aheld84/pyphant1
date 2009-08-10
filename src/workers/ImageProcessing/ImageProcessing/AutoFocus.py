@@ -106,6 +106,10 @@ class FocusSlice(Cube):
         self.label = label
         self.size = mask.sum()
 
+    def __str__(self):
+        retstr = "FocusSlice(slices=%s, focus=%s, label=%s, size=%s)"
+        return retstr % (self.slices, self.focus, self.label, self.size)
+
 
 class ZTube(list):
     def __init__(self, fslice, zvalue, ztol, boundRatio, featureRatio):
