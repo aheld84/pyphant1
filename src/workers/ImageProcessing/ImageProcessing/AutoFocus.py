@@ -99,22 +99,20 @@ class Cube(object):
 
 
 class FocusSlice(Cube):
-    def __init__(self, slices, focus, mask, label):
+    def __init__(self, slices, focus, label, area):
         Cube.__init__(self, slices)
         self.focus = focus
-        self.mask = mask
         self.label = label
-        self.size = mask.sum()
+        self.area = area
 
     def __str__(self):
-        retstr = "FocusSlice(slices=%s, focus=%s, label=%s, size=%s)"
-        return retstr % (self.slices, self.focus, self.label, self.size)
+        retstr = "FocusSlice(slices=%s, focus=%s, label=%s, area=%s)"
+        return retstr % (self.slices, self.focus, self.label, self.area)
 
 
 class ZTube(list):
     def __init__(self, fslice, zvalue, ztol, boundRatio, featureRatio):
         self.yxCube = Cube(fslice.slices)
-        self.mask = fslice.mask.copy()
         self.maxFocus = fslice.focus
         self.append(fslice)
         self.boundRatio = boundRatio
@@ -132,14 +130,7 @@ class ZTube(list):
         zmatch = self.zCube & fszCube
         print zmatch.getVolume(), yxratio
         if yxratio >= self.boundRatio and zmatch.getVolume() != 0:
-            #TODO: feature matching
             orCube = self.yxCube | fslice
-            newmask = numpy.zeros((orCube.getEdgeLength(0),
-                                   orCube.getEdgeLength(1)),
-                                  dtype=bool)
-            newmask[(self.yxCube - orCube).slices] = self.mask
-            newmask[(fslice - orCube).slices] |= fslice.mask
-            self.mask = newmask
             self.yxCube = orCube
             self.zCube = self.zCube | fszCube
             self.append(fslice)
