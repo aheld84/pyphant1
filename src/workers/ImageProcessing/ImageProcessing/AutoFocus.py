@@ -181,8 +181,7 @@ def autofocus(focusfc, boundRatio, featureRatio):
             if not matched:
                 ztubes.append(ZTube(fslice, zvalue, ztol,
                                     boundRatio, featureRatio))
-    for ztube in ztubes:
-        pass
+    return numpy.array([ztube.getFocusedInclusion() for ztube in ztubes])
 
 
 class AutoFocus(Worker.Worker):
