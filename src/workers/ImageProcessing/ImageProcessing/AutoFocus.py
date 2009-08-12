@@ -128,6 +128,7 @@ class ZTube(object):
         self.featureRatio = featureRatio
         self.zCube = Cube([slice(zvalue - ztol, zvalue + ztol)])
         self.ztol = ztol
+        self.focusedZ = zvalue
 
     def match(self, fslice, zvalue):
         vol = (self.yxCube & fslice).getVolume()
@@ -144,6 +145,7 @@ class ZTube(object):
             if fslice.focus > self.maxFocus:
                 self.maxFocus = fslice.focus
                 self.focusedFSlice = fslice
+                self.focusedZ = zvalue
             return True
         return False
 

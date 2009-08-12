@@ -109,13 +109,14 @@ class ZTubeTestCase(unittest.TestCase):
 
     def testMatching(self):
         assert self.ztube.match(self.testfslice1, 1)
-        assert not self.ztube.match(self.testfslice2, 1)
+        assert not self.ztube.match(self.testfslice2, 1.01)
         expectedyx = AF.Cube([slice(0, 12),
                               slice(0, 10)])
         expectedz = AF.Cube([slice(-1, 2)])
         assert self.ztube.yxCube == expectedyx
         assert self.ztube.zCube == expectedz
         assert self.ztube.focusedFSlice == self.testfslice1
+        assert self.ztube.focusedZ == 1
 
 if __name__ == "__main__":
     import sys
