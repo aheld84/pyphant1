@@ -93,6 +93,10 @@ class CubeTestCase(unittest.TestCase):
                             slice(5, 15)])
         assert self.cube1 - self.cube2 == expected
 
+    def testCenter(self):
+        expected = (5.0, 5.0, 5.0)
+        assert self.cube1.getCenter() == expected
+
 
 class ZTubeTestCase(unittest.TestCase):
     def setUp(self):
@@ -120,6 +124,7 @@ class ZTubeTestCase(unittest.TestCase):
         assert self.ztube.zCube == expectedz
         assert self.ztube.focusedFSlice == self.testfslice1
         assert self.ztube.focusedZ == 1
+        print self.ztube.getFocusedInclusion()
 
 if __name__ == "__main__":
     import sys

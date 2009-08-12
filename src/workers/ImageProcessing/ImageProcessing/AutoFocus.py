@@ -92,6 +92,9 @@ class Cube(object):
     def getEdgeLength(self, edgeIndex):
         return self.slices[edgeIndex].stop - self.slices[edgeIndex].start
 
+    def getCenter(self):
+        return tuple([(sli.start + sli.stop) / 2.0 for sli in self.slices])
+
 
 class FocusSlice(Cube):
     def __init__(self, slices, focus, mask):
@@ -146,6 +149,23 @@ class ZTube(object):
             return True
         return False
 
+    def getFocusedInclusion(self):
+        """
+        This method returns a tuple
+        ((z, y, x), (zError, yError, xError), diameter, diameterError, focus)
+        corresponding to the most focused feature in the ZTube
+        """
+        #This is just a preliminary example of how to calculate the values...
+        coordY, coordX = self.focusedFSlice.getCenter()
+        coord = (self.focusedZ, coordY, coordX)
+        edgeL0 = self.focusedFSlice.getEdgeLength(0)
+        edgeL1 = self.focusedFSlice.getEdgeLength(1)
+        coordError = (self.ztol, edgeL0 / 4.0, edgeL1 / 4.0)
+        diameter = (edgeL0 * edgeL0 + edgeL1 * edgeL1) ** .5
+        diameterError = .1 * diameter
+        return (coord, coordError, diameter, diameterError,
+                self.focusedFSlice.focus)
+
 
 def autofocus(focusfc, boundRatio, featureRatio):
     ztubes = []
@@ -182,8 +202,7 @@ class AutoFocus(Worker.Worker):
                             self.paramBoundRatio.value,
                             self.paramFeatureRatio.value)
         longname = "AutoFocus"
-        result = DataContainer.FieldContainer(
-            data=newdata,
-            longname=longname)
+        result = DataContainer.FieldContainer(data=newdata,
+                                              longname=longname)
         result.seal()
         return result
