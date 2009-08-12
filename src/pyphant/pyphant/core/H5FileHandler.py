@@ -137,14 +137,18 @@ class H5FileHandler(object):
             summary['id'] = dcId
             resNode, uriType = self.getNodeAndTypeFromId(dcId)
             summary['longname'] = unicode(self.handle.getNodeAttr(resNode,
-                                                                  "longname"),
-                                          'utf-8')
+                                          "longname"), 'utf-8')
             summary['shortname'] = unicode(self.handle.getNodeAttr(resNode,
-                                                                   "shortname"),
-                                           'utf-8')
+                                           "shortname"), 'utf-8')
             emd5_split = dcId.split('/')
-            summary['host'] = unicode(emd5_split[2], 'utf-8')
-            summary['user'] = unicode(emd5_split[3], 'utf-8')
+            try:
+                summary['machine'] = unicode(self.handle.getNodeAttr(resNode,
+                                             "machine"), 'utf-8')
+                summary['creator'] = unicode(self.handle.getNodeAttr(resNode,
+                                             "creator"), 'utf-8')
+            except:
+                summary['machine'] = unicode(emd5_split[2], 'utf-8')
+                summary['creator'] = unicode(emd5_split[3], 'utf-8')
             summary['date'] = unicode(emd5_split[4], 'utf-8')
             summary['hash'] = emd5_split[5].split('.')[0]
             summary['type'] = unicode(emd5_split[5].split('.')[1], 'utf-8')
