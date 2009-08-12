@@ -42,8 +42,7 @@ import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
 from pyphant.quantities.PhysicalQuantities import PhysicalQuantity as PQ
-from pyphant.core.DataContainer import FieldContainer, SampleContainer,\
-     assertEqual
+from pyphant.core.DataContainer import FieldContainer, SampleContainer
 from ImageProcessing import AutoFocus as AF
 import numpy
 
@@ -61,16 +60,16 @@ class CubeTestCase(unittest.TestCase):
 
     def testEq(self):
         cube1c = AF.Cube(self.cube1.slices)
-        assertEqual(self.cube1, cube1c)
-        assert not self.cube1.__eq__(self.cube2, 0, 0)
+        assert self.cube1 == cube1c
+        assert not self.cube1.__eq__(self.cube2)
 
     def testAnd(self):
         expected = AF.Cube([slice(3, 5), slice(4, 6), slice(0, 7)])
-        assertEqual(self.cube1 & self.cube2, expected)
+        assert self.cube1 & self.cube2 == expected
 
     def testOr(self):
         expected = AF.Cube([slice(0, 10), slice(0, 10), slice(-5, 10)])
-        assertEqual(self.cube1 | self.cube2, expected)
+        assert self.cube1 | self.cube2 == expected
 
     def testVolume(self):
         assert self.cube1.getVolume() == 1000
@@ -81,7 +80,7 @@ class CubeTestCase(unittest.TestCase):
 
     def testSubCube(self):
         expected = AF.Cube([slice(3,5 ), slice(-5, 7)])
-        assertEqual(self.cube2.getSubCube([0, 2]), expected)
+        assert self.cube2.getSubCube([0, 2]) == expected
 
     def testGetEdgeLength(self):
         assert self.cube2.getEdgeLength(0) == 2
@@ -92,7 +91,7 @@ class CubeTestCase(unittest.TestCase):
         expected = AF.Cube([slice(-3, 7),
                             slice(-4, 6),
                             slice(5, 15)])
-        assertEqual(self.cube1 - self.cube2, expected)
+        assert self.cube1 - self.cube2 == expected
 
 
 class ZTubeTestCase(unittest.TestCase):
@@ -111,14 +110,12 @@ class ZTubeTestCase(unittest.TestCase):
     def testMatching(self):
         assert self.ztube.match(self.testfslice1, 1)
         assert not self.ztube.match(self.testfslice2, 1)
-        assert self.testfslice1 in self.ztube
-        assert self.testfslice2 not in self.ztube
         expectedyx = AF.Cube([slice(0, 12),
                               slice(0, 10)])
         expectedz = AF.Cube([slice(-1, 2)])
-        assertEqual(self.ztube.yxCube, expectedyx)
-        assertEqual(self.ztube.zCube, expectedz)
-        assert self.ztube.focusedIndex == 1
+        assert self.ztube.yxCube == expectedyx
+        assert self.ztube.zCube == expectedz
+        assert self.ztube.focusedFSlice == self.testfslice1
 
 if __name__ == "__main__":
     import sys

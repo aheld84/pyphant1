@@ -66,13 +66,8 @@ class Cube(object):
     def __or__(self, other):
         return self._binary(other, min, max)
 
-    def __eq__(self, other, rtol=1e-5, atol=1e-8):
-        if len(self.slices) != len(other.slices):
-            return False
-        for index in xrange(len(self.slices)):
-            if self.slices[index] != other.slices[index]:
-                return False
-        return True
+    def __eq__(self, other):
+        return self.slices == other.slices
 
     def __sub__(self, other):
         subslices = []
@@ -116,15 +111,21 @@ class FocusSlice(Cube):
                          self.label.__repr__(),
                          self.area.__repr__())
 
+    def __eq__(self, other):
+        eqflag = self.slices == other.slices
+        eqflag &= self.focus == other.focus
+        eqflag &= self.label == other.label
+        eqflag &= self.area == other.area
+        return eqflag
 
-class ZTube(list):
+
+class ZTube(object):
     def __init__(self, fslice, zvalue, ztol, boundRatio, featureRatio):
         self.yxCube = Cube(fslice.slices)
         self.maxFocus = fslice.focus
-        self.append(fslice)
+        self.focusedFSlice = fslice
         self.boundRatio = boundRatio
         self.featureRatio = featureRatio
-        self.focusedIndex = 0
         self.zCube = Cube([slice(zvalue - ztol, zvalue + ztol)])
         self.ztol = ztol
 
@@ -140,12 +141,12 @@ class ZTube(list):
             orCube = self.yxCube | fslice
             self.yxCube = orCube
             self.zCube = self.zCube | fszCube
-            self.append(fslice)
             if fslice.focus > self.maxFocus:
                 self.maxFocus = fslice.focus
-                self.focusedIndex = len(self) - 1
+                self.focusedFSlice = fslice
             return True
         return False
+
 
 def autofocus(focusfc, boundRatio, featureRatio):
     ztubes = []
