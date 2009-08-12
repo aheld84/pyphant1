@@ -94,28 +94,25 @@ class Cube(object):
 
 
 class FocusSlice(Cube):
-    def __init__(self, slices, focus, label, area):
+    def __init__(self, slices, focus, mask):
         Cube.__init__(self, slices)
         self.focus = focus
-        self.label = label
-        self.area = area
+        self.mask = mask
 
     def __str__(self):
-        retstr = "FocusSlice(slices=%s, focus=%s, label=%s, area=%s)"
-        return retstr % (self.slices, self.focus, self.label, self.area)
+        retstr = "FocusSlice(slices=%s, focus=%s, mask=%s)"
+        return retstr % (self.slices, self.focus, self.mask)
 
     def __repr__(self):
-        retstr = "FocusSlice(%s, %s, %s, %s)"
+        retstr = "FocusSlice(%s, %s, %s)"
         return retstr % (self.slices.__repr__(),
                          self.focus.__repr__(),
-                         self.label.__repr__(),
-                         self.area.__repr__())
+                         self.mask.__repr__())
 
     def __eq__(self, other):
         eqflag = self.slices == other.slices
         eqflag &= self.focus == other.focus
-        eqflag &= self.label == other.label
-        eqflag &= self.area == other.area
+        eqflag &= (self.mask == other.mask).all()
         return eqflag
 
 

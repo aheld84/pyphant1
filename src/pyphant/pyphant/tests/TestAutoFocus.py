@@ -97,12 +97,15 @@ class CubeTestCase(unittest.TestCase):
 class ZTubeTestCase(unittest.TestCase):
     def setUp(self):
         slices = [slice(0, 10), slice(0, 10)]
-        fslice = AF.FocusSlice(slices, 10.0, 1, 2)
+        mask = numpy.ones((10, 10), dtype=bool)
+        fslice = AF.FocusSlice(slices, 10.0, mask)
         self.ztube = AF.ZTube(fslice, 0, 1, 0.5, 0.5)
         testslices1 = [slice(3, 12), slice(2, 9)]
-        self.testfslice1 = AF.FocusSlice(testslices1, 12.0, 2, 2)
+        mask1 = numpy.ones((9, 7), dtype=bool)
+        self.testfslice1 = AF.FocusSlice(testslices1, 12.0, mask1)
         testslices2 = [slice(7, 17), slice(8, 16)]
-        self.testfslice2 = AF.FocusSlice(testslices2, 8.0, 3, 2)
+        mask2 = numpy.ones((10, 8), dtype=bool)
+        self.testfslice2 = AF.FocusSlice(testslices2, 8.0, mask2)
 
     def tearDown(self):
         pass

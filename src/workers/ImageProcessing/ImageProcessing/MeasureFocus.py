@@ -71,15 +71,16 @@ def sliceAndMeasure(image, labels, grow, human_output):
                 resdata[sl] = numpy.where(labels.data[sl] == label,
                                           focus, resdata[sl])
             else:
-                area = numpy.where(labels.data[sl] == label, 1, 0).sum()
-                area *= dx * dy
+                #area = numpy.where(labels.data[sl] == label, 1, 0).sum()
+                #area *= dx * dy
+                mask = numpy.where(labels.data[sl] == label, True, False)
                 dimslices = [slice(dim.data[subsl.start] * dim.unit,
                                    dim.data[subsl.stop - 1] * dim.unit + dl) \
                                  for subsl, dim, dl in zip(sl,
                                                            image.dimensions,
                                                            [dy, dx])]
                 resdata[label - 1] = FocusSlice(dimslices, focus * unit,
-                                                label, area)
+                                                mask)
     longname = "MeasureFocus"
     if human_output:
         result = DataContainer.FieldContainer(resdata,
