@@ -77,18 +77,18 @@ class Emd5Src(Worker.Worker):
         for emd5, summary in summary_dict.iteritems():
             if summary['type'] != u'index':
                 emd5list.append(unicode(emd5, 'utf-8'))
-                info = u"%s '%s' (user: %s, date: %s)"
+                info = u"%s '%s' (creator: %s, date: %s)"
                 lnitem = HiddenValue(info\
                                          % (summary['type'],
                                             summary['longname'],
-                                            summary['user'],
+                                            summary['creator'],
                                             summary['date']))
                 lnitem.setHiddenValue(emd5)
                 lnlist.append(lnitem)
                 snitem = HiddenValue(info\
                                          % (summary['type'],
                                             summary['shortname'],
-                                            summary['user'],
+                                            summary['creator'],
                                             summary['date']))
                 snitem.setHiddenValue(emd5)
                 snlist.append(snitem)
