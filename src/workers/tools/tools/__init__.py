@@ -41,5 +41,6 @@ __version__ = "$Revision$"
 
 workers=[
     "Emd5Src",
+    "BatchWorker"
     ]
 
