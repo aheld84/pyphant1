@@ -41,7 +41,7 @@ __version__ = "$Revision$".replace('$','')
 import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity as PQ
+from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 from pyphant.core.DataContainer import FieldContainer, SampleContainer
 from ImageProcessing import AutoFocus as AF
 import numpy
@@ -124,7 +124,53 @@ class ZTubeTestCase(unittest.TestCase):
         assert self.ztube.zCube == expectedz
         assert self.ztube.focusedFSlice == self.testfslice1
         assert self.ztube.focusedZ == 1
-        print self.ztube.getFocusedInclusion()
+
+
+class AutoFocusTestCase(unittest.TestCase):
+    def setUp(self):
+        from pyphant.core.KnowledgeManager import KnowledgeManager
+        km = KnowledgeManager.getInstance()
+        sl1 = [slice(PhysicalQuantity('1.0mm'),
+                     PhysicalQuantity('2.0mm')),
+               slice(PhysicalQuantity('1.5mm'),
+                     PhysicalQuantity('3.5mm'))]
+        sl2 = [slice(PhysicalQuantity('0.8mm'),
+                     PhysicalQuantity('1.9mm')),
+               slice(PhysicalQuantity('1.7mm'),
+                     PhysicalQuantity('3.4mm'))]
+        mask1 = numpy.ones((10, 20), dtype=bool)
+        mask2 = numpy.ones((11, 17), dtype=bool)
+        fsl1 = AF.FocusSlice(sl1, PhysicalQuantity('10.0mm**-3'), mask1)
+        self.fsl2 = AF.FocusSlice(sl2, PhysicalQuantity('12.0mm**-3'), mask2)
+        fc1 = FieldContainer(numpy.array([fsl1]))
+        fc2 = FieldContainer(numpy.array([self.fsl2]))
+        fc1.seal()
+        fc2.seal()
+        km.registerDataContainer(fc1)
+        km.registerDataContainer(fc2)
+        columns = [FieldContainer(numpy.array([.5, 1.0]),
+                                  unit=PhysicalQuantity('1.0mm')),
+                   FieldContainer(numpy.array([fc1.id, fc2.id]),
+                                  longname="emd5")]
+        attributes = {u'ztol': PhysicalQuantity('0.5mm')}
+        self.inputSC = SampleContainer(columns, attributes=attributes)
+        self.inputSC.seal()
+
+    def tearDown(self):
+        pass
+
+    def testAutofocus(self):
+        columns = AF.autofocus(self.inputSC, 0.5, 0.75)
+        inclusionSC = SampleContainer(columns,
+                                      "AutoFocus")
+        for fc in inclusionSC.columns:
+            assert fc.data.shape == (1, )
+        zfc, yfc, xfc, dfc, ffc = inclusionSC.columns
+        assert zfc.data[0] * zfc.unit == PhysicalQuantity('1.0mm')
+        assert (yfc.data[0] * yfc.unit,
+                xfc.data[0] * xfc.unit) == self.fsl2.getCenter()
+        assert ffc.data[0] * ffc.unit == PhysicalQuantity('12.0mm**-3')
+
 
 if __name__ == "__main__":
     import sys
