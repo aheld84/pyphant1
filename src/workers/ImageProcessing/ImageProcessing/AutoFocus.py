@@ -56,7 +56,8 @@ class Cube(object):
             bislice = slice(bifunc1(sli1.start, sli2.start),
                             bifunc2(sli1.stop, sli2.stop))
             if bislice.stop < bislice.start:
-                bislice = slice(0, 0)
+                # Weird notation necessary for PhysicalQuantities!
+                bislice = slice(0 * bislice.start, 0 * bislice.stop)
             bislices.append(bislice)
         return Cube(bislices)
 
@@ -136,9 +137,9 @@ class ZTube(object):
             vol = float(vol)
         yxratio = vol / fslice.getVolume()
         fszCube = Cube([slice(zvalue - self.ztol, zvalue + self.ztol)])
-        zmatch = self.zCube & fszCube
-        print zmatch.getVolume(), yxratio
-        if yxratio >= self.boundRatio and zmatch.getVolume() != 0:
+        zvol = (self.zCube & fszCube).getVolume()
+        # weird notation necessary for PhysicalQuantities
+        if yxratio >= self.boundRatio and zvol != 0 * zvol:
             orCube = self.yxCube | fslice
             self.yxCube = orCube
             self.zCube = self.zCube | fszCube
@@ -167,12 +168,15 @@ class ZTube(object):
                 cEZ, cEY, cEX, diameterError)
 
 
-def autofocus(focusfc, boundRatio, featureRatio):
+def autofocus(focusSC, boundRatio, featureRatio):
+    from pyphant.core.KnowledgeManager import KnowledgeManager
+    km = KnowledgeManager.getInstance()
     ztubes = []
-    ztol = focusfc.attributes[u'ztol']
-    for zNumValue, focusData in zip(focusfc.dimensions[0].data, focusfc.data):
-        zvalue = zNumValue * focusfc.dimensions[0].unit
-        for fslice in focusData:
+    ztol = focusSC.attributes[u'ztol']
+    for zNumValue, emd5 in zip(focusSC[0].data, focusSC[1].data):
+        zvalue = zNumValue * focusSC[0].unit
+        focusFC = km.getDataContainer(emd5)
+        for fslice in focusFC.data:
             matched = False
             for ztube in ztubes:
                 matched = ztube.match(fslice, zvalue)
@@ -211,11 +215,11 @@ class AutoFocus(Worker.Worker):
                 0.5, False),
                ("featureRatio", "Minimal overlap ratio (feature area)",
                 0.75, False)]
-    _sockets = [("focusfc", Connectors.TYPE_IMAGE)]
+    _sockets = [("focusSC", Connectors.TYPE_ARRAY)]
 
     @Worker.plug(Connectors.TYPE_ARRAY)
-    def AutoFocusWorker(self, focusfc, subscriber=0):
-        columns = autofocus(focusfc,
+    def AutoFocusWorker(self, focusSC, subscriber=0):
+        columns = autofocus(focusSC,
                             self.paramBoundRatio.value,
                             self.paramFeatureRatio.value)
         longname = "AutoFocus"
