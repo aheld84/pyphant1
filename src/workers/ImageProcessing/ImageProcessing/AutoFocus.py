@@ -152,19 +152,19 @@ class ZTube(object):
     def getFocusedInclusion(self):
         """
         This method returns a tuple
-        ((z, y, x), (zError, yError, xError), diameter, diameterError, focus)
+        (z, y, x, diameter, focus, zError, yError, xError, diameterError)
         corresponding to the most focused feature in the ZTube
         """
         #This is just a preliminary example of how to calculate the values...
         coordY, coordX = self.focusedFSlice.getCenter()
-        coord = (self.focusedZ, coordY, coordX)
+        coordZ = self.focusedZ
         edgeL0 = self.focusedFSlice.getEdgeLength(0)
         edgeL1 = self.focusedFSlice.getEdgeLength(1)
-        coordError = (self.ztol, edgeL0 / 4.0, edgeL1 / 4.0)
+        cEZ, cEY, cEX = self.ztol, edgeL0 / 4.0, edgeL1 / 4.0
         diameter = (edgeL0 * edgeL0 + edgeL1 * edgeL1) ** .5
         diameterError = .1 * diameter
-        return (coord, coordError, diameter, diameterError,
-                self.focusedFSlice.focus)
+        return (coordZ, coordY, coordX, diameter, self.focusedFSlice.focus,
+                cEZ, cEY, cEX, diameterError)
 
 
 def autofocus(focusfc, boundRatio, featureRatio):
@@ -181,7 +181,25 @@ def autofocus(focusfc, boundRatio, featureRatio):
             if not matched:
                 ztubes.append(ZTube(fslice, zvalue, ztol,
                                     boundRatio, featureRatio))
-    return numpy.array([ztube.getFocusedInclusion() for ztube in ztubes])
+    if ztubes == []:
+        return []
+    fInclusions = [ztube.getFocusedInclusion() for ztube in ztubes]
+    longnames = ["z-value", "y-value", "x-value", "diameter", "focus"]
+    shortnames = ["z", "y", "x", "d", "f"]
+    fIColumns = zip(*fInclusions)
+    pqdata = [fIColumns[index] for index in xrange(5)]
+    pqerrors = [fIColumns[index] for index in xrange(5, 9)]
+    units = [PhysicalQuantity(1, fInclusions[0][index].unit) \
+                 for index in xrange(5)]
+    data = [numpy.array([spqd.inUnitsOf(pqunit.unit).value for spqd in pqd]) \
+                for pqd, pqunit in zip(pqdata, units)]
+    errors = [numpy.array([serr.inUnitsOf(pqunit.unit).value for serr in err]) \
+                  for err, pqunit in zip(pqerrors, units[:4])]
+    errors.append(None)
+    return [DataContainer.FieldContainer(dat, unit, err,
+                                         longname=ln, shortname=sn) \
+                for dat, unit, err, ln, sn in zip(data, units, errors,
+                                                  longnames, shortnames)]
 
 
 class AutoFocus(Worker.Worker):
@@ -195,13 +213,13 @@ class AutoFocus(Worker.Worker):
                 0.75, False)]
     _sockets = [("focusfc", Connectors.TYPE_IMAGE)]
 
-    @Worker.plug(Connectors.TYPE_IMAGE)
+    @Worker.plug(Connectors.TYPE_ARRAY)
     def AutoFocusWorker(self, focusfc, subscriber=0):
-        newdata = autofocus(focusfc,
+        columns = autofocus(focusfc,
                             self.paramBoundRatio.value,
                             self.paramFeatureRatio.value)
         longname = "AutoFocus"
-        result = DataContainer.FieldContainer(data=newdata,
+        result = DataContainer.SampleContainer(columns=columns,
                                               longname=longname)
         result.seal()
         return result
