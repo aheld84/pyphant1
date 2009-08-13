@@ -31,6 +31,7 @@
 
 import os, os.path
 import logging
+import sys
 
 def getPyphantPath(subdir = '/'):
     """
