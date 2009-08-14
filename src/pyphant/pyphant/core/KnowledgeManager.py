@@ -618,7 +618,8 @@ URL '%s'...", km_id, km_url)
                     docache = False
                     if len(self._cache) >= CACHE_SIZE:
                         minhitcount = sys.maxint
-                        for cachedid, cacheddcinfo in self._cache.iteritems():
+                        for cachedid in self._cache.keys():
+                            cacheddcinfo = self._storage[cachedid]
                             if (now - cacheddcinfo['lasthit']) >= CACHE_TIMEOUT:
                                 cacheddcinfo['hitcount'] = 0
                                 self._cache.pop(cachedid)
