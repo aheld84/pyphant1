@@ -149,7 +149,8 @@ class AutoFocusTestCase(unittest.TestCase):
         km.registerDataContainer(fc1)
         km.registerDataContainer(fc2)
         columns = [FieldContainer(numpy.array([.5, 1.0]),
-                                  unit=PhysicalQuantity('1.0mm')),
+                                  unit=PhysicalQuantity('1.0mm'),
+                                  longname='z-value'),
                    FieldContainer(numpy.array([fc1.id, fc2.id]),
                                   longname="emd5")]
         attributes = {u'ztol': PhysicalQuantity('0.5mm')}

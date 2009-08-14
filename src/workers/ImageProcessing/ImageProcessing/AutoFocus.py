@@ -173,8 +173,8 @@ def autofocus(focusSC, boundRatio, featureRatio):
     km = KnowledgeManager.getInstance()
     ztubes = []
     ztol = focusSC.attributes[u'ztol']
-    for zNumValue, emd5 in zip(focusSC[0].data, focusSC[1].data):
-        zvalue = zNumValue * focusSC[0].unit
+    for zNumValue, emd5 in zip(focusSC['z-value'].data, focusSC['emd5'].data):
+        zvalue = zNumValue * focusSC['z-value'].unit
         focusFC = km.getDataContainer(emd5)
         for fslice in focusFC.data:
             matched = False
