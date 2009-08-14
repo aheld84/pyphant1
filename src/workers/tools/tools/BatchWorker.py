@@ -83,6 +83,8 @@ def batch(inputSC, recipe, plug,
         km.registerDataContainer(output_dc)
         output_emd5s.append(output_dc.id)
         rowcount += 1
+    if socket._plug != None:
+        socket.pullPlug()
     outputSC = deepcopy(inputSC)
     output_columns = []
     for col in outputSC.columns:
