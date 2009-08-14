@@ -173,6 +173,29 @@ class AutoFocusTestCase(unittest.TestCase):
         assert ffc.data[0] * ffc.unit == PhysicalQuantity('12.0mm**-3')
 
 
+class FocusSliceTestCase(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def testSaveLoadFocusSlice(self):
+        mask = numpy.ones((100, 150), dtype=bool)
+        slices = [slice(PhysicalQuantity('100mm'),
+                        PhysicalQuantity('200mm')),
+                  slice(PhysicalQuantity('150mm'),
+                        PhysicalQuantity('350mm'))]
+        fslice = AF.FocusSlice(slices, PhysicalQuantity('10mm**-3'), mask)
+        fc = FieldContainer(numpy.array([fslice for xr in xrange(1000)]))
+        fc.seal()
+        from pyphant.core.KnowledgeManager import KnowledgeManager
+        km = KnowledgeManager.getInstance()
+        km.registerDataContainer(fc)
+        returnfc = km.getDataContainer(fc.id, use_cache=False)
+        assert returnfc.data[0].slices[0].start == fc.data[0].slices[0].start
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) == 1:
