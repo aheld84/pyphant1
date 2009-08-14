@@ -45,6 +45,8 @@ import numpy, copy
 from scipy import ndimage as ndi
 from pyphant.quantities.PhysicalQuantities import (isPhysicalQuantity,
                                                    PhysicalQuantity)
+from pyphant.core.DataContainer import FieldContainer
+
 
 class Cube(object):
     def __init__(self, slices):
@@ -101,17 +103,33 @@ class FocusSlice(Cube):
     def __init__(self, slices, focus, mask):
         Cube.__init__(self, slices)
         self.focus = focus
-        self.mask = mask
+        from types import StringTypes
+        if isinstance(mask, StringTypes):
+            from pyphant.core.KnowledgeManager import KnowledgeManager
+            km = KnowledgeManager.getInstance()
+            maskfc = km.getDataContainer(unicode(mask).encode('utf-8'))
+            self.mask = maskfc.data
+            self.maskEmd5 = unicode(maskfc.id).encode('utf-8')
+        else:
+            self.mask = mask
+            self.maskEmd5 = None
 
     def __str__(self):
         retstr = "FocusSlice(slices=%s, focus=%s, mask=%s)"
         return retstr % (self.slices, self.focus, self.mask)
 
     def __repr__(self):
-        retstr = "FocusSlice(%s, %s, %s)"
+        retstr = "FocusSlice(%s, %s, '%s')"
+        if self.maskEmd5 == None:
+            from pyphant.core.KnowledgeManager import KnowledgeManager
+            km = KnowledgeManager.getInstance()
+            maskfc = FieldContainer(self.mask, longname="FocusSliceMask")
+            maskfc.seal()
+            km.registerDataContainer(maskfc)
+            self.maskEmd5 = unicode(maskfc.id).encode('utf-8')
         return retstr % (self.slices.__repr__(),
                          self.focus.__repr__(),
-                         self.mask.__repr__())
+                         self.maskEmd5)
 
     def __eq__(self, other):
         eqflag = self.slices == other.slices
@@ -173,9 +191,10 @@ def autofocus(focusSC, boundRatio, featureRatio):
     km = KnowledgeManager.getInstance()
     ztubes = []
     ztol = focusSC.attributes[u'ztol']
+    zunit = focusSC['z-value'].unit
     for zNumValue, emd5 in zip(focusSC['z-value'].data, focusSC['emd5'].data):
-        zvalue = zNumValue * focusSC['z-value'].unit
-        focusFC = km.getDataContainer(emd5)
+        zvalue = zNumValue * zunit
+        focusFC = km.getDataContainer(unicode(emd5).encode('utf-8'))
         for fslice in focusFC.data:
             matched = False
             for ztube in ztubes:
