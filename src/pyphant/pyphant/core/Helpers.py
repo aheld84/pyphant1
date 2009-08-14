@@ -86,3 +86,33 @@ def enableLogging():
     h.setFormatter(f)
     l.addHandler(h)
     l.info("Logger 'pyphant' has been configured for debug purposes.")
+
+def uc2utf8(stype):
+    """
+    Returns utf-8 encoded version of stype, if stype was unicode, else
+    stype is returned.
+    If stype is of ListType, the above applies for all entries of the list.
+    """
+    from types import UnicodeType, ListType
+    def convert(arg):
+        if isinstance(arg, UnicodeType):
+            return arg.encode('utf-8')
+        return arg
+    if isinstance(stype, ListType):
+        return map(convert, stype)
+    return convert(stype)
+
+def utf82uc(stype):
+    """
+    Returns a unicode object created from a utf-8 encoded string.
+    If the input was unicode, it is returned unchanged.
+    List are treated similar to uc2utf8, see docstring there.
+    """
+    from types import StringType, ListType
+    def convert(arg):
+        if isinstance(arg, StringType):
+            return unicode(arg, 'utf')
+        return arg
+    if isinstance(stype, ListType):
+        return map(convert, stype)
+    return convert(stype)
