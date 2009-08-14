@@ -211,17 +211,17 @@ class AutoFocus(Worker.Worker):
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "AutoFocus"
-    _params = [("boundRatio", "Minimal overlap ratio (bounding box)",
-                0.5, False),
-               ("featureRatio", "Minimal overlap ratio (feature area)",
-                0.75, False)]
+    _params = [("boundRatio", "Minimal overlap ratio in percent (bounding box)",
+                50, None),
+               ("featureRatio",
+                "Not implemented", 75, None)]
     _sockets = [("focusSC", Connectors.TYPE_ARRAY)]
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def AutoFocusWorker(self, focusSC, subscriber=0):
         columns = autofocus(focusSC,
-                            self.paramBoundRatio.value,
-                            self.paramFeatureRatio.value)
+                            self.paramBoundRatio.value / 100.0,
+                            self.paramFeatureRatio.value / 100.0)
         longname = "AutoFocus"
         result = DataContainer.SampleContainer(columns=columns,
                                               longname=longname)
