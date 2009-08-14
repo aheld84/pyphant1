@@ -104,15 +104,19 @@ class FocusSlice(Cube):
         Cube.__init__(self, slices)
         self.focus = focus
         from types import StringTypes
+        from pyphant.core.KnowledgeManager import KnowledgeManager
         if isinstance(mask, StringTypes):
-            from pyphant.core.KnowledgeManager import KnowledgeManager
             km = KnowledgeManager.getInstance()
             maskfc = km.getDataContainer(unicode(mask).encode('utf-8'))
             self.mask = maskfc.data
-            self.maskEmd5 = unicode(maskfc.id).encode('utf-8')
+            self.maskEmd5 = unicode(mask).encode('utf-8')
         else:
+            km = KnowledgeManager.getInstance()
+            maskfc = FieldContainer(mask, longname="FocusSliceMask")
+            maskfc.seal()
+            km.registerDataContainer(maskfc)
+            self.maskEmd5 = unicode(maskfc.id).encode('utf-8')
             self.mask = mask
-            self.maskEmd5 = None
 
     def __str__(self):
         retstr = "FocusSlice(slices=%s, focus=%s, mask=%s)"
@@ -120,13 +124,6 @@ class FocusSlice(Cube):
 
     def __repr__(self):
         retstr = "FocusSlice(%s, %s, '%s')"
-        if self.maskEmd5 == None:
-            from pyphant.core.KnowledgeManager import KnowledgeManager
-            km = KnowledgeManager.getInstance()
-            maskfc = FieldContainer(self.mask, longname="FocusSliceMask")
-            maskfc.seal()
-            km.registerDataContainer(maskfc)
-            self.maskEmd5 = unicode(maskfc.id).encode('utf-8')
         return retstr % (self.slices.__repr__(),
                          self.focus.__repr__(),
                          self.maskEmd5)
