@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,18 +37,29 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-import os,sys
-import matplotlib
-matplotlib.rcParams['backend']='WXAgg'
-import platform
-if platform.system()=='Linux' and not 'DISPLAY' in os.environ:
-    matplotlib.rcParams['backend'] = 'Agg'
-#matplotlib.rcParams['text.usetex']=True
-#matplotlib.rcParams['text.latex.unicode']=True
-#matplotlib.rcParams['text.latex.preamble']=(r"\usepackage[utf8]{inputenc}",r"\usepackage{amsmath}")
 
-#files=os.listdir(sys.modules[__name__].__path__[0])
-#for module in filter(lambda file: file[-3:]=='.py', files):
-#    if not module == '__init__.py':
-#        exec 'import ' + module[:-3]
-import ImageVisualizer, Chart, KMVisualizer
+from pyphant.core.Connectors import (TYPE_IMAGE, TYPE_ARRAY)
+from pyphant.wxgui2.DataVisReg import DataVisReg
+from pyphant.core.KnowledgeManager import KnowledgeManager as KM
+import webbrowser
+
+
+class KMVisualizer(object):
+    name='Register @ KnowledgeManager'
+    def __init__(self, DataContainer, show=True):
+        self.DataContainer = DataContainer
+        self.show = show
+        km = KM.getInstance()
+        km.registerDataContainer(DataContainer)
+        dc_id = DataContainer.id
+        if km.isServerRunning():
+            url = 'http://%s:%d/request_dc_details?dcid=%s' % (km._http_host,
+                                                               km._http_port,
+                                                               dc_id)
+            webbrowser.open_new_tab(url)
+        else:
+            print "ID of registered DC is: " + dc_id
+
+
+DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, KMVisualizer)
+DataVisReg.getInstance().registerVisualizer(TYPE_ARRAY, KMVisualizer)
