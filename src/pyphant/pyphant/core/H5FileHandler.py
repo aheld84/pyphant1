@@ -43,7 +43,7 @@ from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 import scipy
 import logging
 import os
-from pyphant.core import PyTablesPersister # as PyTablesPersister
+from pyphant.core import PyTablesPersister
 _logger = logging.getLogger("pyphant")
 
 
