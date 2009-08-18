@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2008, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,9 +29,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""
-The OSC Toolbox holds workers for processing data coming from organic
-solar cells.
+"""
+TODO
 """
 
 __id__ = "$Id$"
@@ -39,11 +38,21 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-workers=[
-    "Emd5Src",
-    "BatchHead",
-    "BatchTail",
-    "BatchExtractor",
-    "ParameterRun"
-    ]
+from pyphant.core import (Worker, Connectors, Param)
+from pyphant.core.KnowledgeManager import KnowledgeManager as KM
 
+
+class BatchExtractor(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "BatchExtractor"
+    _params = [("index", "Index", 0, None)]
+    _sockets = [("emd5SC", Connectors.TYPE_ARRAY)]
+
+    @Worker.plug(Connectors.TYPE_IMAGE)
+    def extract(self, emd5SC, subscriber = 0):
+        km = KM.getInstance()
+        emd5 = unicode(emd5SC['emd5'].data[self.paramIndex.value])
+        emd5 = emd5.encode('utf-8')
+        return km.getDataContainer(emd5)
