@@ -357,7 +357,7 @@ interpreted as "no boundary"'
         """
         if self.disabled:
             return self.get_disabled()
-        findrows = [['type', 'longname', 'shortname', 'user', 'host']]
+        findrows = [['type', 'longname', 'shortname', 'creator', 'machine']]
         if path.startswith('/?'):
             query = parse_qs(path[2:])
         else:
@@ -418,7 +418,7 @@ interpreted as "no boundary"'
         if dateto != None:
             dateto = dateto.groups()
         resrows = [['details', 'type', 'longname', 'shortname',
-                    'user', 'host', 'date', 'data']]
+                    'creator', 'machine', 'date', 'data']]
         for summary in summarydict.itervalues():
             add = True
             for key in findrows[0]:
@@ -455,8 +455,8 @@ interpreted as "no boundary"'
                        summary['type'],
                        summary['longname'],
                        summary['shortname'],
-                       summary['user'],
-                       summary['host'],
+                       summary['creator'],
+                       summary['machine'],
                        summary['date'],
                        HTMLDnldForm(summary['id'])]
                 resrows.append(row)

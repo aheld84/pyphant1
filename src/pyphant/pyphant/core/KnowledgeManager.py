@@ -65,7 +65,7 @@ HTTP_REQUEST_DC_URL_PATH = "/request_dc_url"
 HTTP_REQUEST_KM_ID_PATH = "/request_km_id"
 HTTP_REQUEST_DC_DETAILS_PATH = "/request_dc_details?dcid="
 # Maximum number of DCs to store in cache:
-CACHE_SIZE = 50
+CACHE_SIZE = 10
 # Timeout for cached DCs in seconds:
 CACHE_TIMEOUT = 3600
 # Number of hits a DC has to have at least in order to be cached:
@@ -618,7 +618,8 @@ URL '%s'...", km_id, km_url)
                     docache = False
                     if len(self._cache) >= CACHE_SIZE:
                         minhitcount = sys.maxint
-                        for cachedid, cacheddcinfo in self._cache.iteritems():
+                        for cachedid in self._cache.keys():
+                            cacheddcinfo = self._storage[cachedid]
                             if (now - cacheddcinfo['lasthit']) >= CACHE_TIMEOUT:
                                 cacheddcinfo['hitcount'] = 0
                                 self._cache.pop(cachedid)

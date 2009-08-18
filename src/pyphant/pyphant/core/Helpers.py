@@ -29,14 +29,13 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os, os.path
-
 def getPyphantPath(subdir = '/'):
     """
     returns full pyphant path with optional subdirectory
     subdir -- subdirectory that is created if it does not exist already,
               recursive creation of directories is supported also.
     """
+    import os
     homedir = os.path.expanduser('~')
     if not subdir.startswith('/'):
         subdir = '/' + subdir
@@ -55,6 +54,7 @@ def getPyphantPath(subdir = '/'):
     return path
 
 def getUsername():
+    import os
     enc = lambda s: unicode(s, "utf-8")
     import platform
     pltform = platform.system()
@@ -77,6 +77,8 @@ def enableLogging():
     """
     Enables logging to stdout for debug purposes.
     """
+    import logging
+    import sys
     l = logging.getLogger("pyphant")
     l.setLevel(logging.DEBUG)
     f = logging.Formatter('%(asctime)s [%(name)s|%(levelname)s] %(message)s')

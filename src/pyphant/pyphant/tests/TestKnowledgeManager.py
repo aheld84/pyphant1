@@ -130,6 +130,18 @@ current: I(V) [A]
         os.remove(filename)
         km.getDataContainer(dc_id)
 
+    def testCache(self):
+        km = KnowledgeManager.getInstance()
+        fcids = []
+        for xr in xrange(20):
+            fc = FieldContainer(N.array([1, 2, xr]))
+            fc.seal()
+            km.registerDataContainer(fc)
+            fcids.append(fc.id)
+        for fcid in fcids:
+            for rep in xrange(10):
+                fc = km.getDataContainer(fcid)
+
 
 if __name__ == "__main__":
     import sys
