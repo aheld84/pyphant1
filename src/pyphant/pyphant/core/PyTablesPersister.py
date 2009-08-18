@@ -66,6 +66,7 @@ import sys
 from pyphant.core import (CompositeWorker, DataContainer)
 from tables import StringCol, Col
 from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+from ImageProcessing.AutoFocus import FocusSlice # For loading FCs...
 import scipy
 import logging
 _logger = logging.getLogger("pyphant")

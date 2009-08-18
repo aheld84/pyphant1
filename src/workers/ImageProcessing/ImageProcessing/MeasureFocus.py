@@ -43,7 +43,61 @@ from pyphant.core import Worker, Connectors,\
 import ImageProcessing
 import numpy, copy
 from scipy import ndimage
-from ImageProcessing.NDImageWorker import pile
+from ImageProcessing.AutoFocus import FocusSlice
+
+def sliceAndMeasure(image, labels, grow, human_output):
+    data = image.data
+    dy = (image.dimensions[0].data[1] - image.dimensions[0].data[0])
+    dy *= image.dimensions[0].unit
+    dx = (image.dimensions[1].data[1] - image.dimensions[1].data[0])
+    dx *= image.dimensions[1].unit
+    unit = image.unit / (dy * dx)
+    slices = ndimage.find_objects(labels.data)
+    if human_output:
+        resdata = numpy.zeros(data.shape)
+    else:
+        resdata = numpy.zeros(len(slices), dtype=object)
+    label = 0
+    for sl in slices:
+        label += 1
+        if sl[0].stop - sl[0].start >= 3 and sl[1].stop - sl[1].start >= 3:
+            start = [sl[0].start - grow, sl[1].start - grow]
+            stop = [sl[0].stop + grow, sl[1].stop + grow]
+            if start[0] < 0: start[0] = 0
+            if start[1] < 0: start[1] = 0
+            bigsl = (slice(start[0], stop[0]), slice(start[1], stop[1]))
+            focus = numpy.sum(data[bigsl]) / data[bigsl].size
+            if human_output:
+                resdata[sl] = numpy.where(labels.data[sl] == label,
+                                          focus, resdata[sl])
+            else:
+                #area = numpy.where(labels.data[sl] == label, 1, 0).sum()
+                #area *= dx * dy
+                mask = numpy.where(labels.data[sl] == label, True, False)
+                dimslices = [slice(dim.data[subsl.start] * dim.unit,
+                                   dim.data[subsl.stop - 1] * dim.unit + dl) \
+                                 for subsl, dim, dl in zip(sl,
+                                                           image.dimensions,
+                                                           [dy, dx])]
+                resdata[label - 1] = FocusSlice(dimslices, focus * unit,
+                                                mask)
+    longname = "MeasureFocus"
+    if human_output:
+        result = DataContainer.FieldContainer(resdata,
+                                              unit,
+                                              None,
+                                              copy.deepcopy(image.mask),
+                                              copy.deepcopy(image.dimensions),
+                                              longname,
+                                              image.shortname,
+                                              copy.deepcopy(image.attributes),
+                                              False)
+    else:
+        result = DataContainer.FieldContainer(data=resdata,
+                                              longname=longname,
+                                              shortname='F')
+    return result
+
 
 class MeasureFocus(Worker.Worker):
     API = 2
@@ -52,44 +106,13 @@ class MeasureFocus(Worker.Worker):
     name = "MeasureFocus"
     _sockets = [("image", Connectors.TYPE_IMAGE),
                 ("labels", Connectors.TYPE_IMAGE)]
-    _params = [("grow", "grow slices by #n pixels:", 3, None)]
-
-    def getFocus(self, data):
-        #return numpy.sum(numpy.sqrt(numpy.sum(numpy.square(
-        #                numpy.array(numpy.gradient(data)))))) / data.size
-        return numpy.sum(data) / data.size
-
-    def sliceAndMeasure(self, data):
-        grow = self.paramGrow.value
-        slices = ndimage.find_objects(self._labels)
-        res = numpy.zeros(data.shape)
-        label = 0
-        for sl in slices:
-            label += 1
-            if sl[0].stop - sl[0].start >= 3 and sl[1].stop - sl[1].start >= 3:
-                start = [sl[0].start - grow, sl[1].start - grow]
-                stop = [sl[0].stop + grow, sl[1].stop + grow]
-                if start[0] < 0: start[0] = 0
-                if start[1] < 0: start[1] = 0
-                bigsl = (slice(start[0], stop[0]), slice(start[1], stop[1]))
-                focus = self.getFocus(data[bigsl])
-                res[sl] = numpy.where(self._labels[sl] == label, focus, res[sl])
-        return res
+    _params = [("grow", "grow slices by #n pixels:", 3, None),
+               ("humanOutput", "Human output", True, None)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def measure_focus(self, image, labels, subscriber=0):
-        self._labels = labels.data
-        newdata = pile(self.sliceAndMeasure, image.data)
-        longname = "MeasureFocus"
-        result = DataContainer.FieldContainer(
-            newdata,
-            copy.deepcopy(image.unit),
-            copy.deepcopy(image.error),
-            copy.deepcopy(image.mask),
-            copy.deepcopy(image.dimensions),
-            longname,
-            image.shortname,
-            copy.deepcopy(image.attributes),
-            False)
+        result = sliceAndMeasure(image, labels,
+                                 self.paramGrow.value,
+                                 self.paramHumanOutput.value)
         result.seal()
         return result
