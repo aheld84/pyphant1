@@ -92,23 +92,23 @@ class FitBackground(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def fit_background(self, image, subscriber=0):
-        poldegree = self.paramPoldegree.value
-        swidth = self.paramSwidth.value
-        sheight = self.paramSheight.value
-        threshold = self.paramThreshold.value
-        mediansize = self.paramMediansize.value
-        medianruns = self.paramMedianruns.value
-        darksize = self.paramDarksize.value
-        darkruns = self.paramDarkruns.value
-        brightsize = self.paramBrightsize.value
-        brightruns = self.paramBrightruns.value
+        poldegree = int(self.paramPoldegree.value)
+        swidth = int(self.paramSwidth.value)
+        sheight = int(self.paramSheight.value)
+        threshold = int(self.paramThreshold.value)
+        mediansize = int(self.paramMediansize.value)
+        medianruns = int(self.paramMedianruns.value)
+        darksize = int(self.paramDarksize.value)
+        darkruns = int(self.paramDarkruns.value)
+        brightsize = int(self.paramBrightsize.value)
+        brightruns = int(self.paramBrightruns.value)
         dopreview = self.paramDopreview.value
         assert image.data.ndim in [2, 3]
         if image.data.ndim == 2:
             pile = [image.data]
         else:
             pile = image.data
-        #Median
+        #Median:
         for run in xrange(medianruns):
             pile = [ndimage.median_filter(data,
                                           size=mediansize) for data in pile]
