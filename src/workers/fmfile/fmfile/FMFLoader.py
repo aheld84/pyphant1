@@ -350,9 +350,9 @@ def config2tables(preParsedData, config):
         float,
         complex,
         parseBool,
-        parseQuantity,
         parseVariable,
-        parseDateTime
+        parseQuantity,
+        parseDateTime,
         ]
 
     def item2value(section, key):
