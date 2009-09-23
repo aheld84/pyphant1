@@ -44,7 +44,7 @@ from pyphant.core import Worker, Connectors,\
 import ImageProcessing
 from ImageProcessing.NDImageWorker import pile
 import copy
-import heapq, scipy, scipy.ndimage, pylab, threading
+import heapq, scipy, scipy.ndimage#, pylab, threading
 
 class Watershed(Worker.Worker):
     API = 2
