@@ -66,7 +66,21 @@ class H5FileHandler(object):
             raise IOError("File '%s' does not exist!"%(filename, ))
         self.filename = filename
         self.mode = mode
+        if mode == 'w':
+            tmphandle = tables.openFile(self.filename, 'w')
+            tmphandle.close()
+            self.mode = 'a'
+        self.handle = None
+
+    def __enter__(self):
+        assert self.handle ==  None
         self.handle = tables.openFile(self.filename, self.mode)
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if self.handle != None:
+            self.handle.close()
+            self.handle = None
 
     def getNodeAndTypeFromId(self, dcId):
         """
@@ -239,10 +253,3 @@ class H5FileHandler(object):
         result -- FieldContainer instance to be saved
         """
         PyTablesPersister.saveField(self.handle, resultGroup, result)
-
-    def __del__(self):
-        """
-        Closes the HDF5 file.
-        """
-        if hasattr(self, 'handle'):
-            self.handle.close()

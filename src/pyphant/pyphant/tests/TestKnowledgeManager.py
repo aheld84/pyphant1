@@ -79,7 +79,7 @@ class KnowledgeManagerTestCase(unittest.TestCase):
         url = "http://" + host + remote_dir + "/knowledgemanager-http-test.h5"
         # Get remote file and load DataContainer
         filename, headers = urllib.urlretrieve(url)
-        h5 = tables.openFile(filename)
+        h5 = tables.openFile(filename, 'r')
         for g in h5.walkGroups("/results"):
             if (len(g._v_attrs.TITLE)>0) \
                     and (r"\Psi" in g._v_attrs.shortname):
