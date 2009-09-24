@@ -193,14 +193,15 @@ def autofocus(focusSC, boundRatio, featureRatio):
         zvalue = zNumValue * zunit
         focusFC = km.getDataContainer(unicode(emd5).encode('utf-8'))
         for fslice in focusFC.data:
-            matched = False
-            for ztube in ztubes:
-                matched = ztube.match(fslice, zvalue)
-                if matched:
-                    break
-            if not matched:
-                ztubes.append(ZTube(fslice, zvalue, ztol,
-                                    boundRatio, featureRatio))
+            if fslice != 0:
+                matched = False
+                for ztube in ztubes:
+                    matched = ztube.match(fslice, zvalue)
+                    if matched:
+                        break
+                if not matched:
+                    ztubes.append(ZTube(fslice, zvalue, ztol,
+                                        boundRatio, featureRatio))
     if ztubes == []:
         return []
     fInclusions = [ztube.getFocusedInclusion() for ztube in ztubes]

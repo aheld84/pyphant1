@@ -93,6 +93,8 @@ def sliceAndMeasure(image, labels, grow, human_output):
                                               copy.deepcopy(image.attributes),
                                               False)
     else:
+        if len(slices) == 0:
+            resdata = numpy.zeros(1, dtype=object)
         result = DataContainer.FieldContainer(data=resdata,
                                               longname=longname,
                                               shortname='F')
