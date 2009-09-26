@@ -314,6 +314,7 @@ class WebInterface(object):
         self.title = {}
         self.title['frontpage'] = "Pyphant Web Interface"
         self.title['details'] = "Details for DC with ID '%s'"
+        self.title['search'] = "Search Form"
         self.html = {}
         self.html['disabled'] = "The Pyphant web interface is disabled."
         self.html['frontpage'] = """<h1>Pyphant Web Interface</h1>
@@ -321,19 +322,21 @@ Server ID is '%s'
 <hr>
 %s
 <hr>
-<h2>Registered KnowledgeManagers</h2>
-%s
-<hr>
-<h2>Find DataContainers</h2>
-%s
-<hr>
-<h2>Search matched %d out of %d DataContainers</h2>
+<h2>Remote KnowledgeManagers</h2>
 %s
 <hr>"""
+        self.html['search'] = """<h1>AND Search</h1>
+<hr>
+%s
+<hr>
+<h2>Search matched %d out of %d DataContainers:</h2>
+%s
+<hr>
+"""
         self.html['kmurl'] = "Download DataContainer with ID '%s' as \
 <a href=\"%s\">HDF5</a><hr>Use the 'back' funtion of your browser to return."
         self.html['kmid'] = "KnowledgeManager server ID is: '%s'"
-        self.html['findform'] = """<form action="/" method="get">
+        self.html['findform'] = """<form action="/request_search" method="get">
     Specify constraints for "and" search:
     <br>
     <br>
@@ -342,11 +345,15 @@ Server ID is '%s'
     %s
     <br>
     <input type="hidden" name="dosearch" value="True">
-    <input type="submit" value=" Find! ">
+    <input type="submit" value=" Search! ">
 </form>"""
         self.html['datedescr'] = 'Specify constraints for the date. All input \
 after YYYY is optional.<br>If any of the fields is left blank, this is \
 interpreted as "no boundary"'
+
+    def parse_path(self, path):
+        query = parse_qs(path)
+        return dict([(key, value[0]) for key, value in query.iteritems()])
 
     def cmplower(self, left, right):
         return cmp(left.lower(), right.lower())
@@ -371,8 +378,7 @@ interpreted as "no boundary"'
 
     def get_detailslink(self, dc_id, text):
         return HTMLLink('/request_dc_details?dcid=%s' % (dc_id, ),
-                        text,
-                        '_blank')
+                        text, "_self")
 
     def get_frontpage(self, path):
         """
@@ -381,30 +387,6 @@ interpreted as "no boundary"'
         """
         if self.disabled:
             return self.get_disabled()
-        findrows = [['type', 'longname', 'shortname', 'creator', 'machine']]
-        if path.startswith('/?'):
-            query = parse_qs(path[2:])
-        else:
-            query = {}
-        for key in findrows[0]:
-            if not query.has_key(key):
-                query[key] = [ALLSTRING]
-        if not query.has_key('datefrom'):
-            query['datefrom'] = ['']
-        if not query.has_key('dateto'):
-            query['dateto'] = ['']
-        if not query.has_key('dosearch'):
-            query['dosearch'] = ["False"]
-        datelimit = [query['datefrom'][0], query['dateto'][0]]
-        completestr = '-01-01_00:00:00'
-        for index, date in enumerate(datelimit):
-            if len(date) in [4, 7, 10, 13, 16]:
-                date += completestr[len(date) - 4:]
-                if index == 0:
-                    query['datefrom'] = [date]
-                else:
-                    query['dateto'] = [date]
-        #Registered KMs
         htmlregkm = '<form action="/request_register_km" method="post">'
         htmlregkm += HTMLTextForm("remote_km_host", 30, 1000, "host").getHTML()
         htmlregkm += HTMLTextForm("remote_km_port", 5, 5, "port").getHTML()
@@ -418,22 +400,59 @@ interpreted as "no boundary"'
             htmlregkm += kmtable.getHTML()
         else:
             htmlregkm += "None"
-        #Find DCs
+        searchb = HTMLButton(" AND Search ", "/request_search", method='get')
+        refreshb = HTMLButton(" Refresh Knowledge ", "/request_refresh")
+        htmlmenu = HTMLTable([[searchb, refreshb]], 0, False).getHTML()
+        html = self.html['frontpage'] % (self.km.getServerId(),
+                                         htmlmenu,
+                                         htmlregkm)
+        return HTTPAnswer(200,
+                          htmlheaders = {'title':self.title['frontpage']},
+                          htmlbody = html)
+
+    def get_search(self, path):
+        findrows = [['type', 'longname', 'shortname', 'creator', 'machine']]
+        if path.startswith('/request_search?'):
+            query = self.parse_path(path[16:])
+        else:
+            from datetime import datetime
+            now = datetime.now()
+            datestr = "%d-%s-%s" % (now.year,
+                                    str(now.month).zfill(2),
+                                    str(now.day).zfill(2))
+            query = {'datefrom':datestr}
+        for key in findrows[0]:
+            if not query.has_key(key):
+                query[key] = ALLSTRING
+        if not query.has_key('datefrom'):
+            query['datefrom'] = ''
+        if not query.has_key('dateto'):
+            query['dateto'] = ''
+        datelimit = [query['datefrom'], query['dateto']]
+        completestr = '-01-01_00:00:00'
+        for index, date in enumerate(datelimit):
+            if len(date) in [4, 7, 10, 13, 16]:
+                date += completestr[len(date) - 4:]
+                if index == 0:
+                    query['datefrom'] = date
+                else:
+                    query['dateto'] = date
+        #Search form
         summarydict = self.km.getSummary()
         tmprow = [self.extract_values(summarydict, key) for key in findrows[0]]
         dropdownrow = []
         for index, unsorted in enumerate(tmprow):
             unsorted.sort(self.cmplower)
             unsorted.insert(0, ALLSTRING)
-            select = query[findrows[0][index]][0]
+            select = query[findrows[0][index]]
             dropdownrow.append(HTMLDropdown(findrows[0][index],
                                             unsorted, select))
         findrows.append(dropdownrow)
         findtable = HTMLTable(findrows)
         daterows = [['date', 'YYYY-MM-DD_hh:mm:ss'],
                     ['from', HTMLTextForm('datefrom', 19, 19,
-                                          query['datefrom'][0])],
-                    ['to', HTMLTextForm('dateto', 19, 19, query['dateto'][0])]]
+                                          query['datefrom'])],
+                    ['to', HTMLTextForm('dateto', 19, 19, query['dateto'])]]
         datetable = HTMLTable(daterows)
         descriptiontable = HTMLTable([[datetable, self.html['datedescr']]],
                                      0, False)
@@ -443,65 +462,60 @@ interpreted as "no boundary"'
         htmlresult = ""
         results = 0
         sharpdc = len(summarydict)
-        if query['dosearch'][0] == "True":
-            datefrom = self.redt.match(query['datefrom'][0])
-            if datefrom != None:
-                datefrom = datefrom.groups()
-            dateto = self.redt.match(query['dateto'][0])
-            if dateto != None:
-                dateto = dateto.groups()
-            resrows = [['details', 'type', 'longname', 'shortname',
-                        'creator', 'machine', 'date', 'data']]
-            for summary in summarydict.itervalues():
-                add = True
-                for key in findrows[0]:
-                    if query[key][0] != ALLSTRING:
-                        add = add and summary[key] == query[key][0]
-                dcdate = self.redt.match(summary['date'][:19])
-                if dcdate == None:
-                    add = False
-                else:
-                    dcdate = dcdate.groups()
-                    if datefrom != None:
-                        adddate = True
-                        for index in range(len(datefrom)):
-                            if int(datefrom[index]) < int(dcdate[index]):
-                                adddate = True
-                                break
-                            elif int(datefrom[index]) > int(dcdate[index]):
-                                adddate = False
-                                break
-                        add = add and adddate
-                    if dateto != None:
-                        adddate = True
-                        for index in range(len(dateto)):
-                            if int(dateto[index]) > int(dcdate[index]):
-                                adddate = True
-                                break
-                            elif int(dateto[index]) < int(dcdate[index]):
-                                adddate = False
-                                break
-                        add = add and adddate
-                if add:
-                    results += 1
-                    row = [self.get_detailslink(summary['id'], 'show'),
-                           summary['type'],
-                           summary['longname'],
-                           summary['shortname'],
-                           summary['creator'],
-                           summary['machine'],
-                           summary['date'],
-                           HTMLDnldForm(summary['id'])]
-                    resrows.append(row)
-            htmlresult = HTMLTable(resrows).getHTML()
-        htmlrefresh = HTMLButton(" Refresh Knowledge ",
-                                 "/request_refresh").getHTML()
-        html = self.html['frontpage'] % (self.km.getServerId(),
-                                         htmlrefresh,
-                                         htmlregkm, htmlfindform,
-                                         results, sharpdc, htmlresult)
+        datefrom = self.redt.match(query['datefrom'])
+        if datefrom != None:
+            datefrom = datefrom.groups()
+        dateto = self.redt.match(query['dateto'])
+        if dateto != None:
+            dateto = dateto.groups()
+        resrows = [['details', 'type', 'longname', 'shortname',
+                    'creator', 'machine', 'date', 'data']]
+        for summary in summarydict.itervalues():
+            add = True
+            for key in findrows[0]:
+                if query[key] != ALLSTRING:
+                    add = add and summary[key] == query[key]
+            dcdate = self.redt.match(summary['date'][:19])
+            if dcdate == None:
+                add = False
+            else:
+                dcdate = dcdate.groups()
+                if datefrom != None:
+                    adddate = True
+                    for index in range(len(datefrom)):
+                        if int(datefrom[index]) < int(dcdate[index]):
+                            adddate = True
+                            break
+                        elif int(datefrom[index]) > int(dcdate[index]):
+                            adddate = False
+                            break
+                    add = add and adddate
+                if dateto != None:
+                    adddate = True
+                    for index in range(len(dateto)):
+                        if int(dateto[index]) > int(dcdate[index]):
+                            adddate = True
+                            break
+                        elif int(dateto[index]) < int(dcdate[index]):
+                            adddate = False
+                            break
+                    add = add and adddate
+            if add:
+                results += 1
+                row = [self.get_detailslink(summary['id'], 'show'),
+                       summary['type'],
+                       summary['longname'],
+                       summary['shortname'],
+                       summary['creator'],
+                       summary['machine'],
+                       summary['date'],
+                       HTMLDnldForm(summary['id'])]
+                resrows.append(row)
+        htmlresult = HTMLTable(resrows).getHTML()
+        html = self.html['search'] % (htmlfindform, results,
+                                      sharpdc, htmlresult)
         return HTTPAnswer(200,
-                          htmlheaders = {'title':self.title['frontpage']},
+                          htmlheaders = {'title':self.title['search']},
                           htmlbody = html)
 
     def get_details(self, path):
@@ -510,7 +524,6 @@ interpreted as "no boundary"'
         path -- GET request path
         """
         dc_id = parse_qs(path.split('?')[1])['dcid'][0]
-        html = "Details for DC with ID '%s'\n<hr>\n" % (dc_id, )
         try:
             summary = self.km.getSummary(dc_id).copy()
         except:
@@ -541,11 +554,34 @@ col['longname']) for col in summ['columns']]], headings = False)
             tmp = HTMLDict('key', 'value')
             tmp.setDict(summ)
             return tmp
+        vis = "Only implemented for 2d FieldContainers"
+        if summary['type'] == 'field' and summary.has_key('dimensions'):
+            vis = self.get_visualize(dc_id, len(summary['dimensions']))
+        ln = summary['longname']
         summary = makeHTML(summary)
-        html += summary.getHTML()
+        html = "<h2>Details for '%s'</h2><hr><h3>Preview</h3>" % (ln, )  + vis
+        html += "\n<hr><h3>Meta Data</h3>" + summary.getHTML()
         return HTTPAnswer(200,
                           htmlheaders = {'title':self.title['details'] % dc_id},
                           htmlbody = html)
+
+    def get_visualize(self, fc_id, ndim):
+        if ndim == 2:
+            fc = self.km.getDataContainer(fc_id)
+            from scipy.misc import imsave
+            import os
+            import tempfile
+            osFileId, filename = tempfile.mkstemp(suffix = '.jpg',
+                                                  prefix = 'visualize-',
+                                                  dir = self.km._http_dir)
+            os.close(osFileId)
+            imsave(filename, fc.data)
+            url = self.km._getServerURL() + "/" + os.path.basename(filename)
+            he = max(min(fc.data.shape[0], 500), 100)
+            wi = max(min(fc.data.shape[1], 500), 100)
+            html = '<center><img src="%s" height="%d" width="%d"></center>'
+            return html % (url, he, wi)
+        return "Only implemented for 2d FieldContainers"
 
     def get_kmurl(self, url, dc_id, enduser = False):
         """

@@ -67,6 +67,7 @@ HTTP_REQUEST_KM_ID_PATH = "/request_km_id"
 HTTP_REQUEST_DC_DETAILS_PATH = "/request_dc_details?dcid="
 HTTP_REQUEST_REFRESH = "/request_refresh"
 HTTP_REQUEST_REGISTER_KM = "/request_register_km"
+HTTP_REQUEST_SEARCH = "/request_search"
 # Maximum number of DCs to store in cache:
 CACHE_SIZE = 10
 # Timeout for cached DCs in seconds:
@@ -271,15 +272,23 @@ class KnowledgeManager(Singleton):
                         self._logger.warn("Could not import '%s'.", filename)
         os.path.walk(getPyphantPath(KM_PATH), walkfiles, None)
 
-    def getSummary(self, dcId = None):
+    def _matchKeys(self, summary, match):
+        for key, value in match.iteritems():
+            if summary[key] != value:
+                return False
+        return True
+
+    def getSummary(self, dcId = None, match={}):
         """
         Behaves like H5FileHandler.loadSummary(dcId) except that for
         dcId == None all DataContainers that are stored locally are browsed.
+        match -- Dictionary for filtering DCs, eg {'longname':'distance'}.
+                 Only works with dcId == None.
         """
         if dcId == None:
-            summary = {}
-            for emd5, dcInfo in self._storage.iteritems():
-                summary[emd5] = dcInfo['summary']
+            summary = dict([(emd5, dcInfo['summary']) \
+                                for emd5, dcInfo in self._storage.iteritems()\
+                                if self._matchKeys(dcInfo['summary'], match)])
         else:
             if not self._storage.has_key(dcId):
                 raise KnowledgeManagerException("DC with ID '%s' is unknown."\
@@ -793,6 +802,8 @@ DataContainer ID '%s' not found.", query_dict['dcid'])
             km.web_interface.get_frontpage(self.path).sendTo(self)
         elif self.path.startswith(HTTP_REQUEST_DC_DETAILS_PATH):
             km.web_interface.get_details(self.path).sendTo(self)
+        elif self.path.startswith(HTTP_REQUEST_SEARCH):
+            km.web_interface.get_search(self.path).sendTo(self)
         else:
             f = self.send_head()
             if f:
@@ -823,7 +834,7 @@ DataContainer ID '%s' not found.", query_dict['dcid'])
             self.send_error(404, "File not found")
             return None
         self.send_response(200)
-        self.send_header("Content-type", "application/x-hdf")
+        #self.send_header("Content-type", "application/x-hdf")
         fs = os.fstat(f.fileno())
         self.send_header("Content-Length", str(fs[6]))
         self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
