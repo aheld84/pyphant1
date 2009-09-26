@@ -65,6 +65,7 @@ WAITING_SECONDS_HTTP_SERVER_STOP = 5
 HTTP_REQUEST_DC_URL_PATH = "/request_dc_url"
 HTTP_REQUEST_KM_ID_PATH = "/request_km_id"
 HTTP_REQUEST_DC_DETAILS_PATH = "/request_dc_details?dcid="
+HTTP_REQUEST_REFRESH = "/request_refresh"
 # Maximum number of DCs to store in cache:
 CACHE_SIZE = 10
 # Timeout for cached DCs in seconds:
@@ -261,7 +262,10 @@ class KnowledgeManager(Singleton):
                         dirname = dirname[:-1]
                     filename = dirname + '/' + fname
                     try:
-                        self.registerH5(filename)
+                        if self.H5FileHandlers.has_key(filename):
+                            self.refreshH5(filename)
+                        else:
+                            self.registerH5(filename)
                     except Exception:
                         self._logger.warn("Could not import '%s'.", filename)
         os.path.walk(getPyphantPath(KM_PATH), walkfiles, None)
@@ -691,6 +695,8 @@ class KMHTTPRequestHandler(SimpleHTTPRequestHandler):
             httpanswer = self._do_POST_request_dc_url()
         elif self.path == HTTP_REQUEST_KM_ID_PATH:
             httpanswer = self._do_POST_request_km_id()
+        elif self.path == HTTP_REQUEST_REFRESH:
+            httpanswer = self._do_POST_request_refresh()
         else:
             code = 400
             message = "Unknown request path '%s'." % (self.path, )
@@ -752,6 +758,11 @@ DataContainer ID '%s' not found.", query_dict['dcid'])
         else:
             httpanswer = HTTPAnswer(400, "Cannot interpret query.")
         return httpanswer
+
+    def _do_POST_request_refresh(self):
+        km = KMHTTPRequestHandler._km
+        km.restoreKnowledge()
+        return km.web_interface.get_frontpage(self.path)
 
     def do_GET(self):
         """

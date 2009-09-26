@@ -219,23 +219,6 @@ class HTMLDropdown(object):
         return html
 
 
-class HTMLDnldForm(object):
-    def __init__(self, dc_id):
-        self.dc_id = dc_id
-        self.html = \
-"""
-<form action="/request_dc_url" method="post">
-    <input type="hidden" name="lastkmidindex" value="-1">
-    <input type="hidden" name="dcid" value="%s">
-    <input type="hidden" name="mode" value="enduser">
-    <input type="submit" value=" Download ">
-</form>
-"""
-
-    def getHTML(self):
-        return self.html % (self.dc_id, )
-
-
 class HTMLTextForm(object):
     def __init__(self, name, size, maxlength, value):
         self.name = name
@@ -278,6 +261,44 @@ class HTMLTable(object):
         return html
 
 
+class HTMLButton(object):
+    def __init__(self, tag, action, method='post', hidden={}):
+        self.tag = tag
+        self.action = action
+        self.method = method
+        self.hidden = hidden
+        self.html = \
+"""
+<form action="%s" method="%s">
+    %s
+    <input type="submit" value="%s">
+</form>
+"""
+        self.hihtml = \
+"""
+<input type="hidden" name="%s" value="%s">
+"""
+
+    def getHTML(self):
+        hidden = ""
+        for key, value in self.hidden.iteritems():
+            hidden += self.hihtml % (key, value)
+        return self.html % (self.action, self.method, hidden, self.tag)
+
+
+class HTMLDnldForm(HTMLButton):
+    def __init__(self, dc_id):
+        HTMLButton.__init__(self, " Download ", "/request_dc_url",
+                            {"lastkmidindex": "-1",
+                             "dcid": dc_id,
+                             "mode": "enduser"})
+        self.dc_id = dc_id
+
+    def getHTML(self):
+        self.hidden['dcid'] = self.dc_id
+        return HTMLButton.getHTML(self)
+
+
 class WebInterface(object):
     """
     Provides the web frontend and backend for the KM web interface.
@@ -297,6 +318,7 @@ class WebInterface(object):
         self.html['disabled'] = "The Pyphant web interface is disabled."
         self.html['frontpage'] = """<h1>Pyphant Web Interface</h1>
 Server ID is '%s'
+%s
 <hr>
 <h2>Registered KnowledgeManagers</h2>
 %s
@@ -461,7 +483,10 @@ interpreted as "no boundary"'
                        HTMLDnldForm(summary['id'])]
                 resrows.append(row)
         htmlresult = HTMLTable(resrows).getHTML()
+        htmlrefresh = HTMLButton(" Refresh local knowledge ",
+                                 "/request_refresh").getHTML()
         html = self.html['frontpage'] % (self.km.getServerId(),
+                                         htmlrefresh,
                                          htmlregkm, htmlfindform,
                                          results, sharpdc, htmlresult)
         return HTTPAnswer(200,
