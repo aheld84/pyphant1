@@ -318,6 +318,7 @@ class WebInterface(object):
         self.html['disabled'] = "The Pyphant web interface is disabled."
         self.html['frontpage'] = """<h1>Pyphant Web Interface</h1>
 Server ID is '%s'
+<hr>
 %s
 <hr>
 <h2>Registered KnowledgeManagers</h2>
@@ -340,6 +341,7 @@ Server ID is '%s'
     <br>
     %s
     <br>
+    <input type="hidden" name="dosearch" value="True">
     <input type="submit" value=" Find! ">
 </form>"""
         self.html['datedescr'] = 'Specify constraints for the date. All input \
@@ -391,6 +393,8 @@ interpreted as "no boundary"'
             query['datefrom'] = ['']
         if not query.has_key('dateto'):
             query['dateto'] = ['']
+        if not query.has_key('dosearch'):
+            query['dosearch'] = ["False"]
         datelimit = [query['datefrom'][0], query['dateto'][0]]
         completestr = '-01-01_00:00:00'
         for index, date in enumerate(datelimit):
@@ -401,14 +405,19 @@ interpreted as "no boundary"'
                 else:
                     query['dateto'] = [date]
         #Registered KMs
+        htmlregkm = '<form action="/request_register_km" method="post">'
+        htmlregkm += HTMLTextForm("remote_km_host", 30, 1000, "host").getHTML()
+        htmlregkm += HTMLTextForm("remote_km_port", 5, 5, "port").getHTML()
+        htmlregkm += '<input type="submit" value=" Register! ">'
+        htmlregkm += '</form><br>\n'
         if len(self.km._remoteKMs) != 0:
             kmrows = [['URL', 'ID']]
             for kmid, kmurl in self.km._remoteKMs.iteritems():
                 kmrows.append([HTMLLink(kmurl, kmurl, "_blank"), kmid])
             kmtable = HTMLTable(kmrows)
-            htmlregkm = kmtable.getHTML()
+            htmlregkm += kmtable.getHTML()
         else:
-            htmlregkm = "None"
+            htmlregkm += "None"
         #Find DCs
         summarydict = self.km.getSummary()
         tmprow = [self.extract_values(summarydict, key) for key in findrows[0]]
@@ -431,59 +440,61 @@ interpreted as "no boundary"'
         htmlfindform = self.html['findform'] % (findtable.getHTML(),
                                                 descriptiontable.getHTML())
         #Search Result
+        htmlresult = ""
         results = 0
         sharpdc = len(summarydict)
-        datefrom = self.redt.match(query['datefrom'][0])
-        if datefrom != None:
-            datefrom = datefrom.groups()
-        dateto = self.redt.match(query['dateto'][0])
-        if dateto != None:
-            dateto = dateto.groups()
-        resrows = [['details', 'type', 'longname', 'shortname',
-                    'creator', 'machine', 'date', 'data']]
-        for summary in summarydict.itervalues():
-            add = True
-            for key in findrows[0]:
-                if query[key][0] != ALLSTRING:
-                    add = add and summary[key] == query[key][0]
-            dcdate = self.redt.match(summary['date'][:19])
-            if dcdate == None:
-                add = False
-            else:
-                dcdate = dcdate.groups()
-                if datefrom != None:
-                    adddate = True
-                    for index in range(len(datefrom)):
-                        if int(datefrom[index]) < int(dcdate[index]):
-                            adddate = True
-                            break
-                        elif int(datefrom[index]) > int(dcdate[index]):
-                            adddate = False
-                            break
-                    add = add and adddate
-                if dateto != None:
-                    adddate = True
-                    for index in range(len(dateto)):
-                        if int(dateto[index]) > int(dcdate[index]):
-                            adddate = True
-                            break
-                        elif int(dateto[index]) < int(dcdate[index]):
-                            adddate = False
-                            break
-                    add = add and adddate
-            if add:
-                results += 1
-                row = [self.get_detailslink(summary['id'], 'show'),
-                       summary['type'],
-                       summary['longname'],
-                       summary['shortname'],
-                       summary['creator'],
-                       summary['machine'],
-                       summary['date'],
-                       HTMLDnldForm(summary['id'])]
-                resrows.append(row)
-        htmlresult = HTMLTable(resrows).getHTML()
-        htmlrefresh = HTMLButton(" Refresh local knowledge ",
+        if query['dosearch'][0] == "True":
+            datefrom = self.redt.match(query['datefrom'][0])
+            if datefrom != None:
+                datefrom = datefrom.groups()
+            dateto = self.redt.match(query['dateto'][0])
+            if dateto != None:
+                dateto = dateto.groups()
+            resrows = [['details', 'type', 'longname', 'shortname',
+                        'creator', 'machine', 'date', 'data']]
+            for summary in summarydict.itervalues():
+                add = True
+                for key in findrows[0]:
+                    if query[key][0] != ALLSTRING:
+                        add = add and summary[key] == query[key][0]
+                dcdate = self.redt.match(summary['date'][:19])
+                if dcdate == None:
+                    add = False
+                else:
+                    dcdate = dcdate.groups()
+                    if datefrom != None:
+                        adddate = True
+                        for index in range(len(datefrom)):
+                            if int(datefrom[index]) < int(dcdate[index]):
+                                adddate = True
+                                break
+                            elif int(datefrom[index]) > int(dcdate[index]):
+                                adddate = False
+                                break
+                        add = add and adddate
+                    if dateto != None:
+                        adddate = True
+                        for index in range(len(dateto)):
+                            if int(dateto[index]) > int(dcdate[index]):
+                                adddate = True
+                                break
+                            elif int(dateto[index]) < int(dcdate[index]):
+                                adddate = False
+                                break
+                        add = add and adddate
+                if add:
+                    results += 1
+                    row = [self.get_detailslink(summary['id'], 'show'),
+                           summary['type'],
+                           summary['longname'],
+                           summary['shortname'],
+                           summary['creator'],
+                           summary['machine'],
+                           summary['date'],
+                           HTMLDnldForm(summary['id'])]
+                    resrows.append(row)
+            htmlresult = HTMLTable(resrows).getHTML()
+        htmlrefresh = HTMLButton(" Refresh Knowledge ",
                                  "/request_refresh").getHTML()
         html = self.html['frontpage'] % (self.km.getServerId(),
                                          htmlrefresh,

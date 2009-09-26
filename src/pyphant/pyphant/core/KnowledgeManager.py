@@ -66,6 +66,7 @@ HTTP_REQUEST_DC_URL_PATH = "/request_dc_url"
 HTTP_REQUEST_KM_ID_PATH = "/request_km_id"
 HTTP_REQUEST_DC_DETAILS_PATH = "/request_dc_details?dcid="
 HTTP_REQUEST_REFRESH = "/request_refresh"
+HTTP_REQUEST_REGISTER_KM = "/request_register_km"
 # Maximum number of DCs to store in cache:
 CACHE_SIZE = 10
 # Timeout for cached DCs in seconds:
@@ -697,6 +698,8 @@ class KMHTTPRequestHandler(SimpleHTTPRequestHandler):
             httpanswer = self._do_POST_request_km_id()
         elif self.path == HTTP_REQUEST_REFRESH:
             httpanswer = self._do_POST_request_refresh()
+        elif self.path == HTTP_REQUEST_REGISTER_KM:
+            httpanswer = self._do_POST_request_register_km()
         else:
             code = 400
             message = "Unknown request path '%s'." % (self.path, )
@@ -762,7 +765,21 @@ DataContainer ID '%s' not found.", query_dict['dcid'])
     def _do_POST_request_refresh(self):
         km = KMHTTPRequestHandler._km
         km.restoreKnowledge()
-        return km.web_interface.get_frontpage(self.path)
+        return km.web_interface.get_frontpage("/")
+
+    def _do_POST_request_register_km(self):
+        length = int( self.headers['content-length'] )
+        query = self.rfile.read(length)
+        dict = cgi.parse_qs(query)
+        km = KMHTTPRequestHandler._km
+        host = dict['remote_km_host'][0]
+        port = int(dict['remote_km_port'][0])
+        try:
+            km.registerKnowledgeManager(host, port, False)
+        except KnowledgeManagerException:
+            emsg = "Host '%s:%d' is not a KnowledgeManager."
+            return HTTPAnswer(400, emsg % (host, port))
+        return km.web_interface.get_frontpage("/")
 
     def do_GET(self):
         """
