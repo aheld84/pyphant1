@@ -54,16 +54,24 @@ class ThresholdingWorker(Worker.Worker):
     REVISION = "$Revision$"[11:-1]
     name = "Thresholdfilter"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
-    _params = [("threshold", "Threshold", 160, None),
+    _params = [("threshold", "Threshold", "1 m", None),
 #               ("mode", "Mode(absolute/coverage)", ["absolute", "coverage"], None)
                ]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def threshold(self, image, subscriber=0):
         th=self.paramThreshold.value
-        resultArray = scipy.where( image.data < th,
-                                   ImageProcessing.FEATURE_COLOR,
-                                   ImageProcessing.BACKGROUND_COLOR )
+        from pyphant.quantities.PhysicalQuantities import (PhysicalQuantity,
+                                                           isPhysicalQuantity)
+        from pyphant.core.Helpers import uc2utf8
+        try:
+            thp = PhysicalQuantity(uc2utf8(th))
+        except:
+            thp = float(th)
+        thp /= image.unit
+        assert not isPhysicalQuantity(thp)
+        resultArray = scipy.where( image.data < thp,
+                                   False, True )
         result = DataContainer.FieldContainer(resultArray,
                                               dimensions=copy.deepcopy(image.dimensions),
                                               longname=u"Binary Image", shortname=u"B")
