@@ -150,7 +150,7 @@ class ZTube(object):
         vol = (self.yxCube & fslice).getVolume()
         if not isPhysicalQuantity(vol):
             vol = float(vol)
-        yxratio = vol / fslice.getVolume()
+        yxratio = 2.0 * vol / (fslice.getVolume() + self.yxCube.getVolume())
         fszCube = Cube([slice(zvalue - self.ztol, zvalue + self.ztol)])
         zvol = (self.zCube & fszCube).getVolume()
         # weird notation necessary for PhysicalQuantities
