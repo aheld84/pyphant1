@@ -72,10 +72,11 @@ class KnowledgeManagerTestCase(unittest.TestCase):
         os.remove(h5name)
 
     def testGetHTTPFile(self):
-        #host = "omnibus.uni-freiburg.de"
+        host = "omnibus.uni-freiburg.de"
+        remote_dir = "/~s8klzimm"
         #remote_dir = "/~mr78/pyphant-test"
-        host = "idefix.physik.uni-freiburg.de"
-        remote_dir = "/~zklaus"
+        #host = "idefix.physik.uni-freiburg.de"
+        #remote_dir = "/~zklaus"
         url = "http://" + host + remote_dir + "/knowledgemanager-http-test.h5"
         # Get remote file and load DataContainer
         filename, headers = urllib.urlretrieve(url)
