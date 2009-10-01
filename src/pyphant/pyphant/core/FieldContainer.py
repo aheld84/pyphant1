@@ -61,6 +61,7 @@ import scipy, copy, hashlib, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse
 from pyphant.quantities.PhysicalQuantities import (isPhysicalQuantity, PhysicalQuantity,_prefixes)
 from DataContainer import DataContainer, enc, _logger
+from types import NoneType
 
 #Default variables of indices
 INDEX_NAMES=[u'i', u'j', u'k', u'l', u'm', u'n']
@@ -353,7 +354,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
 
     def __eq__(self, other, rtol=1e-5, atol=1e-8):
         if type(self) != type(other):
-            if type(other) != IndexMarker:
+            if type(other) != IndexMarker and type(other) != NoneType:
                 _logger.debug('Cannot compare objects with different type (%s and %s).' % (type(self),type(other)))
             return False
         if not (self.typeString == other.typeString):
