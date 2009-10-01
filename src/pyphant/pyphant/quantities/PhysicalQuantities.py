@@ -643,7 +643,8 @@ def isPhysicalQuantity(x):
 # Helper functions
 
 def _findUnit(unit):
-    if type(unit) == type(''):
+    from types import StringTypes
+    if isinstance(unit, StringTypes):
         name = string.strip(unit)
         unit = eval(name, _unit_table)
         for cruft in ['__builtins__', '__args__']:
