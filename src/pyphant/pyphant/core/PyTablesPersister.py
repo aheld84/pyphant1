@@ -293,9 +293,10 @@ def loadField(h5, resNode):
         creator = unicode(h5.getNodeAttr(resNode, "creator"), 'utf-8')
         machine = unicode(h5.getNodeAttr(resNode, "machine"), 'utf-8')
     except:
-        import Helpers
-        creator = Helpers.getUsername()
-        machine = Helpers.getMachine()
+        from pyphant.core.Helpers import emd52dict
+        emd5dict = emd52dict(resNode._v_title)
+        creator = emd5dict['creator']
+        machine = emd5dict['machine']
     data = scipy.array(resNode.data.read())
     def loads(inputList):
         if type(inputList)==type([]):
