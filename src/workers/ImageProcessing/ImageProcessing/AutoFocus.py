@@ -194,6 +194,9 @@ def autofocus(focusSC, boundRatio, featureRatio):
         focusFC = km.getDataContainer(unicode(emd5).encode('utf-8'))
         for fslice in focusFC.data:
             if fslice != 0:
+                if not isinstance(fslice, FocusSlice):
+                    print fslice
+                    raise ValueError("Should be FocusSlice object!")
                 matched = False
                 for ztube in ztubes:
                     matched = ztube.match(fslice, zvalue)
