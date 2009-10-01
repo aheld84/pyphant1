@@ -116,3 +116,18 @@ def utf82uc(stype):
     if isinstance(stype, ListType):
         return map(convert, stype)
     return convert(stype)
+
+def emd52dict(emd5):
+    """
+    returns a dictionary with keys
+    ('machine', 'creator', 'date', 'hash', 'type')
+    """
+    emd5 = utf82uc(emd5)
+    emd5_split = emd5.split('/')
+    retdict = {}
+    retdict['machine'] = emd5_split[2]
+    retdict['creator'] = emd5_split[3]
+    retdict['date'] = emd5_split[4]
+    retdict['hash'] = emd5_split[5].split('.')[0]
+    retdict['type'] = emd5_split[5].split('.')[1]
+    return retdict
