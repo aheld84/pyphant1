@@ -81,7 +81,8 @@ class NDImage(Worker.Worker):
                 "distance_transform_bf":("metric", ),
                 "grey_invert":(None, ),
                 "cut_histogram":(None, "tolerance"),
-                "label":(None, "connectivity")}
+                "label":(None, "connectivity"),
+                "threshold":(None, "threshold")}
     _ndparams = {"iterations":1,
                  "size":5,
                  "mode":["reflect",
@@ -93,10 +94,25 @@ class NDImage(Worker.Worker):
                  "connectivity":2,
                  "metric":["euclidean",
                            "taxicab",
-                           "chessboard"]}
+                           "chessboard"],
+                 "threshold":"1 m"}
     _params = [("pile", "Treat 3d images as pile of 2d images", True, None),
                ("ndfilter", "Filter", _filters.keys(), None)]
     _params += [(pn, pn, dflt, None) for pn, dflt in _ndparams.iteritems()]
+
+    def threshold(self, data):
+        th = self.paramThreshold.value
+        from pyphant.quantities.PhysicalQuantities import (PhysicalQuantity,
+                                                           isPhysicalQuantity)
+        from pyphant.core.Helpers import uc2utf8
+        try:
+            thp = PhysicalQuantity(uc2utf8(th))
+        except:
+            thp = float(th)
+        thp /= self._unit
+        assert not isPhysicalQuantity(thp)
+        return scipy.where(data < thp, False, True)
+
 
     def grey_invert(self, data):
         return 255 - data
@@ -131,6 +147,7 @@ class NDImage(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def ndimage(self, image, subscriber=0):
+        self._unit = image.unit
         if "iterations" in self._filters[self.paramNdfilter.value]:
             runs = 1
         else:
