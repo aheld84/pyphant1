@@ -70,13 +70,12 @@ class Emd5Src(Worker.Worker):
 
     def refreshParams(self, subscriber = None):
         km = KM.getInstance()
-        summary_dict = km.getSummary()
-        emd5list = []
+        emd5list = km.getEmd5List()
         lnlist = []
         snlist = []
-        for emd5, summary in summary_dict.iteritems():
+        for emd5 in emd5list:
+            summary = km.getSummary(emd5)
             if summary['type'] != u'index':
-                emd5list.append(unicode(emd5, 'utf-8'))
                 info = u"%s '%s' (creator: %s, date: %s)"
                 lnitem = HiddenValue(info\
                                          % (summary['type'],

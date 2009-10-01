@@ -401,8 +401,7 @@ interpreted as "no boundary"'
         else:
             htmlregkm += "None"
         searchb = HTMLButton(" AND Search ", "/request_search", method='get')
-        refreshb = HTMLButton(" Refresh Knowledge ", "/request_refresh")
-        htmlmenu = HTMLTable([[searchb, refreshb]], 0, False).getHTML()
+        htmlmenu = HTMLTable([[searchb]], 0, False).getHTML()
         html = self.html['frontpage'] % (self.km.getServerId(),
                                          htmlmenu,
                                          htmlregkm)

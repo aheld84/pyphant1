@@ -60,20 +60,22 @@ from pyphant.core.WebInterface import (HTTPAnswer,
                                        KMHTMLParser,
                                        ThreadedHTTPServer)
 from fmfile import FMFLoader
+from pyphant.core.SQLiteWrapper import SQLiteWrapper
 
 WAITING_SECONDS_HTTP_SERVER_STOP = 5
 HTTP_REQUEST_DC_URL_PATH = "/request_dc_url"
 HTTP_REQUEST_KM_ID_PATH = "/request_km_id"
 HTTP_REQUEST_DC_DETAILS_PATH = "/request_dc_details?dcid="
-HTTP_REQUEST_REFRESH = "/request_refresh"
 HTTP_REQUEST_REGISTER_KM = "/request_register_km"
 HTTP_REQUEST_SEARCH = "/request_search"
-# Maximum number of DCs to store in cache:
-CACHE_SIZE = 10
-# Timeout for cached DCs in seconds:
-CACHE_TIMEOUT = 3600
-# Number of hits a DC has to have at least in order to be cached:
-CACHE_THRESHHOLD = 2
+# Maximum number of FCs to store in cache:
+CACHE_SIZE = 100
+# Timeout for cached FCs in seconds:
+CACHE_TIMEOUT = 60
+# Limit for FC.data.size:
+CACHE_MAX_SIZE = 200
+# Number of hits a FC must have within CACHE_TIMEOUT to be stored in cache
+CACHE_MIN_HITS = 2
 KM_PATH = '/KMstorage/'
 REHDF5 = re.compile(r'..*\.h5$|..*\.hdf$|..*\.hdf5$')
 REFMF = re.compile(r'..*\.fmf$')
@@ -101,18 +103,23 @@ def getPyphantPath(subdir = '/'):
                 os.mkdir(makedir)
     return path
 
-def getFilenameFromDcId(dcId):
+def getFilenameFromDcId(dcId, temporary=False):
     """
     Returns a unique filename for the given emd5.
     """
     emd5list = urlparse(dcId + '.h5')[2][2:].split('/')
     emd5path = ''
-    for p in emd5list:
+    for p in emd5list[:-2]:
         emd5path += (p + '/')
-    emd5path = emd5path[:-1]
+    emd5path += emd5list[-2][:10] + '/' + emd5list[-2][11:]\
+        + '.' + emd5list[-1]
     directory = os.path.dirname(emd5path)
     filename = os.path.basename(emd5path)
-    return getPyphantPath(KM_PATH + 'by_emd5/' + directory) + filename
+    if temporary:
+        subdir = 'tmp/by_emd5/'
+    else:
+        subdir = 'by_emd5/'
+    return getPyphantPath(KM_PATH + subdir + directory) + filename
 
 
 class KnowledgeManagerException(Exception):
@@ -177,125 +184,71 @@ class KnowledgeManager(Singleton):
     """
     def __init__(self):
         """
-        Sets the unique id for the KM instance and restores all HDF5 files from
-        the .pyphant directory.
+        Sets the unique id for the KM instance, sets up the DataBase if
+        it has not been initialized yet and clears the tmp dir.
         """
         super(KnowledgeManager, self).__init__()
         self._logger = logging.getLogger("pyphant")
-        self._storage = {}
         self._cache = {}
         self.H5FileHandlers = {}
         self._remoteKMs = {} # key:id, value:url
         self._server = None
         self._server_id = uuid1()
-        self.restoreKnowledge()
         self.web_interface = WebInterface(self, True)
+        self.dbase = getPyphantPath('/sqlite3/') + "km_meta.sqlite3"
+        with SQLiteWrapper(self.dbase) as wrapper:
+            wrapper.setup_dbase()
+        tmpdir = getPyphantPath(KM_PATH + 'tmp/')
+        if os.path.isdir(tmpdir):
+            from shutil import rmtree
+            try:
+                rmtree(tmpdir)
+            except OSError:
+                print "Could not delete '%s'." % (tmpdir, )
 
     def __del__(self):
         """
-        Stops the HTTP server and closes all open files.
+        Stops the HTTP server
         """
         if self.isServerRunning():
             self.stopServer()
 
-    def registerH5(self, filename, mode = 'a', registerContents = True):
+    def hasDataContainer(self, dcid):
         """
-        Adds the given HDF5 file to the pool and handles all
-        further IO operations on the given file in a save way. If you want the
-        knowledge to be stored permanently, use registerURL.
-        Possible usage: Register a file that does not exist (setting
-        registerContents to False). It then is created.
-        Get its H5FileHandler using the getH5FileHandler method.
-        Use this FileHandler to write some Data to the file.
-        Use the refreshH5 method to import the new contents into the
-        KnowledgeManager.
-        filename -- path to the HDF5 file to be registered.
+        Returns whether the given DC is stored locally.
+        Never use this method in a 'with SQLiteWrapper(...) as wrapper'
+        statement! Use wrapper.has_entry(dcid) instead if you already
+        have a wrapper at your hands or you may end up in a sqlite3 locking
+        loop.
+        """
+        with SQLiteWrapper(self.dbase) as wrapper:
+            has_entry = wrapper.has_entry(dcid)
+        return has_entry
+
+    def getH5FileHandler(self, filename, mode='r'):
+        """
+        Returns an H5FileHandler for the given filename to perform IO
+        operations on the file in a save way.
+        filename -- path to the HDF5 file
         mode -- see H5FileHandler
-        registerContents -- whether to register contents of the file as well.
         """
-        if self.H5FileHandlers.has_key(filename):
-            raise KnowledgeManagerException("'%s' has already been registered."
-                                            % filename)
-        self.H5FileHandlers[filename] = H5FileHandler(filename, mode)
-        if registerContents:
-            self.refreshH5(filename)
+        return H5FileHandler(filename, mode)
 
-    def getH5FileHandler(self, filename):
+    def registerH5(self, filename, temporary=False):
         """
-        Returns a H5FileHandler for the given filename to perform IO
-        operations on the file in a save way. The file has
-        to be registered first using registerH5.
-        As soon as you are done with your IO operations, use refreshH5
-        in order to update the changes.
+        Adds the given file to the knowledge pool. If you want the data to
+        be copied to the .pyphant directory, use registerURL() instead.
         filename -- path to the HDF5 file
-        """
-        if self.H5FileHandlers.has_key(filename):
-            return self.H5FileHandlers[filename]
-        else:
-            raise KnowledgeManagerException("'%s' has not been registered.")
-
-    def refreshH5(self, filename):
-        """
-        Refreshes the contents of the given file. The file has to be
-        registered first using registerH5. If a DC emd5 is found that is
-        already known to the KnownledgeManager, it is not updated, following
-        the principle that emd5s are unique and DCs that have been given a emd5
-        should not me modified any more in any way.
-        filename -- path to the HDF5 file
+        temporary -- flag that marks data to be deleted upon next
+                     instantiation of a KM Singleton
         """
         h5fh = self.getH5FileHandler(filename)
         with h5fh:
             summaryDict = h5fh.loadSummary()
-        for dcId, summary in summaryDict.items():
-            if not self._storage.has_key(dcId):
-                self._storage[dcId] = {'lasthit':None,
-                                       'hitcount':0,
-                                       'filehandler':h5fh,
-                                       'summary':summary}
-
-    def restoreKnowledge(self):
-        """
-        Restores knowledge from pyphant path.
-        """
-        def walkfiles(arg, dirname, fnames):
-            for fname in fnames:
-                if REHDF5.match(fname.lower()) != None:
-                    if dirname.endswith('/'):
-                        dirname = dirname[:-1]
-                    filename = dirname + '/' + fname
-                    try:
-                        if self.H5FileHandlers.has_key(filename):
-                            self.refreshH5(filename)
-                        else:
-                            self.registerH5(filename)
-                    except Exception:
-                        self._logger.warn("Could not import '%s'.", filename)
-        os.path.walk(getPyphantPath(KM_PATH), walkfiles, None)
-
-    def _matchKeys(self, summary, match):
-        for key, value in match.iteritems():
-            if summary[key] != value:
-                return False
-        return True
-
-    def getSummary(self, dcId = None, match={}):
-        """
-        Behaves like H5FileHandler.loadSummary(dcId) except that for
-        dcId == None all DataContainers that are stored locally are browsed.
-        match -- Dictionary for filtering DCs, eg {'longname':'distance'}.
-                 Only works with dcId == None.
-        """
-        if dcId == None:
-            summary = dict([(emd5, dcInfo['summary']) \
-                                for emd5, dcInfo in self._storage.iteritems()\
-                                if self._matchKeys(dcInfo['summary'], match)])
-        else:
-            if not self._storage.has_key(dcId):
-                raise KnowledgeManagerException("DC with ID '%s' is unknown."\
-                                                    % (dcId, ))
-            dcInfo = self._storage[dcId]
-            summary = dcInfo['summary']
-        return summary
+        with SQLiteWrapper(self.dbase) as wrapper:
+            for dcId, summary in summaryDict.items():
+                if not wrapper.has_entry(dcId):
+                    wrapper.set_entry(summary, filename, temporary)
 
     def _getServerURL(self):
         """
@@ -423,17 +376,22 @@ class KnowledgeManager(Singleton):
                 % (km_url, ), excep)
         self._remoteKMs[km_id] = km_url
 
-    def registerURL(self, url):
+    def registerURL(self, url, temporary=False):
         """
-        Registers an HDF5 or FMF file downloadable from given URL and store it
-        permanently in the .pyphant directory. The content of the file is made
+        Registers an HDF5 or FMF file downloadable from given URL and stores it
+        in the .pyphant directory. The content of the file is made
         available to the KnowledgeManager.
         HTTP redirects are resolved. The filetype is determined by the
         extension.
         url -- URL of the HDF5 or FMF file
+        temporary -- set to True in order to mark the data to be deleted upon
+                     next instantiation of a KM singleton
         """
         parsed = urlparse(url)
-        filename = KM_PATH + 'registered/' + parsed[1] + '/'
+        tmp_extension = ''
+        if temporary:
+            tmp_extension = 'tmp/'
+        filename = KM_PATH + tmp_extension + 'registered/' + parsed[1] + '/'
         filename += os.path.basename(parsed[2])
         directory = os.path.dirname(filename)
         filename = getPyphantPath(directory) + os.path.basename(filename)
@@ -459,43 +417,47 @@ class KnowledgeManager(Singleton):
         savedto, headers = urllib.urlretrieve(url, filename)
         self._logger.info("Header information: %s", (str(headers), ))
         if REFMF.match(filename.lower()) != None:
-            self.registerFMF(filename)
+            self.registerFMF(filename, temporary)
         elif REHDF5.match(filename.lower()) != None:
-            self.registerH5(filename)
+            self.registerH5(filename, temporary)
         else:
             raise KnowledgeManagerException('Filetype unknown: %s'
                                             % (filename, ))
 
-    def registerDataContainer(self, dc):
+    def registerDataContainer(self, dc, temporary=False):
         """
         Registers a DataContainer located in memory using a given
-        reference and store it permanently.
+        reference and stores it in the pyphant directory.
         The DataContainer must have an .id attribute,
         which could be generated by the datacontainer.seal() method.
         If the DCs emd5 is already known to the KnowledgeManager,
         the DC is not registered again since emd5s are unique.
         dc -- reference to the DataContainer object
+        temporary -- dc is stored only until another KM singleton is
+                     created. Set this flag to True e.g. for unit tests
+                     or whenever you do not want to produce garbage on
+                     your hard drive.
         """
         if dc.id == None:
             raise KnowledgeManagerException("Invalid id for DataContainer '"\
                                             + dc.longname + "'")
-        if not self._storage.has_key(dc.id):
-            filename = getFilenameFromDcId(dc.id)
-            self.registerH5(filename, 'w', False)
-            handler = self.getH5FileHandler(filename)
+        if not self.hasDataContainer(dc.id):
+            filename = getFilenameFromDcId(dc.id, temporary)
+            handler = self.getH5FileHandler(filename, 'w')
             with handler:
                 handler.saveDataContainer(dc)
-            self.refreshH5(filename)
+            self.registerH5(filename, temporary)
 
-    def registerFMF(self, filename):
+    def registerFMF(self, filename, temporary=False):
         """
         Extracts a SampleContainer from a given FMF file and stores it
         permanently. The emd5 of the SampleContainer that has been generated
         is returned.
         filename -- path to the FMF file
+        temporary -- see registerDataContainer
         """
         sc = FMFLoader.loadFMFFromFile(filename)
-        self.registerDataContainer(sc)
+        self.registerDataContainer(sc, temporary)
         return sc.id
 
     def _getDCURLFromRemoteKMs(self, query_dict):
@@ -574,7 +536,7 @@ URL '%s'...", km_id, km_url)
         """
         assert self.isServerRunning(), "Server is not running."
         dc_id = query_dict['dcid']
-        if self._storage.has_key(dc_id):
+        if self.hasDataContainer(dc_id):
             dc = self.getDataContainer(dc_id, True, False)
             # Wrap data container in temporary HDF5 file
             osFileId, filename = tempfile.mkstemp(suffix = '.h5',
@@ -593,6 +555,56 @@ URL '%s'...", km_id, km_url)
                     "URL for DC ID '%s' not found." % (dc_id, ), excep)
         return dc_url
 
+    def getFCFromCache(self, fc_id, filename):
+        """
+        Validates the cache and returns a FC instance from cache or local
+        storage. Also puts FC to cache if reasonable.
+        fc_id: emd5 to look for in cache
+        filename: alternative source if fc_id not present in cache
+        """
+        now = time.time()
+        remove_keys = [key for key, value in self._cache.iteritems()\
+                           if value['reference'] == None\
+                           and key != fc_id\
+                           and (now - value['lasthit']) > CACHE_TIMEOUT]
+        for key in remove_keys:
+            self._cache.pop(key)
+        if self._cache.has_key(fc_id):
+            cinfo = self._cache[fc_id]
+            if now - cinfo['lasthit'] > CACHE_TIMEOUT:
+                cinfo['hitcount'] = 1
+            else:
+                cinfo['hitcount'] += 1
+            cinfo['lasthit'] = now
+        else:
+            cinfo = {'lasthit':now, 'hitcount':1, 'reference':None}
+            self._cache[fc_id] = cinfo
+        if cinfo['reference'] != None:
+            return cinfo['reference']
+        else:
+            with self.getH5FileHandler(filename) as handler:
+                fc = handler.loadDataContainer(fc_id)
+            if fc.data.size <= CACHE_MAX_SIZE \
+                    and cinfo['hitcount'] >= CACHE_MIN_HITS:
+                self._attemptToCacheFC(fc, cinfo)
+            return fc
+
+    def _attemptToCacheFC(self, fc, cinfo):
+        cached_fcs = [(id, info) for id, info in self._cache.iteritems()\
+                          if info['reference'] != None]
+        if len(cached_fcs) >= CACHE_SIZE:
+            for id, info in cached_fcs:
+                if cinfo['lasthit'] - info['lasthit'] > CACHE_TIMEOUT:
+                    info['reference'] = None
+                    cinfo['reference'] = fc
+                    return
+            weakest = min(cached_fcs, key=lambda x: x[1]['hitcount'])
+            if cinfo['hitcount'] >= weakest[1]['hitcount']:
+                weakest[1]['reference'] = None
+                cinfo['reference'] = fc
+        else:
+            cinfo['reference'] = fc
+
     def getDataContainer(self, dc_id, use_cache = True, try_remote = True):
         """
         Returns DataContainer matching the given id.
@@ -601,55 +613,18 @@ URL '%s'...", km_id, km_url)
                      lookups (default: True)
         try_remote -- Try to get DC from remote KMs (default: True)
         """
-        dc = None
-        found_in_cache = False
-        islocal = self._storage.has_key(dc_id)
-        if islocal:
-            dcinfo = self._storage[dc_id]
-            now = time.time()
-            if dcinfo['lasthit'] != None:
-                if (now - dcinfo['lasthit']) >= CACHE_TIMEOUT:
-                    dcinfo['hitcount'] = 0
-            dcinfo['lasthit'] = now
-            dcinfo['hitcount'] += 1
-            if use_cache:
-                if self._cache.has_key(dc_id):
-                    dc = self._cache[dc_id]
-                    found_in_cache = True
-                    self._logger.debug("DC with ID '%s' found in cache.", dc_id)
-                else:
-                    self._logger.debug("DC with ID '%s' not found in cache.",
-                                       dc_id)
-            if not found_in_cache:
-                try:
-                    handler = dcinfo['filehandler']
-                    with handler:
-                        dc = handler.loadDataContainer(dc_id)
-                except Exception, excep:
-                    raise KnowledgeManagerException("DC ID '%s' known, but "
-                                                    "cannot be read"
-                                                    "." % (dc_id, ), excep)
-                if use_cache and dcinfo['hitcount'] >= CACHE_THRESHHOLD:
-                    docache = False
-                    if len(self._cache) >= CACHE_SIZE:
-                        minhitcount = sys.maxint
-                        for cachedid in self._cache.keys():
-                            cacheddcinfo = self._storage[cachedid]
-                            if (now - cacheddcinfo['lasthit']) >= CACHE_TIMEOUT:
-                                cacheddcinfo['hitcount'] = 0
-                                self._cache.pop(cachedid)
-                                docache = True
-                                break
-                            elif cacheddcinfo['hitcount'] < minhitcount:
-                                minhitcount = cacheddcinfo['hitcount']
-                        if docache == False \
-                                and dcinfo['hitcount'] > minhitcount:
-                            docache == True
-                    else:
-                        docache = True
-                    if docache:
-                        self._cache[dc_id] = dc
-                        self._logger.debug("Cached DC with ID '%s'", dc_id)
+        filename = None
+        with SQLiteWrapper(self.dbase) as wrapper:
+            try:
+                filename = wrapper[dc_id]['storage']
+            except KeyError:
+                pass
+        if filename != None:
+            if dc_id.endswith('field') and use_cache:
+                return self.getFCFromCache(dc_id, filename)
+            with self.getH5FileHandler(filename) as handler:
+                dc = handler.loadDataContainer(dc_id)
+            return dc                    
         elif try_remote:
             dc_url = self._getDCURLFromRemoteKMs({'dcid':dc_id,
                                                   'lastkmidindex':-1})
@@ -659,12 +634,35 @@ URL '%s'...", km_id, km_url)
             filename = getFilenameFromDcId(dc_id)
             urllib.urlretrieve(dc_url, filename)
             self.registerH5(filename)
-            with self.H5FileHandlers[filename] as handler:
+            with self.getH5FileHandler(filename) as handler:
                 dc = handler.loadDataContainer(dc_id)
+            return dc
         else:
             raise KnowledgeManagerException("DC ID '%s' is unknown."
                                             % (dc_id, ))
-        return dc
+
+    def getEmd5List(self):
+        """
+        returns a list with all locally known DataContainer ids.
+        """
+        with SQLiteWrapper(self.dbase) as wrapper:
+            return wrapper.get_emd5_list()
+
+    def getSummary(self, dc_id):
+        """
+        This method returns a dictionary with meta information about
+        the given DC.
+        """
+        with SQLiteWrapper(self.dbase) as wrapper:
+            # TODO: usage of rowwrapper is not optimal in performance
+            rowwrapper = wrapper[dc_id]
+            keys = list(SQLiteWrapper.all_keys)
+            if dc_id.endswith('field'):
+                keys.remove('columns')
+            elif dc_id.endswith('sample'):
+                keys.remove('unit')
+            summary = dict([(key, rowwrapper[key]) for key in keys])
+        return summary
 
 
 class KMHTTPRequestHandler(SimpleHTTPRequestHandler):
@@ -705,8 +703,6 @@ class KMHTTPRequestHandler(SimpleHTTPRequestHandler):
             httpanswer = self._do_POST_request_dc_url()
         elif self.path == HTTP_REQUEST_KM_ID_PATH:
             httpanswer = self._do_POST_request_km_id()
-        elif self.path == HTTP_REQUEST_REFRESH:
-            httpanswer = self._do_POST_request_refresh()
         elif self.path == HTTP_REQUEST_REGISTER_KM:
             httpanswer = self._do_POST_request_register_km()
         else:
@@ -770,11 +766,6 @@ DataContainer ID '%s' not found.", query_dict['dcid'])
         else:
             httpanswer = HTTPAnswer(400, "Cannot interpret query.")
         return httpanswer
-
-    def _do_POST_request_refresh(self):
-        km = KMHTTPRequestHandler._km
-        km.restoreKnowledge()
-        return km.web_interface.get_frontpage("/")
 
     def _do_POST_request_register_km(self):
         length = int( self.headers['content-length'] )

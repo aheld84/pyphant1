@@ -41,7 +41,9 @@ __version__ = "$Revision$".replace('$','')
 import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
-from pyphant.core.KnowledgeManager import KnowledgeManager
+from pyphant.core.KnowledgeManager import (KnowledgeManager,
+                                           CACHE_SIZE,
+                                           CACHE_MIN_HITS)
 import pyphant.core.PyTablesPersister as ptp
 from pyphant.core.DataContainer import FieldContainer
 import numpy as N
@@ -66,7 +68,7 @@ class KnowledgeManagerTestCase(unittest.TestCase):
         ptp.saveResult(self._fc, h5)
         h5.close()
         km = KnowledgeManager.getInstance()
-        km.registerURL('file://'+h5name)
+        km.registerURL('file://' + h5name, temporary=True)
         km_fc = km.getDataContainer(self._fc.id)
         self.assertEqual(self._fc, km_fc)
         os.remove(h5name)
@@ -87,14 +89,14 @@ class KnowledgeManagerTestCase(unittest.TestCase):
                 http_fc = ptp.loadField(h5,g)
         h5.close()
         km = KnowledgeManager.getInstance()
-        km.registerURL(url)
+        km.registerURL(url, temporary=True)
         km_fc = km.getDataContainer(http_fc.id)
         self.assertEqual(http_fc, km_fc)
         os.remove(filename)
 
     def testGetDataContainer(self):
         km = KnowledgeManager.getInstance()
-        km.registerDataContainer(self._fc)
+        km.registerDataContainer(self._fc, temporary=True)
         km_fc = km.getDataContainer(self._fc.id)
         self.assertEqual(self._fc, km_fc)
 
@@ -127,21 +129,22 @@ current: I(V) [A]
 """
         handler.write(fmfstring)
         handler.close()
-        dc_id = km.registerFMF(filename)
+        dc_id = km.registerFMF(filename, temporary=True)
         os.remove(filename)
         km.getDataContainer(dc_id)
 
     def testCache(self):
         km = KnowledgeManager.getInstance()
         fcids = []
-        for xr in xrange(20):
+        for xr in xrange(CACHE_SIZE + 10):
             fc = FieldContainer(N.array([1, 2, xr]))
             fc.seal()
-            km.registerDataContainer(fc)
+            km.registerDataContainer(fc, temporary=True)
             fcids.append(fc.id)
-        for fcid in fcids:
-            for rep in xrange(10):
+        for fcid, index in zip(fcids, range(len(fcids))):
+            for rep in xrange(CACHE_MIN_HITS + 5):
                 fc = km.getDataContainer(fcid)
+                assert fc.data[2] == index
 
 
 if __name__ == "__main__":

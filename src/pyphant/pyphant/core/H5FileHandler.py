@@ -51,9 +51,9 @@ class H5FileHandler(object):
     """
     This class is used to handle IO operations on HDF5 files.
     """
-    def __init__(self, filename, mode = 'a'):
+    def __init__(self, filename, mode='a'):
         """
-        Opens a HDF5 file.
+        Opens an HDF5 file.
         filename -- path to the file that should be opened
         mode -- mode in which file is opened. Possible values: 'r', 'w', 'a'
                 meaning 'read only', 'overwrite' and 'append'.
@@ -106,13 +106,9 @@ class H5FileHandler(object):
         """
         resNode, uriType = self.getNodeAndTypeFromId(dcId)
         if uriType == 'field':
-            _logger.info("Trying to load field data from node %s..." % resNode)
             result = self.loadField(resNode)
-            _logger.info("...successfully loaded.")
         elif uriType == 'sample':
-            _logger.info("Trying to load sample data from node %s..." % resNode)
             result = self.loadSample(resNode)
-            _logger.info("...successfully loaded.")
         else:
             raise TypeError, "Unknown result uriType in <%s>" % resNode._v_title
         return result
@@ -147,42 +143,28 @@ class H5FileHandler(object):
                 if len(currDcId) > 0:
                     summary[currDcId] = self.loadSummary(currDcId)
         else:
+            from pyphant.core.Helpers import (utf82uc, emd52dict)
             summary = {}
             summary['id'] = dcId
             resNode, uriType = self.getNodeAndTypeFromId(dcId)
-            summary['longname'] = unicode(self.handle.getNodeAttr(resNode,
-                                          "longname"), 'utf-8')
-            summary['shortname'] = unicode(self.handle.getNodeAttr(resNode,
-                                           "shortname"), 'utf-8')
-            emd5_split = dcId.split('/')
+            summary['longname'] = utf82uc(self.handle.getNodeAttr(resNode,
+                                                                  "longname"))
+            summary['shortname'] = utf82uc(self.handle.getNodeAttr(resNode,
+                                                                   "shortname"))
+            summary.update(emd52dict(dcId))
             try:
-                summary['machine'] = unicode(self.handle.getNodeAttr(resNode,
-                                             "machine"), 'utf-8')
-                summary['creator'] = unicode(self.handle.getNodeAttr(resNode,
-                                             "creator"), 'utf-8')
+                summary['machine'] = utf82uc(self.handle.getNodeAttr(resNode,
+                                                                     "machine"))
+                summary['creator'] = utf82uc(self.handle.getNodeAttr(resNode,
+                                                                     "creator"))
             except:
-                summary['machine'] = unicode(emd5_split[2], 'utf-8')
-                summary['creator'] = unicode(emd5_split[3], 'utf-8')
-            summary['date'] = unicode(emd5_split[4], 'utf-8')
-            summary['hash'] = emd5_split[5].split('.')[0]
-            summary['type'] = unicode(emd5_split[5].split('.')[1], 'utf-8')
+                pass # machine, creator set by emd52dict(dcId) before
             attributes = {}
             if uriType == 'field':
                 for key in resNode.data._v_attrs._v_attrnamesuser:
                     attributes[key]=self.handle.getNodeAttr(resNode.data, key)
-                unit = eval(unicode(self.handle.getNodeAttr(resNode, "unit"),
-                                    'utf-8'))
-                try:
-                    if isinstance(unit, (str, unicode)):
-                        unit = unit.replace('^', '**')
-                    if isinstance(unit, unicode):
-                        unit = unit.encode('utf-8')
-                    summary['unit'] = PhysicalQuantity(unit)
-                except:
-                    try:
-                        summary['unit'] = PhysicalQuantity("1" + unit)
-                    except:
-                        summary['unit'] = unit
+                unit = eval(utf82uc(self.handle.getNodeAttr(resNode, "unit")))
+                summary['unit'] = unit
                 try:
                     dimTable = resNode.dimensions
                     dimensions = [self.loadSummary(row['id'])
@@ -199,7 +181,7 @@ class H5FileHandler(object):
                 for resId in self.handle.getNodeAttr(resNode, "columns"):
                     nodename = "/results/" + resId
                     columnId = self.handle.getNodeAttr(nodename, "TITLE")
-                    columns.append(self.loadSummary(columnId))
+                    columns.append(columnId)
                 summary['columns'] = columns
             summary['attributes'] = attributes
         return summary
