@@ -98,6 +98,19 @@ class H5FileHandler(object):
             uriType = uriType.encode('utf-8')
         return (resNode, uriType)
 
+    def isIndexMarker(self, dcId):
+        """
+        returns True iff the underlying HDF5 file contains dcId and
+        dcId belongs to an IndexMarker
+        """
+        resNode, uriType = self.getNodeAndTypeFromId(dcId)
+        if uriType == u'field':
+            try:
+                resNode._g_checkHasChild('dimensions')
+            except tables.NoSuchNodeError:
+                return True         
+        return False
+
     def loadDataContainer(self, dcId):
         """
         Loads a DataContainer from the HDF5 file and returns it as a
@@ -133,15 +146,21 @@ class H5FileHandler(object):
         """
         Extracts meta data about a given DataContainer and returns it
         as a dictionary.
-        dcId -- emd5 of the DC to summarize. If dcId == None, a dictionary
-                that maps emd5s to summaries is returned.
+        dcId -- emd5 of the DC to summarize. If the emd5 belongs to an
+                IndexMarker object, u'IndexMarker' is returned.
+                If dcId == None, a dictionary that maps emd5s to summaries
+                is returned, where IndexMarker objects are ignored.
         """
         if dcId == None:
             summary = {}
             for group in self.handle.walkGroups(where = "/results"):
                 currDcId = group._v_attrs.TITLE
                 if len(currDcId) > 0:
-                    summary[currDcId] = self.loadSummary(currDcId)
+                    tmp = self.loadSummary(currDcId)
+                    if tmp != u'IndexMarker':
+                        summary[currDcId] = tmp
+        elif self.isIndexMarker(dcId):
+            return u'IndexMarker'
         else:
             from pyphant.core.Helpers import (utf82uc, emd52dict)
             summary = {}
@@ -165,13 +184,14 @@ class H5FileHandler(object):
                     attributes[key]=self.handle.getNodeAttr(resNode.data, key)
                 unit = eval(utf82uc(self.handle.getNodeAttr(resNode, "unit")))
                 summary['unit'] = unit
-                try:
-                    dimTable = resNode.dimensions
-                    dimensions = [self.loadSummary(row['id'])
+                dimTable = resNode.dimensions
+                def filterIndexMarker(emd5):
+                    if self.isIndexMarker(emd5):
+                        return u'IndexMarker'
+                    else:
+                        return emd5
+                dimensions = [filterIndexMarker(row['id']) \
                                   for row in dimTable.iterrows()]
-                except tables.NoSuchNodeError:
-                    dimensions = u'INDEX'
-                    summary['type'] = u'index'
                 summary['dimensions'] = dimensions
             elif uriType == 'sample':
                 for key in resNode._v_attrs._v_attrnamesuser:

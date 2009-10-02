@@ -90,7 +90,8 @@ class SQLiteWrapper(object):
     writable_keys = ['storage']
     fast_keys = ['machine', 'creator', 'date', 'hash', 'type', 'id']
     all_keys = ['id', 'hash', 'longname', 'shortname', 'machine', 'creator',
-                'date', 'type', 'attributes', 'storage', 'unit', 'columns']
+                'date', 'type', 'attributes', 'storage', 'unit', 'columns',
+                'dimensions']
 
     def __init__(self, database, timeout=60.0):
         """        
@@ -147,12 +148,16 @@ class SQLiteWrapper(object):
                    ('storage', 'TEXT')]
         createTable("km_sc", columns, self.cursor)
         columns[0] = ('fc_id', 'TEXT PRIMARY KEY')
-        columns.insert(7, ('unit', 'TEXT'))
+        columns.insert(7, ('unit', ''))
         createTable("km_fc", columns, self.cursor)
         columns = [('sc_id', 'TEXT'),
                    ('fc_id', 'TEXT'),
                    ('fc_index', 'INT')]
         createTable("km_sc_columns", columns, self.cursor)
+        columns = [('fc_id', 'TEXT'),
+                   ('dim_id', 'TEXT'),
+                   ('dim_index', 'INT')]
+        createTable("km_fc_dimensions", columns, self.cursor)
         columns = [('dc_id', 'TEXT'),
                    ('key', 'TEXT'),
                    ('value', 'TEXT')]
@@ -205,6 +210,10 @@ class SQLiteWrapper(object):
         if type == 'fc':
             insert_dict['fc_id'] = summary['id']
             insert_dict['unit'] = quantity2dbase(summary['unit'])
+            dimension_query = "INSERT INTO km_fc_dimensions VALUES (?, ?, ?)"
+            for dim_id, dim_index in zip(summary['dimensions'],
+                                         range(len(summary['dimensions']))):
+                exe(dimension_query, (summary['id'], dim_id, dim_index))
         else:
             insert_dict['sc_id'] = summary['id']
             column_query = "INSERT INTO km_sc_columns VALUES (?, ?, ?)"
@@ -274,10 +283,18 @@ class FCRowWrapper(RowWrapper):
 
     def __init__(self, emd5, cursor):
         RowWrapper.__init__(self, emd5, cursor, 'fc')
+        self.dimension_query = "SELECT dim_id FROM km_fc_dimensions "\
+            "WHERE fc_id=? ORDER BY dim_index ASC"
 
     def __getitem__(self, key):
         if key == 'unit':
             return dbase2quantity(RowWrapper.__getitem__(self, key))
+        elif key == 'dimensions':
+            self.cursor.execute(self.dimension_query, (self.emd5, ))
+            dimensions = [row[0] for row in self.cursor]
+            if dimensions == []:
+                dimensions = [u'IndexMarker']
+            return dimensions
         elif key == 'columns':
             raise KeyError(key)
         else:
@@ -295,7 +312,7 @@ class SCRowWrapper(RowWrapper):
         if key == 'columns':
             self.cursor.execute(self.column_query, (self.emd5, ))
             return [row[0] for row in self.cursor]
-        elif key == 'unit':
+        elif key == 'unit' or key == 'dimensions':
             raise KeyError(key)
         else:
             return RowWrapper.__getitem__(self, key)

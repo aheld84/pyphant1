@@ -661,6 +661,7 @@ URL '%s'...", km_id, km_url)
                 keys.remove('columns')
             elif dc_id.endswith('sample'):
                 keys.remove('unit')
+                keys.remove('dimensions')
             summary = dict([(key, rowwrapper[key]) for key in keys])
         return summary
 

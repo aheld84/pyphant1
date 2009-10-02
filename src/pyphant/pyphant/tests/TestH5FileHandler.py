@@ -228,6 +228,7 @@ class SummaryTestCase(SampleContainerTestCase):
         self.assertEqual(fcsummary['attributes'], self.fc.attributes)
         self.assertEqual(fcsummary['unit'], self.fc.unit)
         self.assertEqual(scsummary['columns'][0], self.fc.id)
+        self.assertEqual(fcsummary['dimensions'], [u'IndexMarker'])
 
 
 if __name__ == "__main__":

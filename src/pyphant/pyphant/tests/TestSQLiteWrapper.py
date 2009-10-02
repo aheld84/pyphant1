@@ -63,10 +63,12 @@ class SQLiteWrapperTestCase(unittest.TestCase):
                         'unit':PhysicalQuantity('10.03e-8 mm**-1'),
                         'attributes':{'attribute1':'bla1',
                                       'attribute2':'bla2'},
-                        'hash':'12345678910'}
+                        'hash':'12345678910',
+                        'dimensions':[u'IndexMarker', u'2ndid']}
         self.sc_summary = self.summary.copy()
         self.sc_summary['id'] = self.summary['id'][:-5] + 'sample'
         self.sc_summary.pop('unit')
+        self.sc_summary.pop('dimensions')
         self.sc_summary['columns'] = [self.summary['id'], 'dummy']
         self.sc_summary['type'] = 'sample'
 
