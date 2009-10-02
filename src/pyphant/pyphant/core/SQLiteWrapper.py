@@ -171,6 +171,9 @@ class SQLiteWrapper(object):
         self.cursor.executemany("DELETE FROM km_fc WHERE fc_id=?", ids)
         self.cursor.executemany("DELETE FROM km_sc WHERE sc_id=?", ids)
         self.cursor.executemany("DELETE FROM km_attributes WHERE dc_id=?", ids)
+        self.cursor.executemany("DELETE FROM km_sc_columns WHERE sc_id=?", ids)
+        self.cursor.executemany("DELETE FROM km_fc_dimensions "\
+                                    "WHERE fc_id=?", ids)
         self.cursor.execute("DELETE FROM km_temporary")
 
     def has_entry(self, id):
