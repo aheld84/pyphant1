@@ -316,7 +316,9 @@ class WebInterface(object):
         self.title['details'] = "Details for DC with ID '%s'"
         self.title['search'] = "Search Form"
         self.html = {}
-        self.html['disabled'] = "The Pyphant web interface is disabled."
+        self.html['disabled'] = "The Pyphant web interface is temporarily "\
+            "disabled due to structural changes in storage of meta data.<br>"\
+            "It will be available again soon with more features."
         self.html['frontpage'] = """<h1>Pyphant Web Interface</h1>
 Server ID is '%s'
 <hr>
@@ -385,7 +387,7 @@ interpreted as "no boundary"'
         Returns an HTTP answer for the front page.
         path -- GET request path
         """
-        if self.disabled:
+        if self.disabled or True:
             return self.get_disabled()
         htmlregkm = '<form action="/request_register_km" method="post">'
         htmlregkm += HTMLTextForm("remote_km_host", 30, 1000, "host").getHTML()
