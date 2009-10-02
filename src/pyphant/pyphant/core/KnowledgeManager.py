@@ -206,7 +206,7 @@ class KnowledgeManager(Singleton):
             except OSError:
                 print "Could not delete '%s'." % (tmpdir, )
 
-    def __del__(self):
+    def tearDown(self):
         """
         Stops the HTTP server
         """
