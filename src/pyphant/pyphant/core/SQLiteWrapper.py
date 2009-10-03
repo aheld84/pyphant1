@@ -138,7 +138,7 @@ class SQLiteWrapper(object):
                 query += name + " " + type + ", "
             query = query[:-2] + ")"
             cursor.execute(query)            
-        columns = [('sc_id', 'TEXT PRIMARY KEY'),
+        columns = [('sc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL'),
                    ('longname', 'TEXT'),
                    ('shortname', 'TEXT'),
                    ('machine', 'TEXT'),
@@ -147,22 +147,28 @@ class SQLiteWrapper(object):
                    ('hash', 'TEXT'),
                    ('storage', 'TEXT')]
         createTable("km_sc", columns, self.cursor)
-        columns[0] = ('fc_id', 'TEXT PRIMARY KEY')
+        columns[0] = ('fc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL')
         columns.insert(7, ('unit', ''))
         createTable("km_fc", columns, self.cursor)
-        columns = [('sc_id', 'TEXT'),
-                   ('fc_id', 'TEXT'),
-                   ('fc_index', 'INT')]
+        columns = [('sc_id', 'TEXT NOT NULL'),
+                   ('fc_id', 'TEXT NOT NULL'),
+                   ('fc_index', 'INT NOT NULL'),
+                   ('', 'UNIQUE(sc_id, fc_id, fc_index)'),
+                   ('', 'PRIMARY KEY(sc_id, fc_id, fc_index)')]
         createTable("km_sc_columns", columns, self.cursor)
-        columns = [('fc_id', 'TEXT'),
-                   ('dim_id', 'TEXT'),
-                   ('dim_index', 'INT')]
+        columns = [('fc_id', 'TEXT NOT NULL'),
+                   ('dim_id', 'TEXT NOT NULL'),
+                   ('dim_index', 'INT NOT NULL'),
+                   ('', 'UNIQUE(fc_id, dim_id, dim_index)'),
+                   ('', 'PRIMARY KEY(fc_id, dim_id, dim_index)')]
         createTable("km_fc_dimensions", columns, self.cursor)
-        columns = [('dc_id', 'TEXT'),
-                   ('key', 'TEXT'),
-                   ('value', 'TEXT')]
+        columns = [('dc_id', 'TEXT NOT NULL'),
+                   ('key', 'TEXT NOT NULL'),
+                   ('value', 'TEXT'),
+                   ('', 'UNIQUE(dc_id, key)'),
+                   ('', 'PRIMARY KEY(dc_id, key)')]
         createTable('km_attributes', columns, self.cursor)
-        columns = [('dc_id', 'TEXT PRIMARY KEY')]
+        columns = [('dc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL')]
         createTable("km_temporary", columns, self.cursor)
         #cleanup tmp mess from last time:
         query = "SELECT dc_id FROM km_temporary"
