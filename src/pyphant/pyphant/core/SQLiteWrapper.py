@@ -247,6 +247,52 @@ class SQLiteWrapper(object):
         emd5_list.extend(self.cursor.fetchall())
         return [row[0] for row in emd5_list]
 
+    def get_andsearch_result(self, result_keys, search_dict={},
+                             limit=-1, offset=0, distinct=False):
+        """returns a list of tuples filled with values of the result keys
+        matching the constraints of search_dict.
+        Arguments:
+        - result_keys: List (of length >= 1) of keys to include in the
+          result tuples. Be sure not to mix FC only and SC only keys.
+        - search_dict: Dict mapping keys to constraint values.
+          Use empty dict for no constraints at all
+          possible keys: values (used relational operator[, type constraint]):
+          'longname': str types (==)
+          'shortname': str types (==)
+          'machine': str types (==)
+          'creator: str types (==)
+          'date_from:' str types:
+                       YYYY[-MM[-DD[_hh:[mm:[ss[.s[s[s[s[s[s]]]]]]]]]]] (>=)
+          'date_to:' str types:
+                     YYYY[-MM[-DD[_hh:[mm:[ss[.s[s[s[s[s[s]]]]]]]]]]] (<)
+          'hash': str types (==)
+          'id': str types: emd5 (==)
+          'type': 'field' or 'sample' (==)
+          'attributes': dict mapping attr. key to attr. value (==)
+          'storage': str types (==)
+          'unit': PhysicalUnit or int: 1 (==, FC only)
+          'dimensions': list of FC search dicts
+                        (see above definitions, FC only)
+          'columns': list of FC search dicts (see above definitions, SC only)
+        - limit: maximum number of results to return,
+          set to -1 for no limit, default: -1
+        - offset: number of search results to skip, default: 0
+        - distinct: flag that indicates whether the result list
+          should only contain distinct tuples.
+        Usage Examples:
+        Get list of all longnames:
+           get_andsearch_result(['longname'], distinct=True)
+           --> [('name1', ), ('name2', ), ...]
+        Get id and shortname of all 1d FCs that are parametrized by
+        a time dimension:
+           tunit = PhysicalQuantity(1, 's').unit
+           get_andsearch_result(['id', 'shortname'],
+                                {'type':'field',
+                                 'dimensions':[{'unit':tunit}]})
+           --> [('emd5_1', 'name_1'), ('emd5_2', 'name_2'), ...]
+        """
+        return []
+
 
 class RowWrapper(object):
 
