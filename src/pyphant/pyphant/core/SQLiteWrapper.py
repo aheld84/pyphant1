@@ -137,7 +137,17 @@ class SQLiteWrapper(object):
             for name, type in columns:
                 query += name + " " + type + ", "
             query = query[:-2] + ")"
-            cursor.execute(query)            
+            cursor.execute(query)
+        def createTrigger(trigger_name, action, table_name,
+                          statements, cursor):
+            query = "CREATE TRIGGER IF NOT EXISTS %s AFTER %s ON %s "\
+                "FOR EACH ROW BEGIN %s END"
+            st_query = ''
+            for st in statements:
+                st_query += st + ';'
+            cursor.execute(query % (trigger_name, action,
+                                    table_name, st_query))
+        #create tables:
         columns = [('sc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL'),
                    ('longname', 'TEXT'),
                    ('shortname', 'TEXT'),
@@ -170,16 +180,20 @@ class SQLiteWrapper(object):
         createTable('km_attributes', columns, self.cursor)
         columns = [('dc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL')]
         createTable("km_temporary", columns, self.cursor)
-        #cleanup tmp mess from last time:
-        query = "SELECT dc_id FROM km_temporary"
-        self.cursor.execute(query)
-        ids = self.cursor.fetchall()
-        self.cursor.executemany("DELETE FROM km_fc WHERE fc_id=?", ids)
-        self.cursor.executemany("DELETE FROM km_sc WHERE sc_id=?", ids)
-        self.cursor.executemany("DELETE FROM km_attributes WHERE dc_id=?", ids)
-        self.cursor.executemany("DELETE FROM km_sc_columns WHERE sc_id=?", ids)
-        self.cursor.executemany("DELETE FROM km_fc_dimensions "\
-                                    "WHERE fc_id=?", ids)
+        #create triggers:
+        createTrigger('trigger_del_fc', 'DELETE', 'km_fc',
+                      ['DELETE FROM km_attributes WHERE dc_id=OLD.fc_id',
+                       'DELETE FROM km_fc_dimensions WHERE fc_id=OLD.fc_id'],
+                      self.cursor)
+        createTrigger('trigger_del_sc', 'DELETE', 'km_sc',
+                      ['DELETE FROM km_attributes WHERE dc_id=OLD.sc_id',
+                       'DELETE FROM km_sc_columns WHERE sc_id=OLD.sc_id'],
+                      self.cursor)
+        createTrigger('trigger_del_tmp', 'DELETE', 'km_temporary',
+                      ['DELETE FROM km_fc WHERE fc_id=OLD.dc_id',
+                       'DELETE FROM km_sc WHERE sc_id=OLD.dc_id'],
+                      self.cursor)
+        #clean tmp:
         self.cursor.execute("DELETE FROM km_temporary")
 
     def has_entry(self, id):
