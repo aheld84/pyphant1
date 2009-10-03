@@ -214,9 +214,10 @@ class SQLiteWrapper(object):
             insert_dict['fc_id'] = summary['id']
             insert_dict['unit'] = quantity2dbase(summary['unit'])
             dimension_query = "INSERT INTO km_fc_dimensions VALUES (?, ?, ?)"
-            for dim_id, dim_index in zip(summary['dimensions'],
-                                         range(len(summary['dimensions']))):
-                exe(dimension_query, (summary['id'], dim_id, dim_index))
+            if summary['dimensions'] != [u'IndexMarker']:
+                for dim_id, dim_index in zip(summary['dimensions'],
+                                             range(len(summary['dimensions']))):
+                    exe(dimension_query, (summary['id'], dim_id, dim_index))
         else:
             insert_dict['sc_id'] = summary['id']
             column_query = "INSERT INTO km_sc_columns VALUES (?, ?, ?)"
