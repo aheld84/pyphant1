@@ -624,7 +624,7 @@ URL '%s'...", km_id, km_url)
                 return self.getFCFromCache(dc_id, filename)
             with self.getH5FileHandler(filename) as handler:
                 dc = handler.loadDataContainer(dc_id)
-            return dc                    
+            return dc
         elif try_remote:
             dc_url = self._getDCURLFromRemoteKMs({'dcid':dc_id,
                                                   'lastkmidindex':-1})
@@ -647,6 +647,16 @@ URL '%s'...", km_id, km_url)
         """
         with SQLiteWrapper(self.dbase) as wrapper:
             return wrapper.get_emd5_list()
+
+    def search(self, result_keys, search_dict={}, order_by=None,
+               order_asc=True, limit=-1, offset=0, distinct=False):
+        """
+        See SQLiteWrapper.get_andsearch_result()
+        """
+        with SQLiteWrapper(self.dbase) as wrapper:
+            return wrapper.get_andsearch_result(
+                result_keys, search_dict, order_by, order_asc,
+                limit, offset, distinct)
 
     def getSummary(self, dc_id):
         """
