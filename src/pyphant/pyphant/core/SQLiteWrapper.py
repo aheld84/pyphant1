@@ -46,9 +46,9 @@ from types import (FloatType, IntType, LongType, StringTypes)
 
 def quantity2dbase(quantity):
     if isinstance(quantity, PhysicalQuantity):
-        return quantity.__repr__()
+        return (quantity.__repr__(), tuple(quantity.unit.powers))
     elif isinstance(quantity, (FloatType, IntType, LongType)):
-        return quantity
+        return (quantity, (0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
     else:
         raise ValueError("Expected (PhysicalQuantity, FloatType, IntType, "\
                              "LongType) but got %s instead."\
@@ -159,6 +159,7 @@ class SQLiteWrapper(object):
         createTable("km_sc", columns, self.cursor)
         columns[0] = ('fc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL')
         columns.insert(7, ('unit', ''))
+        columns.insert(8, ('bu_id', 'INT'))
         createTable("km_fc", columns, self.cursor)
         columns = [('sc_id', 'TEXT NOT NULL'),
                    ('fc_id', 'TEXT NOT NULL'),
@@ -180,6 +181,20 @@ class SQLiteWrapper(object):
         createTable('km_attributes', columns, self.cursor)
         columns = [('dc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL')]
         createTable("km_temporary", columns, self.cursor)
+        columns = [('bu_id', 'INTEGER PRIMARY KEY AUTOINCREMENT '\
+                        'NOT NULL UNIQUE'),
+                   ('m', 'INT'),
+                   ('g', 'INT'),
+                   ('s', 'INT'),
+                   ('A', 'INT'),
+                   ('K', 'INT'),
+                   ('mol', 'INT'),
+                   ('cd', 'INT'),
+                   ('rad', 'INT'),
+                   ('sr', 'INT'),
+                   ('EUR', 'INT'),
+                   ('', 'UNIQUE(m, g, s, A, K, mol, cd, rad, sr, EUR)')]
+        createTable('km_base_units', columns, self.cursor)
         #create triggers:
         createTrigger('trigger_del_fc', 'DELETE', 'km_fc',
                       ['DELETE FROM km_attributes WHERE dc_id=OLD.fc_id',
@@ -232,7 +247,21 @@ class SQLiteWrapper(object):
             exe(attr_query, (summary['id'], key, value.__repr__()))
         if type == 'fc':
             insert_dict['fc_id'] = summary['id']
-            insert_dict['unit'] = quantity2dbase(summary['unit'])
+            q2db = quantity2dbase(summary['unit'])
+            insert_dict['unit'] = q2db[0]
+            try:
+                exe("INSERT OR ABORT INTO km_base_units "\
+                        "(m, g, s, A, K, mol, cd, rad, sr, EUR) "\
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", q2db[1])
+                l_row_id = self.cursor.lastrowid
+            except sqlite3.IntegrityError:
+                exe("SELECT bu_id FROM km_base_units WHERE m=? AND g=? "\
+                        "AND s=? AND A=? AND K=? AND mol=? AND cd=? AND rad=? "\
+                        "AND sr=? AND EUR=?", q2db[1])
+                tmp = self.cursor.fetchone()
+                assert tmp != None
+                l_row_id = tmp[0]
+            insert_dict['bu_id'] = l_row_id
             dimension_query = "INSERT INTO km_fc_dimensions VALUES (?, ?, ?)"
             if summary['dimensions'] != [u'IndexMarker']:
                 for dim_id, dim_index in zip(summary['dimensions'],
