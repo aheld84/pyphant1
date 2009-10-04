@@ -103,6 +103,23 @@ class SQLiteWrapperTestCase(unittest.TestCase):
             assert len(emd5list) == 2
             assert self.summary['id'] in emd5list
             assert self.sc_summary['id'] in emd5list
+            keys = self.wrapper.one_to_one_result_keys
+            dict = self.summary.copy()
+            dict.pop('date')
+            dict.pop('dimensions')
+            dict.pop('unit')
+            dict.pop('type')
+            dict.pop('attributes')
+            dict['storage'] = 'storage2'
+            dict['date_from'] = u'2009-01-01_12:00:00.000000'
+            dict['date_to'] = u'2009-01-01_12:00:00.200000'
+            search_result = self.wrapper.get_andsearch_result(keys, dict)
+            assert len(search_result) == 1
+            expected = [(u'name', u'sn', u'PC', u'aheld', u'12345678910',
+                         u'storage2', u'2009-01-01_12:00:00.123456',
+                         u'emd5://PC/aheld/2009-01-01_12:00:00.123456'\
+                             u'/12345678910.field')]
+            assert search_result == expected
 
 
 if __name__ == "__main__":

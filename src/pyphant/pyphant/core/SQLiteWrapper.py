@@ -31,7 +31,7 @@
 
 """
 This module provides a wrapper class that translates the
-KnowledgeManager's summary dictionaries to an SQLite3 databasae.
+KnowledgeManager's summary dictionaries to an SQLite3 database.
 """
 __id__ = "$Id$"
 __author__ = "$Author$"
@@ -74,6 +74,29 @@ def emd52type(emd5):
     else:
         raise ValueError(emd5)
 
+def replace_type(str, type):
+    if type == 'field':
+        return str % ('fc', )
+    elif type == 'sample':
+        return str % ('sc', )
+
+def get_wildcards(length, char, braces=False, commas=True):
+    if braces:
+        wc = '('
+    else:
+        wc = ''
+    for index in xrange(length):
+        wc += char
+        if commas:
+            wc += ','
+        wc += ' '
+    if commas:
+        wc = wc[:-2]
+    else:
+        wc = wc[:-1]
+    if braces:
+        wc += ')'
+    return wc
 
 class SQLiteWrapper(object):
     """Wrapper class for DC meta data <-> sqlite3
@@ -85,9 +108,19 @@ class SQLiteWrapper(object):
     all_keys = ['id', 'hash', 'longname', 'shortname', 'machine', 'creator',
                 'date', 'type', 'attributes', 'storage', 'unit', 'columns',
                 'dimensions']
+    common_result_keys = common_keys + ['id', 'type', 'attributes', 'storage']
+    fc_result_keys = common_result_keys + ['unit', 'dimensions']
+    sc_result_keys = common_result_keys + ['columns']
+    fc_spec_res_keys = ['unit', 'dimensions', 'attributes', 'type']
+    sc_spec_res_keys = ['columns', 'attributes', 'type']
+    one_to_one_search_keys = ['longname', 'shortname', 'machine',
+                              'creator', 'hash', 'storage']
+    one_to_one_result_keys = one_to_one_search_keys + ['date', 'id']
+    common_search_keys = one_to_one_search_keys + ['id', 'attributes',
+                                                   'date_from', 'date_to']
 
     def __init__(self, database, timeout=60.0):
-        """        
+        """
         Arguments:
         - database: database to connect to
         """
@@ -95,7 +128,7 @@ class SQLiteWrapper(object):
         self.timeout = timeout
         self.connection = None
         self.cursor = None
-        
+
     def __enter__(self):
         assert self.connection == None
         assert self.cursor == None
@@ -115,7 +148,7 @@ class SQLiteWrapper(object):
             self.connection.close()
         self.cursor = None
         self.connection = None
-        
+
     def __getitem__(self, emd5):
         if self.has_entry(emd5):
             if emd5.endswith('field'):
@@ -146,14 +179,15 @@ class SQLiteWrapper(object):
                    ('shortname', 'TEXT'),
                    ('machine', 'TEXT'),
                    ('creator', 'TEXT'),
-                   ('date', 'REAL'),
+                   ('julian_day', 'REAL'),
+                   ('date', 'TEXT'),
                    ('hash', 'TEXT'),
                    ('storage', 'TEXT')]
         createTable("km_sc", columns, self.cursor)
         columns[0] = ('fc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL')
-        columns.insert(7, ('unit_value', ''))
-        columns.insert(8, ('unit_name', 'TEXT'))
-        columns.insert(9, ('bu_id', 'INT'))
+        columns.insert(8, ('unit_value', ''))
+        columns.insert(9, ('unit_name', 'TEXT'))
+        columns.insert(10, ('bu_id', 'INT'))
         createTable("km_fc", columns, self.cursor)
         columns = [('sc_id', 'TEXT NOT NULL'),
                    ('fc_id', 'TEXT NOT NULL'),
@@ -257,7 +291,7 @@ class SQLiteWrapper(object):
         insert_dict = dict([(key, value) for key, value in \
                                 summary.iteritems() if key in \
                                 SQLiteWrapper.common_keys])
-        insert_dict['date'] = date2dbase(insert_dict['date'])
+        insert_dict['julian_day'] = date2dbase(summary['date'])
         insert_dict['storage'] = storage
         type = emd52type(summary['id'])
         attr_query = "INSERT INTO km_attributes VALUES (?, ?, ?)"
@@ -277,7 +311,7 @@ class SQLiteWrapper(object):
         key_query = "("
         value_query = "("
         for key, value in insert_dict.iteritems():
-            if key == 'date':
+            if key == 'julian_day':
                 value_query += "julianday(?), "
             else:
                 value_query += "?, "
@@ -294,6 +328,76 @@ class SQLiteWrapper(object):
         self.cursor.execute("SELECT sc_id FROM km_sc")
         emd5_list.extend(self.cursor.fetchall())
         return [row[0] for row in emd5_list]
+
+    def verify_keys(self, keys, allowed):
+        for key in keys:
+            if not key in allowed:
+                raise KeyError(key)
+
+    def translate_result_key(self, key, type):
+        if type == 'field':
+            trans_keys = self.fc_spec_res_keys
+        elif type == 'sample':
+            trans_keys = self.sc_spec_res_keys
+        if key in trans_keys:
+            return 'NULL'
+        elif key == 'id':
+            return replace_type("%s_id", type)
+        else:
+            return key
+
+    def translate_search_dict(self, type, search_dict):
+        where = ''
+        values = []
+        for key, value in search_dict.iteritems():
+            if key in self.one_to_one_search_keys:
+                expr = '%s=?' % key
+            elif key == 'id':
+                expr = '%s=?' % replace_type('%s_id', type)
+            elif key == 'date_from':
+                expr = 'julian_day>=julianday(?)'
+                value = date2dbase(value)
+            elif key == 'date_to':
+                expr = 'julian_day<julianday(?)'
+                value = date2dbase(value)
+            else:
+                #TODO
+                raise NotImplementedError(key)
+            where += expr + " AND "
+            values.append(value)
+        return where[:-5], values
+
+    def translate_row(self, idrow, result_keys):
+        id = idrow[0]
+        row = idrow[1:]
+        index = 0
+        for key, value in zip(result_keys, row):
+            if key in self.one_to_one_result_keys:
+                pass
+            elif key == type:
+                row[index] = id.split('.')[-1]
+            else:
+                raise NotImplementedError(key)
+            index += 1
+        return row
+
+    def get_andsearch_query(self, type, result_keys, search_dict, distinct):
+        trans_res_keys = tuple([self.translate_result_key(key, type) \
+                                    for key in ['id'] + result_keys])
+        if type == 'field':
+            table = 'km_fc'
+        elif type == 'sample':
+            table = 'km_sc'
+        if distinct:
+            dstr = 'DISTINCT '
+        else:
+            dstr = ''
+        qry = ("SELECT %s %s FROM %s WHERE "\
+                   % (dstr, get_wildcards(len(trans_res_keys), '%s'), table))\
+                   % trans_res_keys
+        where, values = self.translate_search_dict(type, search_dict)
+        qry += where
+        return qry, values
 
     def get_andsearch_result(self, result_keys, search_dict={},
                              limit=-1, offset=0, distinct=False):
@@ -338,8 +442,27 @@ class SQLiteWrapper(object):
                                 {'type':'field',
                                  'dimensions':[{'unit':tunit}]})
            --> [('emd5_1', 'name_1'), ('emd5_2', 'name_2'), ...]
+        Limitations:
+        date_from and date_to are converted using the date2dbase method
+        of this module and julianday() of sqlite. This leads to loss of
+        at most the last three digits in ss.ssssss.
         """
-        return []
+        if not search_dict.has_key('type'):
+            self.verify_keys(result_keys, self.common_result_keys)
+            self.verify_keys(search_dict.keys(), self.common_search_keys)
+            fc_query, fc_values \
+                = self.get_andsearch_query('field', result_keys,
+                                           search_dict, distinct)
+            sc_query, sc_values \
+                = self.get_andsearch_query('sample', result_keys,
+                                           search_dict, distinct)
+            if distinct:
+                dstr = ''
+            else:
+                dstr = ' ALL'
+            query = "%s UNION%s %s" % (fc_query, dstr, sc_query)
+            self.cursor.execute(query, fc_values + sc_values)
+        return [self.translate_row(row, result_keys) for row in self.cursor]
 
 
 class RowWrapper(object):
