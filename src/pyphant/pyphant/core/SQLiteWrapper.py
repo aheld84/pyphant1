@@ -369,17 +369,17 @@ class SQLiteWrapper(object):
 
     def translate_row(self, idrow, result_keys):
         id = idrow[0]
-        row = idrow[1:]
+        row = list(idrow[1:])
         index = 0
         for key, value in zip(result_keys, row):
             if key in self.one_to_one_result_keys:
                 pass
-            elif key == type:
+            elif key == 'type':
                 row[index] = id.split('.')[-1]
             else:
                 raise NotImplementedError(key)
             index += 1
-        return row
+        return tuple(row)
 
     def get_andsearch_query(self, type, result_keys, search_dict, distinct):
         trans_res_keys = tuple([self.translate_result_key(key, type) \
@@ -392,14 +392,20 @@ class SQLiteWrapper(object):
             dstr = 'DISTINCT '
         else:
             dstr = ''
-        qry = ("SELECT %s %s FROM %s WHERE "\
-                   % (dstr, get_wildcards(len(trans_res_keys), '%s'), table))\
-                   % trans_res_keys
-        where, values = self.translate_search_dict(type, search_dict)
-        qry += where
+        if search_dict == {}:
+            qry = "SELECT %s %s FROM %s "
+            values = None
+        else:
+            qry = "SELECT %s %s FROM %s WHERE "
+        qry = (qry % (dstr, get_wildcards(len(trans_res_keys), '%s'),
+                      table)) % trans_res_keys
+        if search_dict != {}:
+            where, values = self.translate_search_dict(type, search_dict)
+            qry += where
         return qry, values
 
     def get_andsearch_result(self, result_keys, search_dict={},
+                             order_by=None, order_asc=True,
                              limit=-1, offset=0, distinct=False):
         """returns a list of tuples filled with values of the result keys
         matching the constraints of search_dict.
@@ -426,6 +432,9 @@ class SQLiteWrapper(object):
           'dimensions': list of FC search dicts
                         (see above definitions, FC only)
           'columns': list of FC search dicts (see above definitions, SC only)
+        - order_by: element of result_keys to order the results by
+                    or None for no special ordering
+        - order_asc: whether to order ascending
         - limit: maximum number of results to return,
           set to -1 for no limit, default: -1
         - offset: number of search results to skip, default: 0
@@ -447,6 +456,17 @@ class SQLiteWrapper(object):
         of this module and julianday() of sqlite. This leads to loss of
         at most the last three digits in ss.ssssss.
         """
+        if order_by == None:
+            order = ''
+        else:
+            assert order_by in result_keys
+            order = ' ORDER BY %s' % order_by
+            if order_asc:
+                order += ' ASC'
+            else:
+                order += ' DESC'
+        assert isinstance(limit, int)
+        assert isinstance(offset, int)
         if not search_dict.has_key('type'):
             self.verify_keys(result_keys, self.common_result_keys)
             self.verify_keys(search_dict.keys(), self.common_search_keys)
@@ -460,9 +480,17 @@ class SQLiteWrapper(object):
                 dstr = ''
             else:
                 dstr = ' ALL'
-            query = "%s UNION%s %s" % (fc_query, dstr, sc_query)
-            self.cursor.execute(query, fc_values + sc_values)
-        return [self.translate_row(row, result_keys) for row in self.cursor]
+            query = "%s UNION%s %s%s LIMIT %d OFFSET %d"
+            query = query % (fc_query, dstr, sc_query, order, limit, offset)
+            if search_dict != {}:
+                self.cursor.execute(query, fc_values + sc_values)
+            else:
+                self.cursor.execute(query)
+        rows = [self.translate_row(row, result_keys) for row in self.cursor]
+        if distinct:
+            return list(set(rows))
+        else:
+            return rows
 
 
 class RowWrapper(object):

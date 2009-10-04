@@ -113,7 +113,8 @@ class SQLiteWrapperTestCase(unittest.TestCase):
             dict['storage'] = 'storage2'
             dict['date_from'] = u'2009-01-01_12:00:00.000000'
             dict['date_to'] = u'2009-01-01_12:00:00.200000'
-            search_result = self.wrapper.get_andsearch_result(keys, dict)
+            search_result = self.wrapper.get_andsearch_result(
+                keys, dict, order_by='storage', limit=10, offset=0)
             assert len(search_result) == 1
             expected = [(u'name', u'sn', u'PC', u'aheld', u'12345678910',
                          u'storage2', u'2009-01-01_12:00:00.123456',
