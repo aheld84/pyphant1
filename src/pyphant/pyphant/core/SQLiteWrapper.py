@@ -40,33 +40,26 @@ __version__ = "$Revision$"
 
 import sqlite3
 import time
-from pyphant.core.Helpers import (utf82uc, emd52dict)
+from pyphant.core.Helpers import (utf82uc, uc2utf8, emd52dict)
 from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 from types import (FloatType, IntType, LongType, StringTypes)
 
 def quantity2dbase(quantity):
     if isinstance(quantity, PhysicalQuantity):
-        return (quantity.__repr__(), tuple(quantity.unit.powers))
+        return (quantity.value, quantity.getUnitName(),
+                tuple(quantity.unit.powers))
     elif isinstance(quantity, (FloatType, IntType, LongType)):
-        return (quantity, (0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+        return (quantity, None, (0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
     else:
         raise ValueError("Expected (PhysicalQuantity, FloatType, IntType, "\
                              "LongType) but got %s instead."\
                              % (type(quantity), ))
 
 def dbase2quantity(dbase):
-    if isinstance(dbase, StringTypes):
-        assert dbase.startswith("PhysicalQuantity(")
-        tmp = dbase.split('(')[1].split(',')
-        try:
-            value = int(tmp[0])
-        except ValueError:
-            value = float(tmp[0])
-        return PhysicalQuantity(value, tmp[1][1:-2])
-    elif isinstance(dbase, (FloatType, IntType, LongType)):
-        return dbase
+    if dbase[1] == None:
+        return dbase[0]
     else:
-        raise ValueError("Broken FC unit in dbase: %s" % (dbase.__repr__(), ))
+        return PhysicalQuantity(dbase[0], uc2utf8(dbase[1]))
 
 def date2dbase(date):
     """converts a pyphant datestring to sql standard
@@ -158,8 +151,9 @@ class SQLiteWrapper(object):
                    ('storage', 'TEXT')]
         createTable("km_sc", columns, self.cursor)
         columns[0] = ('fc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL')
-        columns.insert(7, ('unit', ''))
-        columns.insert(8, ('bu_id', 'INT'))
+        columns.insert(7, ('unit_value', ''))
+        columns.insert(8, ('unit_name', 'TEXT'))
+        columns.insert(9, ('bu_id', 'INT'))
         createTable("km_fc", columns, self.cursor)
         columns = [('sc_id', 'TEXT NOT NULL'),
                    ('fc_id', 'TEXT NOT NULL'),
@@ -218,6 +212,31 @@ class SQLiteWrapper(object):
             (id, ))
         return self.cursor.fetchone() != None
 
+    def _set_fc_keys(self, insert_dict, summary):
+        exe = self.cursor.execute
+        insert_dict['fc_id'] = summary['id']
+        q2db = quantity2dbase(summary['unit'])
+        insert_dict['unit_value'] = q2db[0]
+        insert_dict['unit_name'] = q2db[1]
+        try:
+            exe("INSERT OR ABORT INTO km_base_units "\
+                    "(m, g, s, A, K, mol, cd, rad, sr, EUR) "\
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", q2db[2])
+            l_row_id = self.cursor.lastrowid
+        except sqlite3.IntegrityError:
+            exe("SELECT bu_id FROM km_base_units WHERE m=? AND g=? "\
+                    "AND s=? AND A=? AND K=? AND mol=? AND cd=? AND rad=? "\
+                    "AND sr=? AND EUR=?", q2db[2])
+            tmp = self.cursor.fetchone()
+            assert tmp != None
+            l_row_id = tmp[0]
+        insert_dict['bu_id'] = l_row_id
+        dimension_query = "INSERT INTO km_fc_dimensions VALUES (?, ?, ?)"
+        if summary['dimensions'] != [u'IndexMarker']:
+            for dim_id, dim_index in zip(summary['dimensions'],
+                                         range(len(summary['dimensions']))):
+                exe(dimension_query, (summary['id'], dim_id, dim_index))
+
     def set_entry(self, summary, storage, temporary=False):
         """Sets the meta data in the database according to the
         summary dictionary. If the according entry already exists,
@@ -246,27 +265,7 @@ class SQLiteWrapper(object):
             assert isinstance(key, StringTypes)
             exe(attr_query, (summary['id'], key, value.__repr__()))
         if type == 'fc':
-            insert_dict['fc_id'] = summary['id']
-            q2db = quantity2dbase(summary['unit'])
-            insert_dict['unit'] = q2db[0]
-            try:
-                exe("INSERT OR ABORT INTO km_base_units "\
-                        "(m, g, s, A, K, mol, cd, rad, sr, EUR) "\
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", q2db[1])
-                l_row_id = self.cursor.lastrowid
-            except sqlite3.IntegrityError:
-                exe("SELECT bu_id FROM km_base_units WHERE m=? AND g=? "\
-                        "AND s=? AND A=? AND K=? AND mol=? AND cd=? AND rad=? "\
-                        "AND sr=? AND EUR=?", q2db[1])
-                tmp = self.cursor.fetchone()
-                assert tmp != None
-                l_row_id = tmp[0]
-            insert_dict['bu_id'] = l_row_id
-            dimension_query = "INSERT INTO km_fc_dimensions VALUES (?, ?, ?)"
-            if summary['dimensions'] != [u'IndexMarker']:
-                for dim_id, dim_index in zip(summary['dimensions'],
-                                             range(len(summary['dimensions']))):
-                    exe(dimension_query, (summary['id'], dim_id, dim_index))
+            self._set_fc_keys(insert_dict, summary)
         else:
             insert_dict['sc_id'] = summary['id']
             column_query = "INSERT INTO km_sc_columns VALUES (?, ?, ?)"
@@ -384,10 +383,13 @@ class FCRowWrapper(RowWrapper):
         RowWrapper.__init__(self, emd5, cursor, 'fc')
         self.dimension_query = "SELECT dim_id FROM km_fc_dimensions "\
             "WHERE fc_id=? ORDER BY dim_index ASC"
+        self.unit_query = "SELECT unit_value, unit_name FROM km_fc "\
+            "WHERE fc_id=?"
 
     def __getitem__(self, key):
         if key == 'unit':
-            return dbase2quantity(RowWrapper.__getitem__(self, key))
+            self.cursor.execute(self.unit_query, (self.emd5, ))
+            return dbase2quantity(self.cursor.fetchone())
         elif key == 'dimensions':
             self.cursor.execute(self.dimension_query, (self.emd5, ))
             dimensions = [row[0] for row in self.cursor]
