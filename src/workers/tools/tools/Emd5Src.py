@@ -58,7 +58,6 @@ class Emd5Src(Worker.Worker):
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "Emd5Src"
-
     _params = [("selectby", u"select by:", [u"emd5",
                                             u"longname",
                                             u"shortname",
@@ -70,27 +69,20 @@ class Emd5Src(Worker.Worker):
 
     def refreshParams(self, subscriber = None):
         km = KM.getInstance()
-        emd5list = km.getEmd5List()
+        search_res = km.search(['id', 'type', 'longname', 'shortname',
+                                'creator', 'date'])
         lnlist = []
         snlist = []
-        for emd5 in emd5list:
-            summary = km.getSummary(emd5)
-            if summary['type'] != u'index':
-                info = u"%s '%s' (creator: %s, date: %s)"
-                lnitem = HiddenValue(info\
-                                         % (summary['type'],
-                                            summary['longname'],
-                                            summary['creator'],
-                                            summary['date']))
-                lnitem.setHiddenValue(emd5)
-                lnlist.append(lnitem)
-                snitem = HiddenValue(info\
-                                         % (summary['type'],
-                                            summary['shortname'],
-                                            summary['creator'],
-                                            summary['date']))
-                snitem.setHiddenValue(emd5)
-                snlist.append(snitem)
+        emd5list = []
+        for emd5, type, longname, shortname, creator, date in search_res:
+            emd5list.append(emd5)
+            info = u"%s '%s' (creator: %s, date: %s)"
+            lnitem = HiddenValue(info % (type, longname, creator, date))
+            lnitem.setHiddenValue(emd5)
+            lnlist.append(lnitem)
+            snitem = HiddenValue(info % (type, shortname, creator, date))
+            snitem.setHiddenValue(emd5)
+            snlist.append(snitem)
         emd5list.sort()
         lnlist.sort()
         snlist.sort()
