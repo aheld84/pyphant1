@@ -114,13 +114,14 @@ class SQLiteWrapper(object):
     common_result_keys = common_keys + ['id', 'type', 'attributes', 'storage']
     fc_result_keys = common_result_keys + ['unit', 'dimensions']
     sc_result_keys = common_result_keys + ['columns']
-    fc_spec_res_keys = ['unit', 'dimensions', 'attributes', 'type']
-    sc_spec_res_keys = ['columns', 'attributes', 'type']
+    fc_spec_res_keys = ['unit', 'dimensions', 'attributes']
+    sc_spec_res_keys = ['columns', 'attributes']
     one_to_one_search_keys = ['longname', 'shortname', 'machine',
                               'creator', 'hash', 'storage']
-    one_to_one_result_keys = one_to_one_search_keys + ['date', 'id']
+    one_to_one_result_keys = one_to_one_search_keys + ['date', 'id', 'type']
     common_search_keys = one_to_one_search_keys + ['id', 'attributes',
                                                    'date_from', 'date_to']
+    sortable_keys = common_keys + ['id', 'storage', 'type']
 
     def __init__(self, database, timeout=60.0):
         """
@@ -342,6 +343,8 @@ class SQLiteWrapper(object):
             return 'NULL'
         elif key == 'id':
             return replace_type("%s_id", type)
+        elif key == 'type':
+            return "'%s' AS type" % type
         else:
             return key
 
@@ -373,8 +376,6 @@ class SQLiteWrapper(object):
         for key, value in zip(result_keys, row):
             if key in self.one_to_one_result_keys:
                 pass
-            elif key == 'type':
-                row[index] = id.split('.')[-1]
             else:
                 raise NotImplementedError(key)
             index += 1
@@ -451,6 +452,7 @@ class SQLiteWrapper(object):
             order = ''
         else:
             assert order_by in result_keys
+            assert order_by in self.sortable_keys
             order = ' ORDER BY %s' % order_by
             if order_asc:
                 order += ' ASC'
