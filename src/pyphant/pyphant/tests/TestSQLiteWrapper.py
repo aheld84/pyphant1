@@ -123,23 +123,18 @@ class SQLiteWrapperTestCase(unittest.TestCase):
             expected = [(u'name', u'sn', u'PC', u'aheld', u'12345678910',
                          u'2009-01-01_12:00:00.123456', u'emd5://PC/aheld/'\
                              u'2009-01-01_12:00:00.123456/12345678910.field',
-                         u'field', {u'attribute2': 'bla2',
-                                    u'attribute1': 'bla1'}, u'storage2')]
+                         u'field', u'storage2')]
             assert search_result == expected
             dict['type'] = 'field'
-            search_result = self.wrapper.get_andsearch_result(
-                self.wrapper.fc_result_keys, dict)
-            expected = [(u'name', u'sn', u'PC', u'aheld', u'12345678910',
-                         u'2009-01-01_12:00:00.123456', u'emd5://PC/aheld/'\
-                             u'2009-01-01_12:00:00.123456/12345678910.field',
-                         u'field', {u'attribute2': 'bla2',
-                                    u'attribute1': 'bla1'}, u'storage2',
-                         PhysicalQuantity(1.003e-07,'1/mm'),
-                         [u'IndexMarker', u'2ndid'])]
+            search_result = self.wrapper.get_andsearch_result(keys, dict)
             assert search_result == expected
             search_result = self.wrapper.get_andsearch_result(
                 ['longname'], order_by='longname')
             assert search_result == [(u'name', ), (u'name2', )]
+            search_result = self.wrapper.get_andsearch_result(
+                ['longname'], {'unit':PhysicalQuantity(20, '1/m'),
+                               'type':'field'})
+            assert search_result == [(u'name', )]
 
 
 if __name__ == "__main__":
