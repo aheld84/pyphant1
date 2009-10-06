@@ -388,17 +388,13 @@ class SQLiteWrapper(object):
             table = 'km_fc'
         elif type == 'sample':
             table = 'km_sc'
-        if distinct:
-            dstr = 'DISTINCT '
-        else:
-            dstr = ''
         if search_dict == {}:
             qry = "SELECT %s %s FROM %s "
             values = None
         else:
-            qry = "SELECT %s %s FROM %s WHERE "
-        qry = (qry % (dstr, get_wildcards(len(trans_res_keys), '%s'),
-                      table)) % trans_res_keys
+            qry = "SELECT %s FROM %s WHERE "
+        qry = (qry % (get_wildcards(len(trans_res_keys), '%s'), table)) \
+            % trans_res_keys
         if search_dict != {}:
             where, values = self.translate_search_dict(type, search_dict)
             qry += where
@@ -476,12 +472,8 @@ class SQLiteWrapper(object):
             sc_query, sc_values \
                 = self.get_andsearch_query('sample', result_keys,
                                            search_dict, distinct)
-            if distinct:
-                dstr = ''
-            else:
-                dstr = ' ALL'
-            query = "%s UNION%s %s%s LIMIT %d OFFSET %d"
-            query = query % (fc_query, dstr, sc_query, order, limit, offset)
+            query = "%s UNION ALL %s%s LIMIT %d OFFSET %d"
+            query = query % (fc_query, sc_query, order, limit, offset)
             if search_dict != {}:
                 self.cursor.execute(query, fc_values + sc_values)
             else:
