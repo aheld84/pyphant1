@@ -396,7 +396,7 @@ class SQLiteWrapper(object):
         elif type == 'sample':
             table = 'km_sc'
         if search_dict == {}:
-            qry = "SELECT %s %s FROM %s "
+            qry = "SELECT %s FROM %s "
             values = None
         else:
             qry = "SELECT %s FROM %s WHERE "
@@ -483,7 +483,10 @@ class SQLiteWrapper(object):
                                            search_dict, add_id)
             query = "%s UNION ALL %s%s LIMIT %d OFFSET %d"
             query = query % (fc_query, sc_query, order, limit, offset)
-            values = fc_values + sc_values
+            if search_dict != {}:
+                values = fc_values + sc_values
+            else:
+                values = None
         else:
             if search_dict['type'] == 'field':
                 allowed_res_keys = self.fc_result_keys

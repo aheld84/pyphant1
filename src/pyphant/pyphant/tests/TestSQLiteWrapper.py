@@ -72,6 +72,7 @@ class SQLiteWrapperTestCase(unittest.TestCase):
         self.sc_summary.pop('dimensions')
         self.sc_summary['columns'] = [self.summary['id'], 'dummy']
         self.sc_summary['type'] = 'sample'
+        self.sc_summary['longname'] = u'name2'
 
     def tearDown(self):
         import os
@@ -136,6 +137,9 @@ class SQLiteWrapperTestCase(unittest.TestCase):
                          PhysicalQuantity(1.003e-07,'1/mm'),
                          [u'IndexMarker', u'2ndid'])]
             assert search_result == expected
+            search_result = self.wrapper.get_andsearch_result(
+                ['longname'], order_by='longname')
+            assert search_result == [(u'name', ), (u'name2', )]
 
 
 if __name__ == "__main__":
