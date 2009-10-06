@@ -45,22 +45,43 @@ from pyphant.quantities.PhysicalQuantities import (PhysicalQuantity,
                                                    PhysicalUnit)
 from types import (FloatType, IntType, LongType, StringTypes)
 
-def quantity2dbase(quantity):
+def quantity2powers(quantity):
     if isinstance(quantity, PhysicalQuantity):
-        return (quantity.value, quantity.getUnitName(),
-                tuple(quantity.unit.powers))
+        return tuple(quantity.unit.powers)
     elif isinstance(quantity, (FloatType, IntType, LongType)):
-        return (quantity, None, (0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+        return (0, ) * 10
+    else:
+        raise ValueError("Expected (PhysicalQuantity, FloatType, IntType, "\
+                             "LongType) but got %s instead."\
+                             % (type(quantity), ))
+
+def str2number(str):
+    try:
+        value = int(str)
+    except ValueError:
+        try:
+            value = long(str)
+        except ValueError:
+            value = float(str)
+    return value
+
+def quantity2dbase(quantity):
+    if isinstance(quantity, (PhysicalQuantity, FloatType, IntType, LongType)):
+        return quantity.__repr__()
     else:
         raise ValueError("Expected (PhysicalQuantity, FloatType, IntType, "\
                              "LongType) but got %s instead."\
                              % (type(quantity), ))
 
 def dbase2quantity(dbase):
-    if dbase[1] == None:
-        return dbase[0]
+    if isinstance(dbase, StringTypes):
+        if dbase.startswith("PhysicalQuantity("):
+            tmp = dbase.split('(')[1].split(',')
+            return PhysicalQuantity(str2number(tmp[0]), tmp[1][1:-2])
+        else:
+            return str2number(dbase)
     else:
-        return PhysicalQuantity(dbase[0], uc2utf8(dbase[1]))
+        raise ValueError("Broken FC unit in dbase: %s" % (dbase.__repr__(), ))
 
 def date2dbase(date):
     """extends a short datestring to YYYY-MM-DD_hh:mm:ss.ssssss standard
@@ -135,7 +156,8 @@ class SQLiteWrapper(object):
     def __enter__(self):
         assert self.connection == None
         assert self.cursor == None
-        self.connection = sqlite3.connect(self.database, self.timeout)
+        self.connection = sqlite3.connect(self.database, self.timeout,
+                                          detect_types=sqlite3.PARSE_DECLTYPES)
         self.cursor = self.connection.cursor()
         return self
 
@@ -161,6 +183,7 @@ class SQLiteWrapper(object):
         raise KeyError(emd5)
 
     def setup_dbase(self):
+        sqlite3.register_converter('QUANTITY', dbase2quantity)
         def createTable(table_name, columns, cursor):
             query = "CREATE TABLE IF NOT EXISTS %s (" % (table_name, )
             for name, type in columns:
@@ -187,9 +210,8 @@ class SQLiteWrapper(object):
                    ('storage', 'TEXT')]
         createTable("km_sc", columns, self.cursor)
         columns[0] = ('fc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL')
-        columns.insert(7, ('unit_value', ''))
-        columns.insert(8, ('unit_name', 'TEXT'))
-        columns.insert(9, ('bu_id', 'INT'))
+        columns.insert(7, ('unit', 'QUANTITY'))
+        columns.insert(8, ('bu_id', 'INT'))
         createTable("km_fc", columns, self.cursor)
         columns = [('sc_id', 'TEXT NOT NULL'),
                    ('fc_id', 'TEXT NOT NULL'),
@@ -251,18 +273,17 @@ class SQLiteWrapper(object):
     def _set_fc_keys(self, insert_dict, summary):
         exe = self.cursor.execute
         insert_dict['fc_id'] = summary['id']
-        q2db = quantity2dbase(summary['unit'])
-        insert_dict['unit_value'] = q2db[0]
-        insert_dict['unit_name'] = q2db[1]
+        insert_dict['unit'] = quantity2dbase(summary['unit'])
         try:
             exe("INSERT OR ABORT INTO km_base_units "\
                     "(m, g, s, A, K, mol, cd, rad, sr, EUR) "\
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", q2db[2])
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                quantity2powers(summary['unit']))
             l_row_id = self.cursor.lastrowid
         except sqlite3.IntegrityError:
             exe("SELECT bu_id FROM km_base_units WHERE m=? AND g=? "\
                     "AND s=? AND A=? AND K=? AND mol=? AND cd=? AND rad=? "\
-                    "AND sr=? AND EUR=?", q2db[2])
+                    "AND sr=? AND EUR=?", quantity2powers(summary['unit']))
             tmp = self.cursor.fetchone()
             assert tmp != None
             l_row_id = tmp[0]
@@ -462,8 +483,8 @@ class SQLiteWrapper(object):
                 order += ' DESC'
         assert isinstance(limit, int)
         assert isinstance(offset, int)
-        self.verify_keys(result_keys, self.common_result_keys)
         if not search_dict.has_key('type'):
+            self.verify_keys(result_keys, self.common_result_keys)
             self.verify_keys(search_dict.keys(), self.common_search_keys)
             fc_query, fc_values \
                 = self.get_andsearch_query('field', result_keys,
@@ -485,11 +506,14 @@ class SQLiteWrapper(object):
         else:
             if search_dict['type'] == 'field':
                  allowed_search_keys = self.fc_search_keys
+                 allowed_result_keys = self.common_result_keys + ['unit']
             elif search_dict['type'] == 'sample':
                  allowed_search_keys = self.sc_search_keys
+                 allowed_result_keys = self.common_result_keys
             mod_search_dict = search_dict.copy()
             mod_search_dict.pop('type')
             self.verify_keys(mod_search_dict.keys(), allowed_search_keys)
+            self.verify_keys(result_keys, allowed_result_keys)
             query, values = self.get_andsearch_query(
                 search_dict['type'], result_keys, mod_search_dict, distinct)
             query = "%s%s LIMIT %d OFFSET %d" % (query, order, limit, offset)
@@ -541,14 +565,9 @@ class FCRowWrapper(RowWrapper):
         RowWrapper.__init__(self, emd5, cursor, 'fc')
         self.dimension_query = "SELECT dim_id FROM km_fc_dimensions "\
             "WHERE fc_id=? ORDER BY dim_index ASC"
-        self.unit_query = "SELECT unit_value, unit_name FROM km_fc "\
-            "WHERE fc_id=?"
 
     def __getitem__(self, key):
-        if key == 'unit':
-            self.cursor.execute(self.unit_query, (self.emd5, ))
-            return dbase2quantity(self.cursor.fetchone())
-        elif key == 'dimensions':
+        if key == 'dimensions':
             self.cursor.execute(self.dimension_query, (self.emd5, ))
             dimensions = [row[0] for row in self.cursor]
             if dimensions == []:
