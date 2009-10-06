@@ -121,6 +121,8 @@ class SQLiteWrapper(object):
     one_to_one_result_keys = one_to_one_search_keys + ['date', 'id', 'type']
     common_search_keys = one_to_one_search_keys + ['id', 'attributes',
                                                    'date_from', 'date_to']
+    fc_search_keys = common_search_keys + ['unit', 'dimensions']
+    sc_search_keys = common_search_keys + ['columns']
     sortable_keys = common_keys + ['id', 'storage', 'type']
 
     def __init__(self, database, timeout=60.0):
@@ -373,17 +375,22 @@ class SQLiteWrapper(object):
         id = idrow[0]
         row = list(idrow[1:])
         index = 0
+        rowwrapper = self[id]
         for key, value in zip(result_keys, row):
             if key in self.one_to_one_result_keys:
                 pass
             else:
-                raise NotImplementedError(key)
+                row[index] = rowwrapper[key]
             index += 1
         return tuple(row)
 
-    def get_andsearch_query(self, type, result_keys, search_dict, distinct):
+    def get_andsearch_query(self, type, result_keys, search_dict, add_id):
+        if add_id:
+            ext_res_keys = ['id'] + result_keys
+        else:
+            ext_res_keys = result_keys
         trans_res_keys = tuple([self.translate_result_key(key, type) \
-                                    for key in ['id'] + result_keys])
+                                    for key in ext_res_keys])
         if type == 'field':
             table = 'km_fc'
         elif type == 'sample':
@@ -399,6 +406,10 @@ class SQLiteWrapper(object):
             where, values = self.translate_search_dict(type, search_dict)
             qry += where
         return qry, values
+
+    def res_row_trans_necessary(self, result_keys):
+        return 'unit' in result_keys or 'dimensions' in result_keys \
+            or 'attributes' in result_keys or 'columns' in result_keys
 
     def get_andsearch_result(self, result_keys, search_dict={},
                              order_by=None, order_asc=True,
@@ -460,22 +471,41 @@ class SQLiteWrapper(object):
                 order += ' DESC'
         assert isinstance(limit, int)
         assert isinstance(offset, int)
+        add_id = self.res_row_trans_necessary(result_keys)
         if not search_dict.has_key('type'):
             self.verify_keys(result_keys, self.common_result_keys)
             self.verify_keys(search_dict.keys(), self.common_search_keys)
             fc_query, fc_values \
                 = self.get_andsearch_query('field', result_keys,
-                                           search_dict, distinct)
+                                           search_dict, add_id)
             sc_query, sc_values \
                 = self.get_andsearch_query('sample', result_keys,
-                                           search_dict, distinct)
+                                           search_dict, add_id)
             query = "%s UNION ALL %s%s LIMIT %d OFFSET %d"
             query = query % (fc_query, sc_query, order, limit, offset)
-            if search_dict != {}:
-                self.cursor.execute(query, fc_values + sc_values)
-            else:
-                self.cursor.execute(query)
-        rows = [self.translate_row(row, result_keys) for row in self.cursor]
+            values = fc_values + sc_values
+        else:
+            if search_dict['type'] == 'field':
+                allowed_res_keys = self.fc_result_keys
+                allowed_search_keys = self.fc_search_keys
+            elif search_dict['type'] == 'sample':
+                allowed_res_keys = self.sc_result_keys
+                allowed_search_keys = self.sc_search_keys
+            self.verify_keys(result_keys, allowed_res_keys)
+            mod_search_dict = search_dict.copy()
+            mod_search_dict.pop('type')
+            self.verify_keys(mod_search_dict.keys(), allowed_search_keys)
+            query, values = self.get_andsearch_query(
+                search_dict['type'], result_keys, mod_search_dict, add_id)
+            query = "%s%s LIMIT %d OFFSET %d" % (query, order, limit, offset)
+        if search_dict != {}:
+            self.cursor.execute(query, values)
+        else:
+            self.cursor.execute(query)
+        if add_id:
+            rows = [self.translate_row(row, result_keys) for row in self.cursor]
+        else:
+            rows = self.cursor.fetchall()
         if distinct:
             return list(set(rows))
         else:
