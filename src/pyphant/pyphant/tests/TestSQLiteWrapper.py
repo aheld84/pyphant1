@@ -78,6 +78,8 @@ class SQLiteWrapperTestCase(unittest.TestCase):
         os.removedirs(self.dir)
 
     def testAll(self):
+        assert pyphant.core.SQLiteWrapper.date2dbase('2009') \
+            == '2009-01-01_00:00:00.000000'
         with self.wrapper:
             id = self.summary['id']
             assert not self.wrapper.has_entry(id)

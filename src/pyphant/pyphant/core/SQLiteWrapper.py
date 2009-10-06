@@ -62,9 +62,12 @@ def dbase2quantity(dbase):
         return PhysicalQuantity(dbase[0], uc2utf8(dbase[1]))
 
 def date2dbase(date):
-    """converts a pyphant datestring to sql standard
+    """extends a short datestring to YYYY-MM-DD_hh:mm:ss.ssssss standard
     """
-    return date.replace("_", " ")[:23]
+    assert len(date) in [4, 7, 10, 13, 16, 19, 21, 22, 23, 24, 25, 26]
+    date = date.replace(' ', '_')
+    complete_str = '0000-01-01_00:00:00.000000'
+    return date + complete_str[len(date):]
 
 def emd52type(emd5):
     if emd5.endswith('d'):
@@ -179,15 +182,14 @@ class SQLiteWrapper(object):
                    ('shortname', 'TEXT'),
                    ('machine', 'TEXT'),
                    ('creator', 'TEXT'),
-                   ('julian_day', 'REAL'),
                    ('date', 'TEXT'),
                    ('hash', 'TEXT'),
                    ('storage', 'TEXT')]
         createTable("km_sc", columns, self.cursor)
         columns[0] = ('fc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL')
-        columns.insert(8, ('unit_value', ''))
-        columns.insert(9, ('unit_name', 'TEXT'))
-        columns.insert(10, ('bu_id', 'INT'))
+        columns.insert(7, ('unit_value', ''))
+        columns.insert(8, ('unit_name', 'TEXT'))
+        columns.insert(9, ('bu_id', 'INT'))
         createTable("km_fc", columns, self.cursor)
         columns = [('sc_id', 'TEXT NOT NULL'),
                    ('fc_id', 'TEXT NOT NULL'),
@@ -291,8 +293,8 @@ class SQLiteWrapper(object):
         insert_dict = dict([(key, value) for key, value in \
                                 summary.iteritems() if key in \
                                 SQLiteWrapper.common_keys])
-        insert_dict['julian_day'] = date2dbase(summary['date'])
         insert_dict['storage'] = storage
+        insert_dict['date'] = date2dbase(insert_dict['date'])
         type = emd52type(summary['id'])
         attr_query = "INSERT INTO km_attributes VALUES (?, ?, ?)"
         for key, value in summary['attributes'].iteritems():
@@ -311,10 +313,7 @@ class SQLiteWrapper(object):
         key_query = "("
         value_query = "("
         for key, value in insert_dict.iteritems():
-            if key == 'julian_day':
-                value_query += "julianday(?), "
-            else:
-                value_query += "?, "
+            value_query += "?, "
             key_query += key + ", "
             value_list.append(value)
         key_query = key_query[:-2] + ")"
@@ -355,10 +354,10 @@ class SQLiteWrapper(object):
             elif key == 'id':
                 expr = '%s=?' % replace_type('%s_id', type)
             elif key == 'date_from':
-                expr = 'julian_day>=julianday(?)'
+                expr = 'date>=?'
                 value = date2dbase(value)
             elif key == 'date_to':
-                expr = 'julian_day<julianday(?)'
+                expr = 'date<?'
                 value = date2dbase(value)
             else:
                 #TODO
@@ -447,10 +446,6 @@ class SQLiteWrapper(object):
                                 {'type':'field',
                                  'dimensions':[{'unit':tunit}]})
            --> [('emd5_1', 'name_1'), ('emd5_2', 'name_2'), ...]
-        Limitations:
-        date_from and date_to are converted using the date2dbase method
-        of this module and julianday() of sqlite. This leads to loss of
-        at most the last three digits in ss.ssssss.
         """
         if order_by == None:
             order = ''
