@@ -126,6 +126,14 @@ def get_wildcards(length, char, braces=False, commas=True):
         wc += ')'
     return wc
 
+
+class AnyValue():
+    """Dummy class for use in search queries
+    """
+    def __init__(self):
+        pass
+
+
 class SQLiteWrapper(object):
     """Wrapper class for DC meta data <-> sqlite3
     """
@@ -145,6 +153,7 @@ class SQLiteWrapper(object):
     fc_search_keys = common_search_keys + ['unit', 'dimensions']
     sc_search_keys = common_search_keys + ['columns']
     sortable_keys = common_keys + ['id', 'storage', 'type']
+    any_value = AnyValue()
 
     def __init__(self, database, timeout=60.0):
         """
@@ -397,10 +406,16 @@ class SQLiteWrapper(object):
                 expr = '('
                 new_value = []
                 for attr_key, attr_value in value.iteritems():
-                    expr += '(%s IN (SELECT dc_id FROM km_attributes WHERE '\
-                        'key=? AND value=?))' % replace_type('%s_id', type)
+                    if isinstance(attr_value, AnyValue):
+                        value_expr = ''
+                        new_value.append(attr_key)
+                    else:
+                        value_expr = ' AND value=?'
+                        new_value.extend([attr_key, attr_value.__repr__()])
+                    expr += '(%s IN (SELECT dc_id FROM km_attributes '\
+                        'WHERE key=?%s))' \
+                        % (replace_type('%s_id', type), value_expr)
                     expr += ' AND '
-                    new_value.extend([attr_key, attr_value.__repr__()])
                 expr = expr[:-5] + ')'
                 extend = True
                 value = new_value
@@ -460,6 +475,8 @@ class SQLiteWrapper(object):
           'id': str types: emd5 (==)
           'type': 'field' or 'sample' (==)
           'attributes': dict mapping attr. key to attr. value (==)
+                        use (SQLiteWrapper instance).any_value
+                        or (KM instance).any_value to skip value check
           'storage': str types (==)
           'unit': PhysicalUnit or int or PhysicalQuantity: 1 (==, FC only)
           'dimensions': list of FC search dicts

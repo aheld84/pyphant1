@@ -147,6 +147,11 @@ class SQLiteWrapperTestCase(unittest.TestCase):
                                              'attribute1':'bla1'}},
                 order_by='longname')
             assert search_result == [(u'name', ), (u'name2', )]
+            any_value = self.wrapper.any_value
+            search_result = self.wrapper.get_andsearch_result(
+                ['longname'], {'attributes':{'attribute1':any_value,
+                                             'attribute2':'bla2'}})
+            assert search_result == [(u'name', ), (u'name2', )]
 
 
 if __name__ == "__main__":

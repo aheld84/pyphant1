@@ -60,7 +60,7 @@ from pyphant.core.WebInterface import (HTTPAnswer,
                                        KMHTMLParser,
                                        ThreadedHTTPServer)
 from fmfile import FMFLoader
-from pyphant.core.SQLiteWrapper import SQLiteWrapper
+from pyphant.core.SQLiteWrapper import (SQLiteWrapper, AnyValue)
 
 WAITING_SECONDS_HTTP_SERVER_STOP = 5
 HTTP_REQUEST_DC_URL_PATH = "/request_dc_url"
@@ -196,6 +196,7 @@ class KnowledgeManager(Singleton):
         self._server_id = uuid1()
         self.web_interface = WebInterface(self, True)
         self.dbase = getPyphantPath('/sqlite3/') + "km_meta.sqlite3"
+        self.any_value = AnyValue()
         with SQLiteWrapper(self.dbase) as wrapper:
             wrapper.setup_dbase()
         tmpdir = getPyphantPath(KM_PATH + 'tmp/')
