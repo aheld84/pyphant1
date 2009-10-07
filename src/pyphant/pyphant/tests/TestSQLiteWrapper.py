@@ -138,6 +138,15 @@ class SQLiteWrapperTestCase(unittest.TestCase):
             search_result = self.wrapper.get_andsearch_result(
                 ['unit'], {'type':'field'})
             assert search_result == [(PhysicalQuantity('10.03e-8 mm**-1'), )]
+            search_result = self.wrapper.get_andsearch_result(
+                ['longname'], {'attributes':{'attribute2':'bla2'}},
+                order_by='longname')
+            assert search_result == [(u'name', ), (u'name2', )]
+            search_result = self.wrapper.get_andsearch_result(
+                ['longname'], {'attributes':{'attribute2':'bla2',
+                                             'attribute1':'bla1'}},
+                order_by='longname')
+            assert search_result == [(u'name', ), (u'name2', )]
 
 
 if __name__ == "__main__":

@@ -393,6 +393,17 @@ class SQLiteWrapper(object):
                 expr = '(bu_id IN (SELECT bu_id FROM km_base_units WHERE '\
                     'm=? AND g=? AND s=? AND A=? AND K=? AND mol=? '\
                     'AND cd=? AND rad=? AND sr=? AND EUR=?))'
+            elif key == 'attributes':
+                expr = '('
+                new_value = []
+                for attr_key, attr_value in value.iteritems():
+                    expr += '(%s IN (SELECT dc_id FROM km_attributes WHERE '\
+                        'key=? AND value=?))' % replace_type('%s_id', type)
+                    expr += ' AND '
+                    new_value.extend([attr_key, attr_value.__repr__()])
+                expr = expr[:-5] + ')'
+                extend = True
+                value = new_value
             else:
                 #TODO
                 raise NotImplementedError(key)
