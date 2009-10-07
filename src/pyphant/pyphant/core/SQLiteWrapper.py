@@ -66,8 +66,11 @@ def str2number(str):
     return value
 
 def quantity2dbase(quantity):
-    if isinstance(quantity, (PhysicalQuantity, FloatType, IntType, LongType)):
+    if isinstance(quantity, (FloatType, IntType, LongType)):
         return quantity.__repr__()
+    elif isinstance(quantity, PhysicalQuantity):
+        return "P%s;%s" % (quantity.value.__repr__(),
+                            quantity.getUnitName())
     else:
         raise ValueError("Expected (PhysicalQuantity, FloatType, IntType, "\
                              "LongType) but got %s instead."\
@@ -75,9 +78,9 @@ def quantity2dbase(quantity):
 
 def dbase2quantity(dbase):
     if isinstance(dbase, StringTypes):
-        if dbase.startswith("PhysicalQuantity("):
-            tmp = dbase.split('(')[1].split(',')
-            return PhysicalQuantity(str2number(tmp[0]), tmp[1][1:-2])
+        if dbase.startswith("P"):
+            tmp = dbase[1:].split(';')
+            return PhysicalQuantity(str2number(tmp[0]), tmp[1])
         else:
             return str2number(dbase)
     else:

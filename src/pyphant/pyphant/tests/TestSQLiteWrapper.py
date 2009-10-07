@@ -135,6 +135,9 @@ class SQLiteWrapperTestCase(unittest.TestCase):
                 ['longname'], {'unit':PhysicalQuantity(20, '1/m'),
                                'type':'field'})
             assert search_result == [(u'name', )]
+            search_result = self.wrapper.get_andsearch_result(
+                ['unit'], {'type':'field'})
+            assert search_result == [(PhysicalQuantity('10.03e-8 mm**-1'), )]
 
 
 if __name__ == "__main__":
