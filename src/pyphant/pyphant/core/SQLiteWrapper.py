@@ -274,10 +274,22 @@ class SQLiteWrapper(object):
                       self.cursor)
         #clean tmp:
         self.cursor.execute("DELETE FROM km_temporary")
+        #add IndexMarker dummy if not present yet:
+        from pyphant.core.DataContainer import IndexMarker
+        im = IndexMarker()
+        im_summary = {'id':'IndexMarker', 'longname':im.longname,
+                      'shortname':im.shortname, 'hash':im.hash,
+                      'creator':None, 'machine':None,
+                      'date':'xxxx-xx-xx_xx:xx:xx.xxxxxx',
+                      'unit':1, 'dimensions':['IndexMarker'], 'attributes':{}}
+        self.set_entry(im_summary, None)
 
     def has_entry(self, id):
         exe = self.cursor.execute
-        type = emd52type(id)
+        if id == 'IndexMarker':
+            type = 'fc'
+        else:
+            type = emd52type(id)
         exe("SELECT %s_id FROM km_%s WHERE %s_id=?" % (type, type, type),
             (id, ))
         return self.cursor.fetchone() != None
@@ -301,10 +313,9 @@ class SQLiteWrapper(object):
             l_row_id = tmp[0]
         insert_dict['bu_id'] = l_row_id
         dimension_query = "INSERT INTO km_fc_dimensions VALUES (?, ?, ?)"
-        if summary['dimensions'] != [u'IndexMarker']:
-            for dim_id, dim_index in zip(summary['dimensions'],
-                                         range(len(summary['dimensions']))):
-                exe(dimension_query, (summary['id'], dim_id, dim_index))
+        for dim_id, dim_index in zip(summary['dimensions'],
+                                     range(len(summary['dimensions']))):
+            exe(dimension_query, (summary['id'], dim_id, dim_index))
 
     def set_entry(self, summary, storage, temporary=False):
         """Sets the meta data in the database according to the
@@ -328,7 +339,10 @@ class SQLiteWrapper(object):
                                 SQLiteWrapper.common_keys])
         insert_dict['storage'] = storage
         insert_dict['date'] = date2dbase(insert_dict['date'])
-        type = emd52type(summary['id'])
+        if summary['id'] == 'IndexMarker':
+            type = 'fc'
+        else:
+            type = emd52type(summary['id'])
         attr_query = "INSERT INTO km_attributes VALUES (?, ?, ?)"
         for key, value in summary['attributes'].iteritems():
             assert isinstance(key, StringTypes)
@@ -374,6 +388,61 @@ class SQLiteWrapper(object):
         else:
             return key
 
+    def translate_unit_search(self, value):
+        if isinstance(value, PhysicalQuantity):
+            value = value.unit.powers
+        elif isinstance(value, (IntType, LongType, FloatType)):
+            value = [0] * 10
+        elif isinstance(value, PhysicalUnit):
+            value = value.powers
+        else:
+            raise ValueError(value)
+        expr = '(bu_id IN (SELECT bu_id FROM km_base_units WHERE '\
+            'm=? AND g=? AND s=? AND A=? AND K=? AND mol=? '\
+            'AND cd=? AND rad=? AND sr=? AND EUR=?))'
+        return (expr, value, True)
+
+    def translate_attr_search(self, value, type):
+        expr = '('
+        new_value = []
+        for attr_key, attr_value in value.iteritems():
+            if isinstance(attr_value, AnyValue):
+                value_expr = ''
+                new_value.append(attr_key)
+            else:
+                value_expr = ' AND value=?'
+                new_value.extend([attr_key, attr_value.__repr__()])
+            expr += '(%s IN (SELECT dc_id FROM km_attributes '\
+                'WHERE key=?%s))' \
+                % (replace_type('%s_id', type), value_expr)
+            expr += ' AND '
+        expr = expr[:-5] + ')'
+        return (expr, new_value, True)
+
+    def translate_list_search(self, key, value, type):
+        id_str = replace_type('%s_id', type)
+        if key == 'columns':
+            table = 'km_sc_columns'
+            index_str = 'fc_index'
+            lid_str = 'fc_id'
+        else:
+            table = 'km_fc_dimensions'
+            index_str = 'dim_index'
+            lid_str = 'dim_id'
+        qry = '(%s IN (SELECT %s FROM %s WHERE %s=? AND (%s IN (%s))))'\
+            % (id_str, id_str, table, index_str, lid_str, '%s')
+        new_value = []
+        expr = '('
+        for fc_search_dict, fc_index in zip(value, range(len(value))):
+            fc_query, fc_values = self.get_andsearch_query(
+                'field', ['id'], fc_search_dict, False)
+            expr += qry % (fc_query, )
+            new_value.append(fc_index)
+            if fc_values != None:
+                new_value.extend(fc_values)
+            expr += ' AND '
+        return (expr[:-5] + ')', new_value, True)
+
     def translate_search_dict(self, type, search_dict):
         where = ''
         values = []
@@ -390,37 +459,13 @@ class SQLiteWrapper(object):
                 expr = 'date<?'
                 value = date2dbase(value)
             elif key == 'unit':
-                if isinstance(value, PhysicalQuantity):
-                    value = value.unit.powers
-                elif isinstance(value, (IntType, LongType, FloatType)):
-                    value = [0] * 10
-                elif isinstance(value, PhysicalUnit):
-                    value = value.powers
-                else:
-                    raise ValueError(value)
-                extend = True
-                expr = '(bu_id IN (SELECT bu_id FROM km_base_units WHERE '\
-                    'm=? AND g=? AND s=? AND A=? AND K=? AND mol=? '\
-                    'AND cd=? AND rad=? AND sr=? AND EUR=?))'
+                expr, value, extend = self.translate_unit_search(value)
             elif key == 'attributes':
-                expr = '('
-                new_value = []
-                for attr_key, attr_value in value.iteritems():
-                    if isinstance(attr_value, AnyValue):
-                        value_expr = ''
-                        new_value.append(attr_key)
-                    else:
-                        value_expr = ' AND value=?'
-                        new_value.extend([attr_key, attr_value.__repr__()])
-                    expr += '(%s IN (SELECT dc_id FROM km_attributes '\
-                        'WHERE key=?%s))' \
-                        % (replace_type('%s_id', type), value_expr)
-                    expr += ' AND '
-                expr = expr[:-5] + ')'
-                extend = True
-                value = new_value
+                expr, value, extend = self.translate_attr_search(value, type)
+            elif key == 'columns' or key == 'dimensions':
+                expr, value, extend = self.translate_list_search(
+                    key, value, type)
             else:
-                #TODO
                 raise NotImplementedError(key)
             where += expr + " AND "
             if extend:
@@ -478,7 +523,7 @@ class SQLiteWrapper(object):
                         use (SQLiteWrapper instance).any_value
                         or (KM instance).any_value to skip value check
           'storage': str types (==)
-          'unit': PhysicalUnit or int or PhysicalQuantity: 1 (==, FC only)
+          'unit': PhysicalUnit or number or PhysicalQuantity (==, FC only)
           'dimensions': list of FC search dicts
                         (see above definitions, FC only)
           'columns': list of FC search dicts (see above definitions, SC only)
@@ -494,9 +539,9 @@ class SQLiteWrapper(object):
         Get list of all longnames:
            get_andsearch_result(['longname'], distinct=True)
            --> [('name1', ), ('name2', ), ...]
-        Get id and shortname of all 1d FCs that are parametrized by
-        a time dimension:
-           tunit = PhysicalQuantity(1, 's').unit
+        Get id and shortname of all FCs that are parametrized by
+        a time dimension along the primary axis:
+           tunit = PhysicalQuantity(1, 's')
            get_andsearch_result(['id', 'shortname'],
                                 {'type':'field',
                                  'dimensions':[{'unit':tunit}]})

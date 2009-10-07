@@ -65,12 +65,13 @@ class SQLiteWrapperTestCase(unittest.TestCase):
                         'attributes':{'attribute1':'bla1',
                                       'attribute2':'bla2'},
                         'hash':'12345678910',
-                        'dimensions':[u'IndexMarker', u'2ndid']}
+                        'dimensions':[u'IndexMarker']}
+        self.summary['dimensions'].append(self.summary['id'])
         self.sc_summary = self.summary.copy()
         self.sc_summary['id'] = self.summary['id'][:-5] + 'sample'
         self.sc_summary.pop('unit')
         self.sc_summary.pop('dimensions')
-        self.sc_summary['columns'] = [self.summary['id'], 'dummy']
+        self.sc_summary['columns'] = [self.summary['id'], self.summary['id']]
         self.sc_summary['type'] = 'sample'
         self.sc_summary['longname'] = u'name2'
 
@@ -104,7 +105,7 @@ class SQLiteWrapperTestCase(unittest.TestCase):
             rowwrapper = self.wrapper[self.sc_summary['id']]
             assert rowwrapper['columns'] == self.sc_summary['columns']
             emd5list = self.wrapper.get_emd5_list()
-            assert len(emd5list) == 2
+            assert len(emd5list) == 3
             assert self.summary['id'] in emd5list
             assert self.sc_summary['id'] in emd5list
             keys = self.wrapper.common_result_keys
@@ -130,13 +131,13 @@ class SQLiteWrapperTestCase(unittest.TestCase):
             assert search_result == expected
             search_result = self.wrapper.get_andsearch_result(
                 ['longname'], order_by='longname')
-            assert search_result == [(u'name', ), (u'name2', )]
+            assert search_result == [(u'index', ), (u'name', ), (u'name2', )]
             search_result = self.wrapper.get_andsearch_result(
                 ['longname'], {'unit':PhysicalQuantity(20, '1/m'),
                                'type':'field'})
             assert search_result == [(u'name', )]
             search_result = self.wrapper.get_andsearch_result(
-                ['unit'], {'type':'field'})
+                ['unit'], {'type':'field', 'longname':'name'})
             assert search_result == [(PhysicalQuantity('10.03e-8 mm**-1'), )]
             search_result = self.wrapper.get_andsearch_result(
                 ['longname'], {'attributes':{'attribute2':'bla2'}},
@@ -152,6 +153,16 @@ class SQLiteWrapperTestCase(unittest.TestCase):
                 ['longname'], {'attributes':{'attribute1':any_value,
                                              'attribute2':'bla2'}})
             assert search_result == [(u'name', ), (u'name2', )]
+            search_result = self.wrapper.get_andsearch_result(
+                ['longname'], {'type':'sample',
+                               'columns':[{'unit':PhysicalQuantity(2.0, '1/m')}
+                                          , {}]})
+            assert search_result == [(u'name2', )]
+            search_result = self.wrapper.get_andsearch_result(
+                ['longname'],
+                {'type':'field',
+                 'dimensions':[{}, {'unit':PhysicalQuantity(2.0, '1/m')}]})
+            assert search_result == [(u'name', )]
 
 
 if __name__ == "__main__":
