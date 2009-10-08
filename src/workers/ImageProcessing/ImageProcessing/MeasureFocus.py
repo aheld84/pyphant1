@@ -46,6 +46,10 @@ from scipy import ndimage
 from ImageProcessing.AutoFocus import FocusSlice
 
 def sliceAndMeasure(image, labels, grow, human_output):
+    from pyphant.core.KnowledgeManager import KnowledgeManager
+    km = KnowledgeManager.getInstance()
+    km.registerDataContainer(image)
+    mask_parent = image.id
     data = image.data
     dy = (image.dimensions[0].data[1] - image.dimensions[0].data[0])
     dy *= image.dimensions[0].unit
@@ -80,7 +84,7 @@ def sliceAndMeasure(image, labels, grow, human_output):
                                                            image.dimensions,
                                                            [dy, dx])]
                 resdata[label - 1] = FocusSlice(dimslices, focus * unit,
-                                                mask)
+                                                mask_parent, mask_slices=sl)
     longname = "MeasureFocus"
     if human_output:
         result = DataContainer.FieldContainer(resdata,

@@ -100,39 +100,40 @@ class Cube(object):
 
 
 class FocusSlice(Cube):
-    def __init__(self, slices, focus, mask):
+    def __init__(self, slices, focus, mask_parent, mask_slices):
         Cube.__init__(self, slices)
         self.focus = focus
-        from types import StringTypes
-        from pyphant.core.KnowledgeManager import KnowledgeManager
-        if isinstance(mask, StringTypes):
-            km = KnowledgeManager.getInstance()
-            maskfc = km.getDataContainer(unicode(mask).encode('utf-8'))
-            self.mask = maskfc.data
-            self.maskEmd5 = unicode(mask).encode('utf-8')
-        else:
-            km = KnowledgeManager.getInstance()
-            maskfc = FieldContainer(mask, longname="FocusSliceMask")
-            maskfc.seal()
-            km.registerDataContainer(maskfc)
-            self.maskEmd5 = unicode(maskfc.id).encode('utf-8')
-            self.mask = mask
+        self.mask_parent = mask_parent
+        self.mask_slices = mask_slices
+        self._mask = None
 
     def __str__(self):
-        retstr = "FocusSlice(slices=%s, focus=%s, mask=%s)"
-        return retstr % (self.slices, self.focus, self.mask)
+        return self.__repr__()
 
     def __repr__(self):
-        retstr = "FocusSlice(%s, %s, '%s')"
+        retstr = "FocusSlice(%s, %s, %s, %s)"
         return retstr % (self.slices.__repr__(),
                          self.focus.__repr__(),
-                         self.maskEmd5)
+                         self.mask_parent.__repr__(),
+                         self.mask_slices.__repr__())
 
     def __eq__(self, other):
-        eqflag = self.slices == other.slices
-        eqflag &= self.focus == other.focus
-        eqflag &= (self.mask == other.mask).all()
-        return eqflag
+        if isinstance(other, FocusSlice):
+            eqflag = self.slices == other.slices
+            eqflag &= self.focus == other.focus
+            eqflag &= (self.mask == other.mask).all()
+            return eqflag
+        else:
+            return False
+
+    def getMask(self):
+        if self._mask == None:
+            from pyphant.core.KnowledgeManager import KnowledgeManager
+            km = KnowledgeManager.getInstance()
+            self._mask = km.getDataContainer(
+                self.mask_parent).data[self.mask_slices]
+        return self._mask
+    mask = property(getMask)
 
 
 class ZTube(object):

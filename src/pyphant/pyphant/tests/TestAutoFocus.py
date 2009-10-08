@@ -45,6 +45,7 @@ from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 from pyphant.core.DataContainer import FieldContainer, SampleContainer
 from ImageProcessing import AutoFocus as AF
 import numpy
+from pyphant.core.KnowledgeManager import KnowledgeManager
 
 
 class CubeTestCase(unittest.TestCase):
@@ -101,15 +102,22 @@ class CubeTestCase(unittest.TestCase):
 class ZTubeTestCase(unittest.TestCase):
     def setUp(self):
         slices = [slice(0, 10), slice(0, 10)]
-        mask = numpy.ones((10, 10), dtype=bool)
-        fslice = AF.FocusSlice(slices, 10.0, mask)
+        mask = numpy.ones((20, 20), dtype=bool)
+        mask_fc = FieldContainer(mask)
+        mask_fc.seal()
+        km = KnowledgeManager.getInstance()
+        km.registerDataContainer(mask_fc, temporary=True)
+        mask_parent = mask_fc.id
+        fslice = AF.FocusSlice(slices, 10.0, mask_parent, slices)
         self.ztube = AF.ZTube(fslice, 0, 1, 0.5, 0.5)
         testslices1 = [slice(3, 12), slice(2, 9)]
         mask1 = numpy.ones((9, 7), dtype=bool)
-        self.testfslice1 = AF.FocusSlice(testslices1, 12.0, mask1)
+        self.testfslice1 = AF.FocusSlice(testslices1, 12.0, mask_parent,
+                                         testslices1)
         testslices2 = [slice(7, 17), slice(8, 16)]
         mask2 = numpy.ones((10, 8), dtype=bool)
-        self.testfslice2 = AF.FocusSlice(testslices2, 8.0, mask2)
+        self.testfslice2 = AF.FocusSlice(testslices2, 8.0, mask_parent,
+                                         testslices2)
 
     def tearDown(self):
         pass
@@ -138,16 +146,22 @@ class AutoFocusTestCase(unittest.TestCase):
                      PhysicalQuantity('1.9mm')),
                slice(PhysicalQuantity('1.7mm'),
                      PhysicalQuantity('3.4mm'))]
-        mask1 = numpy.ones((10, 20), dtype=bool)
-        mask2 = numpy.ones((11, 17), dtype=bool)
-        fsl1 = AF.FocusSlice(sl1, PhysicalQuantity('10.0mm**-3'), mask1)
-        self.fsl2 = AF.FocusSlice(sl2, PhysicalQuantity('12.0mm**-3'), mask2)
+        mask = numpy.ones((11, 20), dtype=bool)
+        mask_fc = FieldContainer(mask)
+        mask_fc.seal()
+        mask_parent = mask_fc.id
+        km = KnowledgeManager.getInstance()
+        km.registerDataContainer(mask_fc, temporary=True)
+        fsl1 = AF.FocusSlice(sl1, PhysicalQuantity('10.0mm**-3'), mask_parent,
+                             [slice(0, 10), slice(0, 20)])
+        self.fsl2 = AF.FocusSlice(sl2, PhysicalQuantity('12.0mm**-3'),
+                                  mask_parent, [slice(0, 11), slice(0, 17)])
         fc1 = FieldContainer(numpy.array([fsl1]))
         fc2 = FieldContainer(numpy.array([self.fsl2]))
         fc1.seal()
         fc2.seal()
-        km.registerDataContainer(fc1)
-        km.registerDataContainer(fc2)
+        km.registerDataContainer(fc1, temporary=True)
+        km.registerDataContainer(fc2, temporary=True)
         columns = [FieldContainer(numpy.array([.5, 1.0]),
                                   unit=PhysicalQuantity('1.0mm'),
                                   longname='z-value'),
@@ -181,17 +195,21 @@ class FocusSliceTestCase(unittest.TestCase):
         pass
 
     def testSaveLoadFocusSlice(self):
+        km = KnowledgeManager.getInstance()
         mask = numpy.ones((100, 150), dtype=bool)
+        mask_fc = FieldContainer(mask)
+        mask_fc.seal()
+        mask_parent = mask_fc.id
+        km.registerDataContainer(mask_fc, temporary=True)
         slices = [slice(PhysicalQuantity('100mm'),
                         PhysicalQuantity('200mm')),
                   slice(PhysicalQuantity('150mm'),
                         PhysicalQuantity('350mm'))]
-        fslice = AF.FocusSlice(slices, PhysicalQuantity('10mm**-3'), mask)
+        fslice = AF.FocusSlice(slices, PhysicalQuantity('10mm**-3'),
+                               mask_parent, [slice(0, 100), slice(0, 150)])
         fc = FieldContainer(numpy.array([fslice for xr in xrange(1000)]))
         fc.seal()
-        from pyphant.core.KnowledgeManager import KnowledgeManager
-        km = KnowledgeManager.getInstance()
-        km.registerDataContainer(fc)
+        km.registerDataContainer(fc, temporary=True)
         returnfc = km.getDataContainer(fc.id, use_cache=False)
         assert returnfc.data[0].slices[0].start == fc.data[0].slices[0].start
 
