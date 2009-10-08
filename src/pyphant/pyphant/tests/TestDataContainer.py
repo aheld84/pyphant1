@@ -560,15 +560,15 @@ class CommonSampleContainerTests(SampleContainerTest):
         except TypeError, e:
             pass
         else:
-            self.fail("Modification of sealed FieldContainer was not \
-prohibited.")
+            self.fail("Modification of sealed FieldContainer was not "
+                      "prohibited.")
         try:
             sample['i'].data[0] = 4
         except RuntimeError, e:
             pass
         else:
-            self.fail("Modification of sealed FieldContainer was not \
-prohibited.")
+            self.fail("Modification of sealed FieldContainer was not "
+                      "prohibited.")
 
     def testSingleSample(self):
         #string = numpy.rec.fromrecords([(s,) for s in [u'Hello',u'World!',u'Bäh!']])
@@ -745,8 +745,8 @@ class SampleContainerSlicingTests(SampleContainerTest):
                               [True, True, False, True, True])
 
     def testPrecedence2dExpression(self):
-        self._compareExpected('0m > "l" or not ("t" == 20s or "t" == 40s) and \
-(("l" == -20000m or "t" == 40s) or "l" == 5500m)',
+        self._compareExpected('0m > "l" or not ("t" == 20s or "t" == 40s) and '
+                              '(("l" == -20000m or "t" == 40s) or "l" == 5500m)',
                               [True, False, False, False, True])
 
     def testNestedTuple2dExpression(self):
@@ -792,8 +792,8 @@ class FieldContainerRescaling(unittest.TestCase):
                                rescale=True)
         nt.assert_array_equal(self.testData,
                               field.data,
-                              "Rescale option shouldn't do anything for \
-unitless fields.")
+                              "Rescale option shouldn't do anything for "
+                              "unitless fields.")
 
     def testRescaleBaseUnitsFloats(self):
         field = FieldContainer(copy.deepcopy(self.testData).astype('f'),
@@ -855,8 +855,8 @@ unitless fields.")
                                rescale=True)
         self.assertEqual(field.unit,
                          self.unit,
-                         "An integer field should not be rescaled, but should \
-hold the normation constant in its unit.")
+                         "An integer field should not be rescaled, but should "
+                         "hold the normation constant in its unit.")
 
     def testDimensionsRescaling(self):
         """

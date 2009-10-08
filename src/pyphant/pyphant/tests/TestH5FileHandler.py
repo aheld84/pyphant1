@@ -30,6 +30,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import with_statement
+
 u"""Provides unittest classes for H5FileHandler.
 """
 
@@ -84,8 +86,9 @@ class FCSaveLoadTestCase(FieldContainerTestCase):
 
     def testSaveLoad(self):
         handler = H5FH(self.fcFilename, 'w')
-        handler.saveDataContainer(self.fc)
-        fcLoaded = handler.loadDataContainer(self.fc.id)
+        with handler:
+            handler.saveDataContainer(self.fc)
+            fcLoaded = handler.loadDataContainer(self.fc.id)
         self.assertEqual(self.fc, fcLoaded)
 
 
@@ -96,14 +99,16 @@ class FCReadOnlyTestCase(FieldContainerTestCase):
                                             prefix = 'pyphantH5FileHandlerTest')
         os.close(osHandle)
         handler = H5FH(self.rofcFilename, 'w')
-        handler.saveDataContainer(self.fc)
+        with handler:
+            handler.saveDataContainer(self.fc)
 
     def tearDown(self):
         os.remove(self.rofcFilename)
 
     def testReadOnly(self):
         handler = H5FH(self.rofcFilename, 'r')
-        fcLoaded = handler.loadDataContainer(self.fc.id)
+        with handler:
+            fcLoaded = handler.loadDataContainer(self.fc.id)
         self.assertEqual(self.fc, fcLoaded)
 
 
@@ -141,8 +146,9 @@ class SCSaveLoadTestCase(SampleContainerTestCase):
 
     def testSaveLoad(self):
         handler = H5FH(self.scFilename, 'w')
-        handler.saveDataContainer(self.sc)
-        scLoaded = handler.loadDataContainer(self.sc.id)
+        with handler:
+            handler.saveDataContainer(self.sc)
+            scLoaded = handler.loadDataContainer(self.sc.id)
         self.assertEqual(self.sc, scLoaded)
 
 
@@ -153,14 +159,16 @@ class SCReadOnlyTestCase(SampleContainerTestCase):
                                             prefix = 'pyphantH5FileHandlerTest')
         os.close(osHandle)
         handler = H5FH(self.roscFilename, 'w')
-        handler.saveDataContainer(self.sc)
+        with handler:
+            handler.saveDataContainer(self.sc)
 
     def tearDown(self):
         os.remove(self.roscFilename)
 
     def testReadOnly(self):
         handler = H5FH(self.roscFilename, 'r')
-        scLoaded = handler.loadDataContainer(self.sc.id)
+        with handler:
+            scLoaded = handler.loadDataContainer(self.sc.id)
         self.assertEqual(self.sc, scLoaded)
 
 
@@ -171,16 +179,18 @@ class MixedAppendTestCase(SampleContainerTestCase):
                                             prefix = 'pyphantH5FileHandlerTest')
         os.close(osHandle)
         handler = H5FH(self.appscFilename, 'w')
-        handler.saveDataContainer(self.fc)
+        with handler:
+            handler.saveDataContainer(self.fc)
 
     def tearDown(self):
         os.remove(self.appscFilename)
 
     def testAppend(self):
         handler = H5FH(self.appscFilename, 'a')
-        handler.saveDataContainer(self.sc)
-        fcLoaded = handler.loadDataContainer(self.fc.id)
-        scLoaded = handler.loadDataContainer(self.sc.id)
+        with handler:
+            handler.saveDataContainer(self.sc)
+            fcLoaded = handler.loadDataContainer(self.fc.id)
+            scLoaded = handler.loadDataContainer(self.sc.id)
         self.assertEqual(self.fc, fcLoaded)
         self.assertEqual(self.sc, scLoaded)
 
@@ -192,14 +202,16 @@ class SummaryTestCase(SampleContainerTestCase):
                                             prefix = 'pyphantH5FileHandlerTest')
         os.close(osHandle)
         handler = H5FH(self.summFilename, 'w')
-        handler.saveDataContainer(self.sc)
+        with handler:
+            handler.saveDataContainer(self.sc)
 
     def tearDown(self):
         os.remove(self.summFilename)
 
     def testSummary(self):
         handler = H5FH(self.summFilename, 'r')
-        summarydict = handler.loadSummary()
+        with handler:
+            summarydict = handler.loadSummary()
         scsummary = summarydict[self.sc.id]
         fcsummary = summarydict[self.fc.id]
         self.assertEqual(scsummary['id'], self.sc.id)
@@ -208,6 +220,10 @@ class SummaryTestCase(SampleContainerTestCase):
         self.assertEqual(fcsummary['longname'], self.fc.longname)
         self.assertEqual(scsummary['shortname'], self.sc.shortname)
         self.assertEqual(fcsummary['shortname'], self.fc.shortname)
+        self.assertEqual(scsummary['creator'], self.sc.creator)
+        self.assertEqual(fcsummary['creator'], self.fc.creator)
+        self.assertEqual(scsummary['machine'], self.sc.machine)
+        self.assertEqual(fcsummary['machine'], self.fc.machine)
         self.assertEqual(scsummary['attributes'], self.sc.attributes)
         self.assertEqual(fcsummary['attributes'], self.fc.attributes)
         self.assertEqual(fcsummary['unit'], self.fc.unit)

@@ -28,6 +28,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from __future__ import with_statement
 
 """
 This module provides the KnowledgeManager class as well as some helper methods
@@ -65,7 +66,7 @@ HTTP_REQUEST_DC_URL_PATH = "/request_dc_url"
 HTTP_REQUEST_KM_ID_PATH = "/request_km_id"
 HTTP_REQUEST_DC_DETAILS_PATH = "/request_dc_details?dcid="
 # Maximum number of DCs to store in cache:
-CACHE_SIZE = 50
+CACHE_SIZE = 10
 # Timeout for cached DCs in seconds:
 CACHE_TIMEOUT = 3600
 # Number of hits a DC has to have at least in order to be cached:
@@ -193,8 +194,6 @@ class KnowledgeManager(Singleton):
         """
         if self.isServerRunning():
             self.stopServer()
-        for handler in self.H5FileHandlers.itervalues():
-            handler.__del__()
 
     def registerH5(self, filename, mode = 'a', registerContents = True):
         """
@@ -242,7 +241,8 @@ class KnowledgeManager(Singleton):
         filename -- path to the HDF5 file
         """
         h5fh = self.getH5FileHandler(filename)
-        summaryDict = h5fh.loadSummary()
+        with h5fh:
+            summaryDict = h5fh.loadSummary()
         for dcId, summary in summaryDict.items():
             if not self._storage.has_key(dcId):
                 self._storage[dcId] = {'lasthit':None,
@@ -469,7 +469,8 @@ class KnowledgeManager(Singleton):
             filename = getFilenameFromDcId(dc.id)
             self.registerH5(filename, 'w', False)
             handler = self.getH5FileHandler(filename)
-            handler.saveDataContainer(dc)
+            with handler:
+                handler.saveDataContainer(dc)
             self.refreshH5(filename)
 
     def registerFMF(self, filename):
@@ -567,8 +568,8 @@ URL '%s'...", km_id, km_url)
                                                   dir = self._http_dir)
             os.close(osFileId)
             handler = H5FileHandler(filename, 'w')
-            handler.saveDataContainer(dc)
-            del handler
+            with handler:
+                handler.saveDataContainer(dc)
             dc_url = self._getServerURL() + "/" + os.path.basename(filename)
         else:
             try:
@@ -607,18 +608,19 @@ URL '%s'...", km_id, km_url)
                                        dc_id)
             if not found_in_cache:
                 try:
-                    dc = dcinfo['filehandler'].loadDataContainer(dc_id)
+                    handler = dcinfo['filehandler']
+                    with handler:
+                        dc = handler.loadDataContainer(dc_id)
                 except Exception, excep:
                     raise KnowledgeManagerException("DC ID '%s' known, but "
-                                                    "cannot be read from file "
-                                                    "'%s'." % (dc_id,
-                                                               localfilename),
-                                                    excep)
+                                                    "cannot be read"
+                                                    "." % (dc_id, ), excep)
                 if use_cache and dcinfo['hitcount'] >= CACHE_THRESHHOLD:
                     docache = False
                     if len(self._cache) >= CACHE_SIZE:
                         minhitcount = sys.maxint
-                        for cachedid, cacheddcinfo in self._cache.iteritems():
+                        for cachedid in self._cache.keys():
+                            cacheddcinfo = self._storage[cachedid]
                             if (now - cacheddcinfo['lasthit']) >= CACHE_TIMEOUT:
                                 cacheddcinfo['hitcount'] = 0
                                 self._cache.pop(cachedid)
@@ -643,7 +645,8 @@ URL '%s'...", km_id, km_url)
             filename = getFilenameFromDcId(dc_id)
             urllib.urlretrieve(dc_url, filename)
             self.registerH5(filename)
-            dc = self.H5FileHandlers[filename].loadDataContainer(dc_id)
+            with self.H5FileHandlers[filename] as handler:
+                dc = handler.loadDataContainer(dc_id)
         else:
             raise KnowledgeManagerException("DC ID '%s' is unknown."
                                             % (dc_id, ))

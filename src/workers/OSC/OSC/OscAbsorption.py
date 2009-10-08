@@ -137,7 +137,8 @@ class ColumnExtractor(Worker.Worker):
                                                    dimensions = [dim],
                                                    longname=col.longname,
                                                    shortname=col.shortname)
-        result.attributes = osc.attributes
+        #result.attributes = osc.attributes
+        result.attributes = col.attributes
         result.seal()
         return result
 
@@ -223,7 +224,7 @@ class OscMapper(Worker.Worker):
         xf, yf, h = tuple([ con.data for con in cons ])
         result = self.calcNormal(osc, xCon, yCon, fCon, xf, yf, h)
         if self.paramOverrideV.value:
-            vs = self.paramVmin.value, self.paramVmax.value
+            vs = str(self.paramVmin.value), str(self.paramVmax.value)
             from pyphant.quantities.PhysicalQuantities import (
                 isPhysicalQuantity, PhysicalQuantity)
             try:

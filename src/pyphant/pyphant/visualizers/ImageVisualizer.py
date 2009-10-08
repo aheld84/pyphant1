@@ -48,7 +48,8 @@ import pylab, scipy, numpy
 from pyphant.core.Connectors import TYPE_IMAGE
 from pyphant.wxgui2.DataVisReg import DataVisReg
 from pyphant.quantities.PhysicalQuantities import isPhysicalQuantity
-from NonUniformImage import NonUniformImage
+#from NonUniformImage import NonUniformImage
+from matplotlib.image import NonUniformImage
 
 class F(pylab.Formatter):
     def __init__(self, container, *args, **kwargs):
@@ -75,15 +76,17 @@ class ImageVisualizer(object):
             yc=event.ydata
             xi = numpy.abs(x.data-xc).argmin()
             yi = numpy.abs(y.data-yc).argmin()
-            if (self.fieldContainer.mask != None) and self.fieldContainer.mask[yi, xi]:
+            if ((self.fieldContainer.mask != None)
+                and self.fieldContainer.mask[yi, xi]):
                 val = "n/a"
             else:
                 try:
-                    val = self.fieldContainer.data[yi, xi]*self.fieldContainer.unit
+                    val = self.fieldContainer.data[yi, xi]
+                    val *= self.fieldContainer.unit
                 except IndexError:
                     val = "nan"
-            xval = xc*x.unit
-            yval = yc*y.unit
+            xval = xc * x.unit
+            yval = yc * y.unit
             def format(val):
                 if not isPhysicalQuantity(val):
                     if type(val) in (type(' '),type(u' ')):
@@ -95,7 +98,8 @@ class ImageVisualizer(object):
                 return valstr
             labels = map(format,[xval,yval,val])
             labels.insert(0,zLabel)
-            self.figure.canvas.toolbar.set_message("%s(%s,%s) = %s" % tuple(labels))
+            self.figure.canvas.toolbar.set_message("%s(%s,%s) = %s"
+                                                   % tuple(labels))
         else:
             self.figure.canvas.toolbar.set_message("outside axis")
 
@@ -109,7 +113,8 @@ class ImageVisualizer(object):
         xmax=scipy.amax(x)
         ymin=scipy.amin(y)
         ymax=scipy.amax(y)
-        #Support for images with non uniform axes adapted from python-matplotlib-doc/examples/pcolor_nonuniform.py
+        #Support for images with non uniform axes adapted
+        #from python-matplotlib-doc/examples/pcolor_nonuniform.py
         ax = self.figure.add_subplot(111)
         vmin = self.fieldContainer.attributes.get('vmin', None)
         vmax = self.fieldContainer.attributes.get('vmax', None)
@@ -145,5 +150,17 @@ class ImageVisualizer(object):
             pylab.ion()
             pylab.show()
 
-DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, ImageVisualizer)
+class ImageSaver(object):
+    name = 'Save Greyscale Image'
+    def __init__(self, fieldContainer, show=True):
+        self.fieldContainer = fieldContainer
+        self.show = show
+        #testing only:
+        print("Enter filename: ")
+        filename = raw_input()
+        if filename != "":
+            scipy.misc.imsave('/Users/aheld/CiSE/series/output/' + filename,
+                              fieldContainer.data)
 
+DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, ImageVisualizer)
+DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, ImageSaver)

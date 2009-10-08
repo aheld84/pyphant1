@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,8 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The OSC Toolbox holds workers for processing data coming from organic
-solar cells.
+TODO
 """
 
 __id__ = "$Id$"
@@ -39,11 +38,38 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-workers=[
-    "Emd5Src",
-    "BatchHead",
-    "BatchTail",
-    "BatchExtractor",
-    "ParameterRun"
-    ]
+from pyphant.core import Worker, Connectors, Param, DataContainer
+import ImageProcessing
+import numpy, copy
 
+def gradient(data):
+    res = numpy.sqrt(sum(numpy.square(numpy.array(numpy.gradient(data)))))
+    return (res * 255.0).astype(int) / 361
+
+
+class Gradient(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "Gradient"
+    _sockets = [("image", Connectors.TYPE_IMAGE)]
+
+    @Worker.plug(Connectors.TYPE_IMAGE)
+    def gradientWorker(self, image, subscriber=0):
+        for dim in image.dimensions:
+            assert dim.unit == image.dimensions[0].unit, ("Other cases not "
+                                                          "implemented!")
+        newdata = gradient(image.data)
+        longname = "Gradient"
+        result = DataContainer.FieldContainer(
+            newdata,
+            (361.0 / 255.0) * (image.unit / image.dimensions[0].unit),
+            None,
+            copy.deepcopy(image.mask),
+            copy.deepcopy(image.dimensions),
+            longname,
+            image.shortname,
+            copy.deepcopy(image.attributes),
+            False)
+        result.seal()
+        return result

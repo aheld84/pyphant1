@@ -48,13 +48,20 @@ workers=[
     "DistanceMapper",
     "EdgeFillWorker",
     "EdgeTouchingFeatureRemover",
+    "EnhanceContrast",
     "FilterWorker",
+    "FindLocalExtrema",
+    "FitBackground",
+    "Gradient",
     "ImageLoaderWorker",
     "InvertWorker",
     "Medianiser",
+    "MeasureFocus",
+    "NDImageWorker",
     "SkeletonizeFeature",
     "ThresholdingWorker",
     "UltimatePointsCalculator",
+    "Watershed"
     ]
 
 def isFeature(point):

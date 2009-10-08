@@ -43,7 +43,7 @@ import pkg_resources
 pkg_resources.require("pyphant")
 from pyphant.core.KnowledgeManager import KnowledgeManager
 import pyphant.core.PyTablesPersister as ptp
-from pyphant.core.FieldContainer import FieldContainer
+from pyphant.core.DataContainer import FieldContainer
 import numpy as N
 import tables
 import urllib
@@ -73,11 +73,14 @@ class KnowledgeManagerTestCase(unittest.TestCase):
 
     def testGetHTTPFile(self):
         host = "omnibus.uni-freiburg.de"
-        remote_dir = "/~mr78/pyphant-test"
+        remote_dir = "/~s8klzimm"
+        #remote_dir = "/~mr78/pyphant-test"
+        #host = "idefix.physik.uni-freiburg.de"
+        #remote_dir = "/~zklaus"
         url = "http://" + host + remote_dir + "/knowledgemanager-http-test.h5"
         # Get remote file and load DataContainer
         filename, headers = urllib.urlretrieve(url)
-        h5 = tables.openFile(filename)
+        h5 = tables.openFile(filename, 'r')
         for g in h5.walkGroups("/results"):
             if (len(g._v_attrs.TITLE)>0) \
                     and (r"\Psi" in g._v_attrs.shortname):
@@ -127,6 +130,18 @@ current: I(V) [A]
         dc_id = km.registerFMF(filename)
         os.remove(filename)
         km.getDataContainer(dc_id)
+
+    def testCache(self):
+        km = KnowledgeManager.getInstance()
+        fcids = []
+        for xr in xrange(20):
+            fc = FieldContainer(N.array([1, 2, xr]))
+            fc.seal()
+            km.registerDataContainer(fc)
+            fcids.append(fc.id)
+        for fcid in fcids:
+            for rep in xrange(10):
+                fc = km.getDataContainer(fcid)
 
 
 if __name__ == "__main__":

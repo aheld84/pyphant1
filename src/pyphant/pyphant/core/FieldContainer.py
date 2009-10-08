@@ -276,17 +276,16 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         self.lock.release()
         return res
 
-    def generateHash(self):
-        m = hashlib.md5()
+    def generateHash(self, m=None):
+        if m == None:
+            m = hashlib.md5()
+        super(FieldContainer, self).generateHash(m)
         m.update(str(self.data.tolist()))
         m.update(str(self.unit))
         if self.error!=None:
             m.update(str(self.error.tolist()))
         if self.mask!=None:
             m.update(str(self.mask.tolist()))
-        m.update(str(self.attributes))
-        m.update(self.longname.encode('utf-8'))
-        m.update(self.shortname.encode('utf-8'))
         [m.update(dim.hash) for dim in self._dimensions]
         return enc(m.hexdigest())
 

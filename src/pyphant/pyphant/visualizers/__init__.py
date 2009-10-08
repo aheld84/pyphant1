@@ -51,4 +51,4 @@ if platform.system()=='Linux' and not 'DISPLAY' in os.environ:
 #for module in filter(lambda file: file[-3:]=='.py', files):
 #    if not module == '__init__.py':
 #        exec 'import ' + module[:-3]
-import ImageVisualizer, Chart
+import ImageVisualizer, Chart, KMVisualizer

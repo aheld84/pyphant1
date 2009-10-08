@@ -30,8 +30,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The OSC Toolbox holds workers for processing data coming from organic
-solar cells.
 """
 
 __id__ = "$Id$"
@@ -39,11 +37,29 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-workers=[
-    "Emd5Src",
-    "BatchHead",
-    "BatchTail",
-    "BatchExtractor",
-    "ParameterRun"
-    ]
 
+from pyphant.core.Connectors import (TYPE_IMAGE, TYPE_ARRAY)
+from pyphant.wxgui2.DataVisReg import DataVisReg
+from pyphant.core.KnowledgeManager import KnowledgeManager as KM
+import webbrowser
+
+
+class KMVisualizer(object):
+    name='Register @ KnowledgeManager'
+    def __init__(self, DataContainer, show=True):
+        self.DataContainer = DataContainer
+        self.show = show
+        km = KM.getInstance()
+        km.registerDataContainer(DataContainer)
+        dc_id = DataContainer.id
+        if km.isServerRunning():
+            url = 'http://%s:%d/request_dc_details?dcid=%s' % (km._http_host,
+                                                               km._http_port,
+                                                               dc_id)
+            webbrowser.open_new_tab(url)
+        else:
+            print "ID of registered DC is: " + dc_id
+
+
+DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, KMVisualizer)
+DataVisReg.getInstance().registerVisualizer(TYPE_ARRAY, KMVisualizer)
