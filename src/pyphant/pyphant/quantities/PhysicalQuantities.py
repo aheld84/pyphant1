@@ -990,7 +990,9 @@ if __name__ == '__main__':
 
     euro = PhysicalQuantity('1 EUR')
     print euro.inUnitsOf('DEM')
-    print euro.inUnitsOf('USD')
+
+    if rc['fetchCurrencyRates']:
+        print euro.inUnitsOf('USD')
 
     euroSQM = PhysicalQuantity('19.99 EUR/m**2')
     print "%s=%s" % (euroSQM,euroSQM.inUnitsOf('EUR/cm**2'))
