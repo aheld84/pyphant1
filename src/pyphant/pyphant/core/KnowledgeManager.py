@@ -68,14 +68,10 @@ HTTP_REQUEST_KM_ID_PATH = "/request_km_id"
 HTTP_REQUEST_DC_DETAILS_PATH = "/request_dc_details?dcid="
 HTTP_REQUEST_REGISTER_KM = "/request_register_km"
 HTTP_REQUEST_SEARCH = "/request_search"
-# Maximum number of FCs to store in cache:
-CACHE_SIZE = 100
-# Timeout for cached FCs in seconds:
-CACHE_TIMEOUT = 60
-# Limit for FC.data.size:
-CACHE_MAX_SIZE = 200
-# Number of hits a FC must have within CACHE_TIMEOUT to be stored in cache
-CACHE_MIN_HITS = 2
+# Limit for sum(DC.rawDataBytes) for DC in cache:
+CACHE_MAX_SIZE = 256 * 1024 * 1024
+# Limit for number of stored DCs in cache:
+CACHE_MAX_NUMBER = 100
 KM_PATH = '/KMstorage/'
 REHDF5 = re.compile(r'..*\.h5$|..*\.hdf$|..*\.hdf5$')
 REFMF = re.compile(r'..*\.fmf$')
@@ -148,6 +144,24 @@ class KnowledgeManagerException(Exception):
         return self._parent_excep
 
 
+class CachedDC(object):
+    def __init__(self, dc_ref):
+        self.id = dc_ref.id
+        self.ref = dc_ref
+        self.size = dc_ref.rawDataBytes
+
+    def __eq__(self, other):
+        return self.id == other.id
+
+
+class TestCachedDC(object):
+    def __init__(self, dc_id):
+        self.id = dc_id
+
+    def __eq__(self, other):
+        return self.id == other.id
+
+
 class KnowledgeManager(Singleton):
     """
     Knowledge Manager for Pyphant
@@ -189,7 +203,8 @@ class KnowledgeManager(Singleton):
         """
         super(KnowledgeManager, self).__init__()
         self._logger = logging.getLogger("pyphant")
-        self._cache = {}
+        self._cache = []
+        self._cache_size = 0
         self.H5FileHandlers = {}
         self._remoteKMs = {} # key:id, value:url
         self._server = None
@@ -556,55 +571,40 @@ URL '%s'...", km_id, km_url)
                     "URL for DC ID '%s' not found." % (dc_id, ), excep)
         return dc_url
 
-    def getFCFromCache(self, fc_id, filename):
+    def getDCFromCache(self, dc_id, filename):
         """
-        Validates the cache and returns a FC instance from cache or local
-        storage. Also puts FC to cache if reasonable.
+        Returns a DC instance from cache or local storage.
+        Also puts DC to cache if reasonable.
         fc_id: emd5 to look for in cache
-        filename: alternative source if fc_id not present in cache
+        filename: alternative source if dc_id not present in cache
         """
-        now = time.time()
-        remove_keys = [key for key, value in self._cache.iteritems()\
-                           if value['reference'] == None\
-                           and key != fc_id\
-                           and (now - value['lasthit']) > CACHE_TIMEOUT]
-        for key in remove_keys:
-            self._cache.pop(key)
-        if self._cache.has_key(fc_id):
-            cinfo = self._cache[fc_id]
-            if now - cinfo['lasthit'] > CACHE_TIMEOUT:
-                cinfo['hitcount'] = 1
-            else:
-                cinfo['hitcount'] += 1
-            cinfo['lasthit'] = now
-        else:
-            cinfo = {'lasthit':now, 'hitcount':1, 'reference':None}
-            self._cache[fc_id] = cinfo
-        if cinfo['reference'] != None:
-            return cinfo['reference']
-        else:
+        try:
+            index = self._cache.index(TestCachedDC(dc_id))
+            cached = self._cache.pop(index)
+            self._cache.append(cached)
+            return cached.ref
+        except ValueError:
             with self.getH5FileHandler(filename) as handler:
-                fc = handler.loadDataContainer(fc_id)
-            if fc.data.size <= CACHE_MAX_SIZE \
-                    and cinfo['hitcount'] >= CACHE_MIN_HITS:
-                self._attemptToCacheFC(fc, cinfo)
-            return fc
+                dc = handler.loadDataContainer(dc_id)
+            self._attemptToCacheDC(dc)
+            return dc
 
-    def _attemptToCacheFC(self, fc, cinfo):
-        cached_fcs = [(id, info) for id, info in self._cache.iteritems()\
-                          if info['reference'] != None]
-        if len(cached_fcs) >= CACHE_SIZE:
-            for id, info in cached_fcs:
-                if cinfo['lasthit'] - info['lasthit'] > CACHE_TIMEOUT:
-                    info['reference'] = None
-                    cinfo['reference'] = fc
-                    return
-            weakest = min(cached_fcs, key=lambda x: x[1]['hitcount'])
-            if cinfo['hitcount'] >= weakest[1]['hitcount']:
-                weakest[1]['reference'] = None
-                cinfo['reference'] = fc
-        else:
-            cinfo['reference'] = fc
+    def _attemptToCacheDC(self, dc):
+        cache_item = CachedDC(dc)
+        if cache_item.size > CACHE_MAX_SIZE:
+            return
+        number_fits = len(self._cache) < CACHE_MAX_NUMBER
+        self._cache.reverse()
+        if not number_fits:
+            self._cache_size -= self._cache.pop().size
+        desired_size = CACHE_MAX_SIZE - cache_item.size
+        not_size_fits = self._cache_size > desired_size
+        while not_size_fits:
+            self._cache_size -= self._cache.pop().size
+            not_size_fits = self._cache_size > desired_size
+        self._cache.reverse()
+        self._cache.append(cache_item)
+        self._cache_size += cache_item.size
 
     def getDataContainer(self, dc_id, use_cache = True, try_remote = True):
         """
@@ -621,8 +621,8 @@ URL '%s'...", km_id, km_url)
             except KeyError:
                 pass
         if filename != None:
-            if dc_id.endswith('field') and use_cache:
-                return self.getFCFromCache(dc_id, filename)
+            if use_cache:
+                return self.getDCFromCache(dc_id, filename)
             with self.getH5FileHandler(filename) as handler:
                 dc = handler.loadDataContainer(dc_id)
             return dc

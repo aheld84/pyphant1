@@ -75,6 +75,7 @@ class IndexMarker(object):
     hash = hashlib.md5().hexdigest()
     shortname=u"i"
     longname=u"index"
+    rawDataBytes = 0
     def seal(self, id=None):
         pass
 
@@ -260,6 +261,11 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             label =  u"%s $%s$ / %s" % (self.longname.title(), self.shortname, self.unit)
         return label.replace('1.0 ',r'')#.replace('mu',u'\\textmu{}')
     shortlabel=property(_getShortLabel)
+
+    def _getRawDataBytes(self):
+        return self.data.nbytes \
+               + sum([dim.rawDataBytes for dim in self.dimensions])
+    rawDataBytes = property(_getRawDataBytes)
 
     def __deepcopy__(self, memo):
         self.lock.acquire()
