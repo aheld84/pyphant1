@@ -2,6 +2,7 @@
 
 # Copyright (c) 1998-2007, Konrad Hinsen <hinsen@cnrs-orleans.fr>
 # Copyright (c) 2008, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -668,18 +669,20 @@ def _convertValue (value, src_unit, target_unit):
 
 # SI unit definitions
 
-_base_names = ['m', 'kg', 's', 'A', 'K', 'mol', 'cd', 'rad', 'sr','EUR']
+_base_names = ['m', 'kg', 's', 'A', 'K', 'mol', 'cd', 'rad', 'sr','EUR','bit','B']
 
-_base_units = [('m',   PhysicalUnit('m',   1.,    [1,0,0,0,0,0,0,0,0,0])),
-	       ('g',   PhysicalUnit('g',   0.001, [0,1,0,0,0,0,0,0,0,0])),
-	       ('s',   PhysicalUnit('s',   1.,    [0,0,1,0,0,0,0,0,0,0])),
-	       ('A',   PhysicalUnit('A',   1.,    [0,0,0,1,0,0,0,0,0,0])),
-	       ('K',   PhysicalUnit('K',   1.,    [0,0,0,0,1,0,0,0,0,0])),
-	       ('mol', PhysicalUnit('mol', 1.,    [0,0,0,0,0,1,0,0,0,0])),
-	       ('cd',  PhysicalUnit('cd',  1.,    [0,0,0,0,0,0,1,0,0,0])),
-	       ('rad', PhysicalUnit('rad', 1.,    [0,0,0,0,0,0,0,1,0,0])),
-	       ('sr',  PhysicalUnit('sr',  1.,    [0,0,0,0,0,0,0,0,1,0])),
-               ('EUR',  PhysicalUnit('EUR',  1.,  [0,0,0,0,0,0,0,0,0,1])),
+_base_units = [('m',   PhysicalUnit('m',   1.,    [1,0,0,0,0,0,0,0,0,0,0,0])),
+	       ('g',   PhysicalUnit('g',   0.001, [0,1,0,0,0,0,0,0,0,0,0,0])),
+	       ('s',   PhysicalUnit('s',   1.,    [0,0,1,0,0,0,0,0,0,0,0,0])),
+	       ('A',   PhysicalUnit('A',   1.,    [0,0,0,1,0,0,0,0,0,0,0,0])),
+	       ('K',   PhysicalUnit('K',   1.,    [0,0,0,0,1,0,0,0,0,0,0,0])),
+	       ('mol', PhysicalUnit('mol', 1.,    [0,0,0,0,0,1,0,0,0,0,0,0])),
+	       ('cd',  PhysicalUnit('cd',  1.,    [0,0,0,0,0,0,1,0,0,0,0,0])),
+	       ('rad', PhysicalUnit('rad', 1.,    [0,0,0,0,0,0,0,1,0,0,0,0])),
+	       ('sr',  PhysicalUnit('sr',  1.,    [0,0,0,0,0,0,0,0,1,0,0,0])),
+               ('EUR',  PhysicalUnit('EUR',  1.,  [0,0,0,0,0,0,0,0,0,1,0,0])),
+               ('bit',  PhysicalUnit('bit',  1.,  [0,0,0,0,0,0,0,0,0,0,1,0])),
+               ('B',  PhysicalUnit('B',  1.,  [0,0,0,0,0,0,0,0,0,0,0,1])),
 	       ]
 
 _prefixes = [('Y',  1.e24),
@@ -704,6 +707,14 @@ _prefixes = [('Y',  1.e24),
              ('y',  1.e-24),
              ]
 
+_prefixes = [('Ei',  2.**60),
+             ('Pi',  2.**50),
+             ('Ti',  2.**40),
+             ('Gi',  2.**30),
+             ('Mi',  2.**20),
+             ('Ki',  2.**10)
+]             
+
 _unit_table = {}
 
 for unit in _base_units:
@@ -727,7 +738,7 @@ def _addUnit(name, unit, comment=''):
 def _addPrefixed(unit):
     _help.append('Prefixed units for %s:' % unit)
     _prefixed_names = []
-    if unit in ['EUR']:
+    if unit in ['EUR','bit','B']:
         validPrefixes = filter(lambda prefix: prefix[1]>=1000,_prefixes) 
     else:
         validPrefixes = _prefixes
