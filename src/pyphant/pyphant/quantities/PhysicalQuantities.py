@@ -727,12 +727,15 @@ def _addUnit(name, unit, comment=''):
 def _addPrefixed(unit):
     _help.append('Prefixed units for %s:' % unit)
     _prefixed_names = []
-    for prefix in _prefixes:
+    if unit in ['EUR']:
+        validPrefixes = filter(lambda prefix: prefix[1]>=1000,_prefixes) 
+    else:
+        validPrefixes = _prefixes
+    for prefix in validPrefixes:
 	name = prefix[0] + unit
 	_addUnit(name, prefix[1]*_unit_table[unit])
         _prefixed_names.append(name)
     _help.append(', '.join(_prefixed_names))
-
 
 # SI derived units; these automatically get prefixes
 _help.append('SI derived units; these automatically get prefixes:\n' + \
