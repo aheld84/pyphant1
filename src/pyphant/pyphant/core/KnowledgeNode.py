@@ -107,10 +107,14 @@ class RemoteKM(object):
     def connect(self):
         try:
             stream = urllib2.urlopen(self.url + 'uuid/', timeout=10.0)
-            # TODO
-            # self.uuid = ...
-            self._status = 1
-        except urllib2.URLError:
+            line = stream.readline()
+            if line.startswith('urn:uuid:'):
+                self._status = 1
+            else:
+                self._status = 0
+                self.logger.error("Remote KM '%s' returned broken uuid: '%s'" \
+                                  % (self.url, line))
+        except (urllib2.URLError, IOError):
             self._status = 0
             self.logger.warn("Remote KM '%s' is not responding." % self.url)
         finally:
@@ -137,6 +141,7 @@ class KnowledgeNode(RoutingHTTPServer):
         self.remotes = []
         self._dbase = getPyphantPath('/sqlite3/') + 'kn_remotes.sqlite3'
         self._restore_remotes()
+        self._setup_routes()
 
     def _restore_remotes(self):
         """
@@ -145,18 +150,22 @@ class KnowledgeNode(RoutingHTTPServer):
         connection = sqlite3.connect(self._dbase)
         cursor = connection.cursor()
         try:
-            columns = [('index', 'INTEGER PRIMARY KEY AUTOINCREMENT'),
+            columns = [('idx', 'INTEGER PRIMARY KEY AUTOINCREMENT '\
+                        'NOT NULL UNIQUE'),
                        ('host', 'TEXT'),
                        ('port', 'INT'),
                        ('', 'UNIQUE(host, port)')]
             create_table('kn_remotes', columns, cursor)
-            cursor.execute("SELECT * FROM kn_remotes ORDER BY index ASC")
+            cursor.execute("SELECT * FROM kn_remotes ORDER BY idx ASC")
             self.remotes = [RemoteKM(host, port) for index, host, port \
                             in cursor]
             connection.commit()
         finally:
             cursor.close()
             connection.close()
+
+    def _setup_routes(self):
+        self.app.add_route('/uuid/', self.get_uuid)
 
     def register_remote(self, host, port):
         host = host.lower()
@@ -198,3 +207,7 @@ class KnowledgeNode(RoutingHTTPServer):
                 finally:
                     cursor.close()
                     connection.close()
+
+    def get_uuid(self):
+        return self.km.uuid
+    uuid = property(get_uuid)
