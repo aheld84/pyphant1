@@ -126,6 +126,23 @@ def get_wildcards(length, char, braces=False, commas=True):
         wc += ')'
     return wc
 
+def create_table(table_name, columns, cursor):
+    query = "CREATE TABLE IF NOT EXISTS %s (" % (table_name, )
+    for name, type in columns:
+        query += name + " " + type + ", "
+    query = query[:-2] + ")"
+    cursor.execute(query)
+
+def create_trigger(trigger_name, action, table_name,
+                  statements, cursor):
+    query = "CREATE TRIGGER IF NOT EXISTS %s AFTER %s ON %s "\
+        "FOR EACH ROW BEGIN %s END"
+    st_query = ''
+    for st in statements:
+        st_query += st + ';'
+    cursor.execute(query % (trigger_name, action,
+                            table_name, st_query))
+
 
 class AnyValue():
     """Dummy class for use in search queries
@@ -196,21 +213,6 @@ class SQLiteWrapper(object):
 
     def setup_dbase(self):
         sqlite3.register_converter('QUANTITY', dbase2quantity)
-        def createTable(table_name, columns, cursor):
-            query = "CREATE TABLE IF NOT EXISTS %s (" % (table_name, )
-            for name, type in columns:
-                query += name + " " + type + ", "
-            query = query[:-2] + ")"
-            cursor.execute(query)
-        def createTrigger(trigger_name, action, table_name,
-                          statements, cursor):
-            query = "CREATE TRIGGER IF NOT EXISTS %s AFTER %s ON %s "\
-                "FOR EACH ROW BEGIN %s END"
-            st_query = ''
-            for st in statements:
-                st_query += st + ';'
-            cursor.execute(query % (trigger_name, action,
-                                    table_name, st_query))
         #create tables:
         columns = [('sc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL'),
                    ('longname', 'TEXT'),
@@ -220,31 +222,31 @@ class SQLiteWrapper(object):
                    ('date', 'TEXT'),
                    ('hash', 'TEXT'),
                    ('storage', 'TEXT')]
-        createTable("km_sc", columns, self.cursor)
+        create_table("km_sc", columns, self.cursor)
         columns[0] = ('fc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL')
         columns.insert(7, ('unit', 'QUANTITY'))
         columns.insert(8, ('bu_id', 'INT'))
-        createTable("km_fc", columns, self.cursor)
+        create_table("km_fc", columns, self.cursor)
         columns = [('sc_id', 'TEXT NOT NULL'),
                    ('fc_id', 'TEXT NOT NULL'),
                    ('fc_index', 'INT NOT NULL'),
                    ('', 'UNIQUE(sc_id, fc_id, fc_index)'),
                    ('', 'PRIMARY KEY(sc_id, fc_id, fc_index)')]
-        createTable("km_sc_columns", columns, self.cursor)
+        create_table("km_sc_columns", columns, self.cursor)
         columns = [('fc_id', 'TEXT NOT NULL'),
                    ('dim_id', 'TEXT NOT NULL'),
                    ('dim_index', 'INT NOT NULL'),
                    ('', 'UNIQUE(fc_id, dim_id, dim_index)'),
                    ('', 'PRIMARY KEY(fc_id, dim_id, dim_index)')]
-        createTable("km_fc_dimensions", columns, self.cursor)
+        create_table("km_fc_dimensions", columns, self.cursor)
         columns = [('dc_id', 'TEXT NOT NULL'),
                    ('key', 'TEXT NOT NULL'),
                    ('value', 'TEXT'),
                    ('', 'UNIQUE(dc_id, key)'),
                    ('', 'PRIMARY KEY(dc_id, key)')]
-        createTable('km_attributes', columns, self.cursor)
+        create_table('km_attributes', columns, self.cursor)
         columns = [('dc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL')]
-        createTable("km_temporary", columns, self.cursor)
+        create_table("km_temporary", columns, self.cursor)
         columns = [('bu_id', 'INTEGER PRIMARY KEY AUTOINCREMENT '\
                         'NOT NULL UNIQUE'),
                    ('m', 'INT'),
@@ -258,17 +260,17 @@ class SQLiteWrapper(object):
                    ('sr', 'INT'),
                    ('EUR', 'INT'),
                    ('', 'UNIQUE(m, g, s, A, K, mol, cd, rad, sr, EUR)')]
-        createTable('km_base_units', columns, self.cursor)
+        create_table('km_base_units', columns, self.cursor)
         #create triggers:
-        createTrigger('trigger_del_fc', 'DELETE', 'km_fc',
+        create_trigger('trigger_del_fc', 'DELETE', 'km_fc',
                       ['DELETE FROM km_attributes WHERE dc_id=OLD.fc_id',
                        'DELETE FROM km_fc_dimensions WHERE fc_id=OLD.fc_id'],
                       self.cursor)
-        createTrigger('trigger_del_sc', 'DELETE', 'km_sc',
+        create_trigger('trigger_del_sc', 'DELETE', 'km_sc',
                       ['DELETE FROM km_attributes WHERE dc_id=OLD.sc_id',
                        'DELETE FROM km_sc_columns WHERE sc_id=OLD.sc_id'],
                       self.cursor)
-        createTrigger('trigger_del_tmp', 'DELETE', 'km_temporary',
+        create_trigger('trigger_del_tmp', 'DELETE', 'km_temporary',
                       ['DELETE FROM km_fc WHERE fc_id=OLD.dc_id',
                        'DELETE FROM km_sc WHERE sc_id=OLD.dc_id'],
                       self.cursor)
