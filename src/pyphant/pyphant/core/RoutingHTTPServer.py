@@ -42,6 +42,7 @@ import bottle
 from paste import httpserver
 from paste.translogger import TransLogger
 from threading import Thread
+from time import sleep
 
 
 class PasteServer(bottle.ServerAdapter):
@@ -90,6 +91,8 @@ class RoutingHTTPServer(object):
         self.app = bottle.Bottle()
         self.app.serve = False
         self.is_serving = False
+        if start:
+            self.start()
 
     def _get_url(self):
         return u'http://%s:%d/' % (self.host, self.port)
@@ -104,6 +107,13 @@ class RoutingHTTPServer(object):
             return
         self.server_thread = PasteServerThread(self.host, self.port, self.app)
         self.server_thread.start()
+        print "Waiting for server thread to start..."
+        while not hasattr(self.server_thread, 'paste_server'):
+            pass
+        while not hasattr(self.server_thread.paste_server, 'httpserver'):
+            pass
+        sleep(3) # to be sure
+        print "Server thread started."
         self.app.serve = True
         self.is_serving = True
 
