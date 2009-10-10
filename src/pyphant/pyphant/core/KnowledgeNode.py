@@ -47,7 +47,21 @@ from pyphant.core.Helpers import getPyphantPath
 from pyphant.core.SQLiteWrapper import create_table
 from time import time
 from urllib2 import urlopen
+from urllib import urlencode
 import logging
+from pyphant.core.KnowledgeManager import (DCNotFoundError, KnowledgeManager)
+from bottle import (request, send_file)
+from json import (dumps, load, loads)
+from tempfile import (mkdtemp, mkstemp)
+import os
+
+
+class UnreachableError(Exception):
+    pass
+
+
+class SkipError(Exception):
+    pass
 
 
 class RemoteKM(object):
@@ -57,7 +71,7 @@ class RemoteKM(object):
 
     status_dict = {0:'offline', 1:'online', 2:'disabled'}
 
-    def __init__(self, host, port, status=1, timeout=1800.0):
+    def __init__(self, host, port, status=1, timeout=300.0):
         """
         Arguments:
         - `host`: hostname
@@ -65,7 +79,7 @@ class RemoteKM(object):
         - `status`: 0: offline, may get online after timeout
                     1: online, may get offline anytime
                     2: disabled, use enable() to enable
-        - `timeout`: refresh interval for status lookup, default: 30 min
+        - `timeout`: refresh interval for status lookup, default: 5 min
         """
         self.host = host
         self.port = port
@@ -110,6 +124,7 @@ class RemoteKM(object):
             line = stream.readline()
             if line.startswith('urn:uuid:'):
                 self._status = 1
+                self.uuid = line
             else:
                 self._status = 0
                 self.logger.error("Remote KM '%s' returned broken uuid: '%s'" \
@@ -121,6 +136,27 @@ class RemoteKM(object):
             stream.close()
             self.last_update = time()
 
+    def get_datacontainer_url(self, dc_id, skip):
+        self.update_status()
+        if self._status == 1:
+            if self.uuid in skip:
+                raise SkipError()
+            else:
+                try:
+                    query = urlencode({'skip':dumps(skip), 'dc_id':dc_id})
+                    url = '%sget_dc_url/?%s' % (self.url, query)
+                    stream = urlib2.urlopen(url, timeout=10.0)
+                    assert stream.headers.type == 'application/json'
+                    answer = load(stream)
+                    if not answer['dc_url'].startswith('emd5://'):
+                        raise DCNotFoundError
+                    assert len(answer['skip'] >= len(skip))
+                    return answer['dc_url'], answer['skip']
+                except (urllib2.URLError, IOError, AssertionError):
+                    raise UnreachableError()
+        else:
+            raise UnreachableError()
+
 
 class KnowledgeNode(RoutingHTTPServer):
     """
@@ -128,20 +164,25 @@ class KnowledgeNode(RoutingHTTPServer):
     remote KM instances.
     """
 
-    def __init__(self, local_km, host=u'127.0.0.1', port=8080, start=False):
+    def __init__(self, local_km=None,
+                 host=u'127.0.0.1', port=8080, start=False):
         """
         Arguments:
         - `local_km`: Local KnowledgeManager instance to hook up to.
+          If set to `None`, KnowledgeManager.getInstance() is used.
         - `host`: hostname to listen on
         - `port`: port to listen on
         - `start`: flag that indicates whether to start the server
         """
         RoutingHTTPServer.__init__(self, host, port, start)
+        if local_km == None:
+            local_km = KnowledgeManager.getInstance()
         self.km = local_km
         self.remotes = []
         self._dbase = getPyphantPath('/sqlite3/') + 'kn_remotes.sqlite3'
         self._restore_remotes()
         self._setup_routes()
+        self._tempdir = mkdtemp(prefix = 'HDF5Wrap')
 
     def _restore_remotes(self):
         """
@@ -166,6 +207,18 @@ class KnowledgeNode(RoutingHTTPServer):
 
     def _setup_routes(self):
         self.app.add_route('/uuid/', self.get_uuid)
+        self.app.add_route('/get_dc_url/', self.handle_datacontainer_url)
+        self.app.add_route(r'/wrapped/:filename#..*\.hdf$#',
+                           self.handle_wrapped)
+
+    def stop(self):
+        RoutingHTTPServer.stop(self)
+        if os.path.isdir(self._tempdir):
+            from shutil import rmtree
+            try:
+                rmtree(self._tempdir)
+            except OSError:
+                km.logger.warn("Could not delete '%s'." % self._tempdir)
 
     def register_remote(self, host, port):
         host = host.lower()
@@ -211,3 +264,43 @@ class KnowledgeNode(RoutingHTTPServer):
     def get_uuid(self):
         return self.km.uuid
     uuid = property(get_uuid)
+
+    def get_datacontainer(self, dc_id):
+        skip = [self.uuid]
+        for remote in self.remotes:
+            try:
+                dc_url, skip = remote.get_datacontainer_url(dc_id, skip)
+                self.km.registerURL(dc_url)
+                return self.km.getDataContainer(dc_id)
+            except (DCNotFoundError, UnreachableError, SkipError):
+                pass
+        raise DCNotFoundError()
+
+    def handle_datacontainer_url(self):
+        query = request.GET
+        skip = loads(query['skip'])
+        dc_id = query['dc_id']
+        try:
+            dc = self.km.getDataContainer(dc_id, try_remote=False)
+            # Wrap data container in temporary HDF5 file
+            osFileId, filename = mkstemp(suffix='.hdf',
+                                         prefix='dcrequest-',
+                                         dir=self._tempdir)
+            os.close(osFileId)
+            handler = self.km.H5FileHandler(filename, 'w')
+            with handler:
+                handler.saveDataContainer(dc)
+            dc_url = self.url + "wrapped/" + os.path.basename(filename)
+        except DCNotFoundError:
+            dc_url = None
+            for remote in self.remotes:
+                try:
+                    dc_url, skip = remote.get_datacontainer_url(dc_id, skip)
+                    break
+                except (DCNotFoundError, UnreachableError, SkipError):
+                    pass
+        return {'skip':skip, 'dc_url':dc_url}
+
+    def handle_wrapped(self, filename):
+        send_file(filename, self._tempdir,
+                  guessmime=False, mimetype='application/x-hdf')

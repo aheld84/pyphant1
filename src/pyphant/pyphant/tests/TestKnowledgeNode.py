@@ -42,13 +42,11 @@ import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
 from pyphant.core.KnowledgeNode import KnowledgeNode
-from pyphant.core.KnowledgeManager import KnowledgeManager
 
 
 class KnowledgeNodeTestCase(unittest.TestCase):
     def setUp(self):
-        km = KnowledgeManager.getInstance()
-        self.kn = KnowledgeNode(km, start=True)
+        self.kn = KnowledgeNode(start=True)
 
     def tearDown(self):
         self.kn.stop()

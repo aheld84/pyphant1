@@ -51,6 +51,8 @@ from fmfile import FMFLoader
 from pyphant.core.SQLiteWrapper import (SQLiteWrapper, AnyValue)
 from pyphant.core.Helpers import getPyphantPath
 from uuid import uuid1
+from urlparse import urlparse
+import urllib
 
 # Limit for sum(DC.rawDataBytes) for DC in cache:
 CACHE_MAX_SIZE = 256 * 1024 * 1024
@@ -77,6 +79,10 @@ def getFilenameFromDcId(dcId, temporary=False):
     else:
         subdir = 'by_emd5/'
     return getPyphantPath(KM_PATH + subdir + directory) + filename
+
+
+class DCNotFoundError(Exception):
+    pass
 
 
 class CachedDC(object):
@@ -338,11 +344,11 @@ class KnowledgeManager(Singleton):
         elif try_remote and self.node != None:
             try:
                 return self.node.get_datacontainer(dc_id)
-            except KeyError:
+            except DCNotFoundError:
                 pass
         msg = "Could not find DC with id '%s'." % dc_id
         self.logger.error(msg)
-        raise KeyError(msg)
+        raise DCNotFoundError(msg)
 
     def getEmd5List(self):
         """
