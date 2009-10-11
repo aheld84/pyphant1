@@ -47,6 +47,7 @@ from pyphant.core.Helpers import getPyphantPath
 from pyphant.core.SQLiteWrapper import create_table
 from time import time
 from urllib2 import urlopen
+import urllib2
 from urllib import urlencode
 import logging
 from pyphant.core.KnowledgeManager import (DCNotFoundError, KnowledgeManager)
@@ -122,6 +123,7 @@ class RemoteKM(object):
                 self.connect()
 
     def connect(self):
+        stream = None
         try:
             stream = urllib2.urlopen(self.url + 'uuid/', timeout=10.0)
             line = stream.readline()
@@ -136,7 +138,8 @@ class RemoteKM(object):
             self._status = 0
             self.logger.warn("Remote KM '%s' is not responding." % self.url)
         finally:
-            stream.close()
+            if stream != None:
+                stream.close()
             self.last_update = time()
 
     def get_datacontainer_url(self, dc_id, skip):
@@ -151,6 +154,7 @@ class RemoteKM(object):
                     stream = urlib2.urlopen(url, timeout=10.0)
                     assert stream.headers.type == 'application/json'
                     answer = load(stream)
+                    stream.close()
                     if not answer['dc_url'].startswith('emd5://'):
                         raise DCNotFoundError
                     assert len(answer['skip'] >= len(skip))
