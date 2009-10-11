@@ -41,15 +41,25 @@ __version__ = "$Revision$".replace('$','')
 import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
-from pyphant.core.KnowledgeNode import (KnowledgeNode, RemoteKN)
+from pyphant.core.KnowledgeNode import (KnowledgeNode, RemoteKN,
+                                        get_kn_autoport)
+import tempfile
+import os
+import socket
 
 
 class KnowledgeNodeTestCase(unittest.TestCase):
     def setUp(self):
-        self.kn = KnowledgeNode(start=True)
+        osid, filename = tempfile.mkstemp(suffix='.sqlite3', prefix='test-')
+        os.close(osid)
+        self.filename = filename
+        ports = [8080] + range(48621, 48771)
+        self.kn = get_kn_autoport(ports, start=True, web_interface=True,
+                                  dbase=filename)
 
     def tearDown(self):
         self.kn.stop()
+        os.remove(self.filename)
 
     def testUUID(self):
         from urllib2 import urlopen
@@ -65,6 +75,24 @@ class KnowledgeNodeTestCase(unittest.TestCase):
         assert dummy in self.kn.remotes
         self.kn.remove_remote('127.0.0.1', -1)
         assert not dummy in self.kn.remotes
+
+    def testGetRubbish(self):
+        from pyphant.core.KnowledgeManager import DCNotFoundError
+        self.kn.register_remote('127.0.0.1', 48620)
+        try:
+            self.kn.km.getDataContainer('emd5://rubbish.field')
+        except DCNotFoundError:
+            pass
+        try:
+            self.kn.km.getDataContainer('emd5://rubbish.sample')
+        except DCNotFoundError:
+            pass
+        try:
+            self.kn.km.getDataContainer('rubbish')
+        except ValueError:
+            pass
+        self.kn.remove_remote('127.0.0.1', 48620)
+
 
 if __name__ == "__main__":
     import sys

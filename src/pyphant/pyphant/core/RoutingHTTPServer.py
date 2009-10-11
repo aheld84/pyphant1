@@ -92,9 +92,8 @@ class RoutingHTTPServer(object):
         - `port`: port to listen on
         - `start`: flag that indicates whether to start the server
         """
-        self.host = host
-        self.port = port
-        self.app = None
+        self.host = host.lower()
+        self.port = int(port)
         self.server_thread = None
         self.app = pyphant.core.bottle.Bottle()
         self.app.serve = False

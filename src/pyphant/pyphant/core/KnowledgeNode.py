@@ -171,7 +171,7 @@ class KnowledgeNode(RoutingHTTPServer):
 
     def __init__(self, local_km=None,
                  host=u'127.0.0.1', port=8080, start=False,
-                 web_interface=False):
+                 web_interface=False, dbase=u'default'):
         """
         Arguments:
         - `local_km`: Local KnowledgeManager instance to hook up to.
@@ -182,13 +182,18 @@ class KnowledgeNode(RoutingHTTPServer):
         - `web_interface`: flag that indicates whether to enable
           the web interface. You can enable/disable it anytime by
           setting (KN instance).web_interface.enabled to `True`/`False`.
+        - `dbase`: leave this to 'default', other values are allowed for
+                   debug purposes
         """
         RoutingHTTPServer.__init__(self, host, port, start)
         if local_km == None:
             local_km = KnowledgeManager.getInstance()
         self.km = local_km
         self.remotes = []
-        self._dbase = getPyphantPath('/sqlite3/') + 'kn_remotes.sqlite3'
+        if dbase == u'default':
+            self._dbase = getPyphantPath('/sqlite3/') + 'kn_remotes.sqlite3'
+        else:
+            self._dbase = dbase
         self._restore_remotes()
         self._setup_routes()
         self._tempdir = mkdtemp(prefix = 'HDF5Wrap')
@@ -351,3 +356,32 @@ class KnowledgeNode(RoutingHTTPServer):
     def handle_wrapped(self, filename):
         send_file(filename, self._tempdir,
                   guessmime=False, mimetype='application/x-hdf')
+
+
+def get_kn_autoport(ports, logger=None, *args, **kargs):
+    """
+    Returns a KnowledgeNode listening on the first free port in `ports`
+    messages are logged to `logger` or stdout if `None`
+    If no port is free, a socket.error (no. 98) is raised.
+    """
+    import socket
+    def log(text):
+        if logger is None:
+            print text
+        else:
+            logger.warn(text)
+
+    last_error = None
+    for port in ports:
+        try:
+            kn = KnowledgeNode(port=port, *args, **kargs)
+            return kn
+        except socket.error as err:
+            last_error = err
+            if err.errno == 98:
+                log("Port %d is already in use." % port)
+            elif err.errno == 13:
+                log("Port %d: Permission denied." % port)
+            else:
+                raise err
+    raise last_error

@@ -109,6 +109,9 @@ class TestCachedDC(object):
         return self.id == other.id
 
 
+KM_DBASE = u'default' # modify for debug purposes
+
+
 class KnowledgeManager(Singleton):
     """
     Knowledge Manager for Pyphant
@@ -153,7 +156,10 @@ class KnowledgeManager(Singleton):
         self.logger = logging.getLogger("pyphant")
         self._cache = []
         self._cache_size = 0
-        self.dbase = getPyphantPath('/sqlite3/') + "km_meta.sqlite3"
+        if KM_DBASE == u'default':
+            self.dbase = getPyphantPath('/sqlite3/') + "km_meta.sqlite3"
+        else:
+            self.dbase = KM_DBASE
         self.any_value = AnyValue()
         with SQLiteWrapper(self.dbase) as wrapper:
             wrapper.setup_dbase()

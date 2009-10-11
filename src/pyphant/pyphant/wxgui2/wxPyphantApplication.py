@@ -66,7 +66,7 @@ import pyphant.core.PyTablesPersister
 import WorkerRepository
 import ConfigureFrame
 import platform
-from pyphant.core.KnowledgeNode import KnowledgeNode
+from pyphant.core.KnowledgeNode import (KnowledgeNode, KnowledgeManager)
 import webbrowser
 pltform = platform.system()
 
@@ -80,7 +80,7 @@ class wxPyphantApplication(wx.PySimpleApp):
             return False
         self._logger=logging.getLogger("pyphant")
         sogl.SOGLInitialize()
-        self._knowledgeNode = KnowledgeNode(web_interface=True)
+        self._knowledgeNode = None
         self._paramVisReg=ParamVisReg.ParamVisReg()
         self._frame = wxPyphantFrame(self)
         self._frame.Show()
@@ -263,7 +263,10 @@ class wxPyphantFrame(wx.Frame):
                 self.onSaveCompositeWorker()
             dlg.Destroy()
         if dlgid != wx.ID_CANCEL:
-            self._wxPyphantApp._knowledgeNode.stop()
+            try:
+                self._wxPyphantApp._knowledgeNode.stop()
+            except AttributeError:
+                pass
             self.Destroy()
 
     def editCompositeWorker(self, worker):
@@ -294,7 +297,7 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
             cpt2 = "Info"
             msg2 = "Successfully imported DataContainers from\n'%s'"\
                    % (url ,)
-            km = self._wxPyphantApp._knowledgeNode.local_km
+            km = KnowledgeManager.getInstance()
             try:
                 km.registerURL(url)
             except Exception:
@@ -313,7 +316,7 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
         if dlg.ShowModal() == wx.ID_OK:
             filename = dlg.GetPath()
             url = 'file://' + os.path.realpath(filename)
-            km = self._wxPyphantApp._knowledgeNode.local_km
+            km = KnowledgeManager.getInstance()
             cpt2 = "Info"
             msg2 = "Successfully imported DataContainer(s) from\n'%s'"\
                    % (filename ,)
@@ -330,32 +333,33 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
             dlg.Destroy()
 
     def onShare(self, event):
-        kn = self._wxPyphantApp._knowledgeNode
         cpt = "Share Knowledge"
         msg = ""
-        if not kn.app.serve:
-            if not kn.is_serving:
-                try:
-                    kn.start()
-                    msg += "Knowledge node is listening @ 127.0.0.1:8080.\n"\
-                           "Sharing is experimental and therefore restric"\
-                           "ted\nto the loopback interface."
-                    url = kn.url
-                    webbrowser.open_new(url)
-                except Exception as exep:
-                    msg += "Could not start web server @ 127.0.0.1:8080"
-                    from socket import error as socket_error
-                    if isinstance(exep, socket_error):
-                        if exep.errno == 98:
-                            msg += "\nReason: Address 127.0.0.1:8080 "\
-                                   "already in use!\n(You may stop other"\
-                                   " applications or wait for the OS\n"\
-                                   "to free the port.)"
-            else:
-                msg += "Resumed sharing."
-                kn.app.serve = True
+        if self._wxPyphantApp._knowledgeNode is None:
+            try:
+                logg = self._wxPyphantApp._logger
+                from pyphant.core.KnowledgeNode import get_kn_autoport
+                ports = [8080] + range(48621, 48771)
+                self._wxPyphantApp._knowledgeNode = get_kn_autoport(
+                    ports, logg, start=True, web_interface=True)
+                url = self._wxPyphantApp._knowledgeNode.url
+                msg += "Knowledge node is listening @ %s.\n"\
+                       "Sharing is experimental and therefore restric"\
+                       "ted\nto the loopback interface." % url
+                webbrowser.open_new(url)
+            except Exception as exep:
+                msg += "Could not start web server."
+                from socket import error as socket_error
+                if isinstance(exep, socket_error):
+                    if exep.errno == 98:
+                        msg += "\nReason: Could not find a free port."\
+                               "\n(You may stop other applications or "\
+                               "wait for the OS\nto free some ports.)"
+        elif not self._wxPyphantApp._knowledgeNode.app.serve:
+            msg += "Resumed sharing."
+            self._wxPyphantApp._knowledgeNode.app.serve = True
         else:
-            kn.app.serve = False
+            self._wxPyphantApp._knowledgeNode.app.serve = False
             msg += "Disabled sharing."
         dlg = wx.MessageDialog(self, msg, cpt, wx.OK)
         dlg.ShowModal()
