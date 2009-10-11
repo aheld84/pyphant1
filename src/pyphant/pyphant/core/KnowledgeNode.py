@@ -108,6 +108,7 @@ class RemoteKN(object):
 
     def disable(self):
         self.last_update = None
+        self.uuid = None
         self._status = 2
 
     def update_status(self):
@@ -203,11 +204,12 @@ class KnowledgeNode(RoutingHTTPServer):
         connection = sqlite3.connect(self._dbase)
         cursor = connection.cursor()
         try:
-            columns = [('host', 'TEXT'), ('port', 'INT'),
+            columns = [('host', 'TEXT'), ('port', 'INT'), ('status', 'INT'),
                        ('', 'UNIQUE(host, port)')]
             create_table('kn_remotes', columns, cursor)
             cursor.execute("SELECT * FROM kn_remotes")
-            self.remotes = [RemoteKN(host, port) for host, port in cursor]
+            self.remotes = [RemoteKN(host, port, status) \
+                            for host, port, status in cursor]
             connection.commit()
         finally:
             cursor.close()
@@ -237,8 +239,9 @@ class KnowledgeNode(RoutingHTTPServer):
         cursor = connection.cursor()
         try:
             try:
-                cursor.execute("INSERT OR ABORT INTO kn_remotes (host, port)"\
-                               " VALUES (?, ?)", (host, port))
+                cursor.execute("INSERT OR ABORT INTO kn_remotes "\
+                               "(host, port, status) "\
+                               "VALUES (?, ?, ?)", (host, port, 0))
                 self.remotes.append(RemoteKN(host, port))
             except sqlite3.IntegrityError:
                 self.km.logger.warn("Remote '%s:%d' already registered." \
@@ -253,23 +256,50 @@ class KnowledgeNode(RoutingHTTPServer):
         port = int(port)
         dummy = RemoteKN(host, port, status=2)
         try:
-            imax = len(self.remotes)
-            for index in xrange(imax):
-                self.remotes.remove(dummy)
+            self.remotes.remove(dummy)
         except ValueError:
-            if index == 0:
-                self.km.logger.warn("Remote '%s:%d' is not registered." \
-                                    % (host, port))
-            else:
+            self.km.logger.warn("Remote '%s:%d' is not registered." \
+                                % (host, port))
+            return
+        connection = sqlite3.connect(self._dbase)
+        cursor = connection.cursor()
+        try:
+            cursor.execute("DELETE FROM kn_remotes "\
+                           "WHERE host=? AND port=?", (host, port))
+            connection.commit()
+        finally:
+            cursor.close()
+            connection.close()
+
+    def change_remote(self, host, port, status):
+        host = host.lower()
+        port = int(port)
+        dummy = RemoteKN(host, port, status=2)
+        for rem in self.remotes:
+            if rem == dummy and rem._status != status:
+                if status == 2:
+                    rem.disable()
+                else:
+                    rem.enable()
                 connection = sqlite3.connect(self._dbase)
                 cursor = connection.cursor()
                 try:
-                    cursor.execute("DELETE FROM kn_remotes "\
-                                   "WHERE host=? AND port=?", (host, port))
+                    cursor.execute("UPDATE kn_remotes SET status=? "\
+                                   "WHERE host=? AND port=?",
+                                   (status, host, port))
                     connection.commit()
                 finally:
                     cursor.close()
                     connection.close()
+                return
+        self.km.logger.warn("Remote '%s:%d' is not registered." \
+                            % (host, port))
+
+    def disable_remote(self, host, port):
+        self.change_remote(host, port, 2)
+
+    def enable_remote(self, host, port):
+        self.change_remote(host, port, 0)
 
     def get_uuid(self):
         return self.km.uuid

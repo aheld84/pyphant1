@@ -41,10 +41,15 @@ __version__ = "$Revision$"
 
 from types import DictType
 from types import (DictType, ListType)
-from pyphant.core.bottle import (template, send_file)
-import pyphant.core.bottle
+from pyphant.core.bottle import (template, send_file, request)
+from urllib import urlencode
 
-ALLSTRING = "*****ALL*****"
+
+def cond(condition, results):
+    if condition:
+        return results[0]
+    else:
+        return results[1]
 
 
 class HTMLDict(dict):
@@ -162,15 +167,19 @@ maxlength="%d" value="%s">'
 
 
 class HTMLTable(object):
-    def __init__(self, rows, border = 1, headings = True):
+    def __init__(self, rows, border=1, headings=True,
+                 cellspacing=0, cellpadding=0):
         self.rows = rows
-        self.border = border
+        self.border = int(border)
+        self.cellpadding = int(cellpadding)
+        self.cellspacing = int(cellspacing)
         self.headings = headings
 
     def getHTML(self):
         if self.rows == []:
             return ""
-        html = '<table border="%d">\n' % (self.border, )
+        html = '<table border="%d" cellpadding="%d" cellspacing="%d">\n' \
+               % (self.border, self.cellpadding, self.cellspacing)
         rowcount = 0
         for row in self.rows:
             html += '<tr>\n'
@@ -178,7 +187,11 @@ class HTMLTable(object):
             if rowcount == 0 and self.headings:
                 tag = 'th'
             for cell in row:
-                html += '<%s>' % (tag, )
+                span = 1
+                if isinstance(cell, tuple):
+                    span = cell[1]
+                    cell = cell[0]
+                html += '<%s colspan="%d">' % (tag, span)
                 if hasattr(cell, 'getHTML'):
                     html += cell.getHTML()
                 else:
@@ -227,6 +240,26 @@ class HTMLDnldForm(HTMLButton):
         self.hidden['dcid'] = self.dc_id
         return HTMLButton.getHTML(self)
 
+class HTMLImage(object):
+    def __init__(self, src, width, height, alt):
+        self.src = src
+        self.width = width
+        self.height = height
+        self.alt = alt
+        self.html = '<img src="%s" alt="%s" width="%d" height="%d" />'
+
+    def getHTML(self):
+        return self.html % (self.src, self.alt, self.width, self.height)
+
+
+class HTMLStatus(object):
+    def __init__(self, status):
+        self.status = status
+
+    def getHTML(self):
+        return HTMLImage('/images/%s.gif' % self.status,
+                         width=12, height=12, alt=self.status).getHTML()
+
 
 class WebInterface(object):
     """
@@ -246,19 +279,48 @@ class WebInterface(object):
     def _setup_routes(self):
         self.kn.app.add_route('/', self.frontpage)
         self.kn.app.add_route('/images/:filename', self.images)
+        self.kn.app.add_route('/remote_action', self.remote_action)
+        self.kn.app.add_route('/favicon.ico', self.favicon)
 
     def frontpage(self):
         if not self.enabled:
             return template('disabled')
-        remote_rows = [['URL', 'UUID', 'Status']]
+        remote_rows = [[('URL', 2), 'UUID', ('Action', 2)]]
         for remote in self.kn.remotes:
-            remote_rows.append([HTMLLink(remote.url, remote.url),
-                                remote.uuid, remote.status])
-        remote_table = HTMLTable(remote_rows, border=5)
+            endisstr = cond(remote._status == 2, ('enable', 'disable'))
+            qdict = {'host':remote.host, 'port':remote.port, 'action':endisstr}
+            endis = HTMLLink('/remote_action?' + urlencode(qdict), endisstr)
+            qdict['action'] = 'remove'
+            rem = HTMLLink('/remote_action?' + urlencode(qdict), 'remove')
+            uuid = remote.uuid
+            if uuid != None:
+                uuid = uuid[9:]
+            remote_rows.append([HTMLStatus(remote.status),
+                                HTMLLink(remote.url, remote.url),
+                                uuid, endis, rem])
+        remote_table = HTMLTable(remote_rows, border=2,
+                                 cellspacing=2, cellpadding=2)
         return template('frontpage',
                         local_url=HTMLLink(self.kn.url, self.kn.url).getHTML(),
-                        local_uuid=self.kn.uuid,
+                        local_uuid=self.kn.uuid[9:],
                         remote_table=remote_table.getHTML())
 
     def images(self, filename):
+        if not self.enabled:
+            return template('disabled')
         send_file(filename, self.rootdir + 'images/', guessmime=True)
+
+    def remote_action(self):
+        if not self.enabled:
+            return template('disabled')
+        qry = request.GET
+        action_dict = {'enable':self.kn.enable_remote,
+                       'disable':self.kn.disable_remote,
+                       'remove':self.kn.remove_remote,
+                       'add':self.kn.register_remote}
+        if qry['action'] in action_dict:
+            action_dict[qry['action']](qry['host'], int(qry['port']))
+        return self.frontpage()
+
+    def favicon(self):
+        return self.images('favicon.ico')
