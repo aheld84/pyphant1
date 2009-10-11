@@ -50,10 +50,13 @@ from urllib2 import urlopen
 from urllib import urlencode
 import logging
 from pyphant.core.KnowledgeManager import (DCNotFoundError, KnowledgeManager)
-from bottle import (request, send_file)
+from pyphant.core.bottle import (request, send_file)
 from json import (dumps, load, loads)
 from tempfile import (mkdtemp, mkstemp)
 import os
+from pyphant.core.WebInterface import WebInterface
+from pyphant import __path__ as pyphant_source_path
+import pyphant.core.bottle
 
 
 class UnreachableError(Exception):
@@ -165,7 +168,8 @@ class KnowledgeNode(RoutingHTTPServer):
     """
 
     def __init__(self, local_km=None,
-                 host=u'127.0.0.1', port=8080, start=False):
+                 host=u'127.0.0.1', port=8080, start=False,
+                 web_interface=False):
         """
         Arguments:
         - `local_km`: Local KnowledgeManager instance to hook up to.
@@ -173,6 +177,9 @@ class KnowledgeNode(RoutingHTTPServer):
         - `host`: hostname to listen on
         - `port`: port to listen on
         - `start`: flag that indicates whether to start the server
+        - `web_interface`: flag that indicates whether to enable
+          the web interface. You can enable/disable it anytime by
+          setting (KN instance).web_interface.enabled to `True`/`False`.
         """
         RoutingHTTPServer.__init__(self, host, port, start)
         if local_km == None:
@@ -183,6 +190,10 @@ class KnowledgeNode(RoutingHTTPServer):
         self._restore_remotes()
         self._setup_routes()
         self._tempdir = mkdtemp(prefix = 'HDF5Wrap')
+        tpl_path = pyphant_source_path[0] + '/templates/'
+        if not tpl_path in pyphant.core.bottle.TEMPLATE_PATH:
+            pyphant.core.bottle.TEMPLATE_PATH.append(tpl_path)
+        self.web_interface = WebInterface(self, web_interface)
 
     def _restore_remotes(self):
         """

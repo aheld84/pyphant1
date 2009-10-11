@@ -38,14 +38,14 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source: $
 
-import bottle
+import pyphant.core.bottle
 from paste import httpserver
 from paste.translogger import TransLogger
 from threading import Thread
 from time import sleep
 
 
-class PasteServer(bottle.ServerAdapter):
+class PasteServer(pyphant.core.bottle.ServerAdapter):
     def run(self, handler):
         app = TransLogger(handler)
         self.httpserver = httpserver.serve(app, host=self.host,
@@ -64,7 +64,7 @@ class PasteServerThread(Thread):
 
     def run(self):
         self.paste_server = PasteServer(host=self.host, port=self.port)
-        bottle.run(app=self.app, server=self.paste_server)
+        pyphant.core.bottle.run(app=self.app, server=self.paste_server)
 
 
 class RoutingHTTPServer(object):
@@ -88,7 +88,7 @@ class RoutingHTTPServer(object):
         self.port = port
         self.app = None
         self.server_thread = None
-        self.app = bottle.Bottle()
+        self.app = pyphant.core.bottle.Bottle()
         self.app.serve = False
         self.is_serving = False
         if start:
