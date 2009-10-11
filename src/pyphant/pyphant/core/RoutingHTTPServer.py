@@ -163,7 +163,10 @@ class RoutingHTTPServer(object):
         Stops the server.
         """
         self.app.serve = False
-        self.server_thread.paste_server.httpserver.server_close()
+        try:
+            self.server_thread.paste_server.httpserver.server_close()
+        except AttributeError:
+            pass
         self.logger.info("Waiting for server thread to stop...")
         self.server_thread.join(10.0)
         if self.server_thread.isAlive():
