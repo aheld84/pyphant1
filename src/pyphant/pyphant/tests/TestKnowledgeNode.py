@@ -41,7 +41,7 @@ __version__ = "$Revision$".replace('$','')
 import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
-from pyphant.core.KnowledgeNode import KnowledgeNode
+from pyphant.core.KnowledgeNode import (KnowledgeNode, RemoteKN)
 
 
 class KnowledgeNodeTestCase(unittest.TestCase):
@@ -58,6 +58,13 @@ class KnowledgeNodeTestCase(unittest.TestCase):
         stream.close()
         assert uuid == self.kn.km.uuid
         assert uuid == self.kn.uuid
+
+    def testManageRemotes(self):
+        self.kn.register_remote('127.0.0.1', -1)
+        dummy = RemoteKN('127.0.0.1', -1, status=2)
+        assert dummy in self.kn.remotes
+        self.kn.remove_remote('127.0.0.1', -1)
+        assert not dummy in self.kn.remotes
 
 if __name__ == "__main__":
     import sys

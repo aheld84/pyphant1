@@ -15,10 +15,10 @@
     is bound to a knowledge node which provides this web interface.
     The knowledge node is listening at {{local_url}} for requests.
   </p>
-  <h2>Remote Knowledge Managers</h2>
+  <h2>Remote Knowledge Nodes</h2>
   <p>
-    The following table shows the remote knowledge managers that are
-    connected to the knowledge node.
+    The following table shows the remote knowledge nodes that are
+    connected to the local knowledge node.
   </p>
   {{remote_table}}
 </body>

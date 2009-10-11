@@ -42,7 +42,13 @@ import pyphant.core.bottle
 from paste import httpserver
 from paste.translogger import TransLogger
 from threading import Thread
-from time import sleep
+from time import sleep, time
+import logging
+from urllib2 import (urlopen, URLError, HTTPError)
+
+
+class UnreachableError(Exception):
+    pass
 
 
 class PasteServer(pyphant.core.bottle.ServerAdapter):
@@ -60,11 +66,13 @@ class PasteServerThread(Thread):
         self.host = host
         self.port = port
         self.app = app
-        self.paste_server = None
 
     def run(self):
         self.paste_server = PasteServer(host=self.host, port=self.port)
-        pyphant.core.bottle.run(app=self.app, server=self.paste_server)
+        try:
+            pyphant.core.bottle.run(app=self.app, server=self.paste_server)
+        except Exception as exep:
+            self.error = exep
 
 
 class RoutingHTTPServer(object):
@@ -91,6 +99,7 @@ class RoutingHTTPServer(object):
         self.app = pyphant.core.bottle.Bottle()
         self.app.serve = False
         self.is_serving = False
+        self.logger = logging.getLogger('pyphant')
         if start:
             self.start()
 
@@ -107,13 +116,39 @@ class RoutingHTTPServer(object):
             return
         self.server_thread = PasteServerThread(self.host, self.port, self.app)
         self.server_thread.start()
-        print "Waiting for server thread to start..."
-        while not hasattr(self.server_thread, 'paste_server'):
-            pass
-        while not hasattr(self.server_thread.paste_server, 'httpserver'):
-            pass
-        sleep(3) # to be sure
-        print "Server thread started."
+        self.logger.info("Waiting for server thread to start...")
+        while not hasattr(self.server_thread, 'paste_server') \
+                  and not hasattr(self.server_thread, 'error'):
+            sleep(0.1)
+        while not hasattr(self.server_thread.paste_server, 'httpserver') \
+                  and not hasattr(self.server_thread, 'error'):
+            sleep(0.1)
+        isup = False
+        t1 = time()
+        while not hasattr(self.server_thread, 'error') and not isup \
+                  and time() - t1 < 10.0:
+            sleep(0.1)
+            try:
+                stream = None
+                stream = urlopen(self.url, timeout=3.0)
+                isup = True
+            except HTTPError:
+                isup = True
+            except (URLError, IOError):
+                pass
+            finally:
+                if stream != None:
+                    stream.close()
+        if hasattr(self.server_thread, 'error'):
+            self.logger.error("Could not start server thread. Reason: %s" \
+                                     % self.server_thread.error.__str__())
+            raise self.server_thread.error
+        if not isup:
+            msg = "Server started, but is not responding."
+            self.logger.error(msg)
+            self.stop()
+            raise UnreachableError()
+        self.logger.info("Server thread started.")
         self.app.serve = True
         self.is_serving = True
 
@@ -129,5 +164,11 @@ class RoutingHTTPServer(object):
         """
         self.app.serve = False
         self.server_thread.paste_server.httpserver.server_close()
+        self.logger.info("Waiting for server thread to stop...")
+        self.server_thread.join(10.0)
+        if self.server_thread.isAlive():
+            self.logger.error("Could not stop server thread!")
+        else:
+            self.logger.info("Server thread stopped.")
         self.server_thread = None
         self.is_serving = False

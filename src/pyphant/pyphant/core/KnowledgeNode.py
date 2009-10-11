@@ -41,13 +41,13 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source: $
 
-from pyphant.core.RoutingHTTPServer import RoutingHTTPServer
+from pyphant.core.RoutingHTTPServer import (RoutingHTTPServer,
+                                            UnreachableError)
 import sqlite3
 from pyphant.core.Helpers import getPyphantPath
 from pyphant.core.SQLiteWrapper import create_table
 from time import time
-from urllib2 import urlopen
-import urllib2
+from urllib2 import (urlopen, URLError, HTTPError)
 from urllib import urlencode
 import logging
 from pyphant.core.KnowledgeManager import (DCNotFoundError, KnowledgeManager)
@@ -60,17 +60,13 @@ from pyphant import __path__ as pyphant_source_path
 import pyphant.core.bottle
 
 
-class UnreachableError(Exception):
-    pass
-
-
 class SkipError(Exception):
     pass
 
 
-class RemoteKM(object):
+class RemoteKN(object):
     """
-    This class represents a remote KnowledgeManager.
+    This class represents a remote KnowledgeNode.
     """
 
     status_dict = {0:'offline', 1:'online', 2:'disabled'}
@@ -83,7 +79,8 @@ class RemoteKM(object):
         - `status`: 0: offline, may get online after timeout
                     1: online, may get offline anytime
                     2: disabled, use enable() to enable
-        - `timeout`: refresh interval for status lookup, default: 5 min
+        - `timeout`: refresh interval for status lookup when offline
+                     default: 5 min
         """
         self.host = host
         self.port = port
@@ -96,7 +93,7 @@ class RemoteKM(object):
         self.update_status()
 
     def __eq__(self, other):
-        if not isinstance(other, RemoteKM):
+        if not isinstance(other, RemoteKN):
             return False
         else:
             return self.host == other.host and self.port == other.port
@@ -116,7 +113,7 @@ class RemoteKM(object):
     def update_status(self):
         if self._status == 2:
             return
-        elif self.last_update == None:
+        elif self.last_update == None or self._status == 1:
             self.connect()
         else:
             if time() - self.last_update > self.timeout:
@@ -125,7 +122,7 @@ class RemoteKM(object):
     def connect(self):
         stream = None
         try:
-            stream = urllib2.urlopen(self.url + 'uuid/', timeout=10.0)
+            stream = urlopen(self.url + 'uuid/', timeout=3.0)
             line = stream.readline()
             if line.startswith('urn:uuid:'):
                 self._status = 1
@@ -134,7 +131,7 @@ class RemoteKM(object):
                 self._status = 0
                 self.logger.error("Remote KM '%s' returned broken uuid: '%s'" \
                                   % (self.url, line))
-        except (urllib2.URLError, IOError):
+        except (URLError, IOError, HTTPError):
             self._status = 0
             self.logger.warn("Remote KM '%s' is not responding." % self.url)
         finally:
@@ -151,7 +148,7 @@ class RemoteKM(object):
                 try:
                     query = urlencode({'skip':dumps(skip), 'dc_id':dc_id})
                     url = '%sget_dc_url/?%s' % (self.url, query)
-                    stream = urlib2.urlopen(url, timeout=10.0)
+                    stream = urlib2.urlopen(url, timeout=60.0)
                     assert stream.headers.type == 'application/json'
                     answer = load(stream)
                     stream.close()
@@ -159,7 +156,7 @@ class RemoteKM(object):
                         raise DCNotFoundError
                     assert len(answer['skip'] >= len(skip))
                     return answer['dc_url'], answer['skip']
-                except (urllib2.URLError, IOError, AssertionError):
+                except (URLError, HTTPError, IOError, AssertionError):
                     raise UnreachableError()
         else:
             raise UnreachableError()
@@ -206,15 +203,11 @@ class KnowledgeNode(RoutingHTTPServer):
         connection = sqlite3.connect(self._dbase)
         cursor = connection.cursor()
         try:
-            columns = [('idx', 'INTEGER PRIMARY KEY AUTOINCREMENT '\
-                        'NOT NULL UNIQUE'),
-                       ('host', 'TEXT'),
-                       ('port', 'INT'),
+            columns = [('host', 'TEXT'), ('port', 'INT'),
                        ('', 'UNIQUE(host, port)')]
             create_table('kn_remotes', columns, cursor)
-            cursor.execute("SELECT * FROM kn_remotes ORDER BY idx ASC")
-            self.remotes = [RemoteKM(host, port) for index, host, port \
-                            in cursor]
+            cursor.execute("SELECT * FROM kn_remotes")
+            self.remotes = [RemoteKN(host, port) for host, port in cursor]
             connection.commit()
         finally:
             cursor.close()
@@ -228,6 +221,8 @@ class KnowledgeNode(RoutingHTTPServer):
 
     def stop(self):
         RoutingHTTPServer.stop(self)
+        if not hasattr(self, '_tempdir'):
+            return
         if os.path.isdir(self._tempdir):
             from shutil import rmtree
             try:
@@ -244,7 +239,7 @@ class KnowledgeNode(RoutingHTTPServer):
             try:
                 cursor.execute("INSERT OR ABORT INTO kn_remotes (host, port)"\
                                " VALUES (?, ?)", (host, port))
-                self.remotes.append(RemoteKM(host, port))
+                self.remotes.append(RemoteKN(host, port))
             except sqlite3.IntegrityError:
                 self.km.logger.warn("Remote '%s:%d' already registered." \
                                     % (host, port))
@@ -256,7 +251,7 @@ class KnowledgeNode(RoutingHTTPServer):
     def remove_remote(self, host, port):
         host = host.lower()
         port = int(port)
-        dummy = RemoteKM(host, port, connect=False)
+        dummy = RemoteKN(host, port, status=2)
         try:
             imax = len(self.remotes)
             for index in xrange(imax):
@@ -294,6 +289,12 @@ class KnowledgeNode(RoutingHTTPServer):
     def handle_datacontainer_url(self):
         query = request.GET
         skip = loads(query['skip'])
+        if self.uuid in skip:
+            # This should not happen during normal operation
+            self.km.logger.error(
+                "KN '%s' has been queried although it is in the skip list.")
+        else:
+            skip.append(self.uuid)
         dc_id = query['dc_id']
         try:
             dc = self.km.getDataContainer(dc_id, try_remote=False)
