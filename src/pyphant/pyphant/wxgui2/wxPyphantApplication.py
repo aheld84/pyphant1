@@ -66,7 +66,7 @@ import pyphant.core.PyTablesPersister
 import WorkerRepository
 import ConfigureFrame
 import platform
-from pyphant.core.KnowledgeManager import KnowledgeManager as KM
+from pyphant.core.KnowledgeNode import KnowledgeNode
 import webbrowser
 pltform = platform.system()
 
@@ -80,6 +80,7 @@ class wxPyphantApplication(wx.PySimpleApp):
             return False
         self._logger=logging.getLogger("pyphant")
         sogl.SOGLInitialize()
+        self._knowledgeNode = KnowledgeNode(web_interface=True)
         self._paramVisReg=ParamVisReg.ParamVisReg()
         self._frame = wxPyphantFrame(self)
         self._frame.Show()
@@ -211,7 +212,7 @@ class wxPyphantFrame(wx.Frame):
         self._fileMenu.Append( wx.ID_EXIT, "E&xit" )
         self._fileMenu.Append( wx.ID_FILE1, "Import HDF5 or FMF from &URL" )
         self._fileMenu.Append( wx.ID_FILE2, "&Import local HDF5 or FMF file")
-        self._fileMenu.Append( wx.ID_FILE3, "Start/stop &web interface")
+        self._fileMenu.Append( wx.ID_FILE3, "Start/pause sharing &knowledge")
         self._menuBar.Append( self._fileMenu, "&File" )
         self._closeCompositeWorker = wx.Menu()
         self._closeCompositeWorker.Append(self.ID_CLOSE_COMPOSITE_WORKER, "&Close Composite Worker")
@@ -228,7 +229,7 @@ class wxPyphantFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onCloseCompositeWorker, id=self.ID_CLOSE_COMPOSITE_WORKER)
         self.Bind(wx.EVT_MENU, self.onImportURL, id=wx.ID_FILE1)
         self.Bind(wx.EVT_MENU, self.onImportLocal, id=wx.ID_FILE2)
-        self.Bind(wx.EVT_MENU, self.onWebInterface, id=wx.ID_FILE3)
+        self.Bind(wx.EVT_MENU, self.onShare, id=wx.ID_FILE3)
 
     def createUpdateMenu(self):
         updateMenu = wx.Menu()
@@ -262,8 +263,7 @@ class wxPyphantFrame(wx.Frame):
                 self.onSaveCompositeWorker()
             dlg.Destroy()
         if dlgid != wx.ID_CANCEL:
-            km = KM.getInstance()
-            km.tearDown()
+            self._wxPyphantApp._knowledgeNode.stop()
             self.Destroy()
 
     def editCompositeWorker(self, worker):
@@ -294,7 +294,7 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
             cpt2 = "Info"
             msg2 = "Successfully imported DataContainers from\n'%s'"\
                    % (url ,)
-            km = KM.getInstance()
+            km = self._wxPyphantApp._knowledgeNode.local_km
             try:
                 km.registerURL(url)
             except Exception:
@@ -313,7 +313,7 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
         if dlg.ShowModal() == wx.ID_OK:
             filename = dlg.GetPath()
             url = 'file://' + os.path.realpath(filename)
-            km = KM.getInstance()
+            km = self._wxPyphantApp._knowledgeNode.local_km
             cpt2 = "Info"
             msg2 = "Successfully imported DataContainer(s) from\n'%s'"\
                    % (filename ,)
@@ -329,29 +329,34 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
         else:
             dlg.Destroy()
 
-    def onWebInterface(self, event):
-        km = KM.getInstance()
-        cpt = "Pyphant Web Interface"
+    def onShare(self, event):
+        kn = self._wxPyphantApp._knowledgeNode
+        cpt = "Share Knowledge"
         msg = ""
-        if km.web_interface.disabled:
-            if not km.isServerRunning():
+        if not kn.app.serve:
+            if not kn.is_serving:
                 try:
-                    km.startServer("127.0.0.1", 8000, True)
-                    msg += "Started web server @ 127.0.0.1:8000"
-                    url = 'http://%s:%d/' % (km._http_host,
-                                             km._http_port)
+                    kn.start()
+                    msg += "Knowledge node is listening @ 127.0.0.1:8080.\n"\
+                           "Sharing is experimental and therefore restric"\
+                           "ted\nto the loopback interface."
+                    url = kn.url
                     webbrowser.open_new(url)
-                except:
-                    msg += "Could not start web server @ 127.0.0.1:8000"
-                    km.web_interface.disabled = True
+                except Exception as exep:
+                    msg += "Could not start web server @ 127.0.0.1:8080"
+                    from socket import error as socket_error
+                    if isinstance(exep, socket_error):
+                        if exep.errno == 98:
+                            msg += "\nReason: Address 127.0.0.1:8080 "\
+                                   "already in use!\n(You may stop other"\
+                                   " applications or wait for the OS\n"\
+                                   "to free the port.)"
             else:
-                km.web_interface.disabled = False
+                msg += "Resumed sharing."
+                kn.app.serve = True
         else:
-            km.web_interface.disabled = True
-            msg += "Disabled web interface."
-            if km.isServerRunning():
-                km.stopServer()
-                msg += "\nStopped web server."
+            kn.app.serve = False
+            msg += "Disabled sharing."
         dlg = wx.MessageDialog(self, msg, cpt, wx.OK)
         dlg.ShowModal()
 
