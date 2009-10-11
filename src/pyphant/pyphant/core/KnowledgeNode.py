@@ -149,11 +149,11 @@ class RemoteKN(object):
                 try:
                     query = urlencode({'skip':dumps(skip), 'dc_id':dc_id})
                     url = '%sget_dc_url/?%s' % (self.url, query)
-                    stream = urlib2.urlopen(url, timeout=60.0)
+                    stream = urlopen(url, timeout=60.0)
                     assert stream.headers.type == 'application/json'
                     answer = load(stream)
                     stream.close()
-                    if not answer['dc_url'].startswith('emd5://'):
+                    if answer['dc_url'] == None:
                         raise DCNotFoundError
                     assert len(answer['skip'] >= len(skip))
                     return answer['dc_url'], answer['skip']
@@ -196,6 +196,7 @@ class KnowledgeNode(RoutingHTTPServer):
         if not tpl_path in pyphant.core.bottle.TEMPLATE_PATH:
             pyphant.core.bottle.TEMPLATE_PATH.append(tpl_path)
         self.web_interface = WebInterface(self, web_interface)
+        self.km.node = self
 
     def _restore_remotes(self):
         """
