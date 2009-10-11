@@ -9,5 +9,17 @@
   <p>
     <img src="/images/pyphant.png" alt="pyphant-logo" width="300" height="100">
   </p>
+  <h2>Local Knowledge Manager</h2>
+  <p>
+    The local knowledge manager '{{local_uuid}}'
+    is bound to a knowledge node which provides this web interface.
+    The knowledge node is listening at {{local_url}} for requests.
+  </p>
+  <h2>Remote Knowledge Managers</h2>
+  <p>
+    The following table shows the remote knowledge managers that are
+    connected to the knowledge node.
+  </p>
+  {{remote_table}}
 </body>
 </html>

@@ -250,8 +250,15 @@ class WebInterface(object):
     def frontpage(self):
         if not self.enabled:
             return template('disabled')
-        return template('frontpage')
-        #return bottle.TEMPLATE_PATH.__repr__()
+        remote_rows = [['URL', 'UUID', 'Status']]
+        for remote in self.kn.remotes:
+            remote_rows.append([HTMLLink(remote.url, remote.url),
+                                remote.uuid, remote.status])
+        remote_table = HTMLTable(remote_rows, border=5)
+        return template('frontpage',
+                        local_url=HTMLLink(self.kn.url, self.kn.url).getHTML(),
+                        local_uuid=self.kn.uuid,
+                        remote_table=remote_table.getHTML())
 
     def images(self, filename):
         send_file(filename, self.rootdir + 'images/', guessmime=True)
