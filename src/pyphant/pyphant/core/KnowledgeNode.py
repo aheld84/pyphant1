@@ -155,7 +155,7 @@ class RemoteKN(object):
                     stream.close()
                     if answer['dc_url'] == None:
                         raise DCNotFoundError
-                    assert len(answer['skip'] >= len(skip))
+                    assert len(answer['skip']) >= len(skip)
                     return answer['dc_url'], answer['skip']
                 except (URLError, HTTPError, IOError, AssertionError):
                     raise UnreachableError()
@@ -339,7 +339,7 @@ class KnowledgeNode(RoutingHTTPServer):
                                          prefix='dcrequest-',
                                          dir=self._tempdir)
             os.close(osFileId)
-            handler = self.km.H5FileHandler(filename, 'w')
+            handler = self.km.getH5FileHandler(filename, 'w')
             with handler:
                 handler.saveDataContainer(dc)
             dc_url = self.url + "wrapped/" + os.path.basename(filename)
