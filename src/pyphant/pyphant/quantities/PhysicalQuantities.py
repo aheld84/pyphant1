@@ -671,18 +671,17 @@ def _convertValue (value, src_unit, target_unit):
 
 _base_names = ['m', 'kg', 's', 'A', 'K', 'mol', 'cd', 'rad', 'sr','EUR','bit','B']
 
-_base_units = [('m',   PhysicalUnit('m',   1.,    [1,0,0,0,0,0,0,0,0,0,0,0])),
-	       ('g',   PhysicalUnit('g',   0.001, [0,1,0,0,0,0,0,0,0,0,0,0])),
-	       ('s',   PhysicalUnit('s',   1.,    [0,0,1,0,0,0,0,0,0,0,0,0])),
-	       ('A',   PhysicalUnit('A',   1.,    [0,0,0,1,0,0,0,0,0,0,0,0])),
-	       ('K',   PhysicalUnit('K',   1.,    [0,0,0,0,1,0,0,0,0,0,0,0])),
-	       ('mol', PhysicalUnit('mol', 1.,    [0,0,0,0,0,1,0,0,0,0,0,0])),
-	       ('cd',  PhysicalUnit('cd',  1.,    [0,0,0,0,0,0,1,0,0,0,0,0])),
-	       ('rad', PhysicalUnit('rad', 1.,    [0,0,0,0,0,0,0,1,0,0,0,0])),
-	       ('sr',  PhysicalUnit('sr',  1.,    [0,0,0,0,0,0,0,0,1,0,0,0])),
-               ('EUR',  PhysicalUnit('EUR',  1.,  [0,0,0,0,0,0,0,0,0,1,0,0])),
-               ('bit',  PhysicalUnit('bit',  1.,  [0,0,0,0,0,0,0,0,0,0,1,0])),
-               ('B',  PhysicalUnit('B',  1.,  [0,0,0,0,0,0,0,0,0,0,0,1])),
+_base_units = [('m',   PhysicalUnit('m',   1.,    [1,0,0,0,0,0,0,0,0,0,0])),
+	       ('g',   PhysicalUnit('g',   0.001, [0,1,0,0,0,0,0,0,0,0,0])),
+	       ('s',   PhysicalUnit('s',   1.,    [0,0,1,0,0,0,0,0,0,0,0])),
+	       ('A',   PhysicalUnit('A',   1.,    [0,0,0,1,0,0,0,0,0,0,0])),
+	       ('K',   PhysicalUnit('K',   1.,    [0,0,0,0,1,0,0,0,0,0,0])),
+	       ('mol', PhysicalUnit('mol', 1.,    [0,0,0,0,0,1,0,0,0,0,0])),
+	       ('cd',  PhysicalUnit('cd',  1.,    [0,0,0,0,0,0,1,0,0,0,0])),
+	       ('rad', PhysicalUnit('rad', 1.,    [0,0,0,0,0,0,0,1,0,0,0])),
+	       ('sr',  PhysicalUnit('sr',  1.,    [0,0,0,0,0,0,0,0,1,0,0])),
+               ('EUR',  PhysicalUnit('EUR',  1.,  [0,0,0,0,0,0,0,0,0,1,0])),
+               ('bit',  PhysicalUnit('bit',  1.,  [0,0,0,0,0,0,0,0,0,0,1])),
 	       ]
 
 _prefixes = [('Y',  1.e24),
@@ -708,12 +707,12 @@ _prefixes = [('Y',  1.e24),
              ]
 
 _binaryUnits = ['bit','B']
-_binaryPrefixes = [('Ei',  2.**60),
-             ('Pi',  2.**50),
-             ('Ti',  2.**40),
-             ('Gi',  2.**30),
-             ('Mi',  2.**20),
-             ('Ki',  2.**10)
+_binaryPrefixes = [('Ei',  2**60),
+             ('Pi',  2**50),
+             ('Ti',  2**40),
+             ('Gi',  2**30),
+             ('Mi',  2**20),
+             ('Ki',  2**10)
 ]             
 
 _unit_table = {}
@@ -749,13 +748,13 @@ def _addPrefixed(unit,prefixes=_prefixes):
         _prefixed_names.append(name)
     _help.append(', '.join(_prefixed_names))
 
-# SI derived units; these automatically get prefixes
+# Units with prefixes
 _help.append('SI derived units; these automatically get prefixes:\n' + \
      ', '.join([prefix + ' (%.0E)' % value for prefix, value in _prefixes]) + \
              '\n')
 
 
-_unit_table['kg'] = PhysicalUnit('kg',   1., [0,1,0,0,0,0,0,0,0,0,0,0])
+_unit_table['kg'] = PhysicalUnit('kg',   1., [0,1,0,0,0,0,0,0,0,0,0])
 
 _addUnit('Hz', '1/s', 'Hertz')
 _addUnit('N', 'm*kg/s**2', 'Newton')
@@ -775,6 +774,7 @@ _addUnit('lx', 'lm/m**2', 'Lux')
 _addUnit('Bq', '1/s', 'Becquerel')
 _addUnit('Gy', 'J/kg', 'Gray')
 _addUnit('Sv', 'J/kg', 'Sievert')
+_addUnit('B', '8*bit', 'Byte, Octett')
 
 del _unit_table['kg']
 
@@ -1019,3 +1019,4 @@ if __name__ == '__main__':
 
     byterate = PhysicalQuantity('1MiB/s')
     print "%s=%s" % (byterate,byterate.inUnitsOf('MB/s'))
+    print "%s=%s" % (byterate,byterate.inUnitsOf('Mibit/s'))
