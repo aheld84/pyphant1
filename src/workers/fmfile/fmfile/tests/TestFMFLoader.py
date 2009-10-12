@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008-2009  Rectorate of the University of Freiburg
+# Copyright (c) 2009  Andreas W. Liehr
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -102,6 +103,22 @@ class TestColumn2FieldContainer(unittest.TestCase):
                                         mask = numpy.array([True,False]),
                                         unit='1 degC',longname='temperature',shortname='T')
         assertEqual(result,expectedResult)
+
+class TestDiscriminatingJouleAndImaginary(unittest.TestCase):
+    """In order to discriminate between an imaginary number and unit Joule, imaginary numbers have to be indicated only by a minor capital 'j', while a major capital 'J' indicates the unit Joule.
+    """
+    def setUp(self):
+        self.inputDict = {'complexJ':'1.0j','Joule':'1.0J'}
+
+    def testComplexVale(self):
+        """Imaginary numbers are indicated by 'j'."""
+        result = FMFLoader.item2value(self.inputDict, 'complexJ')
+        self.assertEqual(result,complex(self.inputDict['complexJ']))
+
+    def testJouleValue(self):
+        """Physical quantities with unit Joule are indicated by 'J'."""
+        result = FMFLoader.item2value(self.inputDict, 'Joule')
+        self.assertEqual(result,(PhysicalQuantity(self.inputDict['Joule']),None))
                   
 if __name__ == "__main__":
     import sys

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -344,31 +345,33 @@ def parseBool(value):
         return False
     raise AttributeError
 
-def config2tables(preParsedData, config):
-    converters = [
-        int,
-        float,
-        complex,
-        parseBool,
-        parseVariable,
-        parseQuantity,
-        parseDateTime,
-        ]
+_converters = [
+    int,
+    float,
+    parseBool,
+    parseVariable,
+    parseQuantity,
+    complex,                          # Complex is checked after variables and quantities,
+                                      # because 1J is 1 Joule and not an imaginary number.
+    parseDateTime,
+    ]
 
-    def item2value(section, key):
-        oldVal = section[key]
-        if type(oldVal)==type([]):
-            for c in converters:
-                try:
-                    return map(c,oldVal)
-                except:
-                    pass
-        for c in converters:
+def item2value(section, key):
+    oldVal = section[key]
+    if type(oldVal)==type([]):
+        for c in _converters:
             try:
-                return c(oldVal)
+                return map(c,oldVal)
             except:
                 pass
-        return oldVal
+    for c in _converters:
+        try:
+            return c(oldVal)
+        except:
+            pass
+    return oldVal
+
+def config2tables(preParsedData, config):
 
     if config.has_key('*table definitions'):
         longnames = dict([(i,k) for k,i in config['*table definitions'].iteritems()])
