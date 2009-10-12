@@ -308,7 +308,8 @@ class WebInterface(object):
     def images(self, filename):
         if not self.enabled:
             return template('disabled')
-        send_file(filename, self.rootdir + 'images/', guessmime=True)
+        send_file(filename, self.rootdir + 'images/', guessmime=False,
+                  mimetype=self.kn.mimetypes.guess_type(filename)[0])
 
     def remote_action(self):
         if not self.enabled:
@@ -319,7 +320,11 @@ class WebInterface(object):
                        'remove':self.kn.remove_remote,
                        'add':self.kn.register_remote}
         if qry['action'] in action_dict:
-            action_dict[qry['action']](qry['host'], int(qry['port']))
+            try:
+                port = int(qry['port'])
+                action_dict[qry['action']](qry['host'], port)
+            except ValueError:
+                pass
         return self.frontpage()
 
     def favicon(self):

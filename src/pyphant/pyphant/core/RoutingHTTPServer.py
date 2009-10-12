@@ -45,6 +45,7 @@ from threading import Thread
 from time import sleep, time
 import logging
 from urllib2 import (urlopen, URLError, HTTPError)
+from mimetypes import MimeTypes
 
 
 class UnreachableError(Exception):
@@ -95,7 +96,9 @@ class RoutingHTTPServer(object):
         self.host = host.lower()
         self.port = int(port)
         self.server_thread = None
-        self.app = pyphant.core.bottle.Bottle()
+        self.mimetypes = MimeTypes()
+        self.app = pyphant.core.bottle.Bottle(catchall=False, optimize=True,
+                                              autojson=True)
         self.app.serve = False
         self.is_serving = False
         self.logger = logging.getLogger('pyphant')
@@ -141,7 +144,9 @@ class RoutingHTTPServer(object):
         if hasattr(self.server_thread, 'error'):
             self.logger.error("Could not start server thread. Reason: %s" \
                                      % self.server_thread.error.__str__())
-            raise self.server_thread.error
+            error = self.server_thread.error
+            self.stop()
+            raise error
         if not isup:
             msg = "Server started, but is not responding."
             self.logger.error(msg)
