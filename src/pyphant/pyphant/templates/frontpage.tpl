@@ -6,6 +6,7 @@
 </head>
 <body>
   <h1>Pyphant Web Interface &#64; {{local_url}}</h1>
+  {{menu}}
   <p>
     <img src="/images/pyphant.png" alt="pyphant-logo"
          width="300" height="100" />

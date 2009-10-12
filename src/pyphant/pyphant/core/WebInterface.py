@@ -42,6 +42,7 @@ __version__ = "$Revision$"
 from types import DictType
 from types import (DictType, ListType)
 from pyphant.core.bottle import (template, send_file, request)
+from pyphant.core.Helpers import getPyphantPath
 from urllib import urlencode
 
 
@@ -274,6 +275,8 @@ class WebInterface(object):
         self.kn = knowledge_node
         from pyphant import __path__ as ppath
         self.rootdir = ppath[0] + '/templates/'
+        self.url_link = HTMLLink(self.kn.url, self.kn.url).getHTML()
+        self.menu = HTMLLink('/log/', 'Show log').getHTML()
         self._setup_routes()
 
     def _setup_routes(self):
@@ -281,6 +284,7 @@ class WebInterface(object):
         self.kn.app.add_route('/images/:filename', self.images)
         self.kn.app.add_route('/remote_action', self.remote_action)
         self.kn.app.add_route('/favicon.ico', self.favicon)
+        self.kn.app.add_route('/log/', self.log)
 
     def frontpage(self):
         if not self.enabled:
@@ -301,9 +305,10 @@ class WebInterface(object):
         remote_table = HTMLTable(remote_rows, border=2,
                                  cellspacing=2, cellpadding=2)
         return template('frontpage',
-                        local_url=HTMLLink(self.kn.url, self.kn.url).getHTML(),
+                        local_url=self.url_link,
                         local_uuid=self.kn.uuid[9:],
-                        remote_table=remote_table.getHTML())
+                        remote_table=remote_table.getHTML(),
+                        menu=self.menu)
 
     def images(self, filename):
         if not self.enabled:
@@ -329,3 +334,10 @@ class WebInterface(object):
 
     def favicon(self):
         return self.images('favicon.ico')
+
+    def log(self):
+        if not self.enabled:
+            return template('disabled')
+        with open(getPyphantPath() + 'pyphant.log') as logfile:
+            loglines = logfile.readlines()
+        return template('log', loglines=''.join(loglines), url=self.url_link)

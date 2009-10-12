@@ -38,10 +38,9 @@ __version__ = "Sprint"
 # $Source$
 
 import os, os.path, pkg_resources
-LOGDIR = os.path.expanduser(u'~')
+from pyphant.core.Helpers import getPyphantPath
+LOGDIR = getPyphantPath()[:-1]
 import logging
-if LOGDIR==u'~':
-    LOGDIR = os.getcwdu()
 #    logging.basicConfig(level=logging.DEBUG)
 #else:
 logging.basicConfig(level=logging.DEBUG,
