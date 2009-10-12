@@ -707,7 +707,8 @@ _prefixes = [('Y',  1.e24),
              ('y',  1.e-24),
              ]
 
-_prefixes = [('Ei',  2.**60),
+_binaryUnits = ['bit','B']
+_binaryPrefixes = [('Ei',  2.**60),
              ('Pi',  2.**50),
              ('Ti',  2.**40),
              ('Gi',  2.**30),
@@ -735,13 +736,13 @@ def _addUnit(name, unit, comment=''):
     unit.setName(name)
     _unit_table[name] = unit
 
-def _addPrefixed(unit):
+def _addPrefixed(unit,prefixes=_prefixes):
     _help.append('Prefixed units for %s:' % unit)
     _prefixed_names = []
     if unit in ['EUR','bit','B']:
-        validPrefixes = filter(lambda prefix: prefix[1]>=1000,_prefixes) 
+        validPrefixes = filter(lambda prefix: prefix[1]>=1000,prefixes) 
     else:
-        validPrefixes = _prefixes
+        validPrefixes = prefixes
     for prefix in validPrefixes:
 	name = prefix[0] + unit
 	_addUnit(name, prefix[1]*_unit_table[unit])
@@ -754,7 +755,7 @@ _help.append('SI derived units; these automatically get prefixes:\n' + \
              '\n')
 
 
-_unit_table['kg'] = PhysicalUnit('kg',   1., [0,1,0,0,0,0,0,0,0,0])
+_unit_table['kg'] = PhysicalUnit('kg',   1., [0,1,0,0,0,0,0,0,0,0,0,0])
 
 _addUnit('Hz', '1/s', 'Hertz')
 _addUnit('N', 'm*kg/s**2', 'Newton')
@@ -779,6 +780,8 @@ del _unit_table['kg']
 
 for unit in _unit_table.keys():
     _addPrefixed(unit)
+for unit in _binaryUnits:
+    _addPrefixed(unit,_binaryPrefixes)
 
 # Fundamental constants
 _help.append('Fundamental constants:')
@@ -1010,3 +1013,9 @@ if __name__ == '__main__':
 
     euroSQM = PhysicalQuantity('19.99 EUR/m**2')
     print "%s=%s" % (euroSQM,euroSQM.inUnitsOf('EUR/cm**2'))
+
+    bitrate = PhysicalQuantity('1Kibit/s')
+    print "%s=%s" % (bitrate,bitrate.inUnitsOf('kbit/s'))
+
+    byterate = PhysicalQuantity('1MiB/s')
+    print "%s=%s" % (byterate,byterate.inUnitsOf('MB/s'))
