@@ -112,12 +112,12 @@ class TestDiscriminatingJouleAndImaginary(unittest.TestCase):
 
     def testComplexVale(self):
         """Imaginary numbers are indicated by 'j'."""
-        result = FMFLoader.item2value(self.inputDict, 'complexJ')
+        result = FMFLoader.item2value(self.inputDict['complexJ'])
         self.assertEqual(result,complex(self.inputDict['complexJ']))
 
     def testJouleValue(self):
         """Physical quantities with unit Joule are indicated by 'J'."""
-        result = FMFLoader.item2value(self.inputDict, 'Joule')
+        result = FMFLoader.item2value(self.inputDict['Joule'])
         self.assertEqual(result,(PhysicalQuantity(self.inputDict['Joule']),None))
                   
 if __name__ == "__main__":
