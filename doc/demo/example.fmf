@@ -28,10 +28,10 @@ float with exponential: 1e-10
 float with Exponential: -1.1E10
 list of floats: 1.0, .1, 1e-10, -1.1E10
 complex: 1+2j
-Complex: 1+2J
-Complex number with zero real part : 2J
-Complex number with zero imaginary part: 1+0J
-list of complex: 1+2j, 1+2J 
+Complex: 1.1+2j
+Complex number with zero real part : 2j
+Complex number with zero imaginary part: 1+0j
+list of complex: 1+2j, 1.1+2j
 [Boolean values]
 true1: True
 true2: true
@@ -101,7 +101,7 @@ Infinite Value: V_i
 [*data: T]
 H_2	1	1.	1e1	1+0j	nan	inf	
 O_2	2	.2	2E1	2+.1j	NaN	INF
-O 2	2	.2	2E1	2+.1J	NAN	Inf
+O 2	2	.2	2E1	2.+2j	NAN	Inf
 [*data definitions: M]
 String: S
 Complex: C

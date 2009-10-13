@@ -774,7 +774,7 @@ _addUnit('lx', 'lm/m**2', 'Lux')
 _addUnit('Bq', '1/s', 'Becquerel')
 _addUnit('Gy', 'J/kg', 'Gray')
 _addUnit('Sv', 'J/kg', 'Sievert')
-_addUnit('B', '8*bit', 'Byte, Octett')
+_addUnit('B', '8*bit', 'Byte')
 
 del _unit_table['kg']
 
