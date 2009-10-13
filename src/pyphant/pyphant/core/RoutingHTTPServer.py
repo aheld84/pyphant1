@@ -72,7 +72,7 @@ class PasteServerThread(Thread):
         self.paste_server = PasteServer(host=self.host, port=self.port)
         try:
             pyphant.core.bottle.run(app=self.app, server=self.paste_server)
-        except Exception as exep:
+        except Exception, exep:
             self.error = exep
 
 

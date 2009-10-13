@@ -346,7 +346,7 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
                        "Sharing is experimental and therefore restric"\
                        "ted\nto the loopback interface." % url
                 webbrowser.open_new(url)
-            except Exception as exep:
+            except Exception, exep:
                 msg += "Could not start web server."
                 from socket import error as socket_error
                 if isinstance(exep, socket_error):

@@ -29,6 +29,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import with_statement
+
 """
 This module provides the KnowledgeNode class which is used as an
 HTTP communication channel between one local KnowledgeManager and
@@ -376,7 +378,7 @@ def get_kn_autoport(ports, logger=None, *args, **kargs):
         try:
             kn = KnowledgeNode(port=port, *args, **kargs)
             return kn
-        except socket.error as err:
+        except socket.error, err:
             last_error = err
             if err.errno == 98:
                 log("Port %d is already in use." % port)
