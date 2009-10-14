@@ -44,6 +44,8 @@ from types import (DictType, ListType)
 from pyphant.core.bottle import (template, send_file, request)
 from pyphant.core.Helpers import getPyphantPath
 from urllib import urlencode
+from pyphant.core.KnowledgeNode import RemoteError
+from types import StringTypes
 
 
 def cond(condition, results):
@@ -51,6 +53,27 @@ def cond(condition, results):
         return results[0]
     else:
         return results[1]
+
+def validate(value_validator_message_list):
+    valid = True
+    error_msg = ""
+    for value, validator, message in value_validator_message_list:
+        if not validator(value):
+            valid = False
+            if "%s" in message:
+                message = message % value.__repr__()
+            error_msg += "<p>%s</p>\n" % message
+    if not valid:
+        raise ValueError(error_msg)
+
+def validate_keys(keys, mapping):
+    try:
+        validate([(k, lambda k: k in mapping, "Missing parameter: %s") \
+                  for k in keys])
+    except ValueError, verr:
+        return template('message', heading='Value Error',
+                        message=verr.args[0], back_url='/')
+    return True
 
 
 class HTMLDict(dict):
@@ -276,7 +299,11 @@ class WebInterface(object):
         from pyphant import __path__ as ppath
         self.rootdir = ppath[0] + '/templates/'
         self.url_link = HTMLLink(self.kn.url, self.kn.url).getHTML()
-        self.menu = HTMLLink('/log/', 'Show log').getHTML()
+        self.menu = HTMLTable(
+            [['&#124;', HTMLLink('/remotes/', 'Manage Remotes'),
+              '&#124;', HTMLLink('/log/', 'Show Log'),
+              '&#124;']],
+            border=0, cellspacing=2, cellpadding=2, headings=False).getHTML()
         self._setup_routes()
 
     def _setup_routes(self):
@@ -285,8 +312,17 @@ class WebInterface(object):
         self.kn.app.add_route('/remote_action', self.remote_action)
         self.kn.app.add_route('/favicon.ico', self.favicon)
         self.kn.app.add_route('/log/', self.log)
+        self.kn.app.add_route('/remotes/', self.remotes)
 
     def frontpage(self):
+        if not self.enabled:
+            return template('disabled')
+        return template('frontpage',
+                        local_url=self.url_link,
+                        local_uuid=self.kn.uuid[9:],
+                        menu=self.menu)
+
+    def remotes(self):
         if not self.enabled:
             return template('disabled')
         remote_rows = [[('URL', 2), 'UUID', ('Action', 2)]]
@@ -304,11 +340,7 @@ class WebInterface(object):
                                 uuid, endis, rem])
         remote_table = HTMLTable(remote_rows, border=2,
                                  cellspacing=2, cellpadding=2)
-        return template('frontpage',
-                        local_url=self.url_link,
-                        local_uuid=self.kn.uuid[9:],
-                        remote_table=remote_table.getHTML(),
-                        menu=self.menu)
+        return template('remotes', remote_table=remote_table.getHTML())
 
     def images(self, filename):
         if not self.enabled:
@@ -324,13 +356,29 @@ class WebInterface(object):
                        'disable':self.kn.disable_remote,
                        'remove':self.kn.remove_remote,
                        'add':self.kn.register_remote}
-        if qry['action'] in action_dict:
-            try:
-                port = int(qry['port'])
-                action_dict[qry['action']](qry['host'], port)
-            except ValueError:
-                pass
-        return self.frontpage()
+        valk = validate_keys(['host', 'port', 'action'], qry)
+        if not valk is True:
+            return valk
+        try:
+            validate([(qry['port'],
+                       lambda p: p.isdigit() and int(p) < 65536,
+                       "Parameter 'port' has to be between 0 and 65535."),
+                      (qry['action'],
+                       lambda a: a in action_dict,
+                       "Invalid value for parameter 'action': %s")]
+                     )
+        except ValueError, valerr:
+            return template('message', heading='Parameter Error',
+                            message=valerr.args[0], back_url='/remotes/')
+        port = int(qry['port'])
+        try:
+            action_dict[qry['action']](qry['host'], port)
+        except RemoteError, remerr:
+            return template('message', heading='Error', message=remerr.args[0],
+                            back_url='/remotes/')
+        return template('message', heading='Remote action',
+                        message="Successfully performed action.",
+                        back_url='/remotes/')
 
     def favicon(self):
         return self.images('favicon.ico')
