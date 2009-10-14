@@ -356,8 +356,7 @@ _converters = [
     parseDateTime,
     ]
 
-def item2value(section, key):
-    oldVal = section[key]
+def item2value(oldVal):
     if type(oldVal)==type([]):
         for c in _converters:
             try:
@@ -390,7 +389,7 @@ def config2tables(preParsedData, config):
                                      preParsedData[shortname],
                                      config[k]))
             del config[k]
-    attributes = config.walk(item2value)
+    attributes = config.walk(lambda section,key: item2value(section[key]))
     for t in tables:
         t.attributes = copy.deepcopy(attributes)
     return tables
