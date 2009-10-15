@@ -54,7 +54,7 @@ class UnreachableError(Exception):
 
 class PasteServer(pyphant.core.bottle.ServerAdapter):
     def run(self, handler):
-        app = TransLogger(handler)
+        app = TransLogger(handler, logger=logging.getLogger('pyphant'))
         self.httpserver = httpserver.serve(app, host=self.host,
                                            port=str(self.port),
                                            start_loop=False)

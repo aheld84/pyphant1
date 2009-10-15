@@ -60,12 +60,15 @@ except ImportError:
     from simplejson import (dumps, load, loads)
 from tempfile import (mkdtemp, mkstemp)
 import os
-from pyphant.core.WebInterface import WebInterface
 from pyphant import __path__ as pyphant_source_path
 import pyphant.core.bottle
 
 
 class SkipError(Exception):
+    pass
+
+
+class RemoteError(Exception):
     pass
 
 
@@ -211,6 +214,7 @@ class KnowledgeNode(RoutingHTTPServer):
         tpl_path = pyphant_source_path[0] + '/templates/'
         if not tpl_path in pyphant.core.bottle.TEMPLATE_PATH:
             pyphant.core.bottle.TEMPLATE_PATH.append(tpl_path)
+        from pyphant.core.WebInterface import WebInterface
         self.web_interface = WebInterface(self, web_interface)
         self.km.node = self
 
@@ -254,6 +258,7 @@ class KnowledgeNode(RoutingHTTPServer):
         port = int(port)
         connection = sqlite3.connect(self._dbase)
         cursor = connection.cursor()
+        error = None
         try:
             try:
                 cursor.execute("INSERT OR ABORT INTO kn_remotes "\
@@ -261,12 +266,14 @@ class KnowledgeNode(RoutingHTTPServer):
                                "VALUES (?, ?, ?)", (host, port, 0))
                 self.remotes.append(RemoteKN(host, port))
             except sqlite3.IntegrityError:
-                self.km.logger.warn("Remote '%s:%d' already registered." \
+                error = RemoteError("Remote '%s:%d' already registered." \
                                     % (host, port))
             connection.commit()
         finally:
             cursor.close()
             connection.close()
+        if not error is None:
+            raise error
 
     def remove_remote(self, host, port):
         host = host.lower()
@@ -275,9 +282,8 @@ class KnowledgeNode(RoutingHTTPServer):
         try:
             self.remotes.remove(dummy)
         except ValueError:
-            self.km.logger.warn("Remote '%s:%d' is not registered." \
-                                % (host, port))
-            return
+            raise RemoteError("Remote '%s:%d' is not registered." \
+                              % (host, port))
         connection = sqlite3.connect(self._dbase)
         cursor = connection.cursor()
         try:
@@ -309,8 +315,8 @@ class KnowledgeNode(RoutingHTTPServer):
                     cursor.close()
                     connection.close()
                 return
-        self.km.logger.warn("Remote '%s:%d' is not registered." \
-                            % (host, port))
+        raise RemoteError("Remote '%s:%d' is not registered." \
+                          % (host, port))
 
     def disable_remote(self, host, port):
         self.change_remote(host, port, 2)
