@@ -132,7 +132,10 @@ class RoutingHTTPServer(object):
             sleep(0.1)
             try:
                 stream = None
-                stream = urlopen(self.url, timeout=3.0)
+                try:
+                    stream = urlopen(self.url, timeout=3.0)
+                except TypeError:
+                    stream = urlopen(self.url)
                 isup = True
             except HTTPError:
                 isup = True

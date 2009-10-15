@@ -54,7 +54,10 @@ from urllib import urlencode
 import logging
 from pyphant.core.KnowledgeManager import (DCNotFoundError, KnowledgeManager)
 from pyphant.core.bottle import (request, send_file)
-from json import (dumps, load, loads)
+try:
+    from json import (dumps, load, loads)
+except ImportError:
+    from simplejson import (dumps, load, loads)
 from tempfile import (mkdtemp, mkstemp)
 import os
 from pyphant.core.WebInterface import WebInterface
@@ -125,7 +128,10 @@ class RemoteKN(object):
     def connect(self):
         stream = None
         try:
-            stream = urlopen(self.url + 'uuid/', timeout=3.0)
+            try:
+                stream = urlopen(self.url + 'uuid/', timeout=3.0)
+            except TypeError:
+                stream = urlopen(self.url + 'uuid/')
             line = stream.readline()
             if line.startswith('urn:uuid:'):
                 self._status = 1
@@ -151,7 +157,10 @@ class RemoteKN(object):
                 try:
                     query = urlencode({'skip':dumps(skip), 'dc_id':dc_id})
                     url = '%sget_dc_url/?%s' % (self.url, query)
-                    stream = urlopen(url, timeout=60.0)
+                    try:
+                        stream = urlopen(url, timeout=60.0)
+                    except TypeError:
+                        stream = urlopen(url)
                     assert stream.headers.type == 'application/json'
                     answer = load(stream)
                     stream.close()
@@ -380,9 +389,16 @@ def get_kn_autoport(ports, logger=None, *args, **kargs):
             return kn
         except socket.error, err:
             last_error = err
-            if err.errno == 98:
+            try:
+                #Python 2.6
+                eno = err.errno
+            except AttributeError:
+                #Python 2.5
+                eno = err.args[0]
+            from errno import (EADDRINUSE, EACCES)
+            if eno == EADDRINUSE:
                 log("Port %d is already in use." % port)
-            elif err.errno == 13:
+            elif eno == EACCES:
                 log("Port %d: Permission denied." % port)
             else:
                 raise err

@@ -350,7 +350,14 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
                 msg += "Could not start web server."
                 from socket import error as socket_error
                 if isinstance(exep, socket_error):
-                    if exep.errno == 98:
+                    try:
+                        #Python 2.6
+                        eno = err.errno
+                    except AttributeError:
+                        #Python 2.5
+                        eno = err.args[0]
+                    from errno import EADDRINUSE
+                    if eno == EADDRINUSE:
                         msg += "\nReason: Could not find a free port."\
                                "\n(You may stop other applications or "\
                                "wait for the OS\nto free some ports.)"
