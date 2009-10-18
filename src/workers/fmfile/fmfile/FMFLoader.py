@@ -43,17 +43,17 @@ __version__ = "$Revision$"
 import zipfile, numpy, re, collections, copy, StringIO, os.path
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity,isPhysicalUnit,isPhysicalQuantity
+from pyphant.quantities.PhysicalQuantities import Quantity,isPhysicalUnit,isQuantity
 from pyphant.quantities.ParseQuantities import parseQuantity, parseVariable, parseDateTime, str2unit
 import logging
 _logger = logging.getLogger("pyphant")
 
 def normation(normationStr):
     try:
-        unit = PhysicalQuantity(str(normationStr))
+        unit = Quantity(str(normationStr))
     except:
         try:
-            unit = PhysicalQuantity(1.0,str(normationStr))
+            unit = Quantity(1.0,str(normationStr))
         except:
             unit = float(normationStr)
     return unit
@@ -110,7 +110,7 @@ class column2Field:
         self.Nt = 0
 
     def norm(self,datum,unit,error=False):
-        if isPhysicalQuantity(datum):
+        if isQuantity(datum):
             try:
                 return datum.inUnitsOf(unit).value
             except:
@@ -129,7 +129,7 @@ class column2Field:
             if tuppleLength==2:
                 indexDatum = 0
                 indexError = 1
-                if isPhysicalQuantity(tupples[0][1]) and tupples[0][1].isCompatible('s'):
+                if isQuantity(tupples[0][1]) and tupples[0][1].isCompatible('s'):
                     shortname = 't_%i' % self.Nt
                     self.Nt += 1
                 else:
@@ -152,7 +152,7 @@ class column2Field:
                 import sys
                 sys.exit(0)
             error = [element[indexError] for element in column]
-            unitCandidates = [element.unit for element in data if isPhysicalQuantity(element)]
+            unitCandidates = [element.unit for element in data if isQuantity(element)]
             if len(unitCandidates) == 0:
                 unit = 1.0
             else:
@@ -163,7 +163,7 @@ class column2Field:
             result = DataContainer.FieldContainer(field,
                                                   error=numpy.array(map(ErrorNormation,error)),
                                                   mask = numpy.isnan(field),
-                                                  unit=PhysicalQuantity(1.0, unit),
+                                                  unit=Quantity(1.0, unit),
                                                   shortname=shortname,longname=longname)
         else:
             #Joining lists of strings

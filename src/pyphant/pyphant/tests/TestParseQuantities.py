@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,17 +38,17 @@ pkg_resources.require('pyphant')
 
 import unittest, numpy
 from pyphant.quantities.ParseQuantities import parseDateTime
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+from pyphant.quantities.PhysicalQuantities import Quantity
 """
     >>>parseDateTime('2004-08-21 12:00:00+-12h')
-    (PhysicalQuantity(731814.5,'d'), PhysicalQuantity(0.5,'d'))
+    (Quantity(731814.5,'d'), Quantity(0.5,'d'))
     >>>parseDateTime('2004-08-21 12:00:00')
-    (PhysicalQuantity(731814.5,'d'), None)
+    (Quantity(731814.5,'d'), None)
 """
 class TestParseDateTime(unittest.TestCase):
     def testWithoutError(self):
         self.assertEqual(parseDateTime('2004-08-21 12:00:00+-12h'),
-                         (PhysicalQuantity(731814.5,'d'), PhysicalQuantity(0.5,'d'))
+                         (Quantity(731814.5,'d'), Quantity(0.5,'d'))
                          )
 
 if __name__ == "__main__":

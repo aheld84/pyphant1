@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -70,8 +71,8 @@ __version__ = "$Revision$"
 
 import copy, hashlib, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse
-from pyphant.quantities.PhysicalQuantities import (isPhysicalQuantity,
-                                                   PhysicalQuantity)
+from pyphant.quantities.PhysicalQuantities import (isQuantity,
+                                                   Quantity)
 import Helpers
 
 import logging
@@ -334,12 +335,12 @@ class SampleContainer(DataContainer):
                 al.append(('SCColumn', column))
             else:
                 try:
-                    phq = PhysicalQuantity(e)
+                    phq = Quantity(e)
                     al.append(('PhysQuant', phq))
                     continue
                 except:
                     try:
-                        number = PhysicalQuantity(e+' m')
+                        number = Quantity(e+' m')
                         al.append(('Number', eval(e)))
                         continue
                     except: pass
@@ -590,7 +591,7 @@ class SampleContainer(DataContainer):
                       <atomar> := <value> <CompareOp> <value>
                       where <value> is either a SC Column accessed as
                       "longname" or "shortname" (including the double quotes)
-                      or a number or a string representing a PhysicalQuantity
+                      or a number or a string representing a Quantity
                       (e.g. 300nm). And <CompareOp> can be ==, !=, <, <=, >, >=.
                       Then a valid expression <expression> is:
                       - <atomar>
@@ -609,7 +610,7 @@ class SampleContainer(DataContainer):
                       - or
                       If expression is a nested tuple, syntax is as follows:
                       <value> is either ('SCColumn', FieldContainer instance)
-                      or ('PhysQuant', PhysicalQuantity instance)
+                      or ('PhysQuant', Quantity instance)
                       or ('Number', int float etc.)
                       <CompareOp> is in ['==', '!=', ...]
                       A valid nested tuple <nt> can be:
@@ -657,7 +658,7 @@ class SampleContainer(DataContainer):
             rightvalue = None
             if left[0] == 'SCColumn' and right[0] == 'SCColumn':
                 number = right[1].unit/left[1].unit
-                if isPhysicalQuantity(number):
+                if isQuantity(number):
                     raise TypeError(
                         'Cannot compare "' + left[1].longname + '" to "'
                         + right[1].longname + '".'
@@ -666,7 +667,7 @@ class SampleContainer(DataContainer):
                 rightvalue = right[1].data*number
             elif left[0] == 'SCColumn':
                 number = right[1]/left[1].unit
-                if isPhysicalQuantity(number):
+                if isQuantity(number):
                     raise TypeError(
                         'Cannot compare "' + left[1].longname
                         + '" to ' + str(right[1]) + '".'
@@ -675,7 +676,7 @@ class SampleContainer(DataContainer):
                 rightvalue = number
             elif right[0] == 'SCColumn':
                 number = left[1]/right[1].unit
-                if isPhysicalQuantity(number):
+                if isQuantity(number):
                     raise TypeError(
                         "Cannot compare " + str(left[1]) + ' to "'
                         + right[1].longname + '".'

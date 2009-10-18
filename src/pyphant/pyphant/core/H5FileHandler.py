@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,7 +40,7 @@ __version__ = "$Revision$"
 import tables
 from pyphant.core import DataContainer
 from tables import StringCol
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+from pyphant.quantities.PhysicalQuantities import Quantity
 import scipy
 import logging
 import os
@@ -177,10 +178,10 @@ class H5FileHandler(object):
                         unit = unit.replace('^', '**')
                     if isinstance(unit, unicode):
                         unit = unit.encode('utf-8')
-                    summary['unit'] = PhysicalQuantity(unit)
+                    summary['unit'] = Quantity(unit)
                 except:
                     try:
-                        summary['unit'] = PhysicalQuantity("1" + unit)
+                        summary['unit'] = Quantity("1" + unit)
                     except:
                         summary['unit'] = unit
                 try:

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,7 +42,7 @@ import pylab
 import pyphant.core.Connectors
 from pyphant.core import DataContainer
 from pyphant.wxgui2.DataVisReg import DataVisReg
-from pyphant.quantities.PhysicalQuantities import isPhysicalQuantity
+from pyphant.quantities.PhysicalQuantities import isQuantity
 from pyphant.visualizers.Chart import LineChart
 
 class AbsorptionVisualizer(LineChart):

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -65,7 +66,7 @@ import tables, datetime
 import sys
 from pyphant.core import (CompositeWorker, DataContainer)
 from tables import StringCol, Col
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+from pyphant.quantities.PhysicalQuantities import Quantity
 from ImageProcessing.AutoFocus import FocusSlice # For loading FCs...
 import scipy
 import logging

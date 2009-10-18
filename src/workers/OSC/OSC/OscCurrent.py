@@ -1,6 +1,8 @@
+
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -68,8 +70,8 @@ class OscThickness2CurrentDensity(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def calcCurrentDensity(self, osc, model, subscriber=0):
         #Compute conversion factor between units
-        #{u'\\Psi_{1}': PhysicalQuantity(1.0,'mA/cm**2'),
-        # u'\\Psi_{2}': 1.0, u'\\Psi_{3}': PhysicalQuantity(1.0,'nm'),
+        #{u'\\Psi_{1}': Quantity(1.0,'mA/cm**2'),
+        # u'\\Psi_{2}': 1.0, u'\\Psi_{3}': Quantity(1.0,'nm'),
         # u'\\Psi_{4}': 1.0, u'\\Psi_{0}': 1.0}
         unit = model._units[u'\\Psi_{3}']
         inputUnit = osc.unit
@@ -86,7 +88,7 @@ class OscThickness2CurrentDensity(Worker.Worker):
         if self.paramDiameter.value == 'unknown':
             factor = 1.0
         else:
-            diameter = PhysicalQuantities.PhysicalQuantity(self.paramDiameter.value.encode('latin-1'))
+            diameter = PhysicalQuantities.Quantity(self.paramDiameter.value.encode('latin-1'))
             factor = 0.25 * numpy.pi * diameter**2
 
         scaledUnit = factor * model._units[u'\\Psi_{1}']

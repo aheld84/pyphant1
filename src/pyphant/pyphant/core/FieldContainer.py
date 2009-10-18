@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import with_statement
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -59,7 +60,7 @@ __version__ = "$Revision$"
 
 import scipy, copy, hashlib, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse
-from pyphant.quantities.PhysicalQuantities import (isPhysicalQuantity, PhysicalQuantity,_prefixes)
+from pyphant.quantities.PhysicalQuantities import (isQuantity, Quantity,_prefixes)
 from DataContainer import DataContainer, enc, _logger
 
 #Default variables of indices
@@ -137,11 +138,11 @@ def slice2ind(arg, dim):
         sl = [ "0"+a for a in arg.split(':')] #Hack for PhysicalQuantities, which does not recognize .6 as a number.
         unit = dim.unit
         try:
-            hi = PhysicalQuantity(sl[1])
+            hi = Quantity(sl[1])
             try:
-                li = PhysicalQuantity(sl[0])
+                li = Quantity(sl[0])
             except:
-                li = PhysicalQuantity(float(sl[0]),hi.unit)
+                li = Quantity(float(sl[0]),hi.unit)
             try:
                 li, hi = [ i.inUnitsOf(unit.unit).value/unit.value for i in [li,hi] ]
             except TypeError:
@@ -180,7 +181,7 @@ class FieldContainer(DataContainer):
 \t\t\t  shortname=u"\\Psi",rescale=False)
 \t  Class describing sampled fields:
 \t  .data\t\t- Numpy.array representing the sampled field.
-\t  .unit\t\t- PhysicalQuantity object denoting the unit of the sampled field.
+\t  .unit\t\t- Quantity object denoting the unit of the sampled field.
 \t  .dimensions\t- List of FieldContainer instances
 \t\t\t  describing the dimensions of the sampled field.
 \t  .data \t- Sampled field stored as numpy.array, which is rescaled to reasonable basic units if option rescale is chosen.
@@ -208,10 +209,10 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 unit = unit.replace('^', '**')
             if isinstance(unit, unicode):
                 unit = unit.encode('utf-8')
-            self.unit = PhysicalQuantity(unit)
+            self.unit = Quantity(unit)
         except:
             try:
-                self.unit = PhysicalQuantity("1"+unit)
+                self.unit = Quantity("1"+unit)
             except:
                 self.unit = unit
         self.error = error
@@ -242,7 +243,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             dependency = ''
         label = u"%s $%s%s$ / %s" % (self.longname.title(), self.shortname, dependency, self.unit)
         try:
-            if not isPhysicalQuantity(self.unit) and self.unit == 1:
+            if not isQuantity(self.unit) and self.unit == 1:
                 label = u"%s $%s%s$ / a.u." % (self.longname.title(),self.shortname,dependency)
         except:
             pass #just a ScientificPython bug
@@ -250,7 +251,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
     label=property(_getLabel)
 
     def _getShortLabel(self):
-        if not isPhysicalQuantity(self.unit) and self.unit == 1:
+        if not isQuantity(self.unit) and self.unit == 1:
             if self.longname == 'index':
                 label = u"%s $%s$" % (self.longname.title(),self.shortname)
             else:
@@ -304,11 +305,11 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             super(FieldContainer, self).seal(id)
 
     def inUnitsOf(self, other):
-        if not isPhysicalQuantity(self.unit):
-            if isPhysicalQuantity(other.unit):
+        if not isQuantity(self.unit):
+            if isQuantity(other.unit):
                 raise ValueError("Incompatible Units: self.unit = <%s>, other.unit = <%s>"%(self.unit, other.unit))
             factor = float(self.unit)/float(other.unit)
-        elif not isPhysicalQuantity(other.unit):
+        elif not isQuantity(other.unit):
             raise ValueError("Incompatible Units: self.unit = <%s>, other.unit = <%s>"%(self.unit, other.unit))
         else:
             if not self.unit.isCompatible(other.unit.unit):
@@ -322,7 +323,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         return newSelf
 
     def rescale(self):
-        if isPhysicalQuantity(self.unit):
+        if isQuantity(self.unit):
             oldUnit = self.unit.inBaseUnits()
         else:
             return
@@ -384,7 +385,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             error = self.error
             otherData = other.data
             otherError = other.error
-        if (isPhysicalQuantity(self.unit) or isPhysicalQuantity(other.unit)):
+        if (isQuantity(self.unit) or isQuantity(other.unit)):
             try:
                 if not (self.unit.inBaseUnits().unit == other.unit.inBaseUnits().unit):
                     _logger.debug('The units are different.')
@@ -463,8 +464,8 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             for i in xrange(len(self._dimensions)):
                 if not self._dimensions[i] == other.dimensions[i]:
                     return NotImplemented
-            if isPhysicalQuantity(self.unit):
-                if not isPhysicalQuantity(other.unit):
+            if isQuantity(self.unit):
+                if not isQuantity(other.unit):
                     return NotImplemented
                 if not self.unit.isCompatible(other.unit.unit):
                     return NotImplemented
@@ -474,7 +475,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                 else:
                     data = other.data+(self.data*self.unit.value*self.unit.unit.conversionFactorTo(other.unit.unit))/other.unit.value
                     unit = other.unit
-            elif isPhysicalQuantity(other.unit):
+            elif isQuantity(other.unit):
                 return NotImplemented
             else:
                 data = (self.data*self.unit) + (other.data*other.unit)
@@ -503,8 +504,8 @@ Concerning the ordering of data matrices and the dimension list consult http://w
             for i in xrange(len(self._dimensions)):
                 if not self._dimensions[i] == other.dimensions[i]:
                     return NotImplemented
-            if isPhysicalQuantity(self.unit):
-                if not (isPhysicalQuantity(other.unit) and self.unit.isCompatible(other.unit.unit)):
+            if isQuantity(self.unit):
+                if not (isQuantity(other.unit) and self.unit.isCompatible(other.unit.unit)):
                     return NotImplemented
                 if self.unit >= other.unit:
                     data = self.data - (other.data*other.unit.value*other.unit.unit.conversionFactorTo(self.unit.unit))/self.unit.value
@@ -513,7 +514,7 @@ Concerning the ordering of data matrices and the dimension list consult http://w
                     data = ((self.data*self.unit.value*self.unit.unit.conversionFactorTo(other.unit.unit))/other.unit.value) - other.data
                     unit = other.unit
             else:
-                if isPhysicalQuantity(other.unit):
+                if isQuantity(other.unit):
                     return NotImplemented
                 data = (self.data*self.unit) - (other.data*other.unit)
                 unit = 1.0

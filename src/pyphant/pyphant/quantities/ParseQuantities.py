@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008, Rectorate of the University of Freiburg
+# Copyright (c) 2008-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,7 +38,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from PhysicalQuantities import PhysicalQuantity
+from PhysicalQuantities import Quantity
 import mx.DateTime.ISO
 
 def str2unit(unit):
@@ -57,7 +58,7 @@ def str2unit(unit):
         unit = '1'+unit
     try:
         unit = unit.replace('^', '**')
-        unit = PhysicalQuantity(unit.encode('utf-8'))
+        unit = Quantity(unit.encode('utf-8'))
     except:
         unit = float(unit)
     return unit
@@ -94,9 +95,9 @@ def parseVariable(oldVal):
 def parseDateTime(value):
     """
     >>>parseDateTime('2004-08-21 12:00:00+-12h')
-    (PhysicalQuantity(731814.5,'d'), PhysicalQuantity(0.5,'d'))
+    (Quantity(731814.5,'d'), Quantity(0.5,'d'))
     >>>parseDateTime('2004-08-21 12:00:00')
-    (PhysicalQuantity(731814.5,'d'), None)
+    (Quantity(731814.5,'d'), None)
     """
     datetimeWithError = value.split('+-')
     if len(datetimeWithError)==2:
@@ -106,4 +107,4 @@ def parseDateTime(value):
         datetime = mx.DateTime.ISO.ParseAny(value)
         error = None
     days,seconds = datetime.absvalues()
-    return (PhysicalQuantity(days,'d')+PhysicalQuantity(seconds,'s'),error)
+    return (Quantity(days,'d')+Quantity(seconds,'s'),error)

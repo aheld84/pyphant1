@@ -1,7 +1,8 @@
 #!/usr/bin/env python2.5
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -43,7 +44,7 @@ __version__ = "$Revision$".replace('$','')
 import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity as PQ
+from pyphant.quantities.PhysicalQuantities import Quantity as PQ
 from pyphant.core.DataContainer import FieldContainer, SampleContainer,\
     assertEqual
 from pyphant.core.H5FileHandler import H5FileHandler as H5FH
