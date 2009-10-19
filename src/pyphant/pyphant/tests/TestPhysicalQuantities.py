@@ -38,7 +38,7 @@ pkg_resources.require('pyphant')
 
 import unittest, numpy
 from pyphant.quantities.ParseQuantities import parseDateTime
-from pyphant.quantities.PhysicalQuantities import Quantity
+from pyphant.quantities import Quantity
 """
     >>>parseDateTime('2004-08-21 12:00:00+-12h')
     (Quantity(731814.5,'d'), Quantity(0.5,'d'))

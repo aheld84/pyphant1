@@ -44,7 +44,7 @@ from pyphant.core import Worker, Connectors,\
 import ImageProcessing
 import numpy, copy
 from scipy import ndimage as ndi
-from pyphant.quantities.PhysicalQuantities import (isQuantity,
+from pyphant.quantities import (isQuantity,
                                                    Quantity)
 from pyphant.core.DataContainer import FieldContainer
 

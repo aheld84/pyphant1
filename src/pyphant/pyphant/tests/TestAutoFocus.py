@@ -42,7 +42,7 @@ __version__ = "$Revision$".replace('$','')
 import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
-from pyphant.quantities.PhysicalQuantities import Quantity
+from pyphant.quantities import Quantity
 from pyphant.core.DataContainer import FieldContainer, SampleContainer
 from ImageProcessing import AutoFocus as AF
 import numpy

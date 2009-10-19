@@ -71,7 +71,7 @@ __version__ = "$Revision$"
 
 import copy, hashlib, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse
-from pyphant.quantities.PhysicalQuantities import (isQuantity,
+from pyphant.quantities import (isQuantity,
                                                    Quantity)
 import Helpers
 

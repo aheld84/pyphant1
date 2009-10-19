@@ -44,7 +44,7 @@ from pyphant.core import Worker, Connectors,\
 import ImageProcessing
 
 import numpy, copy, pylab
-from pyphant.quantities.PhysicalQuantities import Quantity as PQ
+from pyphant.quantities import Quantity as PQ
 
 def unit(value):
     try:

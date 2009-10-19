@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -49,7 +50,7 @@ import Statistics.Histogram as S
 from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 import numpy
 import scipy.special
-import pyphant.quantities.PhysicalQuantities as pq
+import pyphant.quantities as pq
 from pyphant.core import DataContainer
 import pylab
 

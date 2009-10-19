@@ -226,7 +226,7 @@ class OscMapper(Worker.Worker):
         result = self.calcNormal(osc, xCon, yCon, fCon, xf, yf, h)
         if self.paramOverrideV.value:
             vs = str(self.paramVmin.value), str(self.paramVmax.value)
-            from pyphant.quantities.PhysicalQuantities import (
+            from pyphant.quantities import (
                 isQuantity, Quantity)
             try:
                 vs = [Quantity(v) for v in vs]

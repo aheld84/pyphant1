@@ -52,7 +52,7 @@ import os.path
 import ImageProcessing.ImageLoaderWorker as IL
 import PIL.Image as Image
 import scipy, numpy
-import pyphant.quantities.PhysicalQuantities as pq
+import pyphant.quantities as pq
 
 class TestImageLoader(unittest.TestCase):
     def setUp(self):

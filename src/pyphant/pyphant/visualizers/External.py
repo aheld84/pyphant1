@@ -45,7 +45,7 @@ import wx
 import csv
 
 from scipy.io import write_array
-from pyphant.quantities.PhysicalQuantities import isQuantity
+from pyphant.quantities import isQuantity
 import scipy
 
 class ExternalDAT(object):

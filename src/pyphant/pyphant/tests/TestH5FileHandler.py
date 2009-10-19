@@ -44,7 +44,7 @@ __version__ = "$Revision$".replace('$','')
 import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
-from pyphant.quantities.PhysicalQuantities import Quantity as PQ
+from pyphant.quantities import Quantity as PQ
 from pyphant.core.DataContainer import FieldContainer, SampleContainer,\
     assertEqual
 from pyphant.core.H5FileHandler import H5FileHandler as H5FH

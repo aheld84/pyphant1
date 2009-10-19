@@ -44,7 +44,7 @@ import numpy
 import pyphant.core.Connectors
 from pyphant.core import DataContainer
 from pyphant.wxgui2.DataVisReg import DataVisReg
-from pyphant.quantities.PhysicalQuantities import isQuantity
+from pyphant.quantities import isQuantity
 
 class Chart(object):
     name='General chart'

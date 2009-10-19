@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.5
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008-2009  Rectorate of the University of Freiburg
+# Copyright (c) 2008-2009,  Rectorate of the University of Freiburg
 # Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
@@ -39,7 +39,7 @@ pkg_resources.require('pyphant.fmf')
 import unittest, numpy
 from fmfile import FMFLoader
 from pyphant.core.DataContainer import FieldContainer,assertEqual
-from pyphant.quantities.PhysicalQuantities import Quantity
+from pyphant.quantities import Quantity
 
 class FieldContainerCondenseDim(unittest.TestCase):
     def setUp(self):

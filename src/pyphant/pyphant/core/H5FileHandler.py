@@ -40,7 +40,7 @@ __version__ = "$Revision$"
 import tables
 from pyphant.core import DataContainer
 from tables import StringCol
-from pyphant.quantities.PhysicalQuantities import Quantity
+from pyphant.quantities import Quantity
 import scipy
 import logging
 import os

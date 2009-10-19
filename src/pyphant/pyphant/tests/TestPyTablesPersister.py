@@ -45,7 +45,7 @@ pkg_resources.require("pyphant")
 
 import scipy
 import copy, datetime
-from pyphant.quantities.PhysicalQuantities import Quantity
+from pyphant.quantities import Quantity
 from pyphant.core.DataContainer import FieldContainer, SampleContainer, assertEqual
 from pyphant.core.PyTablesPersister import (saveField, loadField, saveSample,
                                             loadSample, saveExecutionOrder,

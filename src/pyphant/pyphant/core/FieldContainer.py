@@ -60,7 +60,7 @@ __version__ = "$Revision$"
 
 import scipy, copy, hashlib, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse
-from pyphant.quantities.PhysicalQuantities import (isQuantity, Quantity,_prefixes)
+from pyphant.quantities import (isQuantity, Quantity,_prefixes)
 from DataContainer import DataContainer, enc, _logger
 
 #Default variables of indices

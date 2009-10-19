@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008-2009, Rectorate of the University of Freiburg
-# Copyright (c) 2009  Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # all rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@ __version__ = "$Revision$"
 
 from pyphant.core import (Worker, Connectors, Param)
 from pyphant.core.DataContainer import (FieldContainer, SampleContainer)
-from pyphant.quantities.PhysicalQuantities import Quantity
+from pyphant.quantities import Quantity
 from pyphant.core.KnowledgeManager import KnowledgeManager as KM
 import numpy
 

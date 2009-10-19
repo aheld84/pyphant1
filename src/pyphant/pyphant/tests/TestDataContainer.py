@@ -45,7 +45,7 @@ pkg_resources.require("pyphant")
 
 import scipy
 import copy
-from pyphant.quantities.PhysicalQuantities import Quantity
+from pyphant.quantities import Quantity
 from pyphant.core.DataContainer import (INDEX,
                                         generateIndex,
                                         FieldContainer,
