@@ -463,9 +463,9 @@ class PhysicalUnit:
         return cmp(self.factor, other.factor)
 
     def __mul__(self, other):
-        if self.offset != 0 or (isPhysicalUnit (other) and other.offset != 0):
+        if self.offset != 0 or (isUnit (other) and other.offset != 0):
             raise TypeError("cannot multiply units with non-zero offset")
-        if isPhysicalUnit(other):
+        if isUnit(other):
             return PhysicalUnit(self.names+other.names,
                                 self.factor*other.factor,
                                 map(lambda a,b: a+b,
@@ -479,9 +479,9 @@ class PhysicalUnit:
     __rmul__ = __mul__
 
     def __div__(self, other):
-        if self.offset != 0 or (isPhysicalUnit (other) and other.offset != 0):
+        if self.offset != 0 or (isUnit (other) and other.offset != 0):
             raise TypeError("cannot divide units with non-zero offset")
-        if isPhysicalUnit(other):
+        if isUnit(other):
             return PhysicalUnit(self.names-other.names,
                                 self.factor/other.factor,
                                 map(lambda a,b: a-b,
@@ -491,9 +491,9 @@ class PhysicalUnit:
                                 self.factor/other, self.powers)
 
     def __rdiv__(self, other):
-        if self.offset != 0 or (isPhysicalUnit (other) and other.offset != 0):
+        if self.offset != 0 or (isUnit (other) and other.offset != 0):
             raise TypeError("cannot divide units with non-zero offset")
-        if isPhysicalUnit(other):
+        if isUnit(other):
             return PhysicalUnit(other.names-self.names,
                                 other.factor/self.factor,
                                 map(lambda a,b: a-b,
@@ -622,7 +622,7 @@ class PhysicalUnit:
 
 # Type checks
 
-def isPhysicalUnit(x):
+def isUnit(x):
     """
     @param x: an object
     @type x: any
@@ -651,7 +651,7 @@ def _findUnit(unit):
             try: del _unit_table[cruft]
             except: pass
 
-    if not isPhysicalUnit(unit):
+    if not isUnit(unit):
         raise TypeError(str(unit) + ' is not a unit')
     return unit
 
