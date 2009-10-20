@@ -46,7 +46,7 @@ import tempfile
 import os
 import logging
 import re
-from pyphant.core.H5FileHandler import H5FileHandler
+from pyphant.core.H5FileHandler import (H5FileHandler, im_id)
 from fmfile import FMFLoader
 from pyphant.core.SQLiteWrapper import (SQLiteWrapper, AnyValue)
 from pyphant.core.Helpers import getPyphantPath
@@ -203,7 +203,9 @@ class KnowledgeManager(Singleton):
             summaryDict = h5fh.loadSummary()
         with SQLiteWrapper(self.dbase) as wrapper:
             for dcId, summary in summaryDict.items():
-                if not wrapper.has_entry(dcId):
+                if dcId == im_id:
+                    wrapper.set_entry(summary, None, temporary)
+                else:
                     wrapper.set_entry(summary, filename, temporary)
 
     def registerURL(self, url, temporary=False):

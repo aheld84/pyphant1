@@ -47,6 +47,7 @@ from pyphant.core.bottle import (template, send_file, request)
 from pyphant.core.Helpers import getPyphantPath
 from urllib import urlencode
 from pyphant.core.KnowledgeNode import RemoteError
+from pyphant.core.KnowledgeManager import DCNotFoundError
 from types import StringTypes
 
 
@@ -73,76 +74,30 @@ def validate_keys(keys, mapping):
         validate([(k, lambda k: k in mapping, "Missing parameter: %s") \
                   for k in keys])
     except ValueError, verr:
-        return template('message', heading='Value Error',
+        return template('message', heading='Parameter Error',
                         message=verr.args[0], back_url='/')
     return True
 
-
-class HTMLDict(dict):
-    """
-    Behaves like a dictionary but provides HTML output via the getHTML method.
-    """
-    def __init__(self, keylabel, valuelabel):
-        """
-        Creates an empty dictionary.
-        keylabel -- label for the keys
-        valuelabel -- label for the values
-        """
-        self.keylabel = keylabel
-        self.valuelabel = valuelabel
-
-    def getHTML(self, printkeys = True):
-        """
-        Returns HTML code representing the dictionary as a HTML table. If the
-        dictionary contains instances that provide a getHTML method themselves,
-        then it is used instead of str().
-        printkeys -- whether to generate a column for the keys as well
-        """
-        if printkeys:
-            output = '<table border="2" width="100%%"><tr><th>%s</th>\
-<th>%s</th></tr>\n'%(self.keylabel, self.valuelabel)
-        else:
-            output = '<table border="2" width="100%%"><tr><th>%s</th>\
-</tr>\n'%(self.valuelabel, )
-        for k, v in self.items():
-            if hasattr(k, 'getHTML'):
-                kout = k.getHTML()
-            else:
-                kout = str(k)
-            if hasattr(v, 'getHTML'):
-                vout = v.getHTML()
-            else:
-                vout = str(v)
-            if printkeys:
-                output += '<tr width="100%%"><td>%s</td><td>%s</td></tr>\n'\
-                          % (kout, vout)
-            else:
-                output += '<tr width="100%%"><td>%s</td></tr>\n' % (vout, )
-        output += '</table>\n'
-        return output
-
-    def setDict(self, d):
-        """
-        Copies the content of the given dictionary to this one.
-        All keys are deleted first.
-        """
-        self.clear()
-        for k in d:
-            self[k] = d[k]
-
+def order_bar(keys, order_by, order_asc):
+    keydict = dict([(key, key) for key in keys])
+    extra = cond(order_asc, (" +", " -"))
+    keydict[order_by] = "<i>%s</i>%s" % (order_by, extra) 
+    return [HTMLJSButton(keydict[key],
+                         "set_order_by('%s');" % key) for key in keys]
+    
 
 class HTMLLink():
     """
     This class provides HTML code for hyperlinks.
     """
-    def __init__(self, url, linktext, target = None):
+    def __init__(self, url, linkobj, target = None):
         """
         url -- self explanatory
-        linktext -- text the user sees to click on
+        linkobj -- obj the user sees to click on
         target -- link target, e.g. '_blank'
         """
         self._url = url
-        self._linktext = linktext
+        self._linkobj = linkobj
         self._target = target
 
     def getHTML(self):
@@ -152,19 +107,26 @@ class HTMLLink():
         targetstring = ""
         if self._target != None:
             targetstring = ' target="%s"' % (self._target, )
+        if hasattr(self._linkobj, 'getHTML'):
+            linkhtml = self._linkobj.getHTML()
+        else:
+            linkhtml = str(self._linkobj)
         return '<a href="%s"%s>%s</a>'\
-               % (self._url, targetstring, self._linktext)
+               % (self._url, targetstring, linkhtml)
 
 
 class HTMLDropdown(object):
-    def __init__(self, name, options, select = None):
+    def __init__(self, name, options, select=None, onchange=None):
         self.name = name
         self.options = options
         self.select = select
+        self.onchange = onchange
 
     def getHTML(self):
         htmlopt = '    <option value="%s"%s>%s</option>\n'
-        html = '<select name="%s" size="1">\n' % (self.name, )
+        onchg = cond(self.onchange is None,
+                     ('', 'onchange="%s"' % self.onchange))
+        html = '<select name="%s" size="1" %s>\n' % (self.name, onchg)
         for item in self.options:
             try:
                 value, label = item
@@ -194,7 +156,7 @@ maxlength="%d" value="%s">'
 
 class HTMLTable(object):
     def __init__(self, rows, border=1, headings=True,
-                 cellspacing=0, cellpadding=0):
+                 cellspacing=0, cellpadding=4):
         self.rows = rows
         self.border = int(border)
         self.cellpadding = int(cellpadding)
@@ -229,42 +191,18 @@ class HTMLTable(object):
         return html
 
 
-class HTMLButton(object):
-    def __init__(self, tag, action, method='post', hidden={}):
+class HTMLJSButton(object):
+    def __init__(self, tag, action):
         self.tag = tag
         self.action = action
-        self.method = method
-        self.hidden = hidden
-        self.html = \
-"""
-<form action="%s" method="%s">
-    %s
-    <input type="submit" value="%s">
-</form>
-"""
-        self.hihtml = \
-"""
-<input type="hidden" name="%s" value="%s">
-"""
+        self.html = """<div onclick="%s" """\
+                    """onmouseover="document.body.style.cursor='pointer';" """\
+                    """onmouseout="document.body.style.cursor='default';"  """\
+                    """><u>%s</u></div>"""
 
     def getHTML(self):
-        hidden = ""
-        for key, value in self.hidden.iteritems():
-            hidden += self.hihtml % (key, value)
-        return self.html % (self.action, self.method, hidden, self.tag)
+        return self.html % (self.action, self.tag)
 
-
-class HTMLDnldForm(HTMLButton):
-    def __init__(self, dc_id):
-        HTMLButton.__init__(self, " Download ", "/request_dc_url",
-                            {"lastkmidindex": "-1",
-                             "dcid": dc_id,
-                             "mode": "enduser"})
-        self.dc_id = dc_id
-
-    def getHTML(self):
-        self.hidden['dcid'] = self.dc_id
-        return HTMLButton.getHTML(self)
 
 class HTMLImage(object):
     def __init__(self, src, width, height, alt):
@@ -286,11 +224,65 @@ class HTMLStatus(object):
         return HTMLImage('/images/%s.gif' % self.status,
                          width=12, height=12, alt=self.status).getHTML()
 
+class HTMLSummaryLink(HTMLLink):
+    def __init__(self, emd5_tag):
+        qry = urlencode({'id':emd5_tag[0]})
+        HTMLLink.__init__(self, '/summary?' + qry, emd5_tag[1])
+
+
+class HTMLFCScheme(object):
+    def __init__(self, fc_id, kn):
+        self.dom = kn.km.search(['shortname', 'latex_unit'],
+                                {'type':'field', 'dim_of':fc_id})
+        self.rng = kn.km.search(['shortname', 'latex_unit'],
+                                {'type':'field', 'id':fc_id})[0]
+        self.latex = '$%s$(%s)[%s]'
+        self.html = """<pre class="LaTeX">%s</pre>"""
+
+    def getSpaced(self):
+        domstr = ''
+        for shortname, unit in self.dom:
+            domstr += "$%s$[%s],&nbsp;&nbsp;" % (shortname, unit)
+        return self.latex  % (self.rng[0], domstr[:-13], self.rng[1])
+
+    def getHTML(self):
+        return self.html % self.getSpaced()
+
+
+class HTMLSCScheme(object):
+    def __init__(self, sc_id, kn):
+        columns = kn.km.search(['id'], {'type':'field', 'col_of':sc_id})
+        self.fc_schemes = [HTMLFCScheme(col[0], kn) for col in columns]
+        self.shortname = kn.km.search(['shortname'], {'type':'sample',
+                                                      'id':sc_id})[0][0]
+        self.html = """<pre class="LaTeX">%s</pre>"""
+
+    def getSpaced(self):
+        lstr = '$%s$(' % self.shortname
+        for fc_scheme in self.fc_schemes:
+            lstr += fc_scheme.getSpaced() + ',&nbsp;&nbsp;'
+        return lstr[:-13] + ')'
+
+    def getHTML(self):
+        return self.html % self.getSpaced()
+
+
+class HTMLChildrenTable(HTMLTable):
+    def __init__(self, dc_id, kn):
+        child = cond(dc_id.endswith('field'), ('dim_of', 'col_of'))
+        result = kn.km.search(
+            ['id', 'longname'], {'type':'field', child:dc_id})
+        rows = [[HTMLSummaryLink(res) for res in result]]
+        HTMLTable.__init__(self, rows, headings=False)
+
 
 class WebInterface(object):
     """
     Web interface for the KnowledgeNode class.
     """
+
+    anystr = '-- any --'
+
     def __init__(self, knowledge_node, enabled):
         """
         knowledge_node -- KN instance the web interface is bound to
@@ -299,13 +291,13 @@ class WebInterface(object):
         self.enabled = enabled
         self.kn = knowledge_node
         from pyphant import __path__ as ppath
-        self.rootdir = ppath[0] + '/templates/'
+        self.rootdir = ppath[0] + '/web/'
         self.url_link = HTMLLink(self.kn.url, self.kn.url).getHTML()
         self.menu = HTMLTable(
-            [['&#124;', HTMLLink('/remotes/', 'Manage Remotes'),
-              '&#124;', HTMLLink('/log/', 'Show Log'),
-              '&#124;']],
-            border=0, cellspacing=2, cellpadding=2, headings=False).getHTML()
+            [[HTMLLink('/search', 'Browse Data Containers'),
+              HTMLLink('/remotes/', 'Manage Remotes'),
+              HTMLLink('/log/', 'Show Log')
+              ]], headings=False, border=0).getHTML()
         self._setup_routes()
 
     def _setup_routes(self):
@@ -315,6 +307,9 @@ class WebInterface(object):
         self.kn.app.add_route('/favicon.ico', self.favicon)
         self.kn.app.add_route('/log/', self.log)
         self.kn.app.add_route('/remotes/', self.remotes)
+        self.kn.app.add_route('/summary', self.summary)
+        self.kn.app.add_route('/script/:filename', self.script)
+        self.kn.app.add_route('/search', self.search)
 
     def frontpage(self):
         if not self.enabled:
@@ -340,8 +335,7 @@ class WebInterface(object):
             remote_rows.append([HTMLStatus(remote.status),
                                 HTMLLink(remote.url, remote.url),
                                 uuid, endis, rem])
-        remote_table = HTMLTable(remote_rows, border=2,
-                                 cellspacing=2, cellpadding=2)
+        remote_table = HTMLTable(remote_rows)
         return template('remotes', remote_table=remote_table.getHTML())
 
     def images(self, filename):
@@ -349,6 +343,12 @@ class WebInterface(object):
             return template('disabled')
         send_file(filename, self.rootdir + 'images/', guessmime=False,
                   mimetype=self.kn.mimetypes.guess_type(filename)[0])
+
+    def script(self, filename):
+        if not self.enabled:
+            return template('disabled')
+        send_file(filename, self.rootdir + 'script/', guessmime=False,
+                  mimetype='application/javascript')
 
     def remote_action(self):
         if not self.enabled:
@@ -378,9 +378,7 @@ class WebInterface(object):
         except RemoteError, remerr:
             return template('message', heading='Error', message=remerr.args[0],
                             back_url='/remotes/')
-        return template('message', heading='Remote action',
-                        message="Successfully performed action.",
-                        back_url='/remotes/')
+        return self.remotes()
 
     def favicon(self):
         return self.images('favicon.ico')
@@ -391,3 +389,101 @@ class WebInterface(object):
         with open(getPyphantPath() + 'pyphant.log') as logfile:
             loglines = logfile.readlines()
         return template('log', loglines=''.join(loglines), url=self.url_link)
+
+    def summary(self):
+        if not self.enabled:
+            return template('disabled')
+        qry = request.GET
+        val_id = validate_keys(['id'], qry)
+        if not val_id is True:
+            return val_id
+        if qry['id'].endswith('.field'):
+            return self.fieldcontainer(qry['id'])
+        elif qry['id'].endswith('.sample'):
+            return self.samplecontainer(qry['id'])
+        else:
+            return template(
+                'message', heading='Parameter Error', back_url='/',
+                message="Not an emd5: '%s'" % qry['id'])
+
+    def common_summary(self, dc_id):
+        dctype = cond(dc_id.endswith('field'), ('field', 'sample'))
+        keys = ['machine', 'creator', 'date', 'hash', 'longname']
+        result = self.kn.km.search(keys, {'type':dctype, 'id':dc_id})
+        if result == []:
+            raise DCNotFoundError(template(
+                'message', heading='Parameter Error', back_url='/',
+                message="Could not find data container '%s'" % dc_id))
+        return zip(keys, result[0])
+
+    def fieldcontainer(self, fc_id):
+        try:
+            common_rows = self.common_summary(fc_id)
+        except DCNotFoundError, dcnferr:
+            return dcnferr.args[0]
+        rows = [['scheme', HTMLFCScheme(fc_id, self.kn)]]
+        rows.extend(common_rows[:-1])
+        rows.append(['dimensions', HTMLChildrenTable(fc_id, self.kn)])
+        htmlsumm = HTMLTable(rows, headings=False)
+        return template('fieldcontainer', summary=htmlsumm,
+                        longname=common_rows[4][1])
+
+    def samplecontainer(self, sc_id):
+        try:
+            common_rows = self.common_summary(sc_id)
+        except DCNotFoundError, dcnferr:
+            return dcnferr.args[0]
+        scheme = HTMLSCScheme(sc_id, self.kn)
+        rows = [['scheme', scheme]]
+        rows.extend(common_rows[:-1])
+        rows.append(['columns', HTMLChildrenTable(sc_id, self.kn)])
+        htmlsumm = HTMLTable(rows, headings=False)
+        return template('samplecontainer', summary=htmlsumm,
+                        longname=common_rows[4][1])
+
+    def search(self):
+        if not self.enabled:
+            return template('disabled')
+        common_keys = ['type', 'machine', 'creator', 'longname', 'shortname']
+        complete = dict([(key, self.anystr) for key in common_keys])
+        complete.update({'order_by':'date', 'order_asc':'True', 'offset':'0',
+                         'jump':'False'})
+        qry = request.GET
+        for key in complete:
+            if not key in qry:
+                qry[key] = complete[key]
+        order_asc = (qry['order_asc'] == 'True')
+        order_by = qry['order_by']
+        body_onload = cond(
+            qry['jump'] == 'True',
+            (""" onload="window.location.hash='result_view';" """, ""))
+        offset = int(qry['offset'])
+        search_dict = dict([(key, qry[key]) for key in common_keys \
+                            if qry[key] != self.anystr])
+        optionss = [[(self.anystr, )] \
+                    + self.kn.km.search([key], search_dict, distinct=True) \
+                    for key in common_keys]
+        rows = [common_keys]
+        rows.append([HTMLDropdown(key, [opt[0] for opt in opts],
+                                  qry[key], "document.search_form.submit();") \
+                     for key, opts in zip(common_keys, optionss)])
+        common = HTMLTable(rows).getHTML()
+        missing_keys = ['date'] \
+                       + [key for key in common_keys \
+                          if qry[key] == self.anystr] \
+                       + ['id']
+        search_result = self.kn.km.search(
+            missing_keys, search_dict, order_by=order_by,
+            order_asc=order_asc, limit=-1, offset=offset)
+        rows = [order_bar(missing_keys[:-1], order_by, order_asc) + ['details']]
+        rows.extend([srow[:-1] + (HTMLSummaryLink((srow[-1], 'click')), ) \
+                     for srow in search_result])
+        result = HTMLTable(rows).getHTML()
+        return template('search',
+                        common=common,
+                        attributes='attributes...',
+                        special='special...',
+                        result=result,
+                        order_by=order_by,
+                        order_asc=qry['order_asc'],
+                        body_onload=body_onload)

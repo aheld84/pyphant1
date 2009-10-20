@@ -44,7 +44,18 @@ import scipy
 import logging
 import os
 from pyphant.core import PyTablesPersister
+from pyphant.core.DataContainer import IndexMarker
+from pyphant.core.Helpers import (utf82uc, emd52dict)
 _logger = logging.getLogger("pyphant")
+
+im = IndexMarker()
+im_id = u"emd5://pyphant/pyphant/0001-01-01_00:00:00.000000/%s.field" \
+        % utf82uc(im.hash)
+im_summary = {'id':im_id, 'longname':utf82uc(im.longname),
+              'shortname':utf82uc(im.shortname), 'hash':utf82uc(im.hash),
+              'creator':u'pyphant', 'machine':u'pyphant',
+              'date':u'0001-01-01_00:00:00.000000',
+              'unit':1, 'dimensions':[im_id], 'attributes':{}}
 
 
 class H5FileHandler(object):
@@ -157,12 +168,13 @@ class H5FileHandler(object):
                 currDcId = group._v_attrs.TITLE
                 if len(currDcId) > 0:
                     tmp = self.loadSummary(currDcId)
-                    if tmp != u'IndexMarker':
+                    if tmp == 'IndexMarker':
+                        summary[im_id] = im_summary
+                    else:
                         summary[currDcId] = tmp
         elif self.isIndexMarker(dcId):
             return u'IndexMarker'
         else:
-            from pyphant.core.Helpers import (utf82uc, emd52dict)
             summary = {}
             summary['id'] = dcId
             resNode, uriType = self.getNodeAndTypeFromId(dcId)
@@ -187,7 +199,7 @@ class H5FileHandler(object):
                 dimTable = resNode.dimensions
                 def filterIndexMarker(emd5):
                     if self.isIndexMarker(emd5):
-                        return u'IndexMarker'
+                        return im_id
                     else:
                         return emd5
                 dimensions = [filterIndexMarker(row['id']) \
