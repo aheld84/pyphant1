@@ -49,6 +49,7 @@ from urllib import urlencode
 from pyphant.core.KnowledgeNode import RemoteError
 from pyphant.core.KnowledgeManager import DCNotFoundError
 from types import StringTypes
+from pyphant.core.SQLiteWrapper import SQLiteWrapper
 
 
 def cond(condition, results):
@@ -276,6 +277,15 @@ class HTMLChildrenTable(HTMLTable):
         HTMLTable.__init__(self, rows, headings=False)
 
 
+class HTMLAttrTable(HTMLTable):
+    def __init__(self, dc_id, kn):
+        with SQLiteWrapper(kn.km.dbase) as wrapper:
+            attrs = wrapper[dc_id]['attributes']
+        rows = [('attribute', 'value')]
+        rows.extend(attrs.items())
+        HTMLTable.__init__(self, rows)
+
+
 class WebInterface(object):
     """
     Web interface for the KnowledgeNode class.
@@ -424,6 +434,7 @@ class WebInterface(object):
         rows = [['scheme', HTMLFCScheme(fc_id, self.kn)]]
         rows.extend(common_rows[:-1])
         rows.append(['dimensions', HTMLChildrenTable(fc_id, self.kn)])
+        rows.append(['attributes', HTMLAttrTable(fc_id, self.kn)])
         htmlsumm = HTMLTable(rows, headings=False)
         return template('fieldcontainer', summary=htmlsumm,
                         longname=common_rows[4][1])
@@ -437,6 +448,7 @@ class WebInterface(object):
         rows = [['scheme', scheme]]
         rows.extend(common_rows[:-1])
         rows.append(['columns', HTMLChildrenTable(sc_id, self.kn)])
+        rows.append(['attributes', HTMLAttrTable(fc_id, self.kn)])
         htmlsumm = HTMLTable(rows, headings=False)
         return template('samplecontainer', summary=htmlsumm,
                         longname=common_rows[4][1])
