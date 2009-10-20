@@ -142,17 +142,21 @@ class HTMLDropdown(object):
         return html
 
 
-class HTMLTextForm(object):
-    def __init__(self, name, size, maxlength, value):
+class HTMLTextInput(object):
+    def __init__(self, name, size, maxlength, value, onchange=None):
         self.name = name
         self.size = size
         self.maxlength = maxlength
         self.value = value
+        self.onchange = onchange
         self.html = '<input name="%s" type="text" size="%d" \
-maxlength="%d" value="%s">'
+maxlength="%d" value="%s" %s>\n'
 
     def getHTML(self):
-        return self.html % (self.name, self.size, self.maxlength, self.value)
+        onchg = cond(self.onchange is None,
+                     ('', 'onchange="%s"' % self.onchange))
+        return self.html % (self.name, self.size,
+                            self.maxlength, self.value, onchg)
 
 
 class HTMLTable(object):
@@ -418,7 +422,7 @@ class WebInterface(object):
 
     def common_summary(self, dc_id):
         dctype = cond(dc_id.endswith('field'), ('field', 'sample'))
-        keys = ['machine', 'creator', 'date', 'hash', 'longname']
+        keys = ['id', 'machine', 'creator', 'date', 'hash', 'longname']
         result = self.kn.km.search(keys, {'type':dctype, 'id':dc_id})
         if result == []:
             raise DCNotFoundError(template(
@@ -437,7 +441,7 @@ class WebInterface(object):
         rows.append(['attributes', HTMLAttrTable(fc_id, self.kn)])
         htmlsumm = HTMLTable(rows, headings=False)
         return template('fieldcontainer', summary=htmlsumm,
-                        longname=common_rows[4][1])
+                        longname=common_rows[5][1])
 
     def samplecontainer(self, sc_id):
         try:
@@ -448,18 +452,19 @@ class WebInterface(object):
         rows = [['scheme', scheme]]
         rows.extend(common_rows[:-1])
         rows.append(['columns', HTMLChildrenTable(sc_id, self.kn)])
-        rows.append(['attributes', HTMLAttrTable(fc_id, self.kn)])
+        rows.append(['attributes', HTMLAttrTable(sc_id, self.kn)])
         htmlsumm = HTMLTable(rows, headings=False)
         return template('samplecontainer', summary=htmlsumm,
-                        longname=common_rows[4][1])
+                        longname=common_rows[5][1])
 
     def search(self):
         if not self.enabled:
             return template('disabled')
+        # --- qry verification and completion ---
         common_keys = ['type', 'machine', 'creator', 'longname', 'shortname']
         complete = dict([(key, self.anystr) for key in common_keys])
         complete.update({'order_by':'date', 'order_asc':'True', 'offset':'0',
-                         'jump':'False'})
+                         'jump':'False', 'date_from':'', 'date_to':''})
         qry = request.GET
         for key in complete:
             if not key in qry:
@@ -472,6 +477,12 @@ class WebInterface(object):
         offset = int(qry['offset'])
         search_dict = dict([(key, qry[key]) for key in common_keys \
                             if qry[key] != self.anystr])
+        if qry['date_from'] != '':
+            search_dict['date_from'] = qry['date_from']
+        if qry['date_to'] != '':
+            search_dict['date_to'] = qry['date_to']
+        print search_dict
+        # --- common search keys ---
         optionss = [[(self.anystr, )] \
                     + self.kn.km.search([key], search_dict, distinct=True) \
                     for key in common_keys]
@@ -480,6 +491,15 @@ class WebInterface(object):
                                   qry[key], "document.search_form.submit();") \
                      for key, opts in zip(common_keys, optionss)])
         common = HTMLTable(rows).getHTML()
+        # --- date search keys ---
+        date_table = HTMLTable(
+            [['from', HTMLTextInput('date_from', 26, 26, qry['date_from'],
+                                    "document.search_form.submit();")],
+             ['to', HTMLTextInput('date_to', 26, 26, qry['date_to'],
+                                  "document.search_form.submit();")]],
+            headings=False)
+        date = date_table.getHTML()
+        # --- results ---
         missing_keys = ['date'] \
                        + [key for key in common_keys \
                           if qry[key] == self.anystr] \
@@ -493,6 +513,7 @@ class WebInterface(object):
         result = HTMLTable(rows).getHTML()
         return template('search',
                         common=common,
+                        date=date,
                         attributes='attributes...',
                         special='special...',
                         result=result,

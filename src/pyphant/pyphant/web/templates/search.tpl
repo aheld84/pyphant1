@@ -7,8 +7,13 @@
     <input type="hidden" name="order_by" value="{{order_by}}" />
     <input type="hidden" name="order_asc" value="{{order_asc}}" />
     <input type="hidden" name="jump" value="False" />
+    <h2>Common Search Keys</h2>
     <p>
 {{common}}
+    </p>
+    <h2>Date Search Keys</h2>
+    <p>
+{{date}}
     </p>
     <p>
 {{attributes}}
