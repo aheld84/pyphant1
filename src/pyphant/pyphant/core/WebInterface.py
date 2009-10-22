@@ -319,6 +319,16 @@ class HTMLAttrTable(HTMLTable):
         HTMLTable.__init__(self, rows)
 
 
+class HTMLBrowseBar(HTMLTable):
+    def __init__(self, offset, limit):
+        rows = [[HTMLJSButton('--previous--',
+                              'set_offset(%d);' % (offset - limit, )),
+                 'offset: %d' % offset,
+                 HTMLJSButton('--next--',
+                              'set_offset(%d);' % (offset + limit, ))]]
+        HTMLTable.__init__(self, rows, border=0, headings=False)
+
+
 class WebInterface(object):
     """
     Web interface for the KnowledgeNode class.
@@ -505,7 +515,8 @@ class WebInterface(object):
         body_onload = cond(
             qry['jump'] == 'True',
             (""" onload="window.location.hash='result_view';" """, ""))
-        offset = int(qry['offset'])
+        offset = max(int(qry['offset']), 0)
+        limit = 10
         search_dict = dict([(key, qry[key]) for key in common_keys \
                             if qry[key] != self.anystr])
         if qry['date_from'] != '':
@@ -544,12 +555,13 @@ class WebInterface(object):
                        + ['id']
         search_result = self.kn.km.search(
             missing_keys, search_dict, order_by=order_by,
-            order_asc=order_asc, limit=20, offset=offset)
+            order_asc=order_asc, limit=limit, offset=offset)
         rows = [order_bar(missing_keys[:-1], order_by, order_asc) + ['details']]
         rows.extend([nice(srow[:-1], missing_keys[:-1], do_shorten) \
                      + (HTMLSummaryLink((srow[-1], 'click')), ) \
                      for srow in search_result])
-        result = HTMLTable(rows).getHTML()
+        bbar = HTMLBrowseBar(offset, limit).getHTML()
+        result = bbar + "<br />" + HTMLTable(rows).getHTML() + "<br />" + bbar
         return template('search',
                         common=common,
                         date=date,
@@ -559,4 +571,5 @@ class WebInterface(object):
                         order_by=order_by,
                         order_asc=qry['order_asc'],
                         body_onload=body_onload,
-                        shorten=cond(do_shorten, ('checked', '')))
+                        shorten=cond(do_shorten, ('checked', '')),
+                        offset=qry['offset'])

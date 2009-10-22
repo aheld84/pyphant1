@@ -19,5 +19,10 @@
       document.search_form.jump.value = "True";
       document.search_form.submit();
     }
+    function set_offset(offset_value) {
+      document.search_form.offset.value = offset_value;
+      document.search_form.jump.value = "True";
+      document.search_form.submit();
+    }
   </script>
 </head>

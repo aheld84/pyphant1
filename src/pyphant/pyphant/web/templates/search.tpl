@@ -6,6 +6,7 @@
   <form method="GET" action="/search" name="search_form">
     <input type="hidden" name="order_by" value="{{order_by}}" />
     <input type="hidden" name="order_asc" value="{{order_asc}}" />
+    <input type="hidden" name="offset" value="{{offset}}" />
     <input type="hidden" name="jump" value="False" />
     <p>
 {{common}}
