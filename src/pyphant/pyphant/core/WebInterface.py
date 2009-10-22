@@ -41,8 +41,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source: $
 
-from types import DictType
-from types import (DictType, ListType)
+from types import (DictType, ListType, TupleType)
 from pyphant.core.bottle import (template, send_file, request)
 from pyphant.core.Helpers import getPyphantPath
 from urllib import urlencode
@@ -85,7 +84,37 @@ def order_bar(keys, order_by, order_asc):
     keydict[order_by] = "<i>%s</i>%s" % (order_by, extra) 
     return [HTMLJSButton(keydict[key],
                          "set_order_by('%s');" % key) for key in keys]
-    
+
+def shorten(tolong, premax=7, postmax=15):
+    if len(tolong) > premax + postmax + 3:
+        if postmax == 0:
+            post = ""
+        else:
+            post = tolong[-postmax:]
+        return tolong[:premax] + "..." + post
+    else:
+        return tolong
+
+def html_latex(mathstr):
+    return '<pre class="LaTeX">$%s$</pre>' % mathstr
+
+def nice(value, key, do_shorten):
+    if isinstance(value, (TupleType, ListType)):
+        assert isinstance(key, (TupleType, ListType))
+        nicelist = [nice(singleval, singlekey, do_shorten) \
+                    for singleval, singlekey in zip(value, key)]
+        if isinstance(value, TupleType):
+            return tuple(nicelist)
+        else:
+            return nicelist
+    else:
+        if do_shorten and key in ['longname', 'creator', 'machine']:
+            return shorten(value)
+        elif key == 'shortname':
+            return html_latex(value)
+        else:
+            return value
+
 
 class HTMLLink():
     """
@@ -308,7 +337,7 @@ class WebInterface(object):
         self.rootdir = ppath[0] + '/web/'
         self.url_link = HTMLLink(self.kn.url, self.kn.url).getHTML()
         self.menu = HTMLTable(
-            [[HTMLLink('/search', 'Browse Data Containers'),
+            [[HTMLLink('/search?shorten=True', 'Browse Data Containers'),
               HTMLLink('/remotes/', 'Manage Remotes'),
               HTMLLink('/log/', 'Show Log')
               ]], headings=False, border=0).getHTML()
@@ -464,11 +493,13 @@ class WebInterface(object):
         common_keys = ['type', 'machine', 'creator', 'longname', 'shortname']
         complete = dict([(key, self.anystr) for key in common_keys])
         complete.update({'order_by':'date', 'order_asc':'True', 'offset':'0',
-                         'jump':'False', 'date_from':'', 'date_to':''})
+                         'jump':'False', 'date_from':'', 'date_to':'',
+                         'shorten':'False'})
         qry = request.GET
         for key in complete:
             if not key in qry:
                 qry[key] = complete[key]
+        do_shorten = (qry['shorten'] == 'True')
         order_asc = (qry['order_asc'] == 'True')
         order_by = qry['order_by']
         body_onload = cond(
@@ -486,18 +517,25 @@ class WebInterface(object):
         optionss = [[(self.anystr, )] \
                     + self.kn.km.search([key], search_dict, distinct=True) \
                     for key in common_keys]
-        rows = [common_keys]
-        rows.append([HTMLDropdown(key, [opt[0] for opt in opts],
-                                  qry[key], "document.search_form.submit();") \
-                     for key, opts in zip(common_keys, optionss)])
+        rows = [common_keys[:3]]
+        rows.append([HTMLDropdown(
+            key, [opt[0] for opt in opts],
+            qry[key], "document.search_form.submit();") \
+                     for key, opts in zip(common_keys[:3], optionss[:3])])
         common = HTMLTable(rows).getHTML()
+        rows = [common_keys[3:]]
+        rows.append([HTMLDropdown(
+            key, [opt[0] for opt in opts],
+            qry[key], "document.search_form.submit();") \
+                     for key, opts in zip(common_keys[3:], optionss[3:])])
+        common += "<br />" + HTMLTable(rows).getHTML()
         # --- date search keys ---
         date_table = HTMLTable(
-            [['from', HTMLTextInput('date_from', 26, 26, qry['date_from'],
-                                    "document.search_form.submit();")],
-             ['to', HTMLTextInput('date_to', 26, 26, qry['date_to'],
-                                  "document.search_form.submit();")]],
-            headings=False)
+            [['date from', 'date to'],
+             [HTMLTextInput('date_from', 26, 26, qry['date_from'],
+                            "document.search_form.submit();"),
+              HTMLTextInput('date_to', 26, 26, qry['date_to'],
+                            "document.search_form.submit();")]])
         date = date_table.getHTML()
         # --- results ---
         missing_keys = ['date'] \
@@ -506,9 +544,10 @@ class WebInterface(object):
                        + ['id']
         search_result = self.kn.km.search(
             missing_keys, search_dict, order_by=order_by,
-            order_asc=order_asc, limit=-1, offset=offset)
+            order_asc=order_asc, limit=20, offset=offset)
         rows = [order_bar(missing_keys[:-1], order_by, order_asc) + ['details']]
-        rows.extend([srow[:-1] + (HTMLSummaryLink((srow[-1], 'click')), ) \
+        rows.extend([nice(srow[:-1], missing_keys[:-1], do_shorten) \
+                     + (HTMLSummaryLink((srow[-1], 'click')), ) \
                      for srow in search_result])
         result = HTMLTable(rows).getHTML()
         return template('search',
@@ -519,4 +558,5 @@ class WebInterface(object):
                         result=result,
                         order_by=order_by,
                         order_asc=qry['order_asc'],
-                        body_onload=body_onload)
+                        body_onload=body_onload,
+                        shorten=cond(do_shorten, ('checked', '')))
