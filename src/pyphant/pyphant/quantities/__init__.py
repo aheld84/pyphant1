@@ -790,7 +790,7 @@ _unit_table['pi'] = numpy.oldnumeric.pi
 _addUnit('c', '299792458.*m/s', 'speed of light')
 _addUnit('mu0', '4.e-7*pi*N/A**2', 'permeability of vacuum')
 _addUnit('eps0', '1/mu0/c**2', 'permittivity of vacuum')
-_addUnit('Grav', '6.67259e-11*m**3/kg/s**2', 'gravitational constant')
+_addUnit('G', '6.67428e-11*m**3/kg/s**2', 'gravitational constant')
 _addUnit('hplanck', '6.6260755e-34*J*s', 'Planck constant')
 _addUnit('hbar', 'hplanck/(2*pi)', 'Planck constant / 2pi')
 _addUnit('e', '1.60217733e-19*C', 'elementary charge')
