@@ -38,7 +38,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from PhysicalQuantities import Quantity
+from quantities import Quantity
 import mx.DateTime.ISO
 
 def str2unit(unit):
@@ -94,7 +94,7 @@ def parseVariable(oldVal):
 
 def parseDateTime(value):
     """
-    >>>parseDateTime('2004-08-21 12:00:00+-12h')
+    >>>parseDateTime('2004-08-21 12:00:00+-12hr')
     (Quantity(731814.5,'d'), Quantity(0.5,'d'))
     >>>parseDateTime('2004-08-21 12:00:00')
     (Quantity(731814.5,'d'), None)

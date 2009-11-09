@@ -163,7 +163,7 @@ class Quantity:
     >>>
     >>> t = p(314159., 's')
     >>> # convert to days, hours, minutes, and second:
-    >>> t2 = t.inUnitsOf('d','h','min','s')
+    >>> t2 = t.inUnitsOf('d','hr','min','s')
     >>> t2_print = ' '.join([str(i) for i in t2])
     >>> t2_print
     '3.0 d 15.0 h 15.0 min 59.0 s'
@@ -790,10 +790,10 @@ _unit_table['pi'] = numpy.oldnumeric.pi
 _addUnit('c', '299792458.*m/s', 'speed of light')
 _addUnit('mu0', '4.e-7*pi*N/A**2', 'permeability of vacuum')
 _addUnit('eps0', '1/mu0/c**2', 'permittivity of vacuum')
-_addUnit('Fa','96 485.39 C/mol', 'Faraday constant')
+_addUnit('Fa','96485.39*C/mol', 'Faraday constant')
 _addUnit('G', '6.67428e-11*m**3/kg/s**2', 'gravitational constant')
-_addUnit('hplanck', '6.6260755e-34*J*s', 'Planck constant')
-_addUnit('hbar', 'hplanck/(2*pi)', 'Planck constant / 2pi')
+_addUnit('h', '6.62606896e-34*J*s', 'Planck constant')
+_addUnit('hbar', 'h/(2*pi)', 'Planck constant / 2pi')
 _addUnit('e', '1.60217733e-19*C', 'elementary charge')
 _addUnit('me', '9.1093897e-31*kg', 'electron mass')
 _addUnit('mp', '1.6726231e-27*kg', 'proton mass')
@@ -804,8 +804,8 @@ _addUnit('k', '1.380658e-23*J/K', 'Boltzmann constant')
 _help.append('Time units:')
 
 _addUnit('min', '60*s', 'minute')
-_addUnit('h', '60*min', 'hour')
-_addUnit('d', '24*h', 'day')
+_addUnit('hr', '60*min', 'hour')
+_addUnit('d', '24*hr', 'day')
 _addUnit('wk', '7*d', 'week')
 _addUnit('yr', '365.25*d', 'year')
 
@@ -994,7 +994,7 @@ if __name__ == '__main__':
     big_l = Quantity(10., 'km')
     print big_l + l
     t = Quantity(314159., 's')
-    print t.inUnitsOf('d','h','min','s')
+    print t.inUnitsOf('d','hr','min','s')
 
     p = Quantity # just a shorthand...
 
