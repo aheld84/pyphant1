@@ -799,6 +799,7 @@ _addUnit('me', '9.10938215e-31*kg', 'electron mass')
 _addUnit('mp', '1.672621637e-27*kg', 'proton mass')
 _addUnit('Nav', '6.02214179e23/mol', 'Avogadro number')
 _addUnit('k', '1.3806504e-23*J/K', 'Boltzmann constant')
+_addUnit('Ryd','10973731.568527/m','Rydberg constant')
 
 # Time units
 _help.append('Time units:')
