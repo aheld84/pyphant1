@@ -850,7 +850,7 @@ _addUnit('galUK', '4.54609*l', 'British gallon')
 # Mass units
 _help.append('Mass units:')
 
-_addUnit('amu', '1.6605402e-27*kg', 'atomic mass units')
+_addUnit('u', '1.660538782e-27*kg', 'atomic mass units')
 _addUnit('oz', '28.349523125*g', 'ounce')
 _addUnit('lb', '16*oz', 'pound')
 _addUnit('ton', '2000*lb', 'ton')
