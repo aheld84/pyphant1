@@ -45,7 +45,7 @@ from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 
 import scipy.interpolate
-from pyphant.quantities import PhysicalQuantities
+from pyphant.quantities import Quantity,isQuantity
 import logging, copy, math
 
 class Slicing(Worker.Worker):
@@ -72,7 +72,7 @@ class Slicing(Worker.Worker):
             self.oldField = templ
             self._params = []
             for i,dim in enumerate(templ.dimensions):
-                if PhysicalQuantities.isQuantity(dim.unit):
+                if isQuantity(dim.unit):
                     intStart = (dim.data.min()*dim.unit).value
                     intEnd   = (dim.data.max()*dim.unit).value
                     unitname = dim.unit.unit.name()

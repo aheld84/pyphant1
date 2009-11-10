@@ -135,7 +135,7 @@ class DimensionList(list):
 
 def slice2ind(arg, dim):
     if isinstance(arg, type("")):
-        sl = [ "0"+a for a in arg.split(':')] #Hack for PhysicalQuantities, which does not recognize .6 as a number.
+        sl = [ "0"+a for a in arg.split(':')] #Hack for Quantities, which does not recognize .6 as a number.
         unit = dim.unit
         try:
             hi = Quantity(sl[1])

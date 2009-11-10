@@ -59,7 +59,7 @@ class Cube(object):
             bislice = slice(bifunc1(sli1.start, sli2.start),
                             bifunc2(sli1.stop, sli2.stop))
             if bislice.stop < bislice.start:
-                # Weird notation necessary for PhysicalQuantities!
+                # Weird notation necessary for Quantities!
                 bislice = slice(0 * bislice.start, 0 * bislice.stop)
             bislices.append(bislice)
         return Cube(bislices)
@@ -154,7 +154,7 @@ class ZTube(object):
         yxratio = vol / fslice.getVolume()
         fszCube = Cube([slice(zvalue - self.ztol, zvalue + self.ztol)])
         zvol = (self.zCube & fszCube).getVolume()
-        # weird notation necessary for PhysicalQuantities
+        # weird notation necessary for Quantities
         if yxratio >= self.boundRatio and zvol != 0 * zvol:
             orCube = self.yxCube | fslice
             self.yxCube = orCube

@@ -43,7 +43,6 @@ from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 
 import scipy.interpolate
-from pyphant.quantities import PhysicalQuantities
 import logging, copy, math
 
 def grid2Index(field, extension=0):

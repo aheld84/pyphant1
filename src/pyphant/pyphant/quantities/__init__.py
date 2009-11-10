@@ -126,7 +126,7 @@ import re, string
 class Quantity:
 
     """
-    Physical quantity with units
+    Quantity with units
 
     Quantity instances allow addition, subtraction,
     multiplication, and division with each other as well as
@@ -141,12 +141,12 @@ class Quantity:
       - sin, cos, tan: applicable only to objects whose unit is
         compatible with 'rad'.
 
-    See the documentation of the PhysicalQuantities module for a list
+    See the documentation of the Quantities module for a list
     of the available units.
 
     Here is an example on usage:
 
-    >>> from PhysicalQuantities import Quantity as p  # short hand
+    >>> from quantities import Quantity as p  # short hand
     >>> distance1 = p('10 m')
     >>> distance2 = p('10 km')
     >>> total = distance1 + distance2
@@ -983,9 +983,6 @@ def description():
 
 # add the description of the units to the module's doc string:
 __doc__ += '\n' + description()
-
-# Some demonstration code. Run with "python -i PhysicalQuantities.py"
-# to have this available.
 
 if __name__ == '__main__':
 

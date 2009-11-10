@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2007-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,7 +43,6 @@ import numpy
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 
-from pyphant.quantities import PhysicalQuantities
 import logging, copy, math
 _logger = logging.getLogger("pyphant")
 

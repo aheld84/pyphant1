@@ -44,7 +44,7 @@ from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 
 import scipy.interpolate
-from pyphant.quantities import PhysicalQuantities
+from pyphant.quantities import Quantity
 import copy, logging
 _logger = logging.getLogger("pyphant")
 
@@ -88,7 +88,7 @@ class OscThickness2CurrentDensity(Worker.Worker):
         if self.paramDiameter.value == 'unknown':
             factor = 1.0
         else:
-            diameter = PhysicalQuantities.Quantity(self.paramDiameter.value.encode('latin-1'))
+            diameter = Quantity(self.paramDiameter.value.encode('latin-1'))
             factor = 0.25 * numpy.pi * diameter**2
 
         scaledUnit = factor * model._units[u'\\Psi_{1}']
