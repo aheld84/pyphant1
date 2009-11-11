@@ -168,7 +168,7 @@ class Quantity:
     >>> t2_print
     '3.0 d 15.0 h 15.0 min 59.0 s'
     >>>
-    >>> e = p('2.7 Hartree*Nav')
+    >>> e = p('2.7 Hartree*NA')
     >>> e.convertToUnit('kcal/mol')
     >>> e
     Quantity(1694.2757596034764,'kcal/mol')
@@ -797,7 +797,7 @@ _addUnit('hbar', 'h/(2*pi)', 'Planck constant / 2pi')
 _addUnit('e', '1.602176487e-19*C', 'elementary charge')
 _addUnit('me', '9.10938215e-31*kg', 'electron mass')
 _addUnit('mp', '1.672621637e-27*kg', 'proton mass')
-_addUnit('Nav', '6.02214179e23/mol', 'Avogadro number')
+_addUnit('NA', '6.02214179e23/mol', 'Avogadro number')
 _addUnit('k', '1.3806504e-23*J/K', 'Boltzmann constant')
 _addUnit('Ryd','10973731.568527/m','Rydberg constant')
 
@@ -996,7 +996,7 @@ if __name__ == '__main__':
 
     p = Quantity # just a shorthand...
 
-    e = p('2.7 Hartree*Nav')
+    e = p('2.7 Hartree*NA')
     e.convertToUnit('kcal/mol')
     print e
     print e.inBaseUnits()
