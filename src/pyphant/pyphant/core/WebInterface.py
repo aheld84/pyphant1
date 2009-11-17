@@ -504,12 +504,14 @@ class WebInterface(object):
         complete = dict([(key, self.anystr) for key in common_keys])
         complete.update({'order_by':'date', 'order_asc':'True', 'offset':'0',
                          'jump':'False', 'date_from':'', 'date_to':'',
-                         'shorten':'False'})
+                         'shorten':'False', 'add_attr':'False',
+                         'rem_attr':'None'})
         qry = request.GET
         for key in complete:
             if not key in qry:
                 qry[key] = complete[key]
         do_shorten = (qry['shorten'] == 'True')
+        add_attr = (qry['add_attr'] == 'True')
         order_asc = (qry['order_asc'] == 'True')
         order_by = qry['order_by']
         body_onload = cond(
@@ -523,6 +525,23 @@ class WebInterface(object):
             search_dict['date_from'] = qry['date_from']
         if qry['date_to'] != '':
             search_dict['date_to'] = qry['date_to']
+        attr_post = [key[8:] for key in qry if key.startswith('attr_key')]
+        attr_post.sort(key=lambda x: int(x))
+        if qry['rem_attr'] != 'None':
+            attr_post.remove(qry['rem_attr'])
+            qry.pop('attr_key' + qry['rem_attr'])
+            qry.pop('attr_value' + qry['rem_attr'])
+        if add_attr:
+            if attr_post == []:
+                last_index = -1
+            else:
+                last_index = int(attr_post[-1])
+            attr_post.append(str(last_index + 1))
+            qry['attr_key' + attr_post[-1]] = ''
+            qry['attr_value' + attr_post[-1]] = ''
+        search_dict['attributes'] = dict([(qry['attr_key' + apost],
+                                           qry['attr_value' + apost]) \
+                                          for apost in attr_post])
         print search_dict
         # --- common search keys ---
         optionss = [[(self.anystr, )] \
@@ -548,6 +567,18 @@ class WebInterface(object):
               HTMLTextInput('date_to', 26, 26, qry['date_to'],
                             "document.search_form.submit();")]])
         date = date_table.getHTML()
+        # --- attribute search keys
+        rows = [['attribute', 'value',
+                 HTMLJSButton('--add--', 'add_attribute();')]]
+        rows.extend([[HTMLTextInput('attr_key' + apost,
+                                    20, 100, qry['attr_key' + apost]),
+                      HTMLTextInput('attr_value' + apost,
+                                    50, 1000, qry['attr_value' + apost],
+                                    'document.search_form.submit();'),
+                      HTMLJSButton('--remove--',
+                                   "remove_attribute('%s');" % (apost, ))] \
+                     for apost in attr_post])
+        attributes = HTMLTable(rows).getHTML()
         # --- results ---
         missing_keys = ['date'] \
                        + [key for key in common_keys \
@@ -565,7 +596,7 @@ class WebInterface(object):
         return template('search',
                         common=common,
                         date=date,
-                        attributes='attributes...',
+                        attributes=attributes,
                         special='special...',
                         result=result,
                         order_by=order_by,

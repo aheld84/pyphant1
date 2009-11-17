@@ -411,6 +411,8 @@ class SQLiteWrapper(object):
         return (expr, value, True)
 
     def translate_attr_search(self, value, type):
+        if value == {}:
+            return ('1', [], True)
         expr = '('
         new_value = []
         for attr_key, attr_value in value.iteritems():

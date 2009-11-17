@@ -24,5 +24,13 @@
       document.search_form.jump.value = "True";
       document.search_form.submit();
     }
+    function add_attribute() {
+      document.search_form.add_attr.value = "True";
+      document.search_form.submit();
+    }
+    function remove_attribute(apost) {
+      document.search_form.rem_attr.value = apost;
+      document.search_form.submit();
+    }
   </script>
 </head>
