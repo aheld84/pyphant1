@@ -40,6 +40,7 @@ __version__ = "$Revision$"
 # $Source$
 
 import zipfile, numpy, re, collections, copy, StringIO, os.path
+import codecs
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 from pyphant.quantities.PhysicalQuantities import PhysicalQuantity,isPhysicalUnit,isPhysicalQuantity
@@ -460,6 +461,8 @@ def preParseData(b):
     localVar = {'fmf-version':'1.0','coding':'utf-8',
                 'delimiter':'\t'}
     commentChar = ';'
+    if b.startswith(codecs.BOM_UTF8):
+        b = b.lstrip(codecs.BOM_UTF8)
     if b[0] == ';' or b[0] == '#':
         commentChar = b[0]
         items =  [var.strip().split(':') for var in b.split('-*-')[1].split(';')]
