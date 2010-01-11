@@ -79,6 +79,7 @@ class NDImage(Worker.Worker):
                 "grey_erosion":("size", "mode", "cval"),
                 "grey_opening":("size", "mode", "cval"),
                 "distance_transform_bf":("metric", ),
+                "sobel":("axis", "mode", "cval"),
                 "grey_invert":(None, ),
                 "cut_histogram":(None, "tolerance"),
                 "label":(None, "connectivity"),
@@ -95,7 +96,8 @@ class NDImage(Worker.Worker):
                  "metric":["euclidean",
                            "taxicab",
                            "chessboard"],
-                 "threshold":"1 m"}
+                 "threshold":"1 m",
+                 "axis":-1}
     _params = [("pile", "Treat 3d images as pile of 2d images", True, None),
                ("ndfilter", "Filter", _filters.keys(), None)]
     _params += [(pn, pn, dflt, None) for pn, dflt in _ndparams.iteritems()]
