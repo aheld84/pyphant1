@@ -86,6 +86,19 @@ def dbase2quantity(dbase):
     else:
         raise ValueError("Broken FC unit in dbase: %s" % (dbase.__repr__(), ))
 
+def unitname2latex(unitname):
+    return unitname #TODO
+
+def dbase2latex(dbase):
+    if isinstance(dbase, StringTypes):
+        if dbase.startswith("P"):
+            tmp = dbase[1:].split(';')
+            return unitname2latex(tmp[1])
+        else:
+            return dbase
+    else:
+        raise ValueError("Broken FC unit in dbase: %s" % (dbase.__repr__(), ))
+
 def date2dbase(date):
     """extends a short datestring to YYYY-MM-DD_hh:mm:ss.ssssss standard
     """
@@ -126,6 +139,23 @@ def get_wildcards(length, char, braces=False, commas=True):
         wc += ')'
     return wc
 
+def create_table(table_name, columns, cursor):
+    query = "CREATE TABLE IF NOT EXISTS %s (" % (table_name, )
+    for name, type in columns:
+        query += name + " " + type + ", "
+    query = query[:-2] + ")"
+    cursor.execute(query)
+
+def create_trigger(trigger_name, action, table_name,
+                  statements, cursor):
+    query = "CREATE TRIGGER IF NOT EXISTS %s AFTER %s ON %s "\
+        "FOR EACH ROW BEGIN %s END"
+    st_query = ''
+    for st in statements:
+        st_query += st + ';'
+    cursor.execute(query % (trigger_name, action,
+                            table_name, st_query))
+
 
 class AnyValue():
     """Dummy class for use in search queries
@@ -150,7 +180,7 @@ class SQLiteWrapper(object):
     one_to_one_result_keys = one_to_one_search_keys + ['date', 'id', 'type']
     common_search_keys = one_to_one_search_keys + ['id', 'attributes',
                                                    'date_from', 'date_to']
-    fc_search_keys = common_search_keys + ['unit', 'dimensions']
+    fc_search_keys = common_search_keys + ['unit', 'dimensions', 'dim_of', 'col_of']
     sc_search_keys = common_search_keys + ['columns']
     sortable_keys = common_keys + ['id', 'storage', 'type']
     any_value = AnyValue()
@@ -169,7 +199,7 @@ class SQLiteWrapper(object):
         assert self.connection == None
         assert self.cursor == None
         self.connection = sqlite3.connect(self.database, self.timeout,
-                                          detect_types=sqlite3.PARSE_DECLTYPES)
+                                          detect_types=sqlite3.PARSE_COLNAMES)
         self.cursor = self.connection.cursor()
         return self
 
@@ -196,21 +226,7 @@ class SQLiteWrapper(object):
 
     def setup_dbase(self):
         sqlite3.register_converter('QUANTITY', dbase2quantity)
-        def createTable(table_name, columns, cursor):
-            query = "CREATE TABLE IF NOT EXISTS %s (" % (table_name, )
-            for name, type in columns:
-                query += name + " " + type + ", "
-            query = query[:-2] + ")"
-            cursor.execute(query)
-        def createTrigger(trigger_name, action, table_name,
-                          statements, cursor):
-            query = "CREATE TRIGGER IF NOT EXISTS %s AFTER %s ON %s "\
-                "FOR EACH ROW BEGIN %s END"
-            st_query = ''
-            for st in statements:
-                st_query += st + ';'
-            cursor.execute(query % (trigger_name, action,
-                                    table_name, st_query))
+        sqlite3.register_converter('LATEX', dbase2latex)
         #create tables:
         columns = [('sc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL'),
                    ('longname', 'TEXT'),
@@ -220,31 +236,31 @@ class SQLiteWrapper(object):
                    ('date', 'TEXT'),
                    ('hash', 'TEXT'),
                    ('storage', 'TEXT')]
-        createTable("km_sc", columns, self.cursor)
+        create_table("km_sc", columns, self.cursor)
         columns[0] = ('fc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL')
-        columns.insert(7, ('unit', 'QUANTITY'))
+        columns.insert(7, ('unit', 'TEXT'))
         columns.insert(8, ('bu_id', 'INT'))
-        createTable("km_fc", columns, self.cursor)
+        create_table("km_fc", columns, self.cursor)
         columns = [('sc_id', 'TEXT NOT NULL'),
                    ('fc_id', 'TEXT NOT NULL'),
                    ('fc_index', 'INT NOT NULL'),
                    ('', 'UNIQUE(sc_id, fc_id, fc_index)'),
                    ('', 'PRIMARY KEY(sc_id, fc_id, fc_index)')]
-        createTable("km_sc_columns", columns, self.cursor)
+        create_table("km_sc_columns", columns, self.cursor)
         columns = [('fc_id', 'TEXT NOT NULL'),
                    ('dim_id', 'TEXT NOT NULL'),
                    ('dim_index', 'INT NOT NULL'),
                    ('', 'UNIQUE(fc_id, dim_id, dim_index)'),
                    ('', 'PRIMARY KEY(fc_id, dim_id, dim_index)')]
-        createTable("km_fc_dimensions", columns, self.cursor)
+        create_table("km_fc_dimensions", columns, self.cursor)
         columns = [('dc_id', 'TEXT NOT NULL'),
                    ('key', 'TEXT NOT NULL'),
                    ('value', 'TEXT'),
                    ('', 'UNIQUE(dc_id, key)'),
                    ('', 'PRIMARY KEY(dc_id, key)')]
-        createTable('km_attributes', columns, self.cursor)
+        create_table('km_attributes', columns, self.cursor)
         columns = [('dc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL')]
-        createTable("km_temporary", columns, self.cursor)
+        create_table("km_temporary", columns, self.cursor)
         columns = [('bu_id', 'INTEGER PRIMARY KEY AUTOINCREMENT '\
                         'NOT NULL UNIQUE'),
                    ('m', 'INT'),
@@ -258,31 +274,22 @@ class SQLiteWrapper(object):
                    ('sr', 'INT'),
                    ('EUR', 'INT'),
                    ('', 'UNIQUE(m, g, s, A, K, mol, cd, rad, sr, EUR)')]
-        createTable('km_base_units', columns, self.cursor)
+        create_table('km_base_units', columns, self.cursor)
         #create triggers:
-        createTrigger('trigger_del_fc', 'DELETE', 'km_fc',
+        create_trigger('trigger_del_fc', 'DELETE', 'km_fc',
                       ['DELETE FROM km_attributes WHERE dc_id=OLD.fc_id',
                        'DELETE FROM km_fc_dimensions WHERE fc_id=OLD.fc_id'],
                       self.cursor)
-        createTrigger('trigger_del_sc', 'DELETE', 'km_sc',
+        create_trigger('trigger_del_sc', 'DELETE', 'km_sc',
                       ['DELETE FROM km_attributes WHERE dc_id=OLD.sc_id',
                        'DELETE FROM km_sc_columns WHERE sc_id=OLD.sc_id'],
                       self.cursor)
-        createTrigger('trigger_del_tmp', 'DELETE', 'km_temporary',
+        create_trigger('trigger_del_tmp', 'DELETE', 'km_temporary',
                       ['DELETE FROM km_fc WHERE fc_id=OLD.dc_id',
                        'DELETE FROM km_sc WHERE sc_id=OLD.dc_id'],
                       self.cursor)
         #clean tmp:
         self.cursor.execute("DELETE FROM km_temporary")
-        #add IndexMarker dummy if not present yet:
-        from pyphant.core.DataContainer import IndexMarker
-        im = IndexMarker()
-        im_summary = {'id':'IndexMarker', 'longname':im.longname,
-                      'shortname':im.shortname, 'hash':im.hash,
-                      'creator':None, 'machine':None,
-                      'date':'xxxx-xx-xx_xx:xx:xx.xxxxxx',
-                      'unit':1, 'dimensions':['IndexMarker'], 'attributes':{}}
-        self.set_entry(im_summary, None)
 
     def has_entry(self, id):
         exe = self.cursor.execute
@@ -339,10 +346,7 @@ class SQLiteWrapper(object):
                                 SQLiteWrapper.common_keys])
         insert_dict['storage'] = storage
         insert_dict['date'] = date2dbase(insert_dict['date'])
-        if summary['id'] == 'IndexMarker':
-            type = 'fc'
-        else:
-            type = emd52type(summary['id'])
+        type = emd52type(summary['id'])
         attr_query = "INSERT INTO km_attributes VALUES (?, ?, ?)"
         for key, value in summary['attributes'].iteritems():
             assert isinstance(key, StringTypes)
@@ -385,6 +389,10 @@ class SQLiteWrapper(object):
             return replace_type("%s_id", type)
         elif key == 'type':
             return "'%s' AS type" % type
+        elif key == 'unit':
+            return 'unit AS "unit [QUANTITY]"'
+        elif key == 'latex_unit':
+            return 'unit AS "latex_unit [LATEX]"'
         else:
             return key
 
@@ -403,6 +411,8 @@ class SQLiteWrapper(object):
         return (expr, value, True)
 
     def translate_attr_search(self, value, type):
+        if value == {}:
+            return ('1', [], True)
         expr = '('
         new_value = []
         for attr_key, attr_value in value.iteritems():
@@ -465,6 +475,12 @@ class SQLiteWrapper(object):
             elif key == 'columns' or key == 'dimensions':
                 expr, value, extend = self.translate_list_search(
                     key, value, type)
+            elif key == 'dim_of':
+                expr = '(fc_id IN (SELECT dim_id FROM km_fc_dimensions '\
+                       'WHERE fc_id=?))'
+            elif key == 'col_of':
+                expr = '(fc_id IN (SELECT fc_id FROM km_sc_columns '\
+                           'WHERE sc_id=?))'
             else:
                 raise NotImplementedError(key)
             where += expr + " AND "
@@ -526,6 +542,8 @@ class SQLiteWrapper(object):
           'unit': PhysicalUnit or number or PhysicalQuantity (==, FC only)
           'dimensions': list of FC search dicts
                         (see above definitions, FC only)
+          'dim_of': str types: emd5 of parent FC (==, FC only)
+          'col_of': str types: emd5 of parent SC (==, FC only)
           'columns': list of FC search dicts (see above definitions, SC only)
         - order_by: element of result_keys to order the results by
                     or None for no special ordering
@@ -582,7 +600,8 @@ class SQLiteWrapper(object):
         else:
             if search_dict['type'] == 'field':
                  allowed_search_keys = self.fc_search_keys
-                 allowed_result_keys = self.common_result_keys + ['unit']
+                 allowed_result_keys = self.common_result_keys \
+                                       + ['unit', 'latex_unit']
             elif search_dict['type'] == 'sample':
                  allowed_search_keys = self.sc_search_keys
                  allowed_result_keys = self.common_result_keys
@@ -641,6 +660,7 @@ class FCRowWrapper(RowWrapper):
         RowWrapper.__init__(self, emd5, cursor, 'fc')
         self.dimension_query = "SELECT dim_id FROM km_fc_dimensions "\
             "WHERE fc_id=? ORDER BY dim_index ASC"
+        self.unit_query = 'SELECT unit AS "unit [%s]" FROM km_fc WHERE fc_id=?'
 
     def __getitem__(self, key):
         if key == 'dimensions':
@@ -649,6 +669,12 @@ class FCRowWrapper(RowWrapper):
             if dimensions == []:
                 dimensions = [u'IndexMarker']
             return dimensions
+        elif key == 'unit':
+            self.cursor.execute(self.unit_query % 'QUANTITY', (self.emd5, ))
+            return self.cursor.fetchone()[0]
+        elif key == 'latex_unit':
+            self.cursor.execute(self.unit_query % 'LATEX', (self.emd5, ))
+            return self.cursor.fetchone()[0]
         elif key == 'columns':
             raise KeyError(key)
         else:

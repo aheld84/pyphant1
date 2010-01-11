@@ -30,6 +30,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import with_statement
+
 u"""Provides unittest classes for SQLiteWrapper.
 """
 
@@ -43,6 +45,7 @@ import pkg_resources
 pkg_resources.require("pyphant")
 import pyphant.core.SQLiteWrapper
 from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+from pyphant.core.H5FileHandler import (im_id, im_summary)
 
 
 class SQLiteWrapperTestCase(unittest.TestCase):
@@ -65,8 +68,7 @@ class SQLiteWrapperTestCase(unittest.TestCase):
                         'attributes':{'attribute1':'bla1',
                                       'attribute2':'bla2'},
                         'hash':'12345678910',
-                        'dimensions':[u'IndexMarker']}
-        self.summary['dimensions'].append(self.summary['id'])
+                        'dimensions':[im_id]}
         self.sc_summary = self.summary.copy()
         self.sc_summary['id'] = self.summary['id'][:-5] + 'sample'
         self.sc_summary.pop('unit')
@@ -74,6 +76,7 @@ class SQLiteWrapperTestCase(unittest.TestCase):
         self.sc_summary['columns'] = [self.summary['id'], self.summary['id']]
         self.sc_summary['type'] = 'sample'
         self.sc_summary['longname'] = u'name2'
+        self.sc_summary['shortname'] = u'sn2'
 
     def tearDown(self):
         import os
@@ -86,6 +89,8 @@ class SQLiteWrapperTestCase(unittest.TestCase):
         with self.wrapper:
             id = self.summary['id']
             assert not self.wrapper.has_entry(id)
+            self.wrapper.set_entry(im_summary, None)
+            assert self.wrapper.has_entry(im_summary['id'])
             self.wrapper.set_entry(self.summary, 'storage1')
             assert self.wrapper.has_entry(id)
             rowwrapper = self.wrapper[id]
@@ -140,6 +145,9 @@ class SQLiteWrapperTestCase(unittest.TestCase):
                 ['unit'], {'type':'field', 'longname':'name'})
             assert search_result == [(PhysicalQuantity('10.03e-8 mm**-1'), )]
             search_result = self.wrapper.get_andsearch_result(
+                ['latex_unit'], {'type':'field', 'longname':'name'})
+            #assert search_result == [(..., )]
+            search_result = self.wrapper.get_andsearch_result(
                 ['longname'], {'attributes':{'attribute2':'bla2'}},
                 order_by='longname')
             assert search_result == [(u'name', ), (u'name2', )]
@@ -161,8 +169,17 @@ class SQLiteWrapperTestCase(unittest.TestCase):
             search_result = self.wrapper.get_andsearch_result(
                 ['longname'],
                 {'type':'field',
-                 'dimensions':[{}, {'unit':PhysicalQuantity(2.0, '1/m')}]})
+                 'dimensions':[{'longname':im_summary['longname']}],
+                 'longname':self.summary['longname']})
             assert search_result == [(u'name', )]
+            rowwrapper = self.wrapper[id]
+            assert rowwrapper['dimensions'] == self.summary['dimensions']
+            search_result = self.wrapper.get_andsearch_result(
+                ['longname'], {'type':'field', 'dim_of':id})
+            assert search_result == [(im_summary['longname'], )]
+            search_result = self.wrapper.get_andsearch_result(
+                ['shortname'], {'type':'field', 'col_of':self.sc_summary['id']})
+            assert search_result == [(self.summary['shortname'], )]
 
 
 if __name__ == "__main__":
