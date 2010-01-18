@@ -202,12 +202,29 @@ class wxPyphantFrame(wx.Frame):
                                                             self._wxPyphantApp.pathToRecipe)
         self.recipeState='clean'
 
+    def onSaveAsCompositeWorker(self, event=None):
+        msg = "Select file to save recipe."
+        wc = "Pyphant recipe (*.h5)|*.h5"
+        dlg = wx.FileDialog(self, message = msg, defaultDir = os.getcwd(),
+                            defaultFile = "", wildcard = wc, style = wx.SAVE)
+        if dlg.ShowModal() == wx.ID_OK:
+            filename = dlg.GetPath()
+            if not filename.endswith(".h5"):
+                filename += ".h5"
+            pyphant.core.PyTablesPersister.saveRecipeToHDF5File(
+                self._remainingSpace.diagram.recipe, filename)
+            self._wxPyphantApp.pathToRecipe = filename
+            self.recipeState='clean'
+        else:
+            dlg.Destroy()
+
     def _initMenuBar(self):
         self._menuBar = wx.MenuBar()
         self._fileMenu = wx.Menu()
         #self._fileMenu.Append( wx.ID_NEW, "&New\tCTRL+n")
         #self._fileMenu.Append( wx.ID_OPEN, "&Open\tCTRL+o")
         self._fileMenu.Append( wx.ID_SAVE, "&Save\tCTRL+s")
+        self._fileMenu.Append( wx.ID_SAVEAS, "Save &as\tCTRL+a")
         self._fileMenu.Append( wx.ID_EXIT, "E&xit" )
         self._fileMenu.Append( wx.ID_FILE1, "Import HDF5 or FMF from &URL" )
         self._fileMenu.Append( wx.ID_FILE2, "&Import local HDF5 or FMF file")
@@ -223,6 +240,7 @@ class wxPyphantFrame(wx.Frame):
         #self.Bind(wx.EVT_MENU, self.onCreateNew, id=wx.ID_NEW)
         #self.Bind(wx.EVT_MENU, self.onOpenCompositeWorker, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.onSaveCompositeWorker, id=wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.onSaveAsCompositeWorker, id=wx.ID_SAVEAS)
         self.Bind(wx.EVT_CLOSE, self.onClose)
         self.Bind(wx.EVT_MENU, self.onQuit, id=wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.onCloseCompositeWorker, id=self.ID_CLOSE_COMPOSITE_WORKER)
