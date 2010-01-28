@@ -105,20 +105,20 @@ def saveExecutionOrder(h5, order):
     input.flush()
     orderGroup._v_attrs.resultPlug = order[1]
 
-def saveRecipeToHDF5File( recipe, filename ):
+def saveRecipeToHDF5File(recipe, filename, saveResults=True):
     _logger.info( "Saving to %s" % filename )
     h5 = tables.openFile(filename, 'w')
     recipeGroup = h5.createGroup("/", "recipe")
     resultsGroup = h5.createGroup("/", "results")
     workers=recipe.getWorkers()
     for worker in workers:
-        saveWorker(h5, recipeGroup, worker)
+        saveWorker(h5, recipeGroup, worker, saveResults)
     h5.close()
 
-def saveWorker(h5, recipeGroup, worker):
+def saveWorker(h5, recipeGroup, worker, saveResults=True):
     workerGroup = h5.createGroup(recipeGroup, "worker_"+str(hash(worker)))
     saveBaseAttributes(h5, workerGroup, worker)
-    savePlugs(h5, workerGroup, worker)
+    savePlugs(h5, workerGroup, worker, saveResults)
     saveParameters(h5, workerGroup, worker)
 
 def saveParameters(h5, workerGroup, worker):
@@ -126,11 +126,11 @@ def saveParameters(h5, workerGroup, worker):
     for (paramName, param) in worker._params.iteritems():
         h5.setNodeAttr(paramGroup, paramName, param.value)
 
-def savePlugs(h5, workerGroup, worker):
+def savePlugs(h5, workerGroup, worker, saveResults=True):
     plugs = h5.createGroup(workerGroup, "plugs")
     for (plugName, plug) in worker._plugs.iteritems():
         plugGroup = h5.createGroup(plugs, plugName)
-        if plug.resultIsAvailable():
+        if plug.resultIsAvailable() and saveResults:
             resId = saveResult(plug._result, h5)
             h5.setNodeAttr(plugGroup, "result", resId)
         connectionTable = h5.createTable(plugGroup, 'connections', Connection, expectedrows=len(plug._sockets))

@@ -198,8 +198,10 @@ class wxPyphantFrame(wx.Frame):
         self.recipeState='dirty'
 
     def onSaveCompositeWorker(self, event=None):
-        pyphant.core.PyTablesPersister.saveRecipeToHDF5File(self._remainingSpace.diagram.recipe,
-                                                            self._wxPyphantApp.pathToRecipe)
+        pyphant.core.PyTablesPersister.saveRecipeToHDF5File(
+            self._remainingSpace.diagram.recipe,
+            self._wxPyphantApp.pathToRecipe,
+            self._fileMenu.IsChecked(wx.ID_FILE4))
         self.recipeState='clean'
 
     def onSaveAsCompositeWorker(self, event=None):
@@ -212,7 +214,9 @@ class wxPyphantFrame(wx.Frame):
             if not filename.endswith(".h5"):
                 filename += ".h5"
             pyphant.core.PyTablesPersister.saveRecipeToHDF5File(
-                self._remainingSpace.diagram.recipe, filename)
+                self._remainingSpace.diagram.recipe,
+                filename,
+                self._fileMenu.IsChecked(wx.ID_FILE4))
             self._wxPyphantApp.pathToRecipe = filename
             self.recipeState='clean'
         else:
@@ -223,6 +227,8 @@ class wxPyphantFrame(wx.Frame):
         self._fileMenu = wx.Menu()
         #self._fileMenu.Append( wx.ID_NEW, "&New\tCTRL+n")
         #self._fileMenu.Append( wx.ID_OPEN, "&Open\tCTRL+o")
+        self._fileMenu.AppendCheckItem(wx.ID_FILE4, "Save &results\tCTRL+r")
+        self._fileMenu.Check(wx.ID_FILE4, True)
         self._fileMenu.Append( wx.ID_SAVE, "&Save\tCTRL+s")
         self._fileMenu.Append( wx.ID_SAVEAS, "Save &as\tCTRL+a")
         self._fileMenu.Append( wx.ID_EXIT, "E&xit" )
