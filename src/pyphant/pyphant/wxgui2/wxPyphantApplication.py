@@ -52,12 +52,6 @@ console.setLevel(logging.WARNING)
 logging.getLogger('').addHandler(console)
 
 import sys
-def excepthook(type,value,traceback):
-    log = logging.getLogger('pyphant')
-    log.debug(u"An unhandled exception occured.",
-              exc_info=(type,value,traceback))
-    sys.__excepthook__(type,value,traceback)
-sys.excepthook=excepthook
 import wx
 import sogl
 import pyphant.wxgui2.paramvisualization.ParamVisReg as ParamVisReg
@@ -70,7 +64,7 @@ import webbrowser
 pltform = platform.system()
 
 class wxPyphantApplication(wx.PySimpleApp):
-    def __init__(self,pathToRecipe=None):
+    def __init__(self, pathToRecipe=None):
         self.pathToRecipe = pathToRecipe
         wx.PySimpleApp.__init__(self)
 
@@ -78,12 +72,29 @@ class wxPyphantApplication(wx.PySimpleApp):
         if not wx.PySimpleApp.OnInit(self):
             return False
         self._logger=logging.getLogger("pyphant")
+        self._excframe = wx.Frame(None, -2, "")
+        sys.excepthook = self.excepthook
         sogl.SOGLInitialize()
         self._knowledgeNode = None
         self._paramVisReg=ParamVisReg.ParamVisReg()
         self._frame = wxPyphantFrame(self)
         self._frame.Show()
         return True
+
+    def excepthook(self, type, value, trace):
+        self._logger.debug(u"An unhandled exception occured.",
+                           exc_info=(type, value, trace))
+        sys.__excepthook__(type, value, trace)
+        try:
+            cpt = type.__name__
+            #import traceback
+            #traceStr = ''.join(traceback.format_exception(type, value, trace))
+            msg = "Additional information:\n%s\n\n" % value
+            dlg = wx.MessageDialog(self._excframe, msg, cpt, wx.OK)
+            dlg.ShowModal()
+        except:
+            # avoid loop if displaying error message fails
+            self._logger.debug(u"Failed to display error message in wxPyphant.")
 
     def getMainFrame(self):
         return self._frame
