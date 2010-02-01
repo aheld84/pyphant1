@@ -301,6 +301,7 @@ class wxPyphantFrame(wx.Frame):
                 self._wxPyphantApp._knowledgeNode.stop()
             except AttributeError:
                 pass
+            self._wxPyphantApp._excframe.Destroy()
             self.Destroy()
 
     def editCompositeWorker(self, worker):
