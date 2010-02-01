@@ -172,7 +172,9 @@ def saveSample(h5, resultGroup, result):
     h5.setNodeAttr(resultGroup, "machine", result.machine.encode("utf-8"))
     for key,value in result.attributes.iteritems():
         if key in _reservedAttributes:
-            raise ValueError, "Attribute should not be named %s!" % _reservedAttributes
+            raise ValueError("Attributes should not be named %s, "
+                             "but one was in fact called %s!"
+                             % (str(_reservedAttributes), key))
         h5.setNodeAttr(resultGroup,key,value)
     #Store fields of sample Container and gather list of field IDs
     columns = []
