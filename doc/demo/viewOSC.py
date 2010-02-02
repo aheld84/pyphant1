@@ -174,8 +174,8 @@ def compareAbsorption(recipe, curvNo, noIndicators):
     minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
     worker = recipe.getWorker("AddColumn")
     table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
-    xPos = table[u"horizontal_table_position"]
-    yPos = table[u"vertical_table_position"]
+    xPos = table[u"x-position"]
+    yPos = table[u"y-position"]
     thickness = table[u"thickness"]
     index = curvNo2Index(table[u"pixel"], curvNo)
     result = "$%s_{%s}$(%s %s,%s %s)=%s %s" % (thickness[index].shortname,curvNo,
