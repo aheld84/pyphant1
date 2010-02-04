@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 1998-2007, Konrad Hinsen <hinsen@cnrs-orleans.fr>
-# Copyright (c) 2008-2009, Rectorate of the University of Freiburg
-# Copyright (c) 2009, Andreas W. Liehr
+# Copyright (c) 2008-2010, Rectorate of the University of Freiburg
+# Copyright (c) 2009-2010, Andreas W. Liehr
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -644,7 +644,8 @@ def isQuantity(x):
 # Helper functions
 
 def _findUnit(unit):
-    if type(unit) == type(''):
+    from types import StringTypes
+    if isinstance(unit, StringTypes):
         name = string.strip(unit)
         unit = eval(name, _unit_table)
         for cruft in ['__builtins__', '__args__']:

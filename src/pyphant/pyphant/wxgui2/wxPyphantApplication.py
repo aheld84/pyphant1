@@ -38,10 +38,9 @@ __version__ = "Sprint"
 # $Source$
 
 import os, os.path, pkg_resources
-LOGDIR = os.path.expanduser(u'~')
+from pyphant.core.Helpers import getPyphantPath
+LOGDIR = getPyphantPath()[:-1]
 import logging
-if LOGDIR==u'~':
-    LOGDIR = os.getcwdu()
 #    logging.basicConfig(level=logging.DEBUG)
 #else:
 logging.basicConfig(level=logging.DEBUG,
@@ -53,12 +52,6 @@ console.setLevel(logging.WARNING)
 logging.getLogger('').addHandler(console)
 
 import sys
-def excepthook(type,value,traceback):
-    log = logging.getLogger('pyphant')
-    log.debug(u"An unhandled exception occured.",
-              exc_info=(type,value,traceback))
-    sys.__excepthook__(type,value,traceback)
-sys.excepthook=excepthook
 import wx
 import sogl
 import pyphant.wxgui2.paramvisualization.ParamVisReg as ParamVisReg
@@ -66,12 +59,12 @@ import pyphant.core.PyTablesPersister
 import WorkerRepository
 import ConfigureFrame
 import platform
-from pyphant.core.KnowledgeManager import KnowledgeManager as KM
+from pyphant.core.KnowledgeNode import (KnowledgeNode, KnowledgeManager)
 import webbrowser
 pltform = platform.system()
 
 class wxPyphantApplication(wx.PySimpleApp):
-    def __init__(self,pathToRecipe=None):
+    def __init__(self, pathToRecipe=None):
         self.pathToRecipe = pathToRecipe
         wx.PySimpleApp.__init__(self)
 
@@ -79,11 +72,29 @@ class wxPyphantApplication(wx.PySimpleApp):
         if not wx.PySimpleApp.OnInit(self):
             return False
         self._logger=logging.getLogger("pyphant")
+        self._excframe = wx.Frame(None, -2, "")
+        sys.excepthook = self.excepthook
         sogl.SOGLInitialize()
+        self._knowledgeNode = None
         self._paramVisReg=ParamVisReg.ParamVisReg()
         self._frame = wxPyphantFrame(self)
         self._frame.Show()
         return True
+
+    def excepthook(self, type, value, trace):
+        self._logger.debug(u"An unhandled exception occured.",
+                           exc_info=(type, value, trace))
+        sys.__excepthook__(type, value, trace)
+        try:
+            cpt = type.__name__
+            #import traceback
+            #traceStr = ''.join(traceback.format_exception(type, value, trace))
+            msg = "Additional information:\n%s\n\n" % value
+            dlg = wx.MessageDialog(self._excframe, msg, cpt, wx.OK)
+            dlg.ShowModal()
+        except:
+            # avoid loop if displaying error message fails
+            self._logger.debug(u"Failed to display error message in wxPyphant.")
 
     def getMainFrame(self):
         return self._frame
@@ -198,20 +209,43 @@ class wxPyphantFrame(wx.Frame):
         self.recipeState='dirty'
 
     def onSaveCompositeWorker(self, event=None):
-        pyphant.core.PyTablesPersister.saveRecipeToHDF5File(self._remainingSpace.diagram.recipe,
-                                                            self._wxPyphantApp.pathToRecipe)
+        pyphant.core.PyTablesPersister.saveRecipeToHDF5File(
+            self._remainingSpace.diagram.recipe,
+            self._wxPyphantApp.pathToRecipe,
+            self._fileMenu.IsChecked(wx.ID_FILE4))
         self.recipeState='clean'
+
+    def onSaveAsCompositeWorker(self, event=None):
+        msg = "Select file to save recipe."
+        wc = "Pyphant recipe (*.h5)|*.h5"
+        dlg = wx.FileDialog(self, message = msg, defaultDir = os.getcwd(),
+                            defaultFile = "", wildcard = wc, style = wx.SAVE)
+        if dlg.ShowModal() == wx.ID_OK:
+            filename = dlg.GetPath()
+            if not filename.endswith(".h5"):
+                filename += ".h5"
+            pyphant.core.PyTablesPersister.saveRecipeToHDF5File(
+                self._remainingSpace.diagram.recipe,
+                filename,
+                self._fileMenu.IsChecked(wx.ID_FILE4))
+            self._wxPyphantApp.pathToRecipe = filename
+            self.recipeState='clean'
+        else:
+            dlg.Destroy()
 
     def _initMenuBar(self):
         self._menuBar = wx.MenuBar()
         self._fileMenu = wx.Menu()
         #self._fileMenu.Append( wx.ID_NEW, "&New\tCTRL+n")
         #self._fileMenu.Append( wx.ID_OPEN, "&Open\tCTRL+o")
+        self._fileMenu.AppendCheckItem(wx.ID_FILE4, "Save &results\tCTRL+r")
+        self._fileMenu.Check(wx.ID_FILE4, True)
         self._fileMenu.Append( wx.ID_SAVE, "&Save\tCTRL+s")
+        self._fileMenu.Append( wx.ID_SAVEAS, "Save &as\tCTRL+a")
         self._fileMenu.Append( wx.ID_EXIT, "E&xit" )
         self._fileMenu.Append( wx.ID_FILE1, "Import HDF5 or FMF from &URL" )
         self._fileMenu.Append( wx.ID_FILE2, "&Import local HDF5 or FMF file")
-        self._fileMenu.Append( wx.ID_FILE3, "Start/stop &web interface")
+        self._fileMenu.Append( wx.ID_FILE3, "Start/pause sharing &knowledge")
         self._menuBar.Append( self._fileMenu, "&File" )
         self._closeCompositeWorker = wx.Menu()
         self._closeCompositeWorker.Append(self.ID_CLOSE_COMPOSITE_WORKER, "&Close Composite Worker")
@@ -223,12 +257,13 @@ class wxPyphantFrame(wx.Frame):
         #self.Bind(wx.EVT_MENU, self.onCreateNew, id=wx.ID_NEW)
         #self.Bind(wx.EVT_MENU, self.onOpenCompositeWorker, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.onSaveCompositeWorker, id=wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.onSaveAsCompositeWorker, id=wx.ID_SAVEAS)
         self.Bind(wx.EVT_CLOSE, self.onClose)
         self.Bind(wx.EVT_MENU, self.onQuit, id=wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.onCloseCompositeWorker, id=self.ID_CLOSE_COMPOSITE_WORKER)
         self.Bind(wx.EVT_MENU, self.onImportURL, id=wx.ID_FILE1)
         self.Bind(wx.EVT_MENU, self.onImportLocal, id=wx.ID_FILE2)
-        self.Bind(wx.EVT_MENU, self.onWebInterface, id=wx.ID_FILE3)
+        self.Bind(wx.EVT_MENU, self.onShare, id=wx.ID_FILE3)
 
     def createUpdateMenu(self):
         updateMenu = wx.Menu()
@@ -262,8 +297,11 @@ class wxPyphantFrame(wx.Frame):
                 self.onSaveCompositeWorker()
             dlg.Destroy()
         if dlgid != wx.ID_CANCEL:
-            km = KM.getInstance()
-            km.__del__()
+            try:
+                self._wxPyphantApp._knowledgeNode.stop()
+            except AttributeError:
+                pass
+            self._wxPyphantApp._excframe.Destroy()
             self.Destroy()
 
     def editCompositeWorker(self, worker):
@@ -294,7 +332,7 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
             cpt2 = "Info"
             msg2 = "Successfully imported DataContainers from\n'%s'"\
                    % (url ,)
-            km = KM.getInstance()
+            km = KnowledgeManager.getInstance()
             try:
                 km.registerURL(url)
             except Exception:
@@ -313,7 +351,7 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
         if dlg.ShowModal() == wx.ID_OK:
             filename = dlg.GetPath()
             url = 'file://' + os.path.realpath(filename)
-            km = KM.getInstance()
+            km = KnowledgeManager.getInstance()
             cpt2 = "Info"
             msg2 = "Successfully imported DataContainer(s) from\n'%s'"\
                    % (filename ,)
@@ -329,29 +367,42 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
         else:
             dlg.Destroy()
 
-    def onWebInterface(self, event):
-        km = KM.getInstance()
-        cpt = "Pyphant Web Interface"
+    def onShare(self, event):
+        cpt = "Share Knowledge"
         msg = ""
-        if km.web_interface.disabled:
-            if not km.isServerRunning():
-                try:
-                    km.startServer("127.0.0.1", 8000, True)
-                    msg += "Started web server @ 127.0.0.1:8000"
-                    url = 'http://%s:%d/' % (km._http_host,
-                                             km._http_port)
-                    webbrowser.open_new(url)
-                except:
-                    msg += "Could not start web server @ 127.0.0.1:8000"
-                    km.web_interface.disabled = True
-            else:
-                km.web_interface.disabled = False
+        if self._wxPyphantApp._knowledgeNode is None:
+            try:
+                logg = self._wxPyphantApp._logger
+                from pyphant.core.KnowledgeNode import get_kn_autoport
+                ports = [8080] + range(48621, 48771)
+                self._wxPyphantApp._knowledgeNode = get_kn_autoport(
+                    ports, logg, start=True, web_interface=True)
+                url = self._wxPyphantApp._knowledgeNode.url
+                msg += "Knowledge node is listening @ %s.\n"\
+                       "Sharing is experimental and therefore restric"\
+                       "ted\nto the loopback interface." % url
+                webbrowser.open_new(url)
+            except Exception, exep:
+                msg += "Could not start web server."
+                from socket import error as socket_error
+                if isinstance(exep, socket_error):
+                    try:
+                        #Python 2.6
+                        eno = err.errno
+                    except AttributeError:
+                        #Python 2.5
+                        eno = err.args[0]
+                    from errno import EADDRINUSE
+                    if eno == EADDRINUSE:
+                        msg += "\nReason: Could not find a free port."\
+                               "\n(You may stop other applications or "\
+                               "wait for the OS\nto free some ports.)"
+        elif not self._wxPyphantApp._knowledgeNode.app.serve:
+            msg += "Resumed sharing."
+            self._wxPyphantApp._knowledgeNode.app.serve = True
         else:
-            km.web_interface.disabled = True
-            msg += "Disabled web interface."
-            if km.isServerRunning():
-                km.stopServer()
-                msg += "\nStopped web server."
+            self._wxPyphantApp._knowledgeNode.app.serve = False
+            msg += "Disabled sharing."
         dlg = wx.MessageDialog(self, msg, cpt, wx.OK)
         dlg.ShowModal()
 

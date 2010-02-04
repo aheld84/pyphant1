@@ -116,3 +116,62 @@ def utf82uc(stype):
     if isinstance(stype, ListType):
         return map(convert, stype)
     return convert(stype)
+
+def emd52dict(emd5):
+    """
+    returns a dictionary with keys
+    ('machine', 'creator', 'date', 'hash', 'type')
+    """
+    emd5 = utf82uc(emd5)
+    emd5_split = emd5.split('/')
+    retdict = {}
+    retdict['machine'] = emd5_split[2]
+    retdict['creator'] = emd5_split[3]
+    retdict['date'] = emd5_split[4]
+    retdict['hash'] = emd5_split[5].split('.')[0]
+    retdict['type'] = emd5_split[5].split('.')[1]
+    return retdict
+
+def batch(recipe, input, plug, longname, dobatch=True, temporary=False):
+    """
+    Runs the same recipe multiple times for different input data.
+    The return value is either a SampleContainer similar to input
+    with 'emd5' column replaced by results or the resulting
+    DataContainer from plug, if dobatch is set to False.
+    recipe -- CompositeWorker instance
+    input -- SampleContainer with 'emd5' column or any DataContainer if
+             dobatch is set to False
+    plug -- plug contained in recipe to get output from
+            (there has to be exactly one open socket in recipe
+            ascending from plug)
+    longname -- longname of resulting SampleContainer, works only for
+                dobatch == True
+    dobatch -- if set to False, input is treated as a single data source
+    temporary -- whether to register results temporarily, only applies when
+                 dobatch is set to True
+    """
+    socket = recipe.getOpenSocketsForPlug(plug)[0]
+    from tools import Emd5Src
+    DummyWorker = Emd5Src.Emd5Src()
+    socket.insert(DummyWorker.getPlugs()[0])
+    DummyWorker.paramSelectby.value = u"enter emd5"
+    from pyphant.core.KnowledgeManager import KnowledgeManager
+    km = KnowledgeManager.getInstance()
+    if dobatch:
+        import copy
+        output = copy.deepcopy(input)
+        index = 0
+        for emd5 in input['emd5'].data:
+            DummyWorker.paramEnteremd5.value = emd5
+            resultDC = plug.getResult()
+            km.registerDataContainer(resultDC, temporary=temporary)
+            output['emd5'].data[index] = resultDC.id
+            index += 1
+        output.longname = longname
+        output.seal()
+    else:
+        km.registerDataContainer(input)
+        DummyWorker.paramEnteremd5.value = input.id
+        output = plug.getResult()
+    socket.pullPlug()
+    return output

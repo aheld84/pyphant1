@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
-# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2006-2010, Rectorate of the University of Freiburg
+# Copyright (c) 2009-2010, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -45,16 +45,27 @@ import scipy
 import logging
 import os
 from pyphant.core import PyTablesPersister
+from pyphant.core.DataContainer import IndexMarker
+from pyphant.core.Helpers import (utf82uc, emd52dict)
 _logger = logging.getLogger("pyphant")
+
+im = IndexMarker()
+im_id = u"emd5://pyphant/pyphant/0001-01-01_00:00:00.000000/%s.field" \
+        % utf82uc(im.hash)
+im_summary = {'id':im_id, 'longname':utf82uc(im.longname),
+              'shortname':utf82uc(im.shortname), 'hash':utf82uc(im.hash),
+              'creator':u'pyphant', 'machine':u'pyphant',
+              'date':u'0001-01-01_00:00:00.000000',
+              'unit':1, 'dimensions':[im_id], 'attributes':{}}
 
 
 class H5FileHandler(object):
     """
     This class is used to handle IO operations on HDF5 files.
     """
-    def __init__(self, filename, mode = 'a'):
+    def __init__(self, filename, mode='a'):
         """
-        Opens a HDF5 file.
+        Opens an HDF5 file.
         filename -- path to the file that should be opened
         mode -- mode in which file is opened. Possible values: 'r', 'w', 'a'
                 meaning 'read only', 'overwrite' and 'append'.
@@ -99,6 +110,19 @@ class H5FileHandler(object):
             uriType = uriType.encode('utf-8')
         return (resNode, uriType)
 
+    def isIndexMarker(self, dcId):
+        """
+        returns True iff the underlying HDF5 file contains dcId and
+        dcId belongs to an IndexMarker
+        """
+        resNode, uriType = self.getNodeAndTypeFromId(dcId)
+        if uriType == u'field':
+            try:
+                resNode._g_checkHasChild('dimensions')
+            except tables.NoSuchNodeError:
+                return True         
+        return False
+
     def loadDataContainer(self, dcId):
         """
         Loads a DataContainer from the HDF5 file and returns it as a
@@ -107,13 +131,9 @@ class H5FileHandler(object):
         """
         resNode, uriType = self.getNodeAndTypeFromId(dcId)
         if uriType == 'field':
-            _logger.info("Trying to load field data from node %s..." % resNode)
             result = self.loadField(resNode)
-            _logger.info("...successfully loaded.")
         elif uriType == 'sample':
-            _logger.info("Trying to load sample data from node %s..." % resNode)
             result = self.loadSample(resNode)
-            _logger.info("...successfully loaded.")
         else:
             raise TypeError, "Unknown result uriType in <%s>" % resNode._v_title
         return result
@@ -138,59 +158,53 @@ class H5FileHandler(object):
         """
         Extracts meta data about a given DataContainer and returns it
         as a dictionary.
-        dcId -- emd5 of the DC to summarize. If dcId == None, a dictionary
-                that maps emd5s to summaries is returned.
+        dcId -- emd5 of the DC to summarize. If the emd5 belongs to an
+                IndexMarker object, u'IndexMarker' is returned.
+                If dcId == None, a dictionary that maps emd5s to summaries
+                is returned, where IndexMarker objects are ignored.
         """
         if dcId == None:
             summary = {}
             for group in self.handle.walkGroups(where = "/results"):
                 currDcId = group._v_attrs.TITLE
                 if len(currDcId) > 0:
-                    summary[currDcId] = self.loadSummary(currDcId)
+                    tmp = self.loadSummary(currDcId)
+                    if tmp == 'IndexMarker':
+                        summary[im_id] = im_summary
+                    else:
+                        summary[currDcId] = tmp
+        elif self.isIndexMarker(dcId):
+            return u'IndexMarker'
         else:
             summary = {}
             summary['id'] = dcId
             resNode, uriType = self.getNodeAndTypeFromId(dcId)
-            summary['longname'] = unicode(self.handle.getNodeAttr(resNode,
-                                          "longname"), 'utf-8')
-            summary['shortname'] = unicode(self.handle.getNodeAttr(resNode,
-                                           "shortname"), 'utf-8')
-            emd5_split = dcId.split('/')
+            summary['longname'] = utf82uc(self.handle.getNodeAttr(resNode,
+                                                                  "longname"))
+            summary['shortname'] = utf82uc(self.handle.getNodeAttr(resNode,
+                                                                   "shortname"))
+            summary.update(emd52dict(dcId))
             try:
-                summary['machine'] = unicode(self.handle.getNodeAttr(resNode,
-                                             "machine"), 'utf-8')
-                summary['creator'] = unicode(self.handle.getNodeAttr(resNode,
-                                             "creator"), 'utf-8')
+                summary['machine'] = utf82uc(self.handle.getNodeAttr(resNode,
+                                                                     "machine"))
+                summary['creator'] = utf82uc(self.handle.getNodeAttr(resNode,
+                                                                     "creator"))
             except:
-                summary['machine'] = unicode(emd5_split[2], 'utf-8')
-                summary['creator'] = unicode(emd5_split[3], 'utf-8')
-            summary['date'] = unicode(emd5_split[4], 'utf-8')
-            summary['hash'] = emd5_split[5].split('.')[0]
-            summary['type'] = unicode(emd5_split[5].split('.')[1], 'utf-8')
+                pass # machine, creator set by emd52dict(dcId) before
             attributes = {}
             if uriType == 'field':
                 for key in resNode.data._v_attrs._v_attrnamesuser:
                     attributes[key]=self.handle.getNodeAttr(resNode.data, key)
-                unit = eval(unicode(self.handle.getNodeAttr(resNode, "unit"),
-                                    'utf-8'))
-                try:
-                    if isinstance(unit, (str, unicode)):
-                        unit = unit.replace('^', '**')
-                    if isinstance(unit, unicode):
-                        unit = unit.encode('utf-8')
-                    summary['unit'] = Quantity(unit)
-                except:
-                    try:
-                        summary['unit'] = Quantity("1" + unit)
-                    except:
-                        summary['unit'] = unit
-                try:
-                    dimTable = resNode.dimensions
-                    dimensions = [self.loadSummary(row['id'])
+                unit = eval(utf82uc(self.handle.getNodeAttr(resNode, "unit")))
+                summary['unit'] = unit
+                dimTable = resNode.dimensions
+                def filterIndexMarker(emd5):
+                    if self.isIndexMarker(emd5):
+                        return im_id
+                    else:
+                        return emd5
+                dimensions = [filterIndexMarker(row['id']) \
                                   for row in dimTable.iterrows()]
-                except tables.NoSuchNodeError:
-                    dimensions = u'INDEX'
-                    summary['type'] = u'index'
                 summary['dimensions'] = dimensions
             elif uriType == 'sample':
                 for key in resNode._v_attrs._v_attrnamesuser:
@@ -200,7 +214,7 @@ class H5FileHandler(object):
                 for resId in self.handle.getNodeAttr(resNode, "columns"):
                     nodename = "/results/" + resId
                     columnId = self.handle.getNodeAttr(nodename, "TITLE")
-                    columns.append(self.loadSummary(columnId))
+                    columns.append(columnId)
                 summary['columns'] = columns
             summary['attributes'] = attributes
         return summary

@@ -58,7 +58,8 @@ class Watershed(Worker.Worker):
 
     def watershed(self, a):
         m = self._markers
-        d = scipy.ndimage.distance_transform_edt(a)
+        #d = scipy.ndimage.distance_transform_edt(a)
+        d = a.copy()
         q = []
         w = m.copy()
         for y, x in scipy.argwhere(m!=0):

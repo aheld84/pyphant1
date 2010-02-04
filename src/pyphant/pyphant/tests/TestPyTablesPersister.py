@@ -74,6 +74,8 @@ class ContainerTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.eln.close()
+        import os
+        os.remove('FieldContainerTestCase.h5')
 
 class FieldContainerTestCase(ContainerTestCase):
     def testSaveRestore(self):

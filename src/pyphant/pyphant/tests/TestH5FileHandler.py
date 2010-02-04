@@ -228,9 +228,9 @@ class SummaryTestCase(SampleContainerTestCase):
         self.assertEqual(scsummary['attributes'], self.sc.attributes)
         self.assertEqual(fcsummary['attributes'], self.fc.attributes)
         self.assertEqual(fcsummary['unit'], self.fc.unit)
-        self.assertEqual(scsummary['columns'][0]['dimensions'][0],
-                         summarydict[self.fc.dimensions[0].id])
-        self.assertEqual(scsummary['columns'][0], fcsummary)
+        self.assertEqual(scsummary['columns'][0], self.fc.id)
+        from pyphant.core.H5FileHandler import im_id
+        self.assertEqual(fcsummary['dimensions'], [im_id])
 
 
 if __name__ == "__main__":

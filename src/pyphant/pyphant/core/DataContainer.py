@@ -230,6 +230,10 @@ class SampleContainer(DataContainer):
         return u"%s %s" % (self.longname, self.shortname)
     label = property(_getLabel)
 
+    def _getRawDataBytes(self):
+        return [column.rawDataBytes for column in self.columns]
+    rawDataBytes = property(_getRawDataBytes)
+
     def generateHash(self, m=None):
         if m == None:
             m = hashlib.md5()

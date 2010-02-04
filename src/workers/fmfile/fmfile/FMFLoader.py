@@ -41,6 +41,7 @@ __version__ = "$Revision$"
 # $Source$
 
 import zipfile, numpy, re, collections, copy, StringIO, os.path
+import codecs
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 from pyphant.quantities import Quantity,isUnit,isQuantity
@@ -242,7 +243,14 @@ def readZipFile(filename, subscriber=1):
             newField.dimensions[dim]=independentFields[indepField]
         assert newField.isValid()
         containers.append(newField)
-    result = DataContainer.SampleContainer(containers,attributes=commonAttr)
+    #The next lines are a hack and should be dealt with properly...
+    if u'creator' in commonAttr.keys():
+        creator = commonAttr[u'creator']
+        del commonAttr[u'creator']
+        result = DataContainer.SampleContainer(containers,attributes=commonAttr)
+        result.creator = creator
+    else:
+        result = DataContainer.SampleContainer(containers,attributes=commonAttr)
     return result
 
 def reshapeField(field):
@@ -473,6 +481,8 @@ def preParseData(b):
     localVar = {'fmf-version':'1.0','coding':'utf-8',
                 'delimiter':'\t'}
     commentChar = ';'
+    if b.startswith(codecs.BOM_UTF8):
+        b = b.lstrip(codecs.BOM_UTF8)
     if b[0] == ';' or b[0] == '#':
         commentChar = b[0]
         items =  [var.strip().split(':') for var in b.split('-*-')[1].split(';')]

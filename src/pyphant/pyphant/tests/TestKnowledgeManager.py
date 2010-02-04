@@ -41,7 +41,9 @@ __version__ = "$Revision$".replace('$','')
 import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
-from pyphant.core.KnowledgeManager import KnowledgeManager
+from pyphant.core.KnowledgeManager import (KnowledgeManager,
+                                           CACHE_MAX_SIZE,
+                                           CACHE_MAX_NUMBER)
 import pyphant.core.PyTablesPersister as ptp
 from pyphant.core.DataContainer import FieldContainer
 import numpy as N
@@ -50,6 +52,8 @@ import urllib
 import tempfile
 import os
 import logging
+from time import time
+import random
 
 
 class KnowledgeManagerTestCase(unittest.TestCase):
@@ -66,7 +70,7 @@ class KnowledgeManagerTestCase(unittest.TestCase):
         ptp.saveResult(self._fc, h5)
         h5.close()
         km = KnowledgeManager.getInstance()
-        km.registerURL('file://'+h5name)
+        km.registerURL('file://' + h5name, temporary=True)
         km_fc = km.getDataContainer(self._fc.id)
         self.assertEqual(self._fc, km_fc)
         os.remove(h5name)
@@ -74,9 +78,6 @@ class KnowledgeManagerTestCase(unittest.TestCase):
     def testGetHTTPFile(self):
         host = "omnibus.uni-freiburg.de"
         remote_dir = "/~s8klzimm"
-        #remote_dir = "/~mr78/pyphant-test"
-        #host = "idefix.physik.uni-freiburg.de"
-        #remote_dir = "/~zklaus"
         url = "http://" + host + remote_dir + "/knowledgemanager-http-test.h5"
         # Get remote file and load DataContainer
         filename, headers = urllib.urlretrieve(url)
@@ -87,14 +88,14 @@ class KnowledgeManagerTestCase(unittest.TestCase):
                 http_fc = ptp.loadField(h5,g)
         h5.close()
         km = KnowledgeManager.getInstance()
-        km.registerURL(url)
+        km.registerURL(url, temporary=True)
         km_fc = km.getDataContainer(http_fc.id)
         self.assertEqual(http_fc, km_fc)
         os.remove(filename)
 
     def testGetDataContainer(self):
         km = KnowledgeManager.getInstance()
-        km.registerDataContainer(self._fc)
+        km.registerDataContainer(self._fc, temporary=True)
         km_fc = km.getDataContainer(self._fc.id)
         self.assertEqual(self._fc, km_fc)
 
@@ -127,21 +128,83 @@ current: I(V) [A]
 """
         handler.write(fmfstring)
         handler.close()
-        dc_id = km.registerFMF(filename)
+        dc_id = km.registerFMF(filename, temporary=True)
         os.remove(filename)
         km.getDataContainer(dc_id)
 
     def testCache(self):
+        print "Preparing FCs for cache test (cache size: %d MB)..."\
+              % (CACHE_MAX_SIZE / 1024 / 1024)
         km = KnowledgeManager.getInstance()
-        fcids = []
-        for xr in xrange(20):
-            fc = FieldContainer(N.array([1, 2, xr]))
+        sizes = [(20, ), (10, 10, 10), (200, 200), (700, 700), (2000, 2000)]
+        byte_sizes = [reduce(lambda x, y:x * y, size) * 8 for size in sizes]
+        ids = []
+        rand_id_pool = []
+        assert_dict = {}
+        for num in xrange(2 * 20):
+            fc = FieldContainer(N.ones((500, 500)))
+            fc.data.flat[0] = num
             fc.seal()
-            km.registerDataContainer(fc)
-            fcids.append(fc.id)
-        for fcid in fcids:
-            for rep in xrange(10):
-                fc = km.getDataContainer(fcid)
+            km.registerDataContainer(fc, temporary=True)
+            rand_id_pool.append(fc.id)
+            assert_dict[fc.id] = num
+        for size in sizes:
+            fc = FieldContainer(N.ones(size))
+            fc.seal()
+            km.registerDataContainer(fc, temporary=True)
+            ids.append(fc.id)
+        for id, bytes in zip(ids, byte_sizes):
+            uc_acc_time = 0.0
+            c_acc_time = 0.0
+            reps = 30
+            for rep in xrange(reps):
+                t1 = time()
+                km.getDataContainer(id, use_cache=False)
+                t2 = time()
+                uc_acc_time += t2 - t1
+            km._cache = []
+            km._cache_size = 0
+            for rep in xrange(reps):
+                t1 = time()
+                km.getDataContainer(id)
+                t2 = time()
+                c_acc_time += t2 - t1
+            uc_avr = 1000.0 * uc_acc_time / reps
+            c_avr = 1000.0 * c_acc_time / reps
+            print "Avr. access time for %0.2f kB sequential read: "\
+                  "%0.3f ms unchached, %0.3f ms cached" % (float(bytes) / 1024,
+                                                           uc_avr, c_avr)
+        km._cache = []
+        km._cache_size = 0
+        rand_ids = []
+        reps = 500
+        import pyphant.core.KnowledgeManager
+        pyphant.core.KnowledgeManager.CACHE_MAX_NUMBER = 20
+        for run in xrange(reps):
+            rand_ids.append(rand_id_pool[
+                random.randint(0, len(rand_id_pool) - 1)])
+        uc_acc_time = 0.0
+        c_acc_time = 0.0
+        for id in rand_ids:
+            t1 = time()
+            fc = km.getDataContainer(id, use_cache=False)
+            t2 = time()
+            uc_acc_time += t2 - t1
+        for id in rand_ids:
+            t1 = time()
+            fc = km.getDataContainer(id)
+            t2 = time()
+            c_acc_time += t2 - t1
+            assert km._cache_size >= 0
+            assert km._cache_size <= CACHE_MAX_SIZE
+            assert len(km._cache) <= CACHE_MAX_NUMBER
+            assert assert_dict[id] == fc.data.flat[0]
+        uc_avr = 1000.0 * uc_acc_time / reps
+        c_avr = 1000.0 * c_acc_time / reps
+        bytes = float(500 * 500 * 8) / 1024
+        print "Avr. access time for %0.2f kB random read: "\
+              "%0.3f ms unchached, %0.3f ms cached" % (bytes, uc_avr, c_avr)
+        print "------ End Cache Test ------"
 
 
 if __name__ == "__main__":
