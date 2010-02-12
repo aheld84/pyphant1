@@ -58,7 +58,7 @@ import urllib
 CACHE_MAX_SIZE = 256 * 1024 * 1024
 # Limit for number of stored DCs in cache:
 CACHE_MAX_NUMBER = 100
-KM_PATH = '/KMstorage/'
+KM_PATH = 'KMstorage'
 REHDF5 = re.compile(r'..*\.h5$|..*\.hdf$|..*\.hdf5$')
 REFMF = re.compile(r'..*\.fmf$')
 
@@ -67,18 +67,17 @@ def getFilenameFromDcId(dcId, temporary=False):
     Returns a unique filename for the given emd5.
     """
     emd5list = urlparse(dcId + '.h5')[2][2:].split('/')
-    emd5path = ''
-    for p in emd5list[:-2]:
-        emd5path += (p + '/')
-    emd5path += emd5list[-2][:10] + '/' + emd5list[-2][11:]\
-        + '.' + emd5list[-1]
+    emd5path = os.path.join(
+        *(emd5list[:-2] + [emd5list[-2][:10],
+                           emd5list[-2][11:] + '.' + emd5list[-1]]))
     directory = os.path.dirname(emd5path)
     filename = os.path.basename(emd5path)
     if temporary:
-        subdir = 'tmp/by_emd5/'
+        subdir = os.path.join('tmp', 'by_emd5')
     else:
-        subdir = 'by_emd5/'
-    return getPyphantPath(KM_PATH + subdir + directory) + filename
+        subdir = 'by_emd5'
+    return os.path.join(getPyphantPath(
+        os.path.join(KM_PATH, subdir, directory)), filename)
 
 
 class DCNotFoundError(Exception):
@@ -157,7 +156,8 @@ class KnowledgeManager(Singleton):
         self._cache = []
         self._cache_size = 0
         if KM_DBASE == u'default':
-            self.dbase = getPyphantPath('/sqlite3/') + "km_meta.sqlite3"
+            self.dbase = os.path.join(getPyphantPath('sqlite3'),
+                                      "km_meta.sqlite3")
         else:
             self.dbase = KM_DBASE
         self.any_value = AnyValue()
@@ -165,7 +165,7 @@ class KnowledgeManager(Singleton):
             wrapper.setup_dbase()
         self.node = None # for hooking up a KnowledgeNode
         self.uuid = uuid1().urn
-        tmpdir = getPyphantPath(KM_PATH + 'tmp/')
+        tmpdir = getPyphantPath(os.path.join(KM_PATH, 'tmp'))
         if os.path.isdir(tmpdir):
             from shutil import rmtree
             try:
@@ -222,11 +222,11 @@ class KnowledgeManager(Singleton):
         parsed = urlparse(url)
         tmp_extension = ''
         if temporary:
-            tmp_extension = 'tmp/'
-        filename = KM_PATH + tmp_extension + 'registered/' + parsed[1] + '/'
-        filename += os.path.basename(parsed[2])
-        directory = os.path.dirname(filename)
-        filename = getPyphantPath(directory) + os.path.basename(filename)
+            tmp_extension = 'tmp'
+        directory = os.path.join(KM_PATH, tmp_extension,
+                                 'registered', parsed[1])
+        filename = os.path.join(getPyphantPath(directory),
+                                os.path.basename(parsed[2]))
         if os.path.exists(filename):
             i = 0
             directory = os.path.dirname(filename)
@@ -239,7 +239,8 @@ class KnowledgeManager(Singleton):
             from sys import maxint
             while i < maxint:
                 fill = str(i).zfill(10)
-                tryfn = "%s/%s%s.%s" % (directory, fnwoext, fill, ext)
+                tryfn = os.path.join(directory,
+                                     "%s%s.%s" % (fnwoext, fill, ext))
                 if os.path.exists(tryfn):
                     i += 1
                 else:

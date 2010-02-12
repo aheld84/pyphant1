@@ -49,6 +49,7 @@ from pyphant.core.KnowledgeNode import RemoteError
 from pyphant.core.KnowledgeManager import DCNotFoundError
 from types import StringTypes
 from pyphant.core.SQLiteWrapper import SQLiteWrapper
+import os
 
 
 def cond(condition, results):
@@ -344,7 +345,7 @@ class WebInterface(object):
         self.enabled = enabled
         self.kn = knowledge_node
         from pyphant import __path__ as ppath
-        self.rootdir = ppath[0] + '/web/'
+        self.rootdir = os.path.join(ppath[0], 'web')
         self.url_link = HTMLLink(self.kn.url, self.kn.url).getHTML()
         self.menu = HTMLTable(
             [[HTMLLink('/search?shorten=True', 'Browse Data Containers'),
@@ -394,13 +395,15 @@ class WebInterface(object):
     def images(self, filename):
         if not self.enabled:
             return template('disabled')
-        send_file(filename, self.rootdir + 'images/', guessmime=False,
+        send_file(filename, os.path.join(self.rootdir, 'images'),
+                  guessmime=False,
                   mimetype=self.kn.mimetypes.guess_type(filename)[0])
 
     def script(self, filename):
         if not self.enabled:
             return template('disabled')
-        send_file(filename, self.rootdir + 'script/', guessmime=False,
+        send_file(filename, os.path.join(self.rootdir, 'script'),
+                  guessmime=False,
                   mimetype='application/javascript')
 
     def remote_action(self):
@@ -439,7 +442,7 @@ class WebInterface(object):
     def log(self):
         if not self.enabled:
             return template('disabled')
-        with open(getPyphantPath() + 'pyphant.log') as logfile:
+        with open(os.path.join(getPyphantPath(), 'pyphant.log')) as logfile:
             loglines = logfile.readlines()
         return template('log', loglines=''.join(loglines), url=self.url_link)
 
