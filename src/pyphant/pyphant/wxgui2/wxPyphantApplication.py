@@ -46,7 +46,8 @@ import logging
 logging.basicConfig(level=logging.DEBUG,
                     filename=os.path.join(LOGDIR, u'pyphant.log'),
                     filemode='w',
-                    format="%(asctime)s - %(levelname)s:%(name)s:%(thread)d:%(module)s.%(funcName)s(l %(lineno)d):%(message)s")
+                    format="%(asctime)s - %(levelname)s:%(name)s:%(thread)"\
+                    "d:%(module)s.%(funcName)s(l %(lineno)d):%(message)s")
 console = logging.StreamHandler()
 console.setLevel(logging.WARNING)
 logging.getLogger('').addHandler(console)
@@ -63,6 +64,7 @@ from pyphant.core.KnowledgeNode import (KnowledgeNode, KnowledgeManager)
 import webbrowser
 pltform = platform.system()
 
+
 class wxPyphantApplication(wx.PySimpleApp):
     def __init__(self, pathToRecipe=None):
         self.pathToRecipe = pathToRecipe
@@ -71,12 +73,12 @@ class wxPyphantApplication(wx.PySimpleApp):
     def OnInit(self):
         if not wx.PySimpleApp.OnInit(self):
             return False
-        self._logger=logging.getLogger("pyphant")
+        self._logger = logging.getLogger("pyphant")
         self._excframe = wx.Frame(None, -2, "")
         sys.excepthook = self.excepthook
         sogl.SOGLInitialize()
         self._knowledgeNode = None
-        self._paramVisReg=ParamVisReg.ParamVisReg()
+        self._paramVisReg = ParamVisReg.ParamVisReg()
         self._frame = wxPyphantFrame(self)
         self._frame.Show()
         return True
@@ -100,7 +102,9 @@ class wxPyphantApplication(wx.PySimpleApp):
         return self._frame
 
     def configureWorker(self, worker):
-        configureFrame=ConfigureFrame.ConfigureFrame(self._frame, self._paramVisReg,  worker)
+        configureFrame = ConfigureFrame.ConfigureFrame(self._frame,
+                                                       self._paramVisReg,
+                                                       worker)
         if configureFrame.ShowModal() == wx.ID_OK:
             configureFrame.applyAll()
 
@@ -110,40 +114,38 @@ class wxPyphantApplication(wx.PySimpleApp):
 
 class wxPyphantFrame(wx.Frame):
 
-    ID_WINDOW_TOP=100
-    ID_WINDOW_LEFT=101
-    ID_WINDOW_RIGHT=102
-    ID_WINDOW_BOTTOM=103
+    ID_WINDOW_TOP = 100
+    ID_WINDOW_LEFT = 101
+    ID_WINDOW_RIGHT = 102
+    ID_WINDOW_BOTTOM = 103
     ID_CLOSE_COMPOSITE_WORKER = wx.NewId()
     ID_UPDATE_PYPHANT = wx.NewId()
 
     def __init__(self, _wxPyphantApp):
-        wx.Frame.__init__(self, None, -1, "wxPyphant %s" % __version__, size=(640,480))
+        wx.Frame.__init__(self, None, -1, "wxPyphant %s" % __version__,
+                          size=(640,480))
         import PyphantCanvas
-        self._statusBar=self.CreateStatusBar()
-        self._wxPyphantApp=_wxPyphantApp
+        self._statusBar = self.CreateStatusBar()
+        self._wxPyphantApp = _wxPyphantApp
         self._initMenuBar()
         self._initSash()
-        self.recipeState=None
+        self.recipeState = None
         self.onOpenCompositeWorker(None)
         self._workerRepository.Bind(wx.EVT_SASH_DRAGGED_RANGE,
                                     self.onFoldPanelBarDrag,
                                     id=self.ID_WINDOW_TOP,
                                     id2=self.ID_WINDOW_BOTTOM)
         self.Bind(wx.EVT_SIZE, self.onSize)
-        self.compositeWorkerStack=[]
+        self.compositeWorkerStack = []
         wx.MessageBox("Located log directory at %s.\n"
                       "Logging will go to %s." %
                       (LOGDIR, os.path.join(LOGDIR, 'pyphant.log')),
                       "Logging info")
 
     def _initSash(self):
-        self._workerRepository = wx.SashLayoutWindow(self,
-                                                     self.ID_WINDOW_RIGHT,
-                                                     wx.DefaultPosition,
-                                                     wx.Size(200,1000),
-                                                     wx.NO_BORDER |wx.SW_3D
-                                                     | wx.CLIP_CHILDREN)
+        self._workerRepository = wx.SashLayoutWindow(
+            self, self.ID_WINDOW_RIGHT, wx.DefaultPosition, wx.Size(200,1000),
+            wx.NO_BORDER | wx.SW_3D | wx.CLIP_CHILDREN)
         self._workerRepository.SetDefaultSize(wx.Size(220,1000))
         self._workerRepository.SetOrientation(wx.LAYOUT_VERTICAL)
         self._workerRepository.SetAlignment(wx.LAYOUT_RIGHT)
@@ -159,7 +161,8 @@ class wxPyphantFrame(wx.Frame):
         if event.GetDragStatus() == wx.SASH_STATUS_OUT_OF_RANGE:
             return
         if event.GetId() == self.ID_WINDOW_RIGHT:
-            self._workerRepository.SetDefaultSize(wx.Size(event.GetDragRect().width, 1000))
+            self._workerRepository.SetDefaultSize(
+                wx.Size(event.GetDragRect().width, 1000))
         # Leaves bits of itself behind sometimes
         wx.LayoutAlgorithm().LayoutWindow(self, self._remainingSpace)
         self._remainingSpace.Refresh()
@@ -168,58 +171,58 @@ class wxPyphantFrame(wx.Frame):
     def onOpenCompositeWorker(self, event):
         if not self._wxPyphantApp.pathToRecipe:
             if pltform == 'Linux' or pltform == 'Darwin':
-                osMessage = "Choose an existing recipe or cancel to create a new recipe"
-            elif pltform=='Windows':
-                osMessage = "Choose existing recipe to open or name a new recipe to create"
+                osMessage = "Choose an existing recipe or cancel to create "\
+                            "a new recipe"
+            elif pltform == 'Windows':
+                osMessage = "Choose existing recipe to open or name a new "\
+                            "recipe to create"
             else:
                 raise OSError, "Operating System %s not supported!" % pltform
             wc = "Pyphant Recipe(*.h5)|*.h5"
-            dlg = wx.FileDialog( self, message=osMessage, defaultDir=os.getcwd(),
-                                 defaultFile="", wildcard=wc, style=wx.OPEN)
+            dlg = wx.FileDialog(self, message=osMessage, defaultDir=os.getcwd(),
+                                defaultFile="", wildcard=wc, style=wx.OPEN)
             if dlg.ShowModal() == wx.ID_OK:
                 self._wxPyphantApp.pathToRecipe = dlg.GetPath()
             else:
                 dlg.Destroy()
-                dlg = wx.FileDialog( self, message='Create a new recipe', defaultDir=os.getcwd(),
-                                     defaultFile="", wildcard=wc, style=wx.SAVE)
+                dlg = wx.FileDialog(self, message='Create a new recipe',
+                                    defaultDir=os.getcwd(), defaultFile="",
+                                    wildcard=wc, style=wx.SAVE)
                 if dlg.ShowModal() == wx.ID_OK:
                     path = dlg.GetPath()
-                    if not path[:-3]=='.h5':
-                        path+='.h5'
+                    if not path[:-3] == '.h5':
+                        path += '.h5'
                     self._wxPyphantApp.pathToRecipe = path
             dlg.Destroy()
-
         import PyphantCanvas
         if self._wxPyphantApp.pathToRecipe[-3:] == '.h5':
             if os.path.exists(self._wxPyphantApp.pathToRecipe):
-                recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File(self._wxPyphantApp.pathToRecipe)
-                #from pyphant.core import KnowledgeManager
-                #KnowledgeManager.KnowledgeManager.getInstance().registerURL(
-                #    "file:///"+os.path.realpath(self._wxPyphantApp.pathToRecipe)
-                 #   )
-                self._remainingSpace=PyphantCanvas.PyphantCanvas(self, recipe)
+                recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File(
+                    self._wxPyphantApp.pathToRecipe)
+                self._remainingSpace = PyphantCanvas.PyphantCanvas(self, recipe)
             else:
-                self._remainingSpace=PyphantCanvas.PyphantCanvas(self)
+                self._remainingSpace = PyphantCanvas.PyphantCanvas(self)
         else:
-            raise IOError("Unknown file format in file \""+self._wxPyphantApp.pathToRecipe+"\"")
-        self.recipeState='clean'
+            raise IOError("Unknown file format in file \"%\""\
+                          % self._wxPyphantApp.pathToRecipe)
+        self.recipeState = 'clean'
         self._remainingSpace.diagram.recipe.registerListener(self.recipeChanged)
 
     def recipeChanged(self, event):
-        self.recipeState='dirty'
+        self.recipeState = 'dirty'
 
     def onSaveCompositeWorker(self, event=None):
         pyphant.core.PyTablesPersister.saveRecipeToHDF5File(
             self._remainingSpace.diagram.recipe,
             self._wxPyphantApp.pathToRecipe,
             self._fileMenu.IsChecked(wx.ID_FILE4))
-        self.recipeState='clean'
+        self.recipeState = 'clean'
 
     def onSaveAsCompositeWorker(self, event=None):
         msg = "Select file to save recipe."
         wc = "Pyphant recipe (*.h5)|*.h5"
-        dlg = wx.FileDialog(self, message = msg, defaultDir = os.getcwd(),
-                            defaultFile = "", wildcard = wc, style = wx.SAVE)
+        dlg = wx.FileDialog(self, message=msg, defaultDir=os.getcwd(),
+                            defaultFile="", wildcard=wc, style=wx.SAVE)
         if dlg.ShowModal() == wx.ID_OK:
             filename = dlg.GetPath()
             if not filename.endswith(".h5"):
@@ -229,30 +232,32 @@ class wxPyphantFrame(wx.Frame):
                 filename,
                 self._fileMenu.IsChecked(wx.ID_FILE4))
             self._wxPyphantApp.pathToRecipe = filename
-            self.recipeState='clean'
+            self.recipeState = 'clean'
         else:
             dlg.Destroy()
 
     def _initMenuBar(self):
         self._menuBar = wx.MenuBar()
         self._fileMenu = wx.Menu()
-        #self._fileMenu.Append( wx.ID_NEW, "&New\tCTRL+n")
-        #self._fileMenu.Append( wx.ID_OPEN, "&Open\tCTRL+o")
+        #self._fileMenu.Append(wx.ID_NEW, "&New\tCTRL+n")
+        #self._fileMenu.Append(wx.ID_OPEN, "&Open\tCTRL+o")
         self._fileMenu.AppendCheckItem(wx.ID_FILE4, "Save &results\tCTRL+r")
         self._fileMenu.Check(wx.ID_FILE4, True)
-        self._fileMenu.Append( wx.ID_SAVE, "&Save\tCTRL+s")
-        self._fileMenu.Append( wx.ID_SAVEAS, "Save &as\tCTRL+a")
-        self._fileMenu.Append( wx.ID_EXIT, "E&xit" )
-        self._fileMenu.Append( wx.ID_FILE1, "Import HDF5 or FMF from &URL" )
-        self._fileMenu.Append( wx.ID_FILE2, "&Import local HDF5 or FMF file")
-        self._fileMenu.Append( wx.ID_FILE3, "Start/pause sharing &knowledge")
-        self._menuBar.Append( self._fileMenu, "&File" )
+        self._fileMenu.Append(wx.ID_SAVE, "&Save\tCTRL+s")
+        self._fileMenu.Append(wx.ID_SAVEAS, "Save &as\tCTRL+a")
+        self._fileMenu.Append(wx.ID_EXIT, "E&xit")
+        self._fileMenu.Append(wx.ID_FILE1, "Import HDF5 or FMF from &URL")
+        self._fileMenu.Append(wx.ID_FILE2, "&Import local HDF5 or FMF file")
+        self._fileMenu.Append(wx.ID_FILE3, "Start/pause sharing &knowledge")
+        self._menuBar.Append(self._fileMenu, "&File")
         self._closeCompositeWorker = wx.Menu()
-        self._closeCompositeWorker.Append(self.ID_CLOSE_COMPOSITE_WORKER, "&Close Composite Worker")
-        self._menuBar.Append( self._closeCompositeWorker, "&Close Composite Worker")
+        self._closeCompositeWorker.Append(self.ID_CLOSE_COMPOSITE_WORKER,
+                                          "&Close Composite Worker")
+        self._menuBar.Append(self._closeCompositeWorker,
+                              "&Close Composite Worker")
         self._updateMenu = self.createUpdateMenu()
-        self._menuBar.Append( self._updateMenu, "&Update")
-        self.SetMenuBar( self._menuBar )
+        self._menuBar.Append(self._updateMenu, "&Update")
+        self.SetMenuBar(self._menuBar)
         self._menuBar.EnableTop(1, False)
         #self.Bind(wx.EVT_MENU, self.onCreateNew, id=wx.ID_NEW)
         #self.Bind(wx.EVT_MENU, self.onOpenCompositeWorker, id=wx.ID_OPEN)
@@ -260,21 +265,23 @@ class wxPyphantFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onSaveAsCompositeWorker, id=wx.ID_SAVEAS)
         self.Bind(wx.EVT_CLOSE, self.onClose)
         self.Bind(wx.EVT_MENU, self.onQuit, id=wx.ID_EXIT)
-        self.Bind(wx.EVT_MENU, self.onCloseCompositeWorker, id=self.ID_CLOSE_COMPOSITE_WORKER)
+        self.Bind(wx.EVT_MENU, self.onCloseCompositeWorker,
+                  id=self.ID_CLOSE_COMPOSITE_WORKER)
         self.Bind(wx.EVT_MENU, self.onImportURL, id=wx.ID_FILE1)
         self.Bind(wx.EVT_MENU, self.onImportLocal, id=wx.ID_FILE2)
         self.Bind(wx.EVT_MENU, self.onShare, id=wx.ID_FILE3)
 
     def createUpdateMenu(self):
         updateMenu = wx.Menu()
-        updateMenu.Append( self.ID_UPDATE_PYPHANT, "Update &Pyphant" )
+        updateMenu.Append(self.ID_UPDATE_PYPHANT, "Update &Pyphant")
         self.Bind(wx.EVT_MENU, self.onUpdatePyphant, id=self.ID_UPDATE_PYPHANT)
         self.updateIds = { self.ID_UPDATE_PYPHANT : 'pyphant' }
         for toolbox in pkg_resources.iter_entry_points("pyphant.workers"):
             dist = toolbox.dist
             nId = wx.NewId()
             self.updateIds[nId] = dist.key
-            updateMenu.Append( nId, "Update %s (%s)" % (dist.project_name, dist.version) )
+            updateMenu.Append(nId, "Update %s (%s)"\
+                              % (dist.project_name, dist.version))
             self.Bind(wx.EVT_MENU, self.onUpdatePyphant, id=nId)
         return updateMenu
 
@@ -286,11 +293,13 @@ class wxPyphantFrame(wx.Frame):
         self.Close()
 
     def onClose(self, event):
-        dlgid=None
-        if self.recipeState!='clean':
+        dlgid = None
+        if self.recipeState != 'clean':
             cpt = "Save changed recipe?"
-            msg = "The recipe has changed since the last saving.\nDo you want to save before terminating?"
-            dlg = wx.MessageDialog(self, msg, cpt, style=wx.YES|wx.NO|wx.CANCEL|wx.ICON_QUESTION)
+            msg = "The recipe has changed since the last saving.\n"\
+                  "Do you want to save before terminating?"
+            dlg = wx.MessageDialog(
+                self, msg, cpt, style=wx.YES|wx.NO|wx.CANCEL|wx.ICON_QUESTION)
             dlgid = dlg.ShowModal()
             if dlgid == wx.ID_YES:
                 self.onSaveCompositeWorker()
@@ -306,24 +315,25 @@ class wxPyphantFrame(wx.Frame):
     def editCompositeWorker(self, worker):
         import PyphantCanvas
         self.compositeWorkerStack.append(self._remainingSpace)
-        self._remainingSpace=PyphantCanvas.PyphantCanvas(self, worker)
+        self._remainingSpace = PyphantCanvas.PyphantCanvas(self, worker)
         self._remainingSpace.diagram.recipe.registerListener(self.recipeChanged)
         self._menuBar.EnableTop(1, True)
 
     def onCloseCompositeWorker(self, event):
         self._remainingSpace.Destroy()
-        self._remainingSpace=self.compositeWorkerStack.pop()
-        if len(self.compositeWorkerStack)==0:
+        self._remainingSpace = self.compositeWorkerStack.pop()
+        if len(self.compositeWorkerStack) == 0:
             self._menuBar.EnableTop(1, False)
 
     def onImportURL(self, event):
         cpt = "Import HDF5 or FMF from URL"
-        msg = "Enter an URL to a valid HDF5 or FMF file \
-(e.g. http://www.example.org/data.h5).\n\
-The file is stored permanently in your home directory in the \
-.pyphant directory\nand all DataContainers contained in that file are \
-available by using the\nEmd5Src Worker even after restarting wxPyphant.\n\
-HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
+        msg = "Enter an URL to a valid HDF5 or FMF file "\
+              "(e.g. http://www.example.org/data.h5).\n"\
+              "The file is stored permanently in your home directory in the "\
+              ".pyphant directory\nand all DataContainers contained in that "\
+              "file are available by using the\nEmd5Src Worker even after "\
+              "restarting wxPyphant.\nHTTP redirects are resolved "\
+              "automatically, i.e. DOIs are supported as well."
         dlg = wx.TextEntryDialog(self, msg, cpt)
         dlgid = dlg.ShowModal()
         if dlgid != wx.ID_CANCEL:
@@ -345,8 +355,8 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
     def onImportLocal(self, event):
         msg = "Select HDF5 or FMF file to import DataContainer(s) from."
         wc = "*.h5, *.hdf, *.hdf5, *.fmf|*.h5;*.hdf;*.hdf5;*.fmf"
-        dlg = wx.FileDialog(self, message = msg, defaultDir = os.getcwd(),
-                            defaultFile = "", wildcard = wc, style = wx.OPEN)
+        dlg = wx.FileDialog(self, message=msg, defaultDir=os.getcwd(),
+                            defaultFile="", wildcard=wc, style=wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             filename = dlg.GetPath()
             url = 'file://' + os.path.realpath(filename)
@@ -358,8 +368,8 @@ HTTP redirects are resolved automatically, i.e. DOIs are supported as well."
                 km.registerURL(url)
             except Exception:
                 cpt2 = "Error"
-                msg2 = "'%s' is not a valid HDF5 or FMF file.\n\
-(Tried to import from '%s')" % (filename, url)
+                msg2 = "'%s' is not a valid HDF5 or FMF file.\n"\
+                       "(Tried to import from '%s')" % (filename, url)
             finally:
                 dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
                 dlgid2 = dlg2.ShowModal()
