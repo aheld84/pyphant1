@@ -205,13 +205,14 @@ class KnowledgeNode(RoutingHTTPServer):
         self.km = local_km
         self.remotes = []
         if dbase == u'default':
-            self._dbase = getPyphantPath('/sqlite3/') + 'kn_remotes.sqlite3'
+            self._dbase = os.path.join(getPyphantPath('sqlite3'),
+                                       'kn_remotes.sqlite3')
         else:
             self._dbase = dbase
         self._restore_remotes()
         self._setup_routes()
         self._tempdir = mkdtemp(prefix = 'HDF5Wrap')
-        tpl_path = pyphant_source_path[0] + '/web/templates/'
+        tpl_path = os.path.join(pyphant_source_path[0], 'web', 'templates')
         if not tpl_path in pyphant.core.bottle.TEMPLATE_PATH:
             pyphant.core.bottle.TEMPLATE_PATH.append(tpl_path)
         from pyphant.core.WebInterface import WebInterface

@@ -52,10 +52,10 @@ class KMVisualizer(object):
         km = KM.getInstance()
         km.registerDataContainer(DataContainer)
         dc_id = DataContainer.id
-        if km.isServerRunning():
-            url = 'http://%s:%d/request_dc_details?dcid=%s' % (km._http_host,
-                                                               km._http_port,
-                                                               dc_id)
+        if km.node is not None:
+            if km.node.app.serve:
+                url = '%ssummary?id=%s' \
+                      % (km.node.url, dc_id)
             webbrowser.open_new_tab(url)
         else:
             print "ID of registered DC is: " + dc_id
