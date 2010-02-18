@@ -153,9 +153,9 @@ class AutoFocusTestCase(unittest.TestCase):
         mask_parent = mask_fc.id
         km = KnowledgeManager.getInstance()
         km.registerDataContainer(mask_fc, temporary=True)
-        fsl1 = AF.FocusSlice(sl1, PhysicalQuantity('10.0mm**-3'), mask_parent,
+        fsl1 = AF.FocusSlice(sl1, Quantity('10.0mm**-3'), mask_parent,
                              [slice(0, 10), slice(0, 20)])
-        self.fsl2 = AF.FocusSlice(sl2, PhysicalQuantity('12.0mm**-3'),
+        self.fsl2 = AF.FocusSlice(sl2, Quantity('12.0mm**-3'),
                                   mask_parent, [slice(0, 11), slice(0, 17)])
         fc1 = FieldContainer(numpy.array([fsl1]))
         fc2 = FieldContainer(numpy.array([self.fsl2]))

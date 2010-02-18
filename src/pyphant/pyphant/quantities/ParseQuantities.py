@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008-2009, Rectorate of the University of Freiburg
-# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009-2010, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,10 +38,12 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from PhysicalQuantities import Quantity
 import mx.DateTime.ISO
+from pyphant.quantities import Quantity
 
 def str2unit(unit):
+    """The function str2unit returns either a quantity or a float from a given string."""
+    # Prepare conversion to quantity
     if unit.startswith('.'):
         unit = '0'+unit
     elif unit.endswith('%'):
@@ -56,6 +58,7 @@ def str2unit(unit):
             unit = 1.0
     elif not (unit[0].isdigit() or unit[0]=='-'):
         unit = '1'+unit
+    # Convert input to quantity or float
     try:
         unit = unit.replace('^', '**')
         unit = Quantity(unit.encode('utf-8'))

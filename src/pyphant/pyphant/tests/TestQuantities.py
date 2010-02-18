@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2009, Rectorate of the University of Freiburg
-# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009-2010, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,18 +37,22 @@ import pkg_resources
 pkg_resources.require('pyphant')
 
 import unittest, numpy
-from pyphant.quantities.ParseQuantities import parseDateTime
 from pyphant.quantities import Quantity
 """
-    >>>parseDateTime('2004-08-21 12:00:00+-12h')
-    (Quantity(731814.5,'d'), Quantity(0.5,'d'))
+    >>>Quantity('1V')
+    Quantity(1.0,'d'), Quantity(0.5,'d'))
     >>>parseDateTime('2004-08-21 12:00:00')
     (Quantity(731814.5,'d'), None)
 """
-class TestParseDateTime(unittest.TestCase):
-    def testWithoutError(self):
-        self.assertEqual(parseDateTime('2004-08-21 12:00:00+-12h'),
-                         (Quantity(731814.5,'d'), Quantity(0.5,'d'))
+class TestQuantity(unittest.TestCase):
+    def testTextualQuantitySpecification(self):
+        self.assertEqual(Quantity('1V'),
+                         Quantity(1.0,'V')
+                         )
+
+    def testUnicodeQuantitySpecification(self):
+        self.assertEqual(Quantity(u'1V'),
+                         Quantity(1.0,'V')
                          )
 
 if __name__ == "__main__":

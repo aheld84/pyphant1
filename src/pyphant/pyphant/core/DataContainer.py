@@ -196,7 +196,7 @@ class SampleContainer(DataContainer):
 
 \t  .data \t- Table of samples stored in a numpy.ndarray.
 \t  .desc \t- Description numpy.dtype of the ndarray.
-\t  .units \t- List of PhysicalQuantities objects denoting the units of
+\t  .units \t- List of quantities.objects denoting the units of
 \t\t\t  the columns.
 \t  .longname \t- Notation of the data, e.g. 'database query',
 \t\t\t  which is used for the automatic annotation of charts.

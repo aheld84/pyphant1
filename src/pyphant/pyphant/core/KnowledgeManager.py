@@ -391,7 +391,7 @@ class KnowledgeManager(Singleton):
                         use (SQLiteWrapper instance).any_value
                         or (KM instance).any_value to skip value check
           'storage': str types (==)
-          'unit': PhysicalUnit or number or PhysicalQuantity (==, FC only)
+          'unit': PhysicalUnit or number or Quantity (==, FC only)
           'dimensions': list of FC search dicts
                         (see above definitions, FC only)
           'columns': list of FC search dicts (see above definitions, SC only)
@@ -409,7 +409,7 @@ class KnowledgeManager(Singleton):
            --> [('name1', ), ('name2', ), ...]
         Get id and shortname of all FCs that are parametrized by
         a time dimension along the primary axis:
-           tunit = PhysicalQuantity(1, 's')
+           tunit = Quantity(1, 's')
            get_andsearch_result(['id', 'shortname'],
                                 {'type':'field',
                                  'dimensions':[{'unit':tunit}]})

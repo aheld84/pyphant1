@@ -44,7 +44,7 @@ import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
 import pyphant.core.SQLiteWrapper
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+from pyphant.quantities import Quantity
 from pyphant.core.H5FileHandler import (im_id, im_summary)
 
 
@@ -57,14 +57,14 @@ class SQLiteWrapperTestCase(unittest.TestCase):
         self.wrapper = pyphant.core.SQLiteWrapper.SQLiteWrapper(self.dbase)
         with self.wrapper:
             self.wrapper.setup_dbase()
-        from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+        from pyphant.quantities import Quantity
         self.summary = {'id':'emd5://PC/aheld/'
                         '2009-01-01_12:00:00.123456/12345678910.field',
                         'longname':'name',
                         'shortname':'sn', 'creator':'aheld',
                         'date':'2009-01-01_12:00:00.123456',
                         'machine':'PC', 'type':'field',
-                        'unit':PhysicalQuantity('10.03e-8 mm**-1'),
+                        'unit':Quantity('10.03e-8 mm**-1'),
                         'attributes':{'attribute1':'bla1',
                                       'attribute2':'bla2'},
                         'hash':'12345678910',
@@ -138,12 +138,12 @@ class SQLiteWrapperTestCase(unittest.TestCase):
                 ['longname'], order_by='longname')
             assert search_result == [(u'index', ), (u'name', ), (u'name2', )]
             search_result = self.wrapper.get_andsearch_result(
-                ['longname'], {'unit':PhysicalQuantity(20, '1/m'),
+                ['longname'], {'unit':Quantity(20, '1/m'),
                                'type':'field'})
             assert search_result == [(u'name', )]
             search_result = self.wrapper.get_andsearch_result(
                 ['unit'], {'type':'field', 'longname':'name'})
-            assert search_result == [(PhysicalQuantity('10.03e-8 mm**-1'), )]
+            assert search_result == [(Quantity('10.03e-8 mm**-1'), )]
             search_result = self.wrapper.get_andsearch_result(
                 ['latex_unit'], {'type':'field', 'longname':'name'})
             #assert search_result == [(..., )]
@@ -163,7 +163,7 @@ class SQLiteWrapperTestCase(unittest.TestCase):
             assert search_result == [(u'name', ), (u'name2', )]
             search_result = self.wrapper.get_andsearch_result(
                 ['longname'], {'type':'sample',
-                               'columns':[{'unit':PhysicalQuantity(2.0, '1/m')}
+                               'columns':[{'unit':Quantity(2.0, '1/m')}
                                           , {}]})
             assert search_result == [(u'name2', )]
             search_result = self.wrapper.get_andsearch_result(

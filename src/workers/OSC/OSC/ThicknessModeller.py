@@ -42,7 +42,7 @@ from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 import OSC.OscAbsorption
 import scipy.interpolate
-from pyphant.quantities import PhysicalQuantities
+from pyphant import quantities
 import logging, copy, math
 
 class ThicknessModeller(Worker.Worker):

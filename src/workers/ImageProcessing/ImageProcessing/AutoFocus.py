@@ -59,7 +59,7 @@ class Cube(object):
             bislice = slice(bifunc1(sli1.start, sli2.start),
                             bifunc2(sli1.stop, sli2.stop))
             if bislice.stop < bislice.start:
-                # Weird notation necessary for PhysicalQuantities!
+                # Weird notation necessary for quantities.
                 bislice = slice(0 * bislice.start, 0 * bislice.stop)
             bislices.append(bislice)
         return Cube(bislices)

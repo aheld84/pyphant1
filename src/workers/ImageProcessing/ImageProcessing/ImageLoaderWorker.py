@@ -43,7 +43,7 @@ __version__ = "$Revision$"
 
 import PIL.Image as Image
 import scipy
-from pyphant.quantities import PhysicalQuantities
+from pyphant import quantities
 
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
@@ -55,10 +55,10 @@ class ImageLoaderWorker(Worker.Worker):
     REVISION = "$Revision$"[11:-1]
     name = "Image Loader"
 ##     lengthUnits=[prefix[0]+'m' for prefix
-##                  in PhysicalQuantities._prefixes if prefix[1]>1]
+##                  in quantities._prefixes if prefix[1]>1]
 ##     lengthUnits.append('m')
 ##     lengthUnits+=[prefix[0]+'m' for prefix
-##                   in PhysicalQuantities._prefixes if prefix[1]<1]
+##                   in quantities._prefixes if prefix[1]<1]
 
     _params=[("filename", u"Filename", "", Connectors.SUBTYPE_FILE),
              ("fieldUnit", u"Unit of the field", 1, None),
@@ -73,9 +73,9 @@ class ImageLoaderWorker(Worker.Worker):
 ##         size=im.size
 ##         print scipy.fromimage(im).shape
 ##         result = DataContainer.FieldContainer(scipy.fromimage(im),
-##                                               PhysicalQuantities.Quantity(self.paramFieldUnit.value, 'mum'))
-##         result.dimensions[0].unit=PhysicalQuantities.Quantity(1./float(size[0]), self.paramXUnit.value)
-##         result.dimensions[1].unit=PhysicalQuantities.Quantity(1./float(size[1]), self.paramYUnit.value)
+##                                               quantities.Quantity(self.paramFieldUnit.value, 'mum'))
+##         result.dimensions[0].unit=quantities.Quantity(1./float(size[0]), self.paramXUnit.value)
+##         result.dimensions[1].unit=quantities.Quantity(1./float(size[1]), self.paramYUnit.value)
 ##         return result
 
     @Worker.plug(Connectors.TYPE_IMAGE)
@@ -87,7 +87,7 @@ class ImageLoaderWorker(Worker.Worker):
         else:
             data = scipy.misc.fromimage(im, flatten=True)
         Ny, Nx = data.shape
-        xUnit = PhysicalQuantities.Quantity(self.paramXScale.value.encode('utf-8'))
+        xUnit = quantities.Quantity(self.paramXScale.value.encode('utf-8'))
         xAxis =  DataContainer.FieldContainer(scipy.linspace(0.0,xUnit.value,Nx,True),
                                               xUnit / xUnit.value,
                                               longname = 'x-coordinate',
@@ -95,13 +95,13 @@ class ImageLoaderWorker(Worker.Worker):
         if self.paramYScale.value == 'link2X':
             yUnit = xUnit * float(Ny) / Nx
         else:
-            yUnit = PhysicalQuantities.Quantity(self.paramYScale.value.encode('utf-8'))
+            yUnit = quantities.Quantity(self.paramYScale.value.encode('utf-8'))
         yAxis =  DataContainer.FieldContainer(scipy.linspace(0.0,yUnit.value,Ny,True),
                                               yUnit / yUnit.value,
                                               longname = 'y-coordinate',
                                               shortname = 'y')
         try:
-            FieldUnit = PhysicalQuantities.Quantity(self.paramFieldUnit.value.encode('utf-8'))
+            FieldUnit = quantities.Quantity(self.paramFieldUnit.value.encode('utf-8'))
         except AttributeError:
             FieldUnit = self.paramFieldUnit.value
         result = DataContainer.FieldContainer(data,

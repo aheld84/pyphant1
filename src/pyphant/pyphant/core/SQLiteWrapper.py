@@ -41,17 +41,17 @@ __version__ = "$Revision$"
 import sqlite3
 import time
 from pyphant.core.Helpers import (utf82uc, uc2utf8, emd52dict)
-from pyphant.quantities.PhysicalQuantities import (PhysicalQuantity,
+from pyphant.quantities import (Quantity,
                                                    PhysicalUnit)
 from types import (FloatType, IntType, LongType, StringTypes)
 
 def quantity2powers(quantity):
-    if isinstance(quantity, PhysicalQuantity):
+    if isinstance(quantity, Quantity):
         return tuple(quantity.unit.powers)
     elif isinstance(quantity, (FloatType, IntType, LongType)):
         return (0, ) * 10
     else:
-        raise ValueError("Expected (PhysicalQuantity, FloatType, IntType, "\
+        raise ValueError("Expected (Quantity, FloatType, IntType, "\
                              "LongType) but got %s instead."\
                              % (type(quantity), ))
 
@@ -68,11 +68,11 @@ def str2number(str):
 def quantity2dbase(quantity):
     if isinstance(quantity, (FloatType, IntType, LongType)):
         return quantity.__repr__()
-    elif isinstance(quantity, PhysicalQuantity):
+    elif isinstance(quantity, Quantity):
         return "P%s;%s" % (quantity.value.__repr__(),
                             quantity.getUnitName())
     else:
-        raise ValueError("Expected (PhysicalQuantity, FloatType, IntType, "\
+        raise ValueError("Expected (Quantity, FloatType, IntType, "\
                              "LongType) but got %s instead."\
                              % (type(quantity), ))
 
@@ -80,7 +80,7 @@ def dbase2quantity(dbase):
     if isinstance(dbase, StringTypes):
         if dbase.startswith("P"):
             tmp = dbase[1:].split(';')
-            return PhysicalQuantity(str2number(tmp[0]), tmp[1])
+            return Quantity(str2number(tmp[0]), tmp[1])
         else:
             return str2number(dbase)
     else:
@@ -397,7 +397,7 @@ class SQLiteWrapper(object):
             return key
 
     def translate_unit_search(self, value):
-        if isinstance(value, PhysicalQuantity):
+        if isinstance(value, Quantity):
             value = value.unit.powers
         elif isinstance(value, (IntType, LongType, FloatType)):
             value = [0] * 10
@@ -539,7 +539,7 @@ class SQLiteWrapper(object):
                         use (SQLiteWrapper instance).any_value
                         or (KM instance).any_value to skip value check
           'storage': str types (==)
-          'unit': PhysicalUnit or number or PhysicalQuantity (==, FC only)
+          'unit': PhysicalUnit or number or Quantity (==, FC only)
           'dimensions': list of FC search dicts
                         (see above definitions, FC only)
           'dim_of': str types: emd5 of parent FC (==, FC only)
@@ -559,7 +559,7 @@ class SQLiteWrapper(object):
            --> [('name1', ), ('name2', ), ...]
         Get id and shortname of all FCs that are parametrized by
         a time dimension along the primary axis:
-           tunit = PhysicalQuantity(1, 's')
+           tunit = Quantity(1, 's')
            get_andsearch_result(['id', 'shortname'],
                                 {'type':'field',
                                  'dimensions':[{'unit':tunit}]})
