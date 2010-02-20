@@ -1,7 +1,8 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python2.6
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2010, Rectorate of the University of Freiburg
+# Copyright (c) 2010, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -47,6 +48,24 @@ import pyphant.core.SQLiteWrapper
 from pyphant.quantities import Quantity
 from pyphant.core.H5FileHandler import (im_id, im_summary)
 
+class TestQuantity2powers(unittest.TestCase):
+    def testPowersOfUnits(self):
+        expected = (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        result = pyphant.core.SQLiteWrapper.quantity2powers(Quantity('1m'))
+        self.assertEqual(expected,result,"The number of basic units determining a quantity does not fit. The SQTLiteWrapper is expecting")
+        
+    def testChangedBaseUnits(self):
+        """Test if function quantity2powers checks the expected number of unit powers as given by Quantity.unit.powers
+        in order to avoid clashes with the SQLite tables."""
+        class Unit:
+            powers = (1, 0, 0)
+        class fakedQuantity:
+            """Faked Quantity class of TestQuantity2powers unittest."""
+            def __init__(self):
+                self.unit = Unit()
+                self.__class__ = Quantity
+        quantity = fakedQuantity()
+        self.assertRaises(AssertionError,pyphant.core.SQLiteWrapper.quantity2powers,quantity)
 
 class SQLiteWrapperTestCase(unittest.TestCase):
     def setUp(self):
@@ -57,7 +76,6 @@ class SQLiteWrapperTestCase(unittest.TestCase):
         self.wrapper = pyphant.core.SQLiteWrapper.SQLiteWrapper(self.dbase)
         with self.wrapper:
             self.wrapper.setup_dbase()
-        from pyphant.quantities import Quantity
         self.summary = {'id':'emd5://PC/aheld/'
                         '2009-01-01_12:00:00.123456/12345678910.field',
                         'longname':'name',
@@ -114,25 +132,25 @@ class SQLiteWrapperTestCase(unittest.TestCase):
             assert self.summary['id'] in emd5list
             assert self.sc_summary['id'] in emd5list
             keys = self.wrapper.common_result_keys
-            dict = self.summary.copy()
-            dict.pop('date')
-            dict.pop('dimensions')
-            dict.pop('unit')
-            dict.pop('type')
-            dict.pop('attributes')
-            dict['storage'] = 'storage2'
-            dict['date_from'] = u'2009-01-01_12:00:00.000000'
-            dict['date_to'] = u'2009-01-01_12:00:00.200000'
+            dictionary = self.summary.copy()
+            dictionary.pop('date')
+            dictionary.pop('dimensions')
+            dictionary.pop('unit')
+            dictionary.pop('type')
+            dictionary.pop('attributes')
+            dictionary['storage'] = 'storage2'
+            dictionary['date_from'] = u'2009-01-01_12:00:00.000000'
+            dictionary['date_to'] = u'2009-01-01_12:00:00.200000'
             search_result = self.wrapper.get_andsearch_result(
-                keys, dict, order_by='type', limit=10, offset=0)
+                keys, dictionary, order_by='type', limit=10, offset=0)
             assert len(search_result) == 1
             expected = [(u'name', u'sn', u'PC', u'aheld', u'12345678910',
                          u'2009-01-01_12:00:00.123456', u'emd5://PC/aheld/'\
                              u'2009-01-01_12:00:00.123456/12345678910.field',
                          u'field', u'storage2')]
             assert search_result == expected
-            dict['type'] = 'field'
-            search_result = self.wrapper.get_andsearch_result(keys, dict)
+            dictionary['type'] = 'field'
+            search_result = self.wrapper.get_andsearch_result(keys, dictionary)
             assert search_result == expected
             search_result = self.wrapper.get_andsearch_result(
                 ['longname'], order_by='longname')

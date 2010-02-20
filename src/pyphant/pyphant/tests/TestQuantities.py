@@ -54,6 +54,9 @@ class TestQuantity(unittest.TestCase):
         self.assertEqual(Quantity(u'1V'),
                          Quantity(1.0,'V')
                          )
+        self.assertEqual(Quantity('1V'.encode('utf-8')),
+                         Quantity(1.0,'V')
+                         )
 
 if __name__ == "__main__":
     import sys

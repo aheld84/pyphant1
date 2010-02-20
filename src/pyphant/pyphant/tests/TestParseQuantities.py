@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2009, Rectorate of the University of Freiburg
-# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009-2010, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@ import pkg_resources
 pkg_resources.require('pyphant')
 
 import unittest, numpy
-from pyphant.quantities.ParseQuantities import parseDateTime
+from pyphant.quantities.ParseQuantities import parseDateTime,str2unit
 from pyphant.quantities import Quantity
 """
     >>>parseDateTime('2004-08-21 12:00:00+-12h')
@@ -46,10 +46,18 @@ from pyphant.quantities import Quantity
     (Quantity(731814.5,'d'), None)
 """
 class TestParseDateTime(unittest.TestCase):
-    def testWithoutError(self):
+    def testWithUncertainty(self):
         self.assertEqual(parseDateTime('2004-08-21 12:00:00+-12h'),
                          (Quantity(731814.5,'d'), Quantity(0.5,'d'))
                          )
+
+class TestStr2unit(unittest.TestCase):
+    """Test the correct conversion of strings to quantities or floats."""
+    def testSimpleQuantity(self):
+        """The the conversion of a simple textual quantity specification to a quantity object."""
+        expected = Quantity('1V')
+        result = str2unit('1V')
+        self.assertEqual(expected,result)
 
 if __name__ == "__main__":
     import sys
