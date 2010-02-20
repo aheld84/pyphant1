@@ -39,7 +39,7 @@ __version__ = "Sprint"
 
 import os, os.path, pkg_resources
 from pyphant.core.Helpers import getPyphantPath
-LOGDIR = getPyphantPath()[:-1]
+LOGDIR = getPyphantPath()
 import logging
 #    logging.basicConfig(level=logging.DEBUG)
 #else:
@@ -133,8 +133,8 @@ class wxPyphantFrame(wx.Frame):
         self.Bind(wx.EVT_SIZE, self.onSize)
         self.compositeWorkerStack=[]
         wx.MessageBox("Located log directory at %s.\n"
-                      "Logging will go to %s/pyphant.log." %
-                      (LOGDIR,LOGDIR),
+                      "Logging will go to %s." %
+                      (LOGDIR, os.path.join(LOGDIR, 'pyphant.log')),
                       "Logging info")
 
     def _initSash(self):
@@ -277,7 +277,6 @@ class wxPyphantFrame(wx.Frame):
             updateMenu.Append( nId, "Update %s (%s)" % (dist.project_name, dist.version) )
             self.Bind(wx.EVT_MENU, self.onUpdatePyphant, id=nId)
         return updateMenu
-
 
     def onUpdatePyphant(self, event):
         import pyphant.core.UpdateManager

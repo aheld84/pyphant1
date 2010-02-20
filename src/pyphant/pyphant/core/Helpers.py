@@ -29,7 +29,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-def getPyphantPath(subdir = '/'):
+def getPyphantPath(subdir = ''):
     """
     returns full pyphant path with optional subdirectory
     subdir -- subdirectory that is created if it does not exist already,
@@ -37,20 +37,11 @@ def getPyphantPath(subdir = '/'):
     """
     import os
     homedir = os.path.expanduser('~')
-    if not subdir.startswith('/'):
-        subdir = '/' + subdir
-    if not subdir.endswith('/'):
-        subdir = subdir + '/'
     if homedir == '~':
         homedir = os.getcwdu()
-    plist = ('/.pyphant' + subdir).split('/')
-    makedir = homedir
-    path = homedir + '/.pyphant' + subdir
-    for p in plist:
-        if p != '':
-            makedir += "/%s" % (p, )
-            if not os.path.isdir(makedir):
-                os.mkdir(makedir)
+    path = os.path.join(homedir, '.pyphant', subdir)
+    if not os.path.isdir(path):
+        os.makedirs(path)
     return path
 
 def getUsername():
