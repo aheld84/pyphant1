@@ -248,7 +248,16 @@ def restoreParamsToWorkers(recipeGroup, workers):
                             exc_info = True)
         for paramName in workerGroup.parameters._v_attrs._v_attrnamesuser:
             param = getattr(workerGroup.parameters._v_attrs, paramName)
-            worker.getParam(paramName).overrideValue(param)
+            if type(param)==scipy.ndarray:
+                param=unicode(param)
+            elif type(param)==scipy.string_:
+                param=str(param)
+            elif type(param)==scipy.int32:
+                param=int(param)
+            try:
+                worker.getParam(paramName).overrideValue(param)
+            except KeyError:
+                _logger.warning(u'Could not restore "%s" to parameter: "%s"'%(param,paramName))
 
 def loadRecipeFromHDF5File( filename ):
     h5 = tables.openFile(filename, 'r')
