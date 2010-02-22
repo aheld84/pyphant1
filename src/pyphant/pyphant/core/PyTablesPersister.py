@@ -241,7 +241,11 @@ def instantiateWorker( parent, workerGroup ):
 def restoreParamsToWorkers(recipeGroup, workers):
     for workerGroup in recipeGroup:
         worker = workers[workerGroup._v_name]
-        worker.refreshParams()
+        try:
+            worker.refreshParams()
+        except:
+            _logger.warning(u"Attempted refreshParam failed for %s. Check Parameters!"%worker.name,
+                            exc_info = True)
         for paramName in workerGroup.parameters._v_attrs._v_attrnamesuser:
             param = getattr(workerGroup.parameters._v_attrs, paramName)
             worker.getParam(paramName).overrideValue(param)
