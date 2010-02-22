@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -65,7 +66,8 @@ import tables, datetime
 import sys
 from pyphant.core import (CompositeWorker, DataContainer)
 from tables import StringCol, Col
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+from pyphant.quantities import Quantity
+from pyphant.quantities import Quantity as PhysicalQuantity
 from ImageProcessing.AutoFocus import FocusSlice # For loading FCs...
 import scipy
 import logging
@@ -239,10 +241,23 @@ def instantiateWorker( parent, workerGroup ):
 def restoreParamsToWorkers(recipeGroup, workers):
     for workerGroup in recipeGroup:
         worker = workers[workerGroup._v_name]
-        worker.refreshParams()
+        try:
+            worker.refreshParams()
+        except:
+            _logger.warning(u"Attempted refreshParam failed for %s. Check Parameters!"%worker.name,
+                            exc_info = True)
         for paramName in workerGroup.parameters._v_attrs._v_attrnamesuser:
             param = getattr(workerGroup.parameters._v_attrs, paramName)
-            worker.getParam(paramName).overrideValue(param)
+            if type(param)==scipy.ndarray:
+                param=unicode(param)
+            elif type(param)==scipy.string_:
+                param=str(param)
+            elif type(param)==scipy.int32:
+                param=int(param)
+            try:
+                worker.getParam(paramName).overrideValue(param)
+            except KeyError:
+                _logger.warning(u'Could not restore "%s" to parameter: "%s"'%(param,paramName))
 
 def loadRecipeFromHDF5File( filename ):
     h5 = tables.openFile(filename, 'r')

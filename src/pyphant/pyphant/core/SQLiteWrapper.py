@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2010, Rectorate of the University of Freiburg
+# Copyright (c) 2010, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,17 +42,19 @@ __version__ = "$Revision$"
 import sqlite3
 import time
 from pyphant.core.Helpers import (utf82uc, uc2utf8, emd52dict)
-from pyphant.quantities.PhysicalQuantities import (PhysicalQuantity,
-                                                   PhysicalUnit)
+from pyphant.quantities import (Quantity,PhysicalUnit,_base_units)
 from types import (FloatType, IntType, LongType, StringTypes)
 
 def quantity2powers(quantity):
-    if isinstance(quantity, PhysicalQuantity):
-        return tuple(quantity.unit.powers)
+    numberOfBaseUnits = len(_base_units)
+    if isinstance(quantity, Quantity):
+        result = tuple(quantity.unit.powers)
+        assert len(result) == numberOfBaseUnits, "Expecting %i base units, but got a tupple of %i unit powers insteat." % (numberOfBaseUnits,len(result))
+        return result
     elif isinstance(quantity, (FloatType, IntType, LongType)):
-        return (0, ) * 10
+        return (0, ) * numberOfBaseUnits
     else:
-        raise ValueError("Expected (PhysicalQuantity, FloatType, IntType, "\
+        raise ValueError("Expected (Quantity, FloatType, IntType, "\
                              "LongType) but got %s instead."\
                              % (type(quantity), ))
 
@@ -68,11 +71,11 @@ def str2number(str):
 def quantity2dbase(quantity):
     if isinstance(quantity, (FloatType, IntType, LongType)):
         return quantity.__repr__()
-    elif isinstance(quantity, PhysicalQuantity):
+    elif isinstance(quantity, Quantity):
         return "P%s;%s" % (quantity.value.__repr__(),
                             quantity.getUnitName())
     else:
-        raise ValueError("Expected (PhysicalQuantity, FloatType, IntType, "\
+        raise ValueError("Expected (Quantity, FloatType, IntType, "\
                              "LongType) but got %s instead."\
                              % (type(quantity), ))
 
@@ -80,7 +83,7 @@ def dbase2quantity(dbase):
     if isinstance(dbase, StringTypes):
         if dbase.startswith("P"):
             tmp = dbase[1:].split(';')
-            return PhysicalQuantity(str2number(tmp[0]), tmp[1])
+            return Quantity(str2number(tmp[0]), tmp[1])
         else:
             return str2number(dbase)
     else:
@@ -273,7 +276,8 @@ class SQLiteWrapper(object):
                    ('rad', 'INT'),
                    ('sr', 'INT'),
                    ('EUR', 'INT'),
-                   ('', 'UNIQUE(m, g, s, A, K, mol, cd, rad, sr, EUR)')]
+                   ('bit', 'INT'),
+                   ('', 'UNIQUE(m, g, s, A, K, mol, cd, rad, sr, EUR,bit)')]
         create_table('km_base_units', columns, self.cursor)
         #create triggers:
         create_trigger('trigger_del_fc', 'DELETE', 'km_fc',
@@ -307,14 +311,14 @@ class SQLiteWrapper(object):
         insert_dict['unit'] = quantity2dbase(summary['unit'])
         try:
             exe("INSERT OR ABORT INTO km_base_units "\
-                    "(m, g, s, A, K, mol, cd, rad, sr, EUR) "\
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "(m, g, s, A, K, mol, cd, rad, sr, EUR, bit) "\
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 quantity2powers(summary['unit']))
             l_row_id = self.cursor.lastrowid
         except sqlite3.IntegrityError:
             exe("SELECT bu_id FROM km_base_units WHERE m=? AND g=? "\
                     "AND s=? AND A=? AND K=? AND mol=? AND cd=? AND rad=? "\
-                    "AND sr=? AND EUR=?", quantity2powers(summary['unit']))
+                    "AND sr=? AND EUR=? AND bit=?", quantity2powers(summary['unit']))
             tmp = self.cursor.fetchone()
             assert tmp != None
             l_row_id = tmp[0]
@@ -397,17 +401,17 @@ class SQLiteWrapper(object):
             return key
 
     def translate_unit_search(self, value):
-        if isinstance(value, PhysicalQuantity):
+        if isinstance(value, Quantity):
             value = value.unit.powers
         elif isinstance(value, (IntType, LongType, FloatType)):
-            value = [0] * 10
+            value = [0] * len(_base_units)
         elif isinstance(value, PhysicalUnit):
             value = value.powers
         else:
             raise ValueError(value)
         expr = '(bu_id IN (SELECT bu_id FROM km_base_units WHERE '\
             'm=? AND g=? AND s=? AND A=? AND K=? AND mol=? '\
-            'AND cd=? AND rad=? AND sr=? AND EUR=?))'
+            'AND cd=? AND rad=? AND sr=? AND EUR=? AND bit=?))'
         return (expr, value, True)
 
     def translate_attr_search(self, value, type):
@@ -539,7 +543,7 @@ class SQLiteWrapper(object):
                         use (SQLiteWrapper instance).any_value
                         or (KM instance).any_value to skip value check
           'storage': str types (==)
-          'unit': PhysicalUnit or number or PhysicalQuantity (==, FC only)
+          'unit': PhysicalUnit or number or Quantity (==, FC only)
           'dimensions': list of FC search dicts
                         (see above definitions, FC only)
           'dim_of': str types: emd5 of parent FC (==, FC only)
@@ -559,7 +563,7 @@ class SQLiteWrapper(object):
            --> [('name1', ), ('name2', ), ...]
         Get id and shortname of all FCs that are parametrized by
         a time dimension along the primary axis:
-           tunit = PhysicalQuantity(1, 's')
+           tunit = Quantity(1, 's')
            get_andsearch_result(['id', 'shortname'],
                                 {'type':'field',
                                  'dimensions':[{'unit':tunit}]})

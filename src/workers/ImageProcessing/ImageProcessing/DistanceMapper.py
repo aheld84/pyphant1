@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -44,7 +45,7 @@ from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 
 import scipy, copy
-import pyphant.quantities.PhysicalQuantities as PQ
+import pyphant.quantities as PQ
 import ImageProcessing as I
 
 def UnEqualUnits():

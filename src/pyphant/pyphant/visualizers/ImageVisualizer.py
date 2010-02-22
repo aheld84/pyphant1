@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -47,7 +48,7 @@ except:
 import pylab, scipy, numpy
 from pyphant.core.Connectors import TYPE_IMAGE
 from pyphant.wxgui2.DataVisReg import DataVisReg
-from pyphant.quantities.PhysicalQuantities import isPhysicalQuantity
+from pyphant.quantities import isQuantity
 #from NonUniformImage import NonUniformImage
 from matplotlib.image import NonUniformImage
 
@@ -88,7 +89,7 @@ class ImageVisualizer(object):
             xval = xc * x.unit
             yval = yc * y.unit
             def format(val):
-                if not isPhysicalQuantity(val):
+                if not isQuantity(val):
                     if type(val) in (type(' '),type(u' ')):
                         valstr = val
                     else:

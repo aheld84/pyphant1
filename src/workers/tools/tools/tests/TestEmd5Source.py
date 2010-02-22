@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008, Rectorate of the University of Freiburg
+# Copyright (c) 2009,  Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -48,7 +49,7 @@ pkg_resources.require("pyphant.tools")
 import os.path
 
 import numpy, scipy, scipy.optimize
-import pyphant.quantities.PhysicalQuantities as pq
+import pyphant.quantities as pq
 from pyphant.core import DataContainer as DC
 
 

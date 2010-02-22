@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2010, Rectorate of the University of Freiburg
+# Copyright (c) 2009-2010, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,7 +40,7 @@ __version__ = "$Revision$"
 import tables
 from pyphant.core import DataContainer
 from tables import StringCol
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+from pyphant.quantities import Quantity
 import scipy
 import logging
 import os

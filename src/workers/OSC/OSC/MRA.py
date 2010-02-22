@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,7 +43,7 @@ from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 
 import scipy.interpolate
-from pyphant.quantities import PhysicalQuantities
+from pyphant import quantities
 import logging, copy, math
 
 from scipy.special import ive
@@ -124,7 +125,7 @@ class MRA(Worker.Worker):
     def mra(self, field, subscriber=0):
         dim = field.dimensions[-1]
         try:
-            scale = PhysicalQuantities.PhysicalQuantity(self.paramScale.value.encode('utf-8'))
+            scale = quantities.Quantity(self.paramScale.value.encode('utf-8'))
         except:
             scale = float(self.paramScale.value)
         d = scipy.diff(dim.data)

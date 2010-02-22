@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -43,8 +44,8 @@ from pyphant.core import Worker, Connectors,\
 import ImageProcessing
 import numpy, copy
 from scipy import ndimage as ndi
-from pyphant.quantities.PhysicalQuantities import (isPhysicalQuantity,
-                                                   PhysicalQuantity)
+from pyphant.quantities import (isQuantity,
+                                                   Quantity)
 from pyphant.core.DataContainer import FieldContainer
 
 
@@ -58,7 +59,7 @@ class Cube(object):
             bislice = slice(bifunc1(sli1.start, sli2.start),
                             bifunc2(sli1.stop, sli2.stop))
             if bislice.stop < bislice.start:
-                # Weird notation necessary for PhysicalQuantities!
+                # Weird notation necessary for quantities.
                 bislice = slice(0 * bislice.start, 0 * bislice.stop)
             bislices.append(bislice)
         return Cube(bislices)
@@ -149,7 +150,7 @@ class ZTube(object):
 
     def match(self, fslice, zvalue):
         vol = (self.yxCube & fslice).getVolume()
-        if not isPhysicalQuantity(vol):
+        if not isQuantity(vol):
             vol = float(vol)
         yxratio = 2.0 * vol / (fslice.getVolume() + self.yxCube.getVolume())
         fszCube = Cube([slice(zvalue - self.ztol, zvalue + self.ztol)])
@@ -214,7 +215,7 @@ def autofocus(focusSC, boundRatio, featureRatio):
     fIColumns = zip(*fInclusions)
     pqdata = [fIColumns[index] for index in xrange(5)]
     pqerrors = [fIColumns[index] for index in xrange(5, 9)]
-    units = [PhysicalQuantity(1, fInclusions[0][index].unit) \
+    units = [Quantity(1, fInclusions[0][index].unit) \
                  for index in xrange(5)]
     data = [numpy.array([spqd.inUnitsOf(pqunit.unit).value for spqd in pqd]) \
                 for pqd, pqunit in zip(pqdata, units)]

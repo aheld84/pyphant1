@@ -38,6 +38,7 @@ __version__ = "$Revision$"
 # $Source$
 
 import threading, math
+import Queue
 import wx
 import sogl
 import pyphant.core.CompositeWorker
@@ -254,7 +255,8 @@ class PlugShape(ConnectorShape, sogl.CircleShape):
     def visualize(self, event):
         if not self._plug.resultIsAvailable():
             progress = ProgressMeter(self._plug.name)
-            computer = Connectors.Computer(self._plug.getResult, subscriber=progress)
+            exception_queue = Queue.Queue()
+            computer = Connectors.Computer(self._plug.getResult, exception_queue, subscriber=progress)
             computer.start()
             while (progress.percentage<100) and (computer.isAlive()):
                 progress.update()

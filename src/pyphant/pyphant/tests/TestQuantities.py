@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.5
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008, Rectorate of the University of Freiburg
-# Copyright (c) 2009, Andreas W. Liehr (liehr@user.sourceforge.net)
+# Copyright (c) 2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009-2010, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,33 +31,37 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import logging
-from optparse import OptionParser
+# $Source$
 
-logging.basicConfig(level=logging.WARNING,
-                    format="%(asctime)s - %(levelname)s:%(name)s:%(thread)d:%(module)s.%(funcName)s(l %(lineno)d):%(message)s")
+import pkg_resources
+pkg_resources.require('pyphant')
 
-from fmfile.FMFLoader import FMFLoader,item2value
+import unittest, numpy
+from pyphant.quantities import Quantity
+"""
+    >>>Quantity('1V')
+    Quantity(1.0,'d'), Quantity(0.5,'d'))
+    >>>parseDateTime('2004-08-21 12:00:00')
+    (Quantity(731814.5,'d'), None)
+"""
+class TestQuantity(unittest.TestCase):
+    def testTextualQuantitySpecification(self):
+        self.assertEqual(Quantity('1V'),
+                         Quantity(1.0,'V')
+                         )
 
-parser = OptionParser(usage="""usage: %prog path2FMFfile
-       %prog parse FMFvalue""")
+    def testUnicodeQuantitySpecification(self):
+        self.assertEqual(Quantity(u'1V'),
+                         Quantity(1.0,'V')
+                         )
+        self.assertEqual(Quantity('1V'.encode('utf-8')),
+                         Quantity(1.0,'V')
+                         )
 
-(options, args) = parser.parse_args()
-if len(args) == 0:
-    filenames = ['example.fmf']
-elif args[0] in ('parse',u'parse'):
-    value = ' '.join(args[1:])
-    result = item2value(value)
-    print "Value \"%s\" is interpreted as %s:" % (value,type(result))
-    print result
-    from sys import exit
-    exit(0)
-else:
-    filenames = args
-
-worker = FMFLoader()
-for filename in filenames:
-    worker.paramFilename.value=filename
-    result = worker.plugLoadFMF.getResult()
-    print result
-    print result.attributes
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) == 1:
+        unittest.main()
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
+        unittest.TextTestRunner().run(suite)

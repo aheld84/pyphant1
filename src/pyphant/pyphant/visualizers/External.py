@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -44,7 +45,7 @@ import wx
 import csv
 
 from scipy.io import write_array
-from pyphant.quantities.PhysicalQuantities import isPhysicalQuantity
+from pyphant.quantities import isQuantity
 import scipy
 
 class ExternalDAT(object):
@@ -70,7 +71,7 @@ class ExternalDAT(object):
             self.saveSample(path)
 
     def saveField(self, path):
-        if not isPhysicalQuantity(self.dataContainer.unit):
+        if not isQuantity(self.dataContainer.unit):
             self.ordinate = self.dataContainer.data*self.dataContainer.unit
         else:
             self.ordinate = self.dataContainer.data*self.dataContainer.unit.value

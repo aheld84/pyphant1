@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2007-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2007-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,7 +43,7 @@ from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 
 import scipy.interpolate
-from pyphant.quantities import PhysicalQuantities
+from pyphant import quantities
 import logging, copy, math
 
 def grid2Index(field, extension=0):
@@ -225,10 +226,10 @@ class OscMapper(Worker.Worker):
         result = self.calcNormal(osc, xCon, yCon, fCon, xf, yf, h)
         if self.paramOverrideV.value:
             vs = str(self.paramVmin.value), str(self.paramVmax.value)
-            from pyphant.quantities.PhysicalQuantities import (
-                isPhysicalQuantity, PhysicalQuantity)
+            from pyphant.quantities import (
+                isQuantity, Quantity)
             try:
-                vs = [PhysicalQuantity(v) for v in vs]
+                vs = [Quantity(v) for v in vs]
             except SyntaxError:
                 vs = [float(v) for v in vs]
             result.attributes['vmin'] = vs[0]

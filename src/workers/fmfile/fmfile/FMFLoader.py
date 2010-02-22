@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -43,17 +44,17 @@ import zipfile, numpy, re, collections, copy, StringIO, os.path
 import codecs
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity,isPhysicalUnit,isPhysicalQuantity
+from pyphant.quantities import Quantity,isUnit,isQuantity
 from pyphant.quantities.ParseQuantities import parseQuantity, parseVariable, parseDateTime, str2unit
 import logging
 _logger = logging.getLogger("pyphant")
 
 def normation(normationStr):
     try:
-        unit = PhysicalQuantity(str(normationStr))
+        unit = Quantity(str(normationStr))
     except:
         try:
-            unit = PhysicalQuantity(1.0,str(normationStr))
+            unit = Quantity(1.0,str(normationStr))
         except:
             unit = float(normationStr)
     return unit
@@ -110,7 +111,7 @@ class column2Field:
         self.Nt = 0
 
     def norm(self,datum,unit,error=False):
-        if isPhysicalQuantity(datum):
+        if isQuantity(datum):
             try:
                 return datum.inUnitsOf(unit).value
             except:
@@ -129,7 +130,7 @@ class column2Field:
             if tuppleLength==2:
                 indexDatum = 0
                 indexError = 1
-                if isPhysicalQuantity(tupples[0][1]) and tupples[0][1].isCompatible('s'):
+                if isQuantity(tupples[0][1]) and tupples[0][1].isCompatible('s'):
                     shortname = 't_%i' % self.Nt
                     self.Nt += 1
                 else:
@@ -152,7 +153,7 @@ class column2Field:
                 import sys
                 sys.exit(0)
             error = [element[indexError] for element in column]
-            unitCandidates = [element.unit for element in data if isPhysicalQuantity(element)]
+            unitCandidates = [element.unit for element in data if isQuantity(element)]
             if len(unitCandidates) == 0:
                 unit = 1.0
             else:
@@ -163,7 +164,7 @@ class column2Field:
             result = DataContainer.FieldContainer(field,
                                                   error=numpy.array(map(ErrorNormation,error)),
                                                   mask = numpy.isnan(field),
-                                                  unit=PhysicalQuantity(1.0, unit),
+                                                  unit=Quantity(1.0, unit),
                                                   shortname=shortname,longname=longname)
         else:
             #Joining lists of strings
@@ -352,31 +353,32 @@ def parseBool(value):
         return False
     raise AttributeError
 
-def config2tables(preParsedData, config):
-    converters = [
-        int,
-        float,
-        complex,
-        parseBool,
-        parseVariable,
-        parseQuantity,
-        parseDateTime,
-        ]
+_converters = [
+    int,
+    float,
+    parseBool,
+    parseVariable,
+    parseQuantity,
+    complex,                          # Complex is checked after variables and quantities,
+                                      # because 1J is 1 Joule and not an imaginary number.
+    parseDateTime,
+    ]
 
-    def item2value(section, key):
-        oldVal = section[key]
-        if type(oldVal)==type([]):
-            for c in converters:
-                try:
-                    return map(c,oldVal)
-                except:
-                    pass
-        for c in converters:
+def item2value(oldVal):
+    if type(oldVal)==type([]):
+        for c in _converters:
             try:
-                return c(oldVal)
+                return map(c,oldVal)
             except:
                 pass
-        return oldVal
+    for c in _converters:
+        try:
+            return c(oldVal)
+        except:
+            pass
+    return oldVal
+
+def config2tables(preParsedData, config):
 
     if config.has_key('*table definitions'):
         longnames = dict([(i,k) for k,i in config['*table definitions'].iteritems()])
@@ -395,7 +397,7 @@ def config2tables(preParsedData, config):
                                      preParsedData[shortname],
                                      config[k]))
             del config[k]
-    attributes = config.walk(item2value)
+    attributes = config.walk(lambda section,key: item2value(section[key]))
     for t in tables:
         t.attributes = copy.deepcopy(attributes)
     return tables
@@ -456,10 +458,21 @@ def data2table(longname, shortname, preParsedData, config):
                 f.error = numpy.ones(f.data.shape)*error
             except:
                 f.error = fields_by_name[error].inUnitsOf(f).data
-    fields = [ reshapeField(field) for field in fields ]
+    reshapedFields = []
+    for field in fields:
+        try:
+            newField = reshapeField(field)
+        except TypeError,e:
+            if field.data.dtype.name.startswith('string'):
+                _logger.warning('Warning: Cannot reshape numpy.array of string: %s' % field)
+                newField = field
+            else:
+                _logger.error('Error: Cannot reshape numpy.array: %s' % field)
+                sys.exit(0)
+        reshapedFields.append(newField)
     if shortname==None:
         shortname='T'
-    return DataContainer.SampleContainer(fields,
+    return DataContainer.SampleContainer(reshapedFields,
                                          longname=longname,
                                          shortname=shortname)
 

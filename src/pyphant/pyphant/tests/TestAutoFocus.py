@@ -1,7 +1,8 @@
 #!/usr/bin/env python2.5
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2010, Rectorate of the University of Freiburg
+# Copyright (c) 2009-2010, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,7 +42,7 @@ __version__ = "$Revision$".replace('$','')
 import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+from pyphant.quantities import Quantity
 from pyphant.core.DataContainer import FieldContainer, SampleContainer
 from ImageProcessing import AutoFocus as AF
 import numpy
@@ -138,23 +139,23 @@ class AutoFocusTestCase(unittest.TestCase):
     def setUp(self):
         from pyphant.core.KnowledgeManager import KnowledgeManager
         km = KnowledgeManager.getInstance()
-        sl1 = [slice(PhysicalQuantity('1.0mm'),
-                     PhysicalQuantity('2.0mm')),
-               slice(PhysicalQuantity('1.5mm'),
-                     PhysicalQuantity('3.5mm'))]
-        sl2 = [slice(PhysicalQuantity('0.8mm'),
-                     PhysicalQuantity('1.9mm')),
-               slice(PhysicalQuantity('1.7mm'),
-                     PhysicalQuantity('3.4mm'))]
+        sl1 = [slice(Quantity('1.0mm'),
+                     Quantity('2.0mm')),
+               slice(Quantity('1.5mm'),
+                     Quantity('3.5mm'))]
+        sl2 = [slice(Quantity('0.8mm'),
+                     Quantity('1.9mm')),
+               slice(Quantity('1.7mm'),
+                     Quantity('3.4mm'))]
         mask = numpy.ones((11, 20), dtype=bool)
         mask_fc = FieldContainer(mask)
         mask_fc.seal()
         mask_parent = mask_fc.id
         km = KnowledgeManager.getInstance()
         km.registerDataContainer(mask_fc, temporary=True)
-        fsl1 = AF.FocusSlice(sl1, PhysicalQuantity('10.0mm**-3'), mask_parent,
+        fsl1 = AF.FocusSlice(sl1, Quantity('10.0mm**-3'), mask_parent,
                              [slice(0, 10), slice(0, 20)])
-        self.fsl2 = AF.FocusSlice(sl2, PhysicalQuantity('12.0mm**-3'),
+        self.fsl2 = AF.FocusSlice(sl2, Quantity('12.0mm**-3'),
                                   mask_parent, [slice(0, 11), slice(0, 17)])
         fc1 = FieldContainer(numpy.array([fsl1]))
         fc2 = FieldContainer(numpy.array([self.fsl2]))
@@ -163,11 +164,11 @@ class AutoFocusTestCase(unittest.TestCase):
         km.registerDataContainer(fc1, temporary=True)
         km.registerDataContainer(fc2, temporary=True)
         columns = [FieldContainer(numpy.array([.5, 1.0]),
-                                  unit=PhysicalQuantity('1.0mm'),
+                                  unit=Quantity('1.0mm'),
                                   longname='z-value'),
                    FieldContainer(numpy.array([fc1.id, fc2.id]),
                                   longname="emd5")]
-        attributes = {u'ztol': PhysicalQuantity('0.5mm')}
+        attributes = {u'ztol': Quantity('0.5mm')}
         self.inputSC = SampleContainer(columns, attributes=attributes)
         self.inputSC.seal()
 
@@ -181,10 +182,10 @@ class AutoFocusTestCase(unittest.TestCase):
         for fc in inclusionSC.columns:
             assert fc.data.shape == (1, )
         zfc, yfc, xfc, dfc, ffc = inclusionSC.columns
-        assert zfc.data[0] * zfc.unit == PhysicalQuantity('1.0mm')
+        assert zfc.data[0] * zfc.unit == Quantity('1.0mm')
         assert (yfc.data[0] * yfc.unit,
                 xfc.data[0] * xfc.unit) == self.fsl2.getCenter()
-        assert ffc.data[0] * ffc.unit == PhysicalQuantity('12.0mm**-3')
+        assert ffc.data[0] * ffc.unit == Quantity('12.0mm**-3')
 
 
 class FocusSliceTestCase(unittest.TestCase):
@@ -201,11 +202,11 @@ class FocusSliceTestCase(unittest.TestCase):
         mask_fc.seal()
         mask_parent = mask_fc.id
         km.registerDataContainer(mask_fc, temporary=True)
-        slices = [slice(PhysicalQuantity('100mm'),
-                        PhysicalQuantity('200mm')),
-                  slice(PhysicalQuantity('150mm'),
-                        PhysicalQuantity('350mm'))]
-        fslice = AF.FocusSlice(slices, PhysicalQuantity('10mm**-3'),
+        slices = [slice(Quantity('100mm'),
+                        Quantity('200mm')),
+                  slice(Quantity('150mm'),
+                        Quantity('350mm'))]
+        fslice = AF.FocusSlice(slices, Quantity('10mm**-3'),
                                mask_parent, [slice(0, 100), slice(0, 150)])
         fc = FieldContainer(numpy.array([fslice for xr in xrange(1000)]))
         fc.seal()

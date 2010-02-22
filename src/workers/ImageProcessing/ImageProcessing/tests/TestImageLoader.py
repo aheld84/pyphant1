@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,7 +52,7 @@ import os.path
 import ImageProcessing.ImageLoaderWorker as IL
 import PIL.Image as Image
 import scipy, numpy
-import pyphant.quantities.PhysicalQuantities as pq
+import pyphant.quantities as pq
 
 class TestImageLoader(unittest.TestCase):
     def setUp(self):
@@ -71,19 +72,19 @@ class TestImageLoader(unittest.TestCase):
         unit = "1 V/m"
         self.worker.paramFieldUnit.value = unit
         gs = self.worker.plugLoadImageAsGreyScale.getResult()
-        self.assertEqual(gs.unit, pq.PhysicalQuantity(unit))
+        self.assertEqual(gs.unit, pq.Quantity(unit))
 
     def testArbitraryFieldUnit(self):
         """Check for correct setting of field unit in an arbitrary case."""
         unit = "2345 V/m"
         self.worker.paramFieldUnit.value = unit
         gs = self.worker.plugLoadImageAsGreyScale.getResult()
-        self.assertEqual(gs.unit, pq.PhysicalQuantity(unit))
+        self.assertEqual(gs.unit, pq.Quantity(unit))
 
     def testSimpleXScale(self):
         """Check for correct handling of xScale."""
         unit = "32 m"
-        punit = pq.PhysicalQuantity(unit)
+        punit = pq.Quantity(unit)
         self.worker.paramXScale.value = unit
         gs = self.worker.plugLoadImageAsGreyScale.getResult()
         self.assertEqual(gs.dimensions[-1].unit.unit, punit.unit)
@@ -93,7 +94,7 @@ class TestImageLoader(unittest.TestCase):
     def testSimpleYScale(self):
         """Check for correct handling of yScale."""
         unit = "57 m"
-        punit = pq.PhysicalQuantity(unit)
+        punit = pq.Quantity(unit)
         self.worker.paramYScale.value = unit
         gs = self.worker.plugLoadImageAsGreyScale.getResult()
         self.assertEqual(gs.dimensions[-2].unit.unit, punit.unit)
@@ -103,7 +104,7 @@ class TestImageLoader(unittest.TestCase):
     def testLink2X(self):
         """Check for correct inferrence of yScale from set xScale."""
         unit = "32 m"
-        punit = pq.PhysicalQuantity(unit)
+        punit = pq.Quantity(unit)
         self.worker.paramXScale.value = unit
         self.worker.paramYScale.value = "link2X"
         gs = self.worker.plugLoadImageAsGreyScale.getResult()

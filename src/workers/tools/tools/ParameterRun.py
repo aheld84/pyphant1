@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008, Rectorate of the University of Freiburg
-# All rights reserved.
+# Copyright (c) 2008-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
+# all rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -40,7 +41,7 @@ __version__ = "$Revision$"
 
 from pyphant.core import (Worker, Connectors, Param)
 from pyphant.core.DataContainer import (FieldContainer, SampleContainer)
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+from pyphant.quantities import Quantity
 from pyphant.core.KnowledgeManager import KnowledgeManager as KM
 import numpy
 
@@ -65,7 +66,7 @@ class ParameterRun(Worker.Worker):
         pname = unicode(self.paramPname.value).encode('utf-8')
         unitstring = unicode(self.paramUnit.value).encode('utf-8')
         if unitstring != "None":
-            unit = PhysicalQuantity(unitstring)
+            unit = Quantity(unitstring)
         else:
             unit = 1
         paramData = numpy.arange(start, stop, step)

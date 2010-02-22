@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008, Rectorate of the University of Freiburg
+# Copyright (c) 2008-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -44,7 +45,7 @@ from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 
 import scipy.interpolate
-from pyphant.quantities import PhysicalQuantities
+from pyphant import quantities
 import logging, copy, math
 
 class Slicing(Worker.Worker):
@@ -71,7 +72,7 @@ class Slicing(Worker.Worker):
             self.oldField = templ
             self._params = []
             for i,dim in enumerate(templ.dimensions):
-                if PhysicalQuantities.isPhysicalQuantity(dim.unit):
+                if quantities.isQuantity(dim.unit):
                     intStart = (dim.data.min()*dim.unit).value
                     intEnd   = (dim.data.max()*dim.unit).value
                     unitname = dim.unit.unit.name()

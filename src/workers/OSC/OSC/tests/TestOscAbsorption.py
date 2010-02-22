@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2007-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,7 +52,7 @@ pkg_resources.require("pyphant.osc")
 import os.path
 
 import numpy, scipy, scipy.optimize
-import pyphant.quantities.PhysicalQuantities as pq
+import pyphant.quantities as pq
 import OSC.OscAbsorption as OA
 from pyphant.core import DataContainer as DC
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env python2.5
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -44,7 +45,7 @@ pkg_resources.require("pyphant")
 
 import scipy
 import copy, datetime
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+from pyphant.quantities import Quantity
 from pyphant.core.DataContainer import FieldContainer, SampleContainer, assertEqual
 from pyphant.core.PyTablesPersister import (saveField, loadField, saveSample,
                                             loadSample, saveExecutionOrder,
@@ -58,7 +59,7 @@ class ContainerTestCase(unittest.TestCase):
         self.testData = scipy.array([[0.,1.,2.],[3.,4.,5.],[6.,7.,8.]])
         self.longname = u"Sampled Data"
         self.shortname = u"I\\omega"
-        self.unit = PhysicalQuantity('3.14 m')
+        self.unit = Quantity('3.14 m')
         self.attributes = {'id': __id__, 'author':__author__,'version':__version__,
                            'unit':self.unit}
         self.eln = tables.openFile('FieldContainerTestCase.h5','w',
@@ -129,13 +130,13 @@ class SampleContainerTestCase(ContainerTestCase):
         self.independent = FieldContainer(0.3*numpy.linspace(0,1,self.testData.shape[0]),
                                           longname='independent variable',
                                           shortname='x',
-                                          unit = PhysicalQuantity('1 mg'),
+                                          unit = Quantity('1 mg'),
                                           attributes = copy.copy(self.attributes).update({'independent':True}))
         self.dependent = FieldContainer(9.81*self.independent.data,
                                         dimensions=[self.independent],
                                         longname='dependent variable',
                                         shortname='f',
-                                        unit = PhysicalQuantity('9.81 nN'),
+                                        unit = Quantity('9.81 nN'),
                                         attributes = copy.copy(self.attributes).update({'independent':False}))
         self.sample = SampleContainer([self.dependent,self.field],longname='Sample',shortname='X',
                                       attributes = copy.copy(self.attributes).update({'isSample':'It seems so.'}))
@@ -155,13 +156,13 @@ class SampleContainerInSampleContainerTestCase(SampleContainerTestCase):
         self.independent2 = FieldContainer(0.3*numpy.linspace(0,1,self.testData.shape[0]*10),
                                           longname='independent variable',
                                           shortname='x',
-                                          unit = PhysicalQuantity('1 mg'),
+                                          unit = Quantity('1 mg'),
                                           attributes = copy.copy(self.attributes).update({'independent':True}))
         self.dependent2 = FieldContainer(9.81*self.independent2.data,
                                         dimensions=[self.independent2],
                                         longname='dependent variable',
                                         shortname='f',
-                                        unit = PhysicalQuantity('9.81 nN'),
+                                        unit = Quantity('9.81 nN'),
                                         attributes = copy.copy(self.attributes).update({'independent':False}))
 
         sample2 = SampleContainer([self.dependent2,self.independent2],longname='Second Sample',shortname='Y',

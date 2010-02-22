@@ -1,7 +1,8 @@
 #!/usr/bin/env python2.5
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008-2009  Rectorate of the University of Freiburg
+# Copyright (c) 2008-2009,  Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,7 +39,7 @@ pkg_resources.require('pyphant.fmf')
 import unittest, numpy
 from fmfile import FMFLoader
 from pyphant.core.DataContainer import FieldContainer,assertEqual
-from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
+from pyphant.quantities import Quantity
 
 class FieldContainerCondenseDim(unittest.TestCase):
     def setUp(self):
@@ -74,8 +75,8 @@ class TestColumn2FieldContainer(unittest.TestCase):
         assertEqual(result,expectedResult)
 
     def testVariable(self):
-        column = [('T',PhysicalQuantity('22.4 degC'),PhysicalQuantity('0.5 degC')),
-                  ('T',PhysicalQuantity('11.2 degC'),PhysicalQuantity('0.5 degC'))
+        column = [('T',Quantity('22.4 degC'),Quantity('0.5 degC')),
+                  ('T',Quantity('11.2 degC'),Quantity('0.5 degC'))
                   ]
         result = FMFLoader.column2FieldContainer('temperature',column)
         expectedResult = FieldContainer(numpy.array([22.4,11.2]),error=numpy.array([0.5,0.5]),
@@ -84,8 +85,8 @@ class TestColumn2FieldContainer(unittest.TestCase):
         assertEqual(result,expectedResult)
 
     def testVariableWithNaN(self):
-        column = [('T',PhysicalQuantity('22.4 degC'),PhysicalQuantity('0.5 degC')),
-                  ('T',PhysicalQuantity('11.2 degC'),None)
+        column = [('T',Quantity('22.4 degC'),Quantity('0.5 degC')),
+                  ('T',Quantity('11.2 degC'),None)
                   ]
         result = FMFLoader.column2FieldContainer('temperature',column)
         expectedResult = FieldContainer(numpy.array([22.4,11.2]),error=numpy.array([0.5,0.0]),
@@ -94,14 +95,30 @@ class TestColumn2FieldContainer(unittest.TestCase):
         assertEqual(result,expectedResult)
 
     def testVariableFirstNaN(self):
-        column = [('T','NaN',PhysicalQuantity('0.5 degC')),
-                  ('T',PhysicalQuantity('11.2 degC'),None)
+        column = [('T','NaN',Quantity('0.5 degC')),
+                  ('T',Quantity('11.2 degC'),None)
                   ]
         result = FMFLoader.column2FieldContainer('temperature',column)
         expectedResult = FieldContainer(numpy.array([numpy.NaN,11.2]),error=numpy.array([0.5,0.0]),
                                         mask = numpy.array([True,False]),
                                         unit='1 degC',longname='temperature',shortname='T')
         assertEqual(result,expectedResult)
+
+class TestDiscriminatingJouleAndImaginary(unittest.TestCase):
+    """In order to discriminate between an imaginary number and unit Joule, imaginary numbers have to be indicated only by a minor capital 'j', while a major capital 'J' indicates the unit Joule.
+    """
+    def setUp(self):
+        self.inputDict = {'complexJ':'1.0j','Joule':'1.0J'}
+
+    def testComplexVale(self):
+        """Imaginary numbers are indicated by 'j'."""
+        result = FMFLoader.item2value(self.inputDict['complexJ'])
+        self.assertEqual(result,complex(self.inputDict['complexJ']))
+
+    def testJouleValue(self):
+        """Physical quantities with unit Joule are indicated by 'J'."""
+        result = FMFLoader.item2value(self.inputDict['Joule'])
+        self.assertEqual(result,(Quantity(self.inputDict['Joule']),None))
                   
 if __name__ == "__main__":
     import sys

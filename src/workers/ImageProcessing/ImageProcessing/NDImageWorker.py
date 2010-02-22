@@ -103,15 +103,15 @@ class NDImage(Worker.Worker):
     _params += [(pn, pn, dflt, None) for pn, dflt in _ndparams.iteritems()]
 
     def threshold(self, data, threshold):
-        from pyphant.quantities.PhysicalQuantities import (PhysicalQuantity,
-                                                           isPhysicalQuantity)
+        from pyphant.quantities import (Quantity,
+                                                           isQuantity)
         from pyphant.core.Helpers import uc2utf8
         try:
-            thp = PhysicalQuantity(uc2utf8(threshold))
+            thp = Quantity(uc2utf8(threshold))
         except:
             thp = float(threshold)
         thp /= self._unit
-        assert not isPhysicalQuantity(thp)
+        assert not isQuantity(thp)
         return numpy.where(data < thp, False, True)
 
     def grey_invert(self, data):

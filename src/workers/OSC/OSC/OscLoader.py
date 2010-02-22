@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,7 +42,7 @@ import zipfile, numpy, re, collections
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 
-from pyphant.quantities import PhysicalQuantities
+from pyphant import quantities
 
 def makeRoot(pixelName, ll):
     return {}
@@ -103,13 +104,13 @@ def createFieldContainer(key,array):
         if not m or m.group(1)=="counts" or m.group(1)=="":
             return 1.0
         else:
-            return PhysicalQuantities.PhysicalQuantity('1 '+str(m.group(1)))
+            return quantities.Quantity('1 '+str(m.group(1)))
     fieldUnit = longname2unit(key)
-    if PhysicalQuantities.isPhysicalQuantity(fieldUnit):
+    if quantities.isQuantity(fieldUnit):
         fieldContainer = DataContainer.FieldContainer(numpy.array(array), unit=fieldUnit, longname=key)
     else:
         try:
-            quantities = [PhysicalQuantities.PhysicalQuantity(string.encode('latin-1')) for string in array]
+            quantities = [quantities.Quantity(string.encode('latin-1')) for string in array]
             firstUnit = quantities[0].unit
             scaledArray = [quant.inUnitsOf(firstUnit).value for quant in quantities]
             fieldContainer = DataContainer.FieldContainer(numpy.array(scaledArray), unit='1. %s' % firstUnit.name(),
