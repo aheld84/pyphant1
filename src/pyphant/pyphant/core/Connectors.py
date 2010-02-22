@@ -38,6 +38,7 @@ __version__ = "$Revision$"
 # $Source$
 
 import copy, threading, inspect, logging
+import Queue
 
 class FullSocketError(ValueError):
     pass
@@ -71,20 +72,22 @@ class Connector(object):
                   self.worker.id+"."+self.pre+self.name.capitalize())
 
 class Computer(threading.Thread):
-    def __init__(self, method, **kwargs):
+    def __init__(self, method, exception_queue, **kwargs):
         threading.Thread.__init__(self)
         self.method = method
         self.kwargs = kwargs
         self.result = None
+        self.exception_queue = exception_queue
 
     def run(self):
         if self.method:
             try:
                 self.result = self.method(subscriber=self.kwargs["subscriber"])
-            except:
+            except Exception, e:
                 logging.getLogger('pyphant').debug(
                     u"An unhandled exception occured in the calculation.",
                     exc_info = True)
+                self.exception_queue.put(e)
                 raise
 
 
@@ -148,13 +151,20 @@ class CalculatingPlug(Plug):
         sockets = args[1:-1]
         name = method.func_name+'PyphantWrapper'
         l = 'def '+name+'(subscriber, method=method, process=self):\n'
+        l += '\texception_queue=Queue.Queue()\n'
         for s in sockets:
             l += '\t'+s+'=Computer(method.im_self.getSocket("'
-            l += s+'").getResult, subscriber=subscriber)\n'
+            l += s+'").getResult, exception_queue, subscriber=subscriber)\n'
         for s in sockets:
             l += '\t'+s+'.start()\n'
         for s in sockets:
             l += '\t'+s+'.join()\n'
+        l += '\texceptions=[]\n'
+        l += '\twhile not exception_queue.empty():\n'
+        l += '\t\texceptions.append(exception_queue.get())\n'
+        l += '\t\texception_queue.task_done()\n'
+        l += '\tif len(exceptions)>0:\n'
+        l += '\t\traise RuntimeError, str(exceptions)\n'
         #If no sockets are needed the comma in the next line will be erased,
         #so do not add a space!
         l += '\treturn method( subscriber=Updater(subscriber, process),'
@@ -186,7 +196,6 @@ class CalculatingPlug(Plug):
         finally:
             self._resultLock.release()
         return result
-
 
 class Socket(Connector):
     def __init__(self, worker, name, type=DEFAULT_DATA_TYPE):

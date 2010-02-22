@@ -37,6 +37,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
+import Queue
 import wx
 from pyphant.core.Connectors import Computer
 
@@ -49,7 +50,8 @@ class ConfigureFrame(wx.Dialog):
         wx.Dialog.__init__(self, parent, -1, "Configure "+worker.getParam("name").value)
         self._paramDict={}
         progress = ProgressMeter("Acquiring Param data")
-        computer = Computer(worker.refreshParams, subscriber=progress)
+        exception_queue = Queue.Queue()
+        computer = Computer(worker.refreshParams, exception_queue, subscriber=progress)
         computer.start()
         while (progress.percentage<100) and (computer.isAlive()):
             progress.update()
