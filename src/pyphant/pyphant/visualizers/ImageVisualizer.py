@@ -134,14 +134,15 @@ class ImageVisualizer(object):
             pylab.colorbar(format=F(self.fieldContainer), ax=ax)
         else:
             im = NonUniformImage(ax, extent=(xmin,xmax,ymin,ymax))
-            im.set_data(x, y, self.fieldContainer.maskedData)
+            if vmin is not None or vmax is not None:
+                im.set_clim(vmin, vmax)
+                im.set_data(x, y, self.fieldContainer.maskedData)
+            else:
+                im.set_data(x, y, self.fieldContainer.maskedData)
+                im.autoscale_None()
             ax.images.append(im)
             ax.set_xlim(xmin,xmax)
             ax.set_ylim(ymin,ymax)
-            if vmin is not None or vmax is not None:
-                im.set_clim(vmin, vmax)
-            else:
-                im.autoscale_None()
             pylab.colorbar(im,format=F(self.fieldContainer), ax=ax)
         pylab.xlabel(self.fieldContainer.dimensions[-1].shortlabel)
         pylab.ylabel(self.fieldContainer.dimensions[-2].shortlabel)
