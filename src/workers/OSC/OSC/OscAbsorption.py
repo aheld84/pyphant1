@@ -162,9 +162,11 @@ class OscMapper(Worker.Worker):
     _sockets = [("osc", Connectors.TYPE_ARRAY)]
     _params = [("xAxis", u"x-Axis", [u"horizontal_table_position"], None),
                ("yAxis", u"y-Axis", [u"vertical_table_position"], None),
+               ("zAxis", u"z-Axis", [u"z_table_position"], None),
                ("field", u"Field", [u"thickness"], None),
                ("extentX", u"Extension of x-axis [%%]", 10, None),
                ("extentY", u"Extension of y-axis [%%]", 10, None),
+               ("extentZ", u"Extension of z-axis [%%]", 10, None),
                ("overrideV", u"Override value limits", False, None),
                ("vmin", u"Minimal value", "0 nm", None),
                ("vmax", u"Maximal value", "100 nm", None)]
@@ -178,13 +180,16 @@ class OscMapper(Worker.Worker):
             colNames = templ.longnames.keys()
             self.paramXAxis.possibleValues = colNames
             self.paramYAxis.possibleValues = colNames
+            self.paramZAxis.possibleValues = colNames
             self.paramField.possibleValues = colNames
 
-    def calcNormal(self, osc, xCon, yCon, fCon, xf, yf, h):
+    def calcNormal(self, osc, xCon, yCon, zCon, fCon, xf, yf, zf, h):
         xOff, xStep, xInd = grid2Index(xf, self.paramExtentX.value)
         yOff, yStep, yInd = grid2Index(yf, self.paramExtentY.value)
+        zOff, zStep, zInd = grid2Index(zf, self.paramExtentZ.value)
         xMax = xInd.maxV
         yMax = yInd.maxV
+        zMax = zInd.maxV
         xDim = DataContainer.FieldContainer(
             numpy.linspace(xInd.minV,xInd.maxV,xInd.stepCount)-0.5*xStep,
             xCon.unit,
@@ -193,22 +198,28 @@ class OscMapper(Worker.Worker):
             numpy.linspace(yInd.minV,yInd.maxV,yInd.stepCount)-0.5*yStep,
             yCon.unit,
             longname = yCon.longname, shortname = yCon.shortname )
-        img = numpy.ones((yInd.stepCount, xInd.stepCount),
+        zDim = DataContainer.FieldContainer(
+            numpy.linspace(zInd.minV,zInd.maxV,zInd.stepCount)-0.5*yStep,
+            zCon.unit,
+            longname = zCon.longname, shortname = zCon.shortname )
+        img = numpy.ones((zInd.stepCount, yInd.stepCount, xInd.stepCount),
                          dtype='float')*numpy.NaN
-        mask = numpy.ones((yInd.stepCount, xInd.stepCount), dtype='bool')
+        mask = numpy.ones((zInd.stepCount, yInd.stepCount, xInd.stepCount),
+                          dtype='bool')
         for i in xrange(xf.size):
             xi = xInd[xf[i]]
             yi = yInd[yf[i]]
-            if not mask[yi, xi]:
-                self._logger.warning("Duplicate data for pixel (%.4g,%.4g). "
+            zi = zInd[zf[i]]
+            if not mask[zi, yi, xi]:
+                self._logger.warning("Duplicate data for pixel (%.4g,%.4g,%.4g). "
                                      "Using first found value. "
-                                     "Is your data corrupt?"%(xf[i],yf[i]))
+                                     "Is your data corrupt?"%(xf[i],yf[i],zf[i]))
             else:
-                img[yi, xi] = h[i]
+                img[zi, yi, xi] = h[i]
                 if h[i]>0:
-                    mask[yi, xi] = False
+                    mask[zi, yi, xi] = False
         result = DataContainer.FieldContainer(
-            img, fCon.unit, mask=mask, dimensions=[yDim, xDim],
+            img, fCon.unit, mask=mask, dimensions=[zDim, yDim, xDim],
             longname=u'Map of %s'%fCon.longname, shortname=fCon.shortname)
         return result
 
@@ -216,14 +227,15 @@ class OscMapper(Worker.Worker):
     def mapHeights(self, osc, subscriber=0):
         xCon = osc[self.paramXAxis.value]
         yCon = osc[self.paramYAxis.value]
+        zCon = osc[self.paramYAxis.value]
         fCon = osc[self.paramField.value]
-        cons = [copy.deepcopy(data) for data in [xCon, yCon, fCon]]
-        xCon, yCon, fCon = cons
+        cons = [copy.deepcopy(data) for data in [xCon, yCon, zCon, fCon]]
+        xCon, yCon, zCon, fCon = cons
         for con in cons:
             con.longname = con.longname.replace('_', ' ')
             con.data = con.data.astype('float')
-        xf, yf, h = tuple([ con.data for con in cons ])
-        result = self.calcNormal(osc, xCon, yCon, fCon, xf, yf, h)
+        xf, yf, zf, h = tuple([ con.data for con in cons ])
+        result = self.calcNormal(osc, xCon, yCon, zCon, fCon, xf, yf, zf, h)
         if self.paramOverrideV.value:
             vs = str(self.paramVmin.value), str(self.paramVmax.value)
             from pyphant.quantities import (
