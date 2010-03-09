@@ -2,7 +2,7 @@
 
 # Copyright (c) 1998-2007, Konrad Hinsen <hinsen@cnrs-orleans.fr>
 # Copyright (c) 2008-2010, Rectorate of the University of Freiburg
-# Copyright (c) 2009-2010, Andreas W. Liehr
+# Copyright (c) 2009-2010, Andreas W. Liehr <liehr@users.sourceforge.net>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,11 @@ Quantities with units
 
 based on the module Scientific.Physics.PhysicalQuantities
 written by Conrad Hinsen with contributions from Greg Ward.
+A comprehensive documentation of these units is given in 
+Riede et al: On the Communication of Scientific Data: 
+The Full-Metadata Format, Computer Physics and Communication 181(3), 
+2010, pp 651--662 (doi:10.1016/j.cpc.2009.11.014), 
+which defines version 1.1 of the Full-Metadata Format.  
 
 This module provides a data type that represents a physical
 quantity together with its unit. It is possible to add and
