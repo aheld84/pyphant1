@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2006-2009, Rectorate of the University of Freiburg
-# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009-2010, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -196,7 +196,7 @@ class SampleContainer(DataContainer):
 
 \t  .data \t- Table of samples stored in a numpy.ndarray.
 \t  .desc \t- Description numpy.dtype of the ndarray.
-\t  .units \t- List of quantities.objects denoting the units of
+\t  .units \t- List of quantities objects denoting the units of
 \t\t\t  the columns.
 \t  .longname \t- Notation of the data, e.g. 'database query',
 \t\t\t  which is used for the automatic annotation of charts.

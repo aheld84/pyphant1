@@ -40,13 +40,18 @@ import unittest, numpy
 from pyphant.quantities.ParseQuantities import parseDateTime,str2unit
 from pyphant.quantities import Quantity
 """
-    >>>parseDateTime('2004-08-21 12:00:00+-12h')
+    >>>parseDateTime('2004-08-21 12:00:00+-12hr')
     (Quantity(731814.5,'d'), Quantity(0.5,'d'))
     >>>parseDateTime('2004-08-21 12:00:00')
     (Quantity(731814.5,'d'), None)
 """
 class TestParseDateTime(unittest.TestCase):
-    def testWithUncertainty(self):
+    def testWithError(self):
+        self.assertEqual(parseDateTime('2004-08-21 12:00:00+-12hr'),
+                         (Quantity(731814.5,'d'), Quantity(0.5,'d'))
+                         )
+
+    def testWithErrorOldDeprecatedAbbreviation(self):
         self.assertEqual(parseDateTime('2004-08-21 12:00:00+-12h'),
                          (Quantity(731814.5,'d'), Quantity(0.5,'d'))
                          )

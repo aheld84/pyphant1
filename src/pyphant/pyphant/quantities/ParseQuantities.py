@@ -41,6 +41,9 @@ __version__ = "$Revision$"
 import mx.DateTime.ISO
 from pyphant.quantities import Quantity
 
+import logging
+_logger = logging.getLogger("pyphant")
+
 def str2unit(unit):
     """The function str2unit returns either a quantity or a float from a given string."""
     # Prepare conversion to quantity
@@ -97,7 +100,7 @@ def parseVariable(oldVal):
 
 def parseDateTime(value):
     """
-    >>>parseDateTime('2004-08-21 12:00:00+-12h')
+    >>>parseDateTime('2004-08-21 12:00:00+-12hr')
     (Quantity(731814.5,'d'), Quantity(0.5,'d'))
     >>>parseDateTime('2004-08-21 12:00:00')
     (Quantity(731814.5,'d'), None)
@@ -105,7 +108,12 @@ def parseDateTime(value):
     datetimeWithError = value.split('+-')
     if len(datetimeWithError)==2:
         datetime = mx.DateTime.ISO.ParseAny(datetimeWithError[0])
-        error = parseQuantity(datetimeWithError[1])[0].inUnitsOf('d')
+        uncertainty = parseQuantity(datetimeWithError[1])[0]
+        if uncertainty.isCompatible('h'):
+            _logger.warning("The uncertainty of timestamp %s has the unit 'h', which is deprecated. The correct abbreviation for hour is 'hr'." % value)
+            uncertainty = uncertainty*Quantity('1hr/h')
+            print uncertainty
+        error = uncertainty.inUnitsOf('d')
     else:
         datetime = mx.DateTime.ISO.ParseAny(value)
         error = None

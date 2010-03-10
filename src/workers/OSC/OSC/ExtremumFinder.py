@@ -2,6 +2,7 @@
 #!Pyphant's ExtremumFinder worker
 #!-------------------------------
 # Copyright (c) 2007-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
