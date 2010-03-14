@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The ImageProcessing toolbox holds workers to process data resulting from scalar fields.
+TODO
 """
 
 __id__ = "$Id$"
@@ -38,36 +38,36 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-BACKGROUND_COLOR=255
-FEATURE_COLOR=0
+from pyphant.core import Worker, Connectors,\
+                         Param
+from tools.Emd5Src import HiddenValue
+import ImageProcessing
 
-workers=[
-    "ApplyMask",
-    "CoverageWorker",
-    "DiffWorker",
-    "DistanceMapper",
-    "EdgeFillWorker",
-    "EdgeTouchingFeatureRemover",
-    "EnhanceContrast",
-    "FilterWorker",
-    "FindLocalExtrema",
-    "FitBackground",
-    "Gradient",
-    "ImageLoaderWorker",
-    "InvertWorker",
-    "Medianiser",
-    "MeasureFocus",
-    "NDImageWorker",
-    "SkeletonizeFeature",
-    "ThresholdingWorker",
-    "UltimatePointsCalculator",
-    "Watershed",
-    "ZStacks",
-    "SliceSelector"
-    ]
 
-def isFeature(point):
-    if point == FEATURE_COLOR:
-        return True
-    else:
-        return False
+class SliceSelector(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "SliceSelector"
+    _sockets = [("zstack", Connectors.TYPE_ARRAY)]
+    _params = [("slice", u"ZSlice", [u'None'], None)]
+
+    def refreshParams(self, subscriber=None):
+        if self.socketZstack.isFull():
+            repr_sc = self.socketZstack.getResult(subscriber)
+            unit = repr_sc['z-value'].unit
+            pvalues = []
+            for zvalue, emd5 in zip(repr_sc['z-value'].data,
+                                    repr_sc['emd5'].data):
+                hvalue = HiddenValue(unicode((zvalue * unit).__str__()))
+                hvalue.setHiddenValue(unicode(emd5))
+                pvalues.append(hvalue)
+            #pvalues.sort()
+            self.paramSlice.possibleValues = pvalues
+
+    @Worker.plug(Connectors.TYPE_IMAGE)
+    def image(self, subscriber=0):
+        img_id = self.paramSlice.value.hiddenvalue
+        from pyphant.core.KnowledgeManager import KnowledgeManager
+        kmanager = KnowledgeManager.getInstance()
+        return kmanager.getDataContainer(img_id)

@@ -46,6 +46,7 @@ import numpy, copy
 from scipy import ndimage as ndi
 from pyphant.quantities import (isQuantity,
                                                    Quantity)
+PhysicalQuantity = Quantity
 from pyphant.core.DataContainer import FieldContainer
 
 
@@ -189,7 +190,7 @@ def autofocus(focusSC, boundRatio, featureRatio):
     from pyphant.core.KnowledgeManager import KnowledgeManager
     km = KnowledgeManager.getInstance()
     ztubes = []
-    ztol = focusSC.attributes[u'ztol']
+    ztol = eval(focusSC.attributes['ztol'])
     zunit = focusSC['z-value'].unit
     for zNumValue, emd5 in zip(focusSC['z-value'].data, focusSC['emd5'].data):
         zvalue = zNumValue * zunit

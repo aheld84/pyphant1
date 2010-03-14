@@ -521,7 +521,7 @@ class WebInterface(object):
             qry['jump'] == 'True',
             (""" onload="window.location.hash='result_view';" """, ""))
         offset = max(int(qry['offset']), 0)
-        limit = 10
+        limit = 500
         search_dict = dict([(key, qry[key]) for key in common_keys \
                             if qry[key] != self.anystr])
         if qry['date_from'] != '':
@@ -542,10 +542,16 @@ class WebInterface(object):
             attr_post.append(str(last_index + 1))
             qry['attr_key' + attr_post[-1]] = ''
             qry['attr_value' + attr_post[-1]] = ''
+        from pyphant.core.Helpers import utf82uc
+        def testany(str1):
+            str2 = utf82uc(str1)
+            if str2 == u"":
+                str2 = self.kn.km.any_value
+            return str2
         search_dict['attributes'] = dict([(qry['attr_key' + apost],
-                                           qry['attr_value' + apost]) \
+                                           testany(qry['attr_value' + apost])) \
                                           for apost in attr_post])
-        print search_dict
+        #print search_dict
         # --- common search keys ---
         optionss = [[(self.anystr, )] \
                     + self.kn.km.search([key], search_dict, distinct=True) \
@@ -590,9 +596,11 @@ class WebInterface(object):
         search_result = self.kn.km.search(
             missing_keys, search_dict, order_by=order_by,
             order_asc=order_asc, limit=limit, offset=offset)
-        rows = [order_bar(missing_keys[:-1], order_by, order_asc) + ['details']]
+        rows = [order_bar(missing_keys[:-1], order_by, order_asc)\
+                + ['details', 'tmp']]
         rows.extend([nice(srow[:-1], missing_keys[:-1], do_shorten) \
-                     + (HTMLSummaryLink((srow[-1], 'click')), ) \
+                     + (HTMLSummaryLink((srow[-1], 'click')),
+                        self.kn.km.isTemporary(srow[-1])) \
                      for srow in search_result])
         bbar = HTMLBrowseBar(offset, limit).getHTML()
         result = bbar + "<br />" + HTMLTable(rows).getHTML() + "<br />" + bbar
