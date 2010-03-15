@@ -393,8 +393,11 @@ class SQLiteWrapper(object):
             return
         exe = self.cursor.execute
         if temporary:
-            exe("INSERT OR ABORT INTO km_temporary VALUES (?)",
-                (entry_id,))
+            try:
+                exe("INSERT OR ABORT INTO km_temporary VALUES (?)",
+                    (entry_id,))
+            except sqlite3.IntegrityError:
+                pass # Already set to temporary!
         else:
             exe("DELETE FROM km_temporary WHERE dc_id=?",
                 (entry_id,))
