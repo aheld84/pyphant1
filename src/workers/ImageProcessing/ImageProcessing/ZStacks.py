@@ -55,7 +55,10 @@ class ZStacks(Worker.Worker):
     _params = [("zstack", u"ZStack", [u'None'], None),
                ("rpath", u"Path to recipes (select any file)", "",
                 Connectors.SUBTYPE_FILE),
-               ("cutoff", u"Cutoff", "100 mum", None)]
+               ("gradient_recipe", u"Gradient recipe", [u'None'], None),
+               ("label_recipe", u"Label recipe", [u'None'], None),
+               #("cutoff", u"Cutoff", "100 mum", None),
+               ("median_size", u"Median size", 5, None)]
 
     def refreshParams(self, subscriber=None):
         zstacks = ZStackManager().getZStacks()
@@ -66,22 +69,36 @@ class ZStacks(Worker.Worker):
             pvalues.append(hvalue)
         pvalues.sort()
         self.paramZstack.possibleValues = pvalues
+        directory = os.path.dirname(self.paramRpath.value)
+        if os.path.isdir(directory):
+            pvalues = filter(
+                lambda x: x.endswith('.h5'),
+                os.listdir(directory))
+            pvalues.sort()
+            self.paramGradient_recipe.possibleValues = pvalues
+            self.paramLabel_recipe.possibleValues = pvalues
 
     def get_rp_ga_la(self):
+        gradient_recipe = self.paramGradient_recipe.value
+        label_recipe = self.paramLabel_recipe.value
         rpath = os.path.dirname(os.path.realpath(self.paramRpath.value))
-        gradient_alg = RecipeAlg(os.path.join(rpath, 'pre-MF-default.h5'),
-                                 'gradient', 'gradientWorker')
-        label_alg = RecipeAlg(os.path.join(rpath, 'pre-MF-default.h5'),
+        gradient_alg = RecipeAlg(os.path.join(rpath, gradient_recipe),
+                                 'gradient', 'gradientWorker',
+                                 {'median':{'size':self.paramMedian_size.value}})
+        label_alg = RecipeAlg(os.path.join(rpath, label_recipe),
                               'label', 'ndimage')
         return (rpath, gradient_alg, label_alg)
 
-    @Worker.plug(Connectors.TYPE_IMAGE)
+    @Worker.plug(Connectors.TYPE_ARRAY)
     def statistics(self, subscriber=0):
-        cutoff = self.paramCutoff.value
-        rpath, gradient_alg, label_alg = self.get_rp_ga_la()
+        #cutoff = self.paramCutoff.value
+        try:
+            rpath, gradient_alg, label_alg = self.get_rp_ga_la()
+        except IOError:
+            return None
         self.paramZstack.value.hiddenvalue.recipe_path = rpath
         return self.paramZstack.value.hiddenvalue.get_statistics(
-            gradient_alg, label_alg, cutoff)
+            gradient_alg, label_alg)
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def raw_image(self, subscriber=0):
@@ -89,7 +106,10 @@ class ZStacks(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def mf_human(self, subscriber=0):
-        rpath, gradient_alg, label_alg = self.get_rp_ga_la()
+        try:
+            rpath, gradient_alg, label_alg = self.get_rp_ga_la()
+        except IOError:
+            return None
         self.paramZstack.value.hiddenvalue.recipe_path = rpath
         return self.paramZstack.value.hiddenvalue.get_human_imgs(
             gradient_alg, label_alg)

@@ -49,80 +49,121 @@ from pyphant.core.RecipeAlg import RecipeAlg
 import os
 kmanager = KnowledgeManager.getInstance()
 
-def getImageFCs(images_meta):
-    zvalues = []
-    emd5s = []
-    files = []
-    for img_meta in images_meta:
-        files.append(img_meta['filename'])
-        img = Image.open(img_meta['filename'])
-        data = scipy.misc.fromimage(img, flatten=True)
-        zvalue = img_meta['z-pos']
-        ydata = scipy.arange(img_meta['height']) \
-                * img_meta['pixel_height'].value \
-                + img_meta['y-pos'].value
-        xdata = scipy.arange(img_meta['width']) \
-                * img_meta['pixel_width'].value \
-                + img_meta['x-pos'].value
-        dimensions = [FieldContainer(ydata,
-                                     unit=Quantity(1.0, 'mum'),
-                                     longname=u'y-axis',
-                                     shortname=u'y'),
-                      FieldContainer(xdata,
-                                     unit=Quantity(1.0, 'mum'),
-                                     longname=u'x-axis',
-                                     shortname=u'x')]
-        fcattr = {u'filename': img_meta['filename'],
-                  u'zvalue': zvalue,
-                  u'pxx': img_meta['id'],
-                  u'timestamp': img_meta['timestamp']}
-        img_fc = FieldContainer(data=data,
-                                longname=os.path.basename(img_meta['filename']),
-                                shortname="image",
-                                dimensions=dimensions, attributes=fcattr)
-        img_fc.seal()
-        kmanager.registerDataContainer(img_fc)
-        emd5s.append(img_fc.id)
-        zvalues.append(zvalue.value)
-    if len(zvalues) == 0:
-        return None, None, None
-    zfc = FieldContainer(scipy.array(zvalues), longname='z-value',
-                         shortname='z', unit=Quantity(1.0, 'mum'))
-    filefc = FieldContainer(scipy.array(files), longname='filename',
-                            shortname='f')
-    emd5fc = FieldContainer(scipy.array(emd5s), longname='emd5', shortname='i')
-    return zfc, filefc, emd5fc
-
 
 class ZStack(object):
-    def __init__(self, sc_id=None, name=None, image_path=None,
-                 extension='.tif', ztol=None):
+    def __init__(self, sc_id=None, name=None, image_path=None):
         """Initializes a ZStack from an existing id or a local source"""
         assert (sc_id is None) is not (image_path is None)
         self._recipe_path = None
-        self.ztol = ztol
         if sc_id is not None:
             self.repr_sc = kmanager.getDataContainer(sc_id)
         else:
-            assert name is not None and ztol is not None
+            assert name is not None
             self.repr_sc = self._import_zstack(name,
-                                               os.path.realpath(image_path),
-                                               extension)
+                                               os.path.realpath(image_path))
 
-    def _import_zstack(self, name, path, extension):
-        def file_filter(name):
-            return os.path.isfile(name) and name.endswith(extension)
-        file_names = filter(file_filter,
-                            [os.path.join(path, entry) \
-                             for entry in os.listdir(path)])
-        file_names.sort()
-        # TODO
-        #images_meta = ...
-        zfc, filefc, emd5fc = getImageFCs(images_meta)
+    @staticmethod
+    def _get_images_meta(path):
+        def getFloat(xmlelement):
+            return float(xmlelement.content.strip().replace(',', '.'))
+
+        def getMum(xmlelement):
+            return Quantity(getFloat(xmlelement), 'mum')
+
+        def xml_filter(name):
+            return os.path.isfile(name) and name.endswith('.xml')
+
+        mfns = filter(xml_filter,
+                     [os.path.join(path, entry) \
+                      for entry in os.listdir(path)])
+        images_meta = []
+        for mfn in mfns:
+            xml_root = getXMLRoot(mfn)
+            meta = {}
+            tags = xml_root['Tags']
+            s_tags = xml_root['_single']['Tags']
+            directory = os.path.dirname(mfn)
+            meta['xml_filename'] = mfn
+            meta['zvi_filename'] = os.path.join(directory,
+                                                tags['V120'].content.strip())
+            meta['img_filename'] = os.path.join(directory,
+                                                tags['V5'].content.strip())
+            meta['timestamp'] = tags['V3'].content.strip()
+            meta['width'] = int(s_tags['V3'].content.strip())
+            meta['height'] = int(s_tags['V4'].content.strip())
+            meta['x-pos'] = getMum(s_tags['V15'])
+            meta['y-pos'] = getMum(s_tags['V16'])
+            meta['z-pos'] = getMum(tags['V114'])
+            meta['pixel_width'] = getMum(xml_root['Scaling']['Factor_0'])
+            meta['pixel_height'] = getMum(xml_root['Scaling']['Factor_1'])
+            images_meta.append(meta)
+        images_meta.sort(key = lambda x: x['z-pos'].value)
+        return images_meta
+
+    @staticmethod
+    def _get_image_fcs(images_meta):
+        zvalues = []
+        emd5s = []
+        files = []
+        for img_meta in images_meta:
+            files.append(img_meta['xml_filename'])
+            img = Image.open(img_meta['img_filename'])
+            data = scipy.misc.fromimage(img, flatten=True)
+            zvalue = img_meta['z-pos']
+            ydata = scipy.arange(img_meta['height']) \
+                    * img_meta['pixel_height'].inUnitsOf('mum').value \
+                    + img_meta['y-pos'].inUnitsOf('mum').value
+            xdata = scipy.arange(img_meta['width']) \
+                    * img_meta['pixel_width'].inUnitsOf('mum').value \
+                    + img_meta['x-pos'].inUnitsOf('mum').value
+            dimensions = [FieldContainer(ydata,
+                                         unit=Quantity(1.0, 'mum'),
+                                         longname=u'y-axis',
+                                         shortname=u'y'),
+                          FieldContainer(xdata,
+                                         unit=Quantity(1.0, 'mum'),
+                                         longname=u'x-axis',
+                                         shortname=u'x')]
+            fcattr = {'img_filename':img_meta['img_filename'],
+                      'xml_filename':img_meta['xml_filename'],
+                      'zvi_filename':img_meta['zvi_filename'],
+                      'zvalue':zvalue,
+                      'timestamp':img_meta['timestamp']}
+            img_fc = FieldContainer(data=data,
+                                    longname=os.path.basename(
+                                        img_meta['img_filename']),
+                                    shortname="img",
+                                    dimensions=dimensions, attributes=fcattr)
+            img_fc.seal()
+            kmanager.registerDataContainer(img_fc)
+            emd5s.append(img_fc.id)
+            zvalues.append(zvalue.inUnitsOf('mum').value)
+        if len(zvalues) == 0:
+            return None, None, None
+        zfc = FieldContainer(scipy.array(zvalues), longname='z-value',
+                             shortname='z', unit=Quantity(1.0, 'mum'))
+        filefc = FieldContainer(scipy.array(files), longname='filename',
+                                shortname='f')
+        emd5fc = FieldContainer(scipy.array(emd5s), longname='emd5', shortname='i')
+        return zfc, filefc, emd5fc
+
+    @staticmethod
+    def _estimate_ztol(zfc):
+        zmums = [(float(zvalue) * zfc.unit).inUnitsOf('mum').value \
+                 for zvalue in zfc.data]
+        zmums.sort()
+        diffs = []
+        for index in xrange(len(zmums) - 1):
+            diffs.append(zmums[index + 1] - zmums[index])
+        return Quantity(2.0 * sum(diffs) / float(len(diffs)), 'mum')
+
+    def _import_zstack(self, name, path):
+        images_meta = ZStack._get_images_meta(path)
+        zfc, filefc, emd5fc = ZStack._get_image_fcs(images_meta)
         if zfc == None:
             return None
         attributes = {}
-        attributes['ztol'] = ztol.__repr__()
+        attributes['ztol'] = ZStack._estimate_ztol(zfc)
         attributes['isZStack'] = 'yes'
         ssc = SampleContainer([zfc, filefc, emd5fc],
                               name,
@@ -153,18 +194,19 @@ class ZStack(object):
                                   'labels':label_id}}
         return mf_alg.get_batch_result_id(in_ids, update_attrs=uattr)
 
-    def get_statistics(self, gradient_alg, label_alg, cutoff):
+    def get_statistics(self, gradient_alg, label_alg):
         mf_id = self._get_mf_id(gradient_alg, label_alg, False)
         af_alg = RecipeAlg(os.path.join(self.recipe_path, 'AutoFocus.h5'),
                            'AutoFocus', 'AutoFocusWorker')
         in_ids = {'AutoFocus':{'focusSC':mf_id}}
-        af_id = af_alg.get_result(in_ids, id_only=True)
-        params = {'Cutoff':{'expression':'"d" <= %s' % cutoff},
-                  'ColumnExtractor':{'column':'diameter'}}
-        stat_alg = RecipeAlg(os.path.join(self.recipe_path, 'Statistics.h5'),
-                             'ColumnExtractor', 'extract', params)
-        in_ids = {'Cutoff':{'table':af_id}}
-        return stat_alg.get_result(in_ids, temporary=True)
+        af_sc = af_alg.get_result(in_ids)
+        return af_sc
+        #params = {'Cutoff':{'expression':'"d" <= %s' % cutoff},
+        #          'ColumnExtractor':{'column':'diameter'}}
+        #stat_alg = RecipeAlg(os.path.join(self.recipe_path, 'Statistics.h5'),
+        #                     'ColumnExtractor', 'extract', params)
+        #in_ids = {'Cutoff':{'table':af_id}}
+        #return stat_alg.get_result(in_ids, temporary=True)
 
     def get_human_imgs(self, gradient_alg, label_alg):
         mf_id = self._get_mf_id(gradient_alg, label_alg, True)

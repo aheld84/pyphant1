@@ -190,7 +190,8 @@ def autofocus(focusSC, boundRatio, featureRatio):
     from pyphant.core.KnowledgeManager import KnowledgeManager
     km = KnowledgeManager.getInstance()
     ztubes = []
-    ztol = eval(focusSC.attributes['ztol'])
+    ztol = focusSC.attributes['ztol']
+    assert isinstance(ztol, Quantity)
     zunit = focusSC['z-value'].unit
     for zNumValue, emd5 in zip(focusSC['z-value'].data, focusSC['emd5'].data):
         zvalue = zNumValue * zunit
