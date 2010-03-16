@@ -178,14 +178,21 @@ N_2	1	2
         """Test the correct interpretation of physical constants as definied in FMF version 1.0."""
         consts = FMFLoader.readSingleFile(self.FMFinput,"testReadSingleFile")[0].attributes['Mathematical and Physical Constants']
         self.assertEqual(consts[u'Speed of light'][1],str2unit("1 c",FMFversion="1.0"))
+        self.assertEqual(consts[u'Speed of light'][1],str2unit("1 c"))
         self.assertEqual(consts[u'Permeability of vacuum'][1],str2unit("1 mu0",FMFversion="1.0"))
         self.assertEqual(consts[u'Permittivity of vacuum'][1],str2unit("1 eps0",FMFversion="1.0"))
         self.assertEqual(consts[u'Gravitational constant'][1],str2unit("1 Grav",FMFversion="1.0"))
         self.assertEqual(consts[u'Planck constant'][1],str2unit("1 hplanck",FMFversion="1.0"))
         self.assertEqual(consts[u'Planck constant / 2pi'][1],str2unit("1 hbar",FMFversion="1.0"))
         self.assertEqual(consts[u'Elementary charge'][1],str2unit("1 e",FMFversion="1.0"))
+        self.assertNotEqual(consts[u'Elementary charge'][1],str2unit("1 e"),
+                         "Elementary charge has been adapted to new CODATA recommendations.")
         self.assertEqual(consts[u'Electron mass'][1],str2unit("1 me",FMFversion="1.0"))
+        self.assertNotEqual(consts[u'Electron mass'][1],str2unit("1 me"),
+                            "Electron mass has been adapted to new CODATA recommendations.")
         self.assertEqual(consts[u'Proton mass'][1],str2unit("1 mp",FMFversion="1.0"))
+        self.assertNotEqual(consts[u'Proton mass'][1],str2unit("1 mp"),
+                            "Proton mass has been adapted to new CODATA recommendations.")
         self.assertEqual(consts[u'Avogadro number'][1],str2unit("1 Nav",FMFversion="1.0"))
         self.assertEqual(consts[u'Boltzmann constant'][1],str2unit("1 k",FMFversion="1.0"))
         consts = FMFLoader.readSingleFile(self.FMFinput,"testReadSingleFile")[0].attributes['Additional constants changed from FMF version 1.0 to 1.1']
