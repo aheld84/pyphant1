@@ -64,6 +64,21 @@ class TestStr2unit(unittest.TestCase):
         result = str2unit('1V')
         self.assertEqual(expected,result)
 
+    def setUp(self):
+        self.inputDict = {'complexJ':'1.0j','Joule':'1.0J'}
+
+    def testJouleValue(self):
+        """Physical quantities with unit Joule are indicated by 'J'."""
+        result = str2unit(self.inputDict['Joule'])
+        self.assertEqual(result,Quantity(self.inputDict['Joule']))
+
+    def testHourPlanck(self):
+        """In FMF 1.0 unit 'h' denotes hours, while in FMF 1.1 'h' denotes the Planck constant."""
+        result = str2unit('1h')
+        self.assertEqual(result,Quantity('6.62606896e-34 J*s'))
+        result = str2unit('1h',FMFversion='1.0')
+        self.assertEqual(result,Quantity('3600s'))
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) == 1:

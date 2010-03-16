@@ -40,11 +40,12 @@ __version__ = "$Revision$"
 
 import mx.DateTime.ISO
 from pyphant.quantities import Quantity
+from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 
 import logging
 _logger = logging.getLogger("pyphant")
 
-def str2unit(unit):
+def str2unit(unit,FMFversion='1.1'):
     """The function str2unit returns either a quantity or a float from a given string."""
     # Prepare conversion to quantity
     if unit.startswith('.'):
@@ -62,14 +63,22 @@ def str2unit(unit):
     elif not (unit[0].isdigit() or unit[0]=='-'):
         unit = '1'+unit
     # Convert input to quantity or float
-    try:
+    if FMFversion not in ['1.0','1.1']:
+        raise ValueError, 'FMFversion %s not supported.' % FMFversion
+    else:
         unit = unit.replace('^', '**')
-        unit = Quantity(unit.encode('utf-8'))
-    except:
-        unit = float(unit)
+        try:
+            unit = unit.replace('^', '**')
+            if FMFversion=='1.1':
+                unit = Quantity(unit.encode('utf-8'))
+            elif FMFversion=='1.0':
+                unit1_0 = PhysicalQuantity(unit.encode('utf-8'))
+                unit = Quantity(str(unit1_0.inBaseUnits()))
+        except:
+            unit = float(unit)
     return unit
 
-def parseQuantity(value):
+def parseQuantity(value,FMFversion='1.1'):
     import re
     pm = re.compile(ur"(?:\\pm|\+-|\+/-)")
     try:
@@ -79,10 +88,10 @@ def parseQuantity(value):
     if value.startswith('('):
         value = float(value[1:])
         error, unit = [s.strip() for s in error.split(')')]
-        unit = str2unit(unit)
+        unit = str2unit(unit,FMFversion)
         value *= unit
     else:
-        value = str2unit(value)
+        value = str2unit(value,FMFversion)
     if error != None:
         if error.endswith('%'):
             error = value*float(error[:-1])/100.0
@@ -90,15 +99,15 @@ def parseQuantity(value):
             try:
                 error = float(error)*unit
             except:
-                error = str2unit(error)
+                error = str2unit(error,FMFversion)
     return value, error
 
-def parseVariable(oldVal):
+def parseVariable(oldVal,FMFversion='1.1'):
     shortname, value = tuple([s.strip() for s in oldVal.split('=')])
-    value, error = parseQuantity(value)
+    value, error = parseQuantity(value,FMFversion)
     return (shortname, value, error)
 
-def parseDateTime(value):
+def parseDateTime(value,FMFversion='1.1'):
     """
     >>>parseDateTime('2004-08-21 12:00:00+-12hr')
     (Quantity(731814.5,'d'), Quantity(0.5,'d'))
@@ -108,11 +117,10 @@ def parseDateTime(value):
     datetimeWithError = value.split('+-')
     if len(datetimeWithError)==2:
         datetime = mx.DateTime.ISO.ParseAny(datetimeWithError[0])
-        uncertainty = parseQuantity(datetimeWithError[1])[0]
+        uncertainty = parseQuantity(datetimeWithError[1],FMFversion)[0]
         if uncertainty.isCompatible('h'):
             _logger.warning("The uncertainty of timestamp %s has the unit 'h', which is deprecated. The correct abbreviation for hour is 'hr'." % value)
             uncertainty = uncertainty*Quantity('1hr/h')
-            print uncertainty
         error = uncertainty.inUnitsOf('d')
     else:
         datetime = mx.DateTime.ISO.ParseAny(value)
