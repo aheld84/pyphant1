@@ -242,7 +242,8 @@ class Quantity:
         return self._sum(other, -1, 1)
 
     def __cmp__(self, other):
-        diff = self._sum(other, 1, -1)
+        normed = self.inBaseUnits() # Minimizing numerical errors
+        diff = normed._sum(other, 1, -1) 
         return cmp(diff.value, 0)
 
     def __mul__(self, other):

@@ -199,6 +199,79 @@ N_2	1	2
         self.assertEqual(consts[u'Parsec'][1],str2unit("1 pc",FMFversion="1.0"))
         self.assertEqual(consts[u'US gallon'][1],str2unit("1 galUS",FMFversion="1.0"))
         self.assertEqual(consts[u'Atomic mass units'][1],str2unit("1 amu",FMFversion="1.0"))
+
+class TestFMFversion1_1(unittest.TestCase):
+    def setUp(self):
+        self.FMFinput = """# -*- fmf-version: 1.1; coding: utf-8 -*-
+[*reference]
+title: The physical constants of the Full-Metadata Format 1.1 by Riede in doi://10.1016/j.cpc.2009.11.014
+creator: Andreas W. Liehr
+created: 2010-03-17
+place: ICE 604, Offenburg-Karlsruhe, Germany
+[Mathematical and Physical Constants]
+Area of unit circle:  pi = 3.1415926535897931 
+Speed of light: c = 299792458 m/s
+Permeability of vacuum: \mu_0 = 4.e-7 pi*N/A**2
+Permittivity of vacuum: \eps_0 = 1.0 1/mu0/c**2
+Faraday constant: Fa = 96485.3399 C/mol
+Gravitational constant: G = 6.67428e-11 m**3/kg/s**2 
+Planck constant: h = 6.62606896e-34 J*s
+Planck constant / 2pi: hbar = 0.5 h/pi 
+Elementary charge: e = 1.602176487e-19 C
+Electron mass:       m_e = 9.10938215e-31 kg
+Proton mass: m_p = 1.672621637e-27 kg
+Avogadro number: NA = 6.02214179e23 1/mol
+Boltzmann constant: k = 1.3806504e-23 J/K
+Rydberg constant: Ryd = 10973731.568527 1/m
+[Additional constants changed from FMF version 1.0 to 1.1]
+Parsec: pc = 3.0856776E16 m
+US gallon: galUS = 231 inch**3
+Wave-numbers/inverse cm: invcm = 1 h*c/cm
+Atomic mass units: u = 1.660538782e-27 kg
+[*table definitions]
+table: T
+mixed: M
+[*data definitions: T]
+String: S
+Integer: I
+Float with dot: Fd
+Float with exponent: Fe
+Complex: C
+Missing Value: V_m
+Infinite Value: V_i
+[*data: T]
+H_2	1	1.	1e1	1+0j	nan	inf	
+O_2	2	.2	2E1	2+.1j	NaN	INF
+O 2	2	.2	2E1	2.+2j	NAN	Inf
+[*data definitions: M]
+String: S
+Complex: C
+Float: F
+[*data: M]
+N_2	1	2
+2	1+1j	2.
+"""
+    def testReadSingleFile(self):
+        """Test the correct interpretation of physical constants as definied in FMF version 1.1."""
+        consts = FMFLoader.readSingleFile(self.FMFinput,"testReadSingleFile")[0].attributes['Mathematical and Physical Constants']
+        self.assertEqual(consts[u'Speed of light'][1],str2unit("1 c",FMFversion="1.1"))
+        self.assertEqual(consts[u'Permeability of vacuum'][1],str2unit("1 mu0",FMFversion="1.1"),
+                         'The values differ by %s.' % (consts[u'Permeability of vacuum'][1]-str2unit("1 mu0",FMFversion="1.1"),))
+        self.assertEqual(consts[u'Permittivity of vacuum'][1],str2unit("1 eps0",FMFversion="1.1"))
+        self.assertEqual(consts[u'Gravitational constant'][1],str2unit("1 G",FMFversion="1.1"))
+        self.assertEqual(consts[u'Planck constant'][1],str2unit("1 h",FMFversion="1.1"))
+        self.assertEqual(consts[u'Planck constant / 2pi'][1],str2unit("1 hbar",FMFversion="1.1"))
+        self.assertEqual(consts[u'Elementary charge'][1],str2unit("1 e",FMFversion="1.1"),
+                         'The elements %s and %s do not match.' % (consts[u'Elementary charge'][1],str2unit("1 e",FMFversion="1.1")))
+        self.assertEqual(consts[u'Electron mass'][1],str2unit("1 me",FMFversion="1.1"))
+        self.assertEqual(consts[u'Proton mass'][1],str2unit("1 mp",FMFversion="1.1"))
+        self.assertEqual(consts[u'Avogadro number'][1],str2unit("1 NA",FMFversion="1.1"))
+        self.assertEqual(consts[u'Boltzmann constant'][1],str2unit("1 k",FMFversion="1.1"))
+        self.assertEqual(consts[u'Rydberg constant'][1],str2unit("1 Ryd",FMFversion="1.1"))
+        consts = FMFLoader.readSingleFile(self.FMFinput,"testReadSingleFile")[0].attributes['Additional constants changed from FMF version 1.0 to 1.1']
+        self.assertEqual(consts[u'Parsec'][1],str2unit("1 pc",FMFversion="1.1"))
+        self.assertEqual(consts[u'US gallon'][1],str2unit("1 galUS",FMFversion="1.1"))
+        self.assertEqual(consts[u'Atomic mass units'][1],str2unit("1 u",FMFversion="1.1"))
                   
 if __name__ == "__main__":
     import sys
