@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008, Rectorate of the University of Freiburg
+# Copyright (c) 2008-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -45,7 +46,6 @@ import OSC.OscAbsorption as OA
 import scipy.interpolate
 from pyphant import quantities
 import copy
-
 
 class ComputeFunctional(Worker.Worker):
     API = 2

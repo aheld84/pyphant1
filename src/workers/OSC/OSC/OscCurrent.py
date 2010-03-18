@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2006-2008, Rectorate of the University of Freiburg
