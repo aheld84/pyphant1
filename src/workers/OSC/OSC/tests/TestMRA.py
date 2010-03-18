@@ -87,7 +87,25 @@ class TestMRA(unittest.TestCase):
         w.paramScale.value = "1.0m"
         result = w.mra(self.V)
         #Testing
-        numpy.testing.assert_array_almost_equal(result.data,expectedResult.data,4)
+        numpy.testing.assert_array_almost_equal(result[r'x_{min}'].data,expectedResult.data,4)
+
+    def testMaxima(self):
+        """Test the correct computation of all local minima for a bistable potential."""
+        #Predict result
+        x0,curv,mask = fixedPoints(numpy.array([self.LAMBDA]),kappa1=self.kappa1)
+        expectedResult = DC.FieldContainer(numpy.extract(curv[0]>0,x0[0]),
+                                           unit = self.xField.unit,
+                                           longname = 'position of the local minima of electric potential',
+                                           shortname = 'x_0')
+        #Retrieve result from worker
+        w = MRA.MRA(None)
+        w.paramScale.value = "1.0m"
+        V = copy.deepcopy(self.V)
+        V.data*=-1
+        result = w.mra(V)
+        #Testing
+        numpy.testing.assert_array_almost_equal(result[r'x_{max}'].data,expectedResult.data,4)
+
 
 class TestExtremumFinderTable(unittest.TestCase):
     """Sets up a mirror symmetric bistable potential with a continuous
@@ -142,7 +160,7 @@ class TestExtremumFinderTable(unittest.TestCase):
         w = MRA.MRA(None)
         w.paramScale.value = "1.0m"
         #Retrieve result from worker
-        result = copy.deepcopy(w.mra(self.V))
+        result = copy.deepcopy(w.mra(self.V))['x_{min}']
         result.error=None
         self.test(result,expectedResult,1e-2,1e-2)
 
