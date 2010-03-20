@@ -199,7 +199,7 @@ def compareAbsorption(recipe, curvNo, noIndicators):
                      label ="$\\Delta%s$"%minimaPos.shortname, linestyle='dashed')
         pylab.vlines(maximaPos.data[:,index],0.1,1.0,
                      label ="$%s$"%maximaPos.shortname)
-        pylab.vlines(minimaPos.data[:,index]+maximaPos.error[:,index],0.1,1.0,
+        pylab.vlines(maximaPos.data[:,index]+maximaPos.error[:,index],0.1,1.0,
                      label ="$\\Delta%s$"%maximaPos.shortname, linestyle='dashed')
         pylab.vlines(maximaPos.data[:,index]-maximaPos.error[:,index],0.1,1.0,
                      label ="$\\Delta%s$"%maximaPos.shortname, linestyle='dashed')
