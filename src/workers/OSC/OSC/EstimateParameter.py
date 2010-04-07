@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008, Rectorate of the University of Freiburg
+# Copyright (c) 2008-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -44,27 +45,40 @@ import scipy.interpolate
 from pyphant import quantities
 import copy
 
-
 class EstimateParameter(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "Estimate Parameter"
 
-    _sockets = [("model", Connectors.TYPE_IMAGE),
-                ("experimental", Connectors.TYPE_IMAGE)]
-    _params = [("extentX", u"Extension of x-axis [%%]", 10, None),
+    _sockets = [("model", Connectors.TYPE_ARRAY),
+                ("experimental", Connectors.TYPE_ARRAY)]
+    _params = [("minima_model", u"Minima in the model", [u"Minima"], None),
+               ("maxima_model", u"Maxima in the model", [u"Maxima"], None),
+               ("minima_experimental", u"Minima in the experiment", [u"Minima"], None),
+               ("maxima_experimental", u"Maxima in the experiment", [u"Maxima"], None),
+               ("extentX", u"Extension of x-axis [%%]", 10, None),
                ("extentY", u"Extension of y-axis [%%]", 10, None)]
 
-    def calculateThickness(self, row, model, error=None):
+    def refreshParams(self, subscriber=None):
+        if self.socketModel.isFull():
+            templ = self.socketModel.getResult( subscriber )
+            self.paramMinima_model.possibleValues = templ.longnames.keys()
+            self.paramMaxima_model.possibleValues = templ.longnames.keys()
+        if self.socketExperimental.isFull():
+            templ = self.socketExperimental.getResult( subscriber )
+            self.paramMinima_experimental.possibleValues = templ.longnames.keys()
+            self.paramMaxima_experimental.possibleValues = templ.longnames.keys()
+
+    def calculateThickness(self, row_minima, row_maxima, minima_model, maxima_model,
+                           minima_error=None, maxima_error=None):
         """
         Given a vector of minima (row) and a 2 dimensional model,
         this estimates the corresponding parameter.
         """
-        if len(row)==0:
+        if len(row_minima)+len(row_maxima)==0:
             return numpy.nan
-        data = model.data.transpose()
-        def calc(row, col, error):
+        def calc(row, model, col, error):
             if error:
                 weight=0
                 for c,e in zip(row, error):
@@ -78,38 +92,68 @@ class EstimateParameter(Worker.Worker):
             else:
                 return sum([col[numpy.argmin((model.dimensions[0].data-c)**2)]
                             for c in row])
-        i = numpy.argmin(numpy.array([calc(row, col, error) for col in data]))
-        return model.dimensions[1].data[i]
+        minima_data = minima_model.data.transpose()
+        maxima_data = maxima_model.data.transpose()
+        i = numpy.argmin(numpy.array([calc(row_minima, minima_model, minima_col, minima_error)
+                                      +calc(row_maxima, maxima_model, maxima_col, maxima_error)
+                                      for minima_col, maxima_col in
+                                      zip(minima_data, maxima_data)]))
+        assert(minima_model.dimensions[1].data[i]==maxima_model.dimensions[1].data[i])
+        return minima_model.dimensions[1].data[i]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def compute(self, model, experimental, subscriber=1):
-        renormedExp = experimental.inUnitsOf(model.dimensions[0])
-        minima = renormedExp.data.transpose()
-        if renormedExp.error != None:
-            error = iter(renormedExp.error.transpose())
+        minima_model = model[self.paramMinima_model.value]
+        maxima_model = model[self.paramMaxima_model.value]
+        minima_experimental = experimental[
+            self.paramMinima_experimental.value
+            ].inUnitsOf(
+            minima_model.dimensions[0]
+            )
+        maxima_experimental = experimental[
+            self.paramMaxima_experimental.value
+            ].inUnitsOf(
+            maxima_model.dimensions[0]
+            )
+        minima = minima_experimental.data.transpose()
+        if minima_experimental.error != None:
+            minima_error = iter(minima_experimental.error.transpose())
         else:
-            error = None
+            minima_error = None
+        maxima = maxima_experimental.data.transpose()
+        if maxima_experimental.error != None:
+            maxima_error = iter(maxima_experimental.error.transpose())
+        else:
+            maxima_error = None
         parameter = []
         inc = 100.0/float(len(minima))
         acc = inc
         subscriber %= acc
-        for row in minima:
-            if error:
-                filteredError = filter(
-                    lambda c: not numpy.isnan(c), error.next())
+        for row_minima, row_maxima in zip(minima, maxima):
+            if minima_error:
+                filtered_minima_error = filter(
+                    lambda c: not numpy.isnan(c), minima_error.next())
             else:
-                filteredError = None
+                filtered_minima_error = None
+            if maxima_error:
+                filtered_maxima_error = filter(
+                    lambda c: not numpy.isnan(c), maxima_error.next())
+            else:
+                filtered_maxima_error = None
             parameter.append(self.calculateThickness(
-                    filter(lambda c: not numpy.isnan(c), row),
-                    model,
-                    filteredError
+                    filter(lambda c: not numpy.isnan(c), row_minima),
+                    filter(lambda c: not numpy.isnan(c), row_maxima),
+                    minima_model,
+                    maxima_model,
+                    filtered_minima_error,
+                    filtered_maxima_error
                     ))
             acc += inc
             subscriber %= acc
         result = DataContainer.FieldContainer(
             numpy.array(parameter),
-            longname = model.dimensions[-1].longname,
-            shortname = model.dimensions[-1].shortname,
-            unit = model.dimensions[-1].unit)
+            longname = minima_model.dimensions[-1].longname,
+            shortname = minima_model.dimensions[-1].shortname,
+            unit = minima_model.dimensions[-1].unit)
         result.seal()
         return result

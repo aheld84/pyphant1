@@ -171,7 +171,8 @@ def compareAbsorption(recipe, curvNo, noIndicators):
     worker = recipe.getWorker("ThicknessModeller")
     simulation = worker.plugCalcAbsorption.getResult()
     worker = recipe.getWorker("MRA Exp")
-    minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
+    minimaPos = worker.plugMra.getResult()[r'\lambda_{min}'].inUnitsOf(simulation.dimensions[1])
+    maximaPos = worker.plugMra.getResult()[r'\lambda_{max}'].inUnitsOf(simulation.dimensions[1])
     worker = recipe.getWorker("AddColumn")
     table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
     xPos = table[u"x-position"]
@@ -196,6 +197,12 @@ def compareAbsorption(recipe, curvNo, noIndicators):
                      label ="$\\Delta%s$"%minimaPos.shortname, linestyle='dashed')
         pylab.vlines(minimaPos.data[:,index]-minimaPos.error[:,index],0.1,1.0,
                      label ="$\\Delta%s$"%minimaPos.shortname, linestyle='dashed')
+        pylab.vlines(maximaPos.data[:,index],0.1,1.0,
+                     label ="$%s$"%maximaPos.shortname)
+        pylab.vlines(maximaPos.data[:,index]+maximaPos.error[:,index],0.1,1.0,
+                     label ="$\\Delta%s$"%maximaPos.shortname, linestyle='dashed')
+        pylab.vlines(maximaPos.data[:,index]-maximaPos.error[:,index],0.1,1.0,
+                     label ="$\\Delta%s$"%maximaPos.shortname, linestyle='dashed')
     pylab.title(result)
     pylab.xlabel(simulation.dimensions[1].label)
 
@@ -205,7 +212,8 @@ def noisyAbsorption(recipe, curvNo, noIndicators):
     worker = recipe.getWorker("ThicknessModeller")[0]
     simulation = worker.plugCalcAbsorption.getResult()
     worker = recipe.getWorker("MRA Exp")
-    minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
+    minimaPos = worker.plugMra.getResult()[r'\lambda_{min}'].inUnitsOf(simulation.dimensions[1])
+    maximaPos = worker.plugMra.getResult()[r'\lambda_{max}'].inUnitsOf(simulation.dimensions[1])
     worker = recipe.getWorker("AddColumn")
     table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
     xPos = table[u"x-position"]
@@ -222,6 +230,8 @@ def noisyAbsorption(recipe, curvNo, noIndicators):
     if not noIndicators:
         pylab.vlines(minimaPos.data[:,index],0.1,1.0,
                      label ="$%s$"%minimaPos.shortname)
+        pylab.vlines(maximaPos.data[:,index],0.1,1.0,
+                     label ="$%s$"%maximaPos.shortname)
     pylab.title(result)
     pylab.xlabel(simulation.dimensions[1].label)
     pylab.ylabel(simulation.label)
@@ -239,11 +249,12 @@ def thicknessMap(recipe, curvNo):
 
 def functional(recipe, curvNo, noIndicators):
     worker = recipe.getWorker("Compute Functional")
-    functional = worker.plugCompute.getResult()
+    functional = worker.plugCompute.getResult()[r'F_{\lambda_{min}}']
     worker = recipe.getWorker("ThicknessModeller")
     simulation = worker.plugCalcAbsorption.getResult()
     worker = recipe.getWorker("MRA Exp")
-    minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
+    minimaPos = worker.plugMra.getResult()[r'\lambda_{min}'].inUnitsOf(simulation.dimensions[1])
+    maximaPos = worker.plugMra.getResult()[r'\lambda_{max}'].inUnitsOf(simulation.dimensions[1])
     worker = recipe.getWorker("AddColumn")
     table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
     thickness = table[u"thickness"]
@@ -253,6 +264,8 @@ def functional(recipe, curvNo, noIndicators):
         ordinate = functional.dimensions[1].data
         pylab.hlines(minimaPos.data[:,index],ordinate.min(),ordinate.max(),
                      label ="$%s$"%minimaPos.shortname)
+        pylab.hlines(maximaPos.data[:,index],ordinate.min(),ordinate.max(),
+                     label ="$%s$"%maximaPos.shortname)
         abscissae = functional.dimensions[0].data
         pylab.vlines(thickness.data[index],abscissae.min(),abscissae.max(),
                      label ="$%s$"%minimaPos.shortname)
@@ -265,7 +278,8 @@ def simulation(recipe, curvNo, noIndicators):
     thickness = table[u"thickness"]
     index = curvNo2Index(table[u"pixel"], curvNo)
     worker = recipe.getWorker("MRA Exp")
-    minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
+    minimaPos = worker.plugMra.getResult()[r'\lambda_{min}'].inUnitsOf(simulation.dimensions[1])
+    maximaPos = worker.plugMra.getResult()[r'\lambda_{max}'].inUnitsOf(simulation.dimensions[1])
     visualizer = ImageVisualizer(simulation, False)
     ordinate = simulation.dimensions[1].data
     if not noIndicators:
@@ -274,6 +288,8 @@ def simulation(recipe, curvNo, noIndicators):
         abscissae = simulation.dimensions[0].data
         pylab.vlines(minimaPos.data[:,index],abscissae.min(),abscissae.max(),
                      label ="$%s$"%minimaPos.shortname)
+        pylab.vlines(maximaPos.data[:,index],abscissae.min(),abscissae.max(),
+                     label ="$%s$"%maximaPos.shortname)
 
 def dumpMinima(recipe):
     worker = recipe.getWorker("ThicknessModeller")
@@ -286,7 +302,7 @@ def dumpMinima(recipe):
     thickness = table[u"thickness"]
     cols = [index, xPos, yPos, thickness]
     worker = recipe.getWorker("MRA Exp")
-    minimaPos = worker.plugMra.getResult().inUnitsOf(simulation.dimensions[1])
+    minimaPos = worker.plugMra.getResult()[r'\lambda_{min}'].inUnitsOf(simulation.dimensions[1])
     import numpy
     data = numpy.vstack([ c.data for c in cols]
                         + numpy.vsplit(minimaPos.data, len(minimaPos.data))).transpose()

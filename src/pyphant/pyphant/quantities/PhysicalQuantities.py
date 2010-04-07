@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 1998-2007, Konrad Hinsen <hinsen@cnrs-orleans.fr>
-# Copyright (c) 2008-2010, Rectorate of the University of Freiburg
-# Copyright (c) 2009-2010, Andreas W. Liehr <liehr@users.sourceforge.net>
+# Copyright (c) 2008-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2010, Andreas W. Liehr <liehr@users.sourceforge.net>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,15 +32,14 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-Quantities with units
+Quantities with units 
 
 based on the module Scientific.Physics.PhysicalQuantities
-written by Conrad Hinsen with contributions from Greg Ward.
+written by Conrad Hinsen with contributions from Greg Ward. 
 A comprehensive documentation of these units is given in 
-Riede et al: On the Communication of Scientific Data: 
-The Full-Metadata Format, Computer Physics and Communication 181(3), 
-2010, pp 651--662 (doi:10.1016/j.cpc.2009.11.014), 
-which defines version 1.1 of the Full-Metadata Format.  
+Riede et al: On the Communication of Scientific Results: 
+The Full-Metadata Format (http://arxiv.org/abs/0904.1299), 
+which defines version 1.0 of the Full-Metadata Format.  
 
 This module provides a data type that represents a physical
 quantity together with its unit. It is possible to add and
@@ -128,12 +127,12 @@ import re, string
 
 # Class definitions
 
-class Quantity:
+class PhysicalQuantity:
 
     """
-    Quantity with units
+    Physical quantity with units
 
-    Quantity instances allow addition, subtraction,
+    PhysicalQuantity instances allow addition, subtraction,
     multiplication, and division with each other as well as
     multiplication, division, and exponentiation with numbers.
     Addition and subtraction check that the units of the two operands
@@ -146,17 +145,17 @@ class Quantity:
       - sin, cos, tan: applicable only to objects whose unit is
         compatible with 'rad'.
 
-    See the documentation of the quantities module for a list
+    See the documentation of the PhysicalQuantities module for a list
     of the available units.
 
     Here is an example on usage:
 
-    >>> from quantities import Quantity as p  # short hand
+    >>> from PhysicalQuantities import PhysicalQuantity as p  # short hand
     >>> distance1 = p('10 m')
     >>> distance2 = p('10 km')
     >>> total = distance1 + distance2
     >>> total
-    Quantity(10010.0,'m')
+    PhysicalQuantity(10010.0,'m')
     >>> total.convertToUnit('km')
     >>> total.getValue()
     10.01
@@ -164,19 +163,19 @@ class Quantity:
     'km'
     >>> total = total.inBaseUnits()
     >>> total
-    Quantity(10010.0,'m')
+    PhysicalQuantity(10010.0,'m')
     >>>
     >>> t = p(314159., 's')
     >>> # convert to days, hours, minutes, and second:
-    >>> t2 = t.inUnitsOf('d','hr','min','s')
+    >>> t2 = t.inUnitsOf('d','h','min','s')
     >>> t2_print = ' '.join([str(i) for i in t2])
     >>> t2_print
     '3.0 d 15.0 h 15.0 min 59.0 s'
     >>>
-    >>> e = p('2.7 Hartree*NA')
+    >>> e = p('2.7 Hartree*Nav')
     >>> e.convertToUnit('kcal/mol')
     >>> e
-    Quantity(1694.2757596034764,'kcal/mol')
+    PhysicalQuantity(1694.2757596034764,'kcal/mol')
     >>> e = e.inBaseUnits()
     >>> str(e)
     '7088849.77818 kg*m**2/s**2/mol'
@@ -192,10 +191,10 @@ class Quantity:
         """
         There are two constructor calling patterns:
 
-            1. Quantity(value, unit), where value is any number
+            1. PhysicalQuantity(value, unit), where value is any number
             and unit is a string defining the unit
 
-            2. Quantity(value_with_unit), where value_with_unit
+            2. PhysicalQuantity(value_with_unit), where value_with_unit
             is a string that contains both the value and the unit,
             i.e. '1.5 m/s'. This form is provided for more convenient
             interactive use.
@@ -208,7 +207,7 @@ class Quantity:
             self.unit = _findUnit(args[1])
         else:
             s = string.strip(args[0])
-            match = Quantity._number.match(s)
+            match = PhysicalQuantity._number.match(s)
             if match is None:
                 raise TypeError('No number found')
             self.value = string.atof(match.group(0))
@@ -224,7 +223,7 @@ class Quantity:
                 `self.unit.name()` + ')')
 
     def _sum(self, other, sign1, sign2):
-        if not isQuantity(other):
+        if not isPhysicalQuantity(other):
             raise TypeError('Incompatible types')
         new_value = sign1*self.value + \
                     sign2*other.value*other.unit.conversionFactorTo(self.unit)
@@ -242,12 +241,11 @@ class Quantity:
         return self._sum(other, -1, 1)
 
     def __cmp__(self, other):
-        normed = self.inBaseUnits() # Minimizing numerical errors
-        diff = normed._sum(other, 1, -1) 
+        diff = self._sum(other, 1, -1)
         return cmp(diff.value, 0)
 
     def __mul__(self, other):
-        if not isQuantity(other):
+        if not isPhysicalQuantity(other):
             return self.__class__(self.value*other, self.unit)
         value = self.value*other.value
         unit = self.unit*other.unit
@@ -259,7 +257,7 @@ class Quantity:
     __rmul__ = __mul__
 
     def __div__(self, other):
-        if not isQuantity(other):
+        if not isPhysicalQuantity(other):
             return self.__class__(self.value/other, self.unit)
         value = self.value/other.value
         unit = self.unit/other.unit
@@ -269,7 +267,7 @@ class Quantity:
             return self.__class__(value, unit)
 
     def __rdiv__(self, other):
-        if not isQuantity(other):
+        if not isPhysicalQuantity(other):
             return self.__class__(other/self.value, pow(self.unit, -1))
         value = other.value/self.value
         unit = other.unit/self.unit
@@ -279,7 +277,7 @@ class Quantity:
             return self.__class__(value, unit)
 
     def __pow__(self, other):
-        if isQuantity(other):
+        if isPhysicalQuantity(other):
             raise TypeError('Exponents must be dimensionless')
         return self.__class__(pow(self.value, other), pow(self.unit, other))
 
@@ -316,7 +314,7 @@ class Quantity:
     def inUnitsOf(self, *units):
         """
         Express the quantity in different units. If one unit is
-        specified, a new Quantity object is returned that
+        specified, a new PhysicalQuantity object is returned that
         expresses the quantity in that unit. If several units
         are specified, the return value is a tuple of
         PhysicalObject instances with with one element per unit such
@@ -328,7 +326,7 @@ class Quantity:
         @param units: one or several units
         @type units: C{str} or sequence of C{str}
         @returns: one or more physical quantities
-        @rtype: L{Quantity} or C{tuple} of L{Quantity}
+        @rtype: L{PhysicalQuantity} or C{tuple} of L{PhysicalQuantity}
         @raises TypeError: if any of the specified units are not compatible
         with the original unit
         """
@@ -358,7 +356,7 @@ class Quantity:
         """
         @returns: the same quantity converted to base units,
         i.e. SI units in most cases
-        @rtype: L{Quantity}
+        @rtype: L{PhysicalQuantity}
         """
         new_value = self.value * self.unit.factor
         num = ''
@@ -469,9 +467,9 @@ class PhysicalUnit:
         return cmp(self.factor, other.factor)
 
     def __mul__(self, other):
-        if self.offset != 0 or (isUnit (other) and other.offset != 0):
+        if self.offset != 0 or (isPhysicalUnit (other) and other.offset != 0):
             raise TypeError("cannot multiply units with non-zero offset")
-        if isUnit(other):
+        if isPhysicalUnit(other):
             return PhysicalUnit(self.names+other.names,
                                 self.factor*other.factor,
                                 map(lambda a,b: a+b,
@@ -485,9 +483,9 @@ class PhysicalUnit:
     __rmul__ = __mul__
 
     def __div__(self, other):
-        if self.offset != 0 or (isUnit (other) and other.offset != 0):
+        if self.offset != 0 or (isPhysicalUnit (other) and other.offset != 0):
             raise TypeError("cannot divide units with non-zero offset")
-        if isUnit(other):
+        if isPhysicalUnit(other):
             return PhysicalUnit(self.names-other.names,
                                 self.factor/other.factor,
                                 map(lambda a,b: a-b,
@@ -497,9 +495,9 @@ class PhysicalUnit:
                                 self.factor/other, self.powers)
 
     def __rdiv__(self, other):
-        if self.offset != 0 or (isUnit (other) and other.offset != 0):
+        if self.offset != 0 or (isPhysicalUnit (other) and other.offset != 0):
             raise TypeError("cannot divide units with non-zero offset")
-        if isUnit(other):
+        if isPhysicalUnit(other):
             return PhysicalUnit(other.names-self.names,
                                 other.factor/self.factor,
                                 map(lambda a,b: a-b,
@@ -628,7 +626,7 @@ class PhysicalUnit:
 
 # Type checks
 
-def isUnit(x):
+def isPhysicalUnit(x):
     """
     @param x: an object
     @type x: any
@@ -637,11 +635,11 @@ def isUnit(x):
     """
     return hasattr(x, 'factor') and hasattr(x, 'powers')
 
-def isQuantity(x):
+def isPhysicalQuantity(x):
     """
     @param x: an object
     @type x: any
-    @returns: C{True} if x is a L{Quantity}
+    @returns: C{True} if x is a L{PhysicalQuantity}
     @rtype: C{bool}
     """
     return hasattr(x, 'value') and hasattr(x, 'unit')
@@ -650,15 +648,14 @@ def isQuantity(x):
 # Helper functions
 
 def _findUnit(unit):
-    from types import StringTypes
-    if isinstance(unit, StringTypes):
+    if type(unit) == type(''):
         name = string.strip(unit)
         unit = eval(name, _unit_table)
         for cruft in ['__builtins__', '__args__']:
             try: del _unit_table[cruft]
             except: pass
 
-    if not isUnit(unit):
+    if not isPhysicalUnit(unit):
         raise TypeError(str(unit) + ' is not a unit')
     return unit
 
@@ -676,19 +673,18 @@ def _convertValue (value, src_unit, target_unit):
 
 # SI unit definitions
 
-_base_names = ['m', 'kg', 's', 'A', 'K', 'mol', 'cd', 'rad', 'sr','EUR','bit','B']
+_base_names = ['m', 'kg', 's', 'A', 'K', 'mol', 'cd', 'rad', 'sr','EUR']
 
-_base_units = [('m',   PhysicalUnit('m',   1.,    [1,0,0,0,0,0,0,0,0,0,0])),
-	       ('g',   PhysicalUnit('g',   0.001, [0,1,0,0,0,0,0,0,0,0,0])),
-	       ('s',   PhysicalUnit('s',   1.,    [0,0,1,0,0,0,0,0,0,0,0])),
-	       ('A',   PhysicalUnit('A',   1.,    [0,0,0,1,0,0,0,0,0,0,0])),
-	       ('K',   PhysicalUnit('K',   1.,    [0,0,0,0,1,0,0,0,0,0,0])),
-	       ('mol', PhysicalUnit('mol', 1.,    [0,0,0,0,0,1,0,0,0,0,0])),
-	       ('cd',  PhysicalUnit('cd',  1.,    [0,0,0,0,0,0,1,0,0,0,0])),
-	       ('rad', PhysicalUnit('rad', 1.,    [0,0,0,0,0,0,0,1,0,0,0])),
-	       ('sr',  PhysicalUnit('sr',  1.,    [0,0,0,0,0,0,0,0,1,0,0])),
-               ('EUR',  PhysicalUnit('EUR',  1.,  [0,0,0,0,0,0,0,0,0,1,0])),
-               ('bit',  PhysicalUnit('bit',  1.,  [0,0,0,0,0,0,0,0,0,0,1])),
+_base_units = [('m',   PhysicalUnit('m',   1.,    [1,0,0,0,0,0,0,0,0,0])),
+	       ('g',   PhysicalUnit('g',   0.001, [0,1,0,0,0,0,0,0,0,0])),
+	       ('s',   PhysicalUnit('s',   1.,    [0,0,1,0,0,0,0,0,0,0])),
+	       ('A',   PhysicalUnit('A',   1.,    [0,0,0,1,0,0,0,0,0,0])),
+	       ('K',   PhysicalUnit('K',   1.,    [0,0,0,0,1,0,0,0,0,0])),
+	       ('mol', PhysicalUnit('mol', 1.,    [0,0,0,0,0,1,0,0,0,0])),
+	       ('cd',  PhysicalUnit('cd',  1.,    [0,0,0,0,0,0,1,0,0,0])),
+	       ('rad', PhysicalUnit('rad', 1.,    [0,0,0,0,0,0,0,1,0,0])),
+	       ('sr',  PhysicalUnit('sr',  1.,    [0,0,0,0,0,0,0,0,1,0])),
+               ('EUR',  PhysicalUnit('EUR',  1.,  [0,0,0,0,0,0,0,0,0,1])),
 	       ]
 
 _prefixes = [('Y',  1.e24),
@@ -713,15 +709,6 @@ _prefixes = [('Y',  1.e24),
              ('y',  1.e-24),
              ]
 
-_binaryUnits = ['bit','B']
-_binaryPrefixes = [('Ei',  2**60),
-             ('Pi',  2**50),
-             ('Ti',  2**40),
-             ('Gi',  2**30),
-             ('Mi',  2**20),
-             ('Ki',  2**10)
-]             
-
 _unit_table = {}
 
 for unit in _base_units:
@@ -742,26 +729,26 @@ def _addUnit(name, unit, comment=''):
     unit.setName(name)
     _unit_table[name] = unit
 
-def _addPrefixed(unit,prefixes=_prefixes):
+def _addPrefixed(unit):
     _help.append('Prefixed units for %s:' % unit)
     _prefixed_names = []
-    if unit in ['EUR','bit','B']:
-        validPrefixes = filter(lambda prefix: prefix[1]>=1000,prefixes) 
+    if unit in ['EUR']:
+        validPrefixes = filter(lambda prefix: prefix[1]>=1000,_prefixes) 
     else:
-        validPrefixes = prefixes
+        validPrefixes = _prefixes
     for prefix in validPrefixes:
 	name = prefix[0] + unit
 	_addUnit(name, prefix[1]*_unit_table[unit])
         _prefixed_names.append(name)
     _help.append(', '.join(_prefixed_names))
 
-# Units with prefixes
+# SI derived units; these automatically get prefixes
 _help.append('SI derived units; these automatically get prefixes:\n' + \
      ', '.join([prefix + ' (%.0E)' % value for prefix, value in _prefixes]) + \
              '\n')
 
 
-_unit_table['kg'] = PhysicalUnit('kg',   1., [0,1,0,0,0,0,0,0,0,0,0])
+_unit_table['kg'] = PhysicalUnit('kg',   1., [0,1,0,0,0,0,0,0,0,0])
 
 _addUnit('Hz', '1/s', 'Hertz')
 _addUnit('N', 'm*kg/s**2', 'Newton')
@@ -781,14 +768,11 @@ _addUnit('lx', 'lm/m**2', 'Lux')
 _addUnit('Bq', '1/s', 'Becquerel')
 _addUnit('Gy', 'J/kg', 'Gray')
 _addUnit('Sv', 'J/kg', 'Sievert')
-_addUnit('B', '8*bit', 'Byte')
 
 del _unit_table['kg']
 
 for unit in _unit_table.keys():
     _addPrefixed(unit)
-for unit in _binaryUnits:
-    _addPrefixed(unit,_binaryPrefixes)
 
 # Fundamental constants
 _help.append('Fundamental constants:')
@@ -797,23 +781,21 @@ _unit_table['pi'] = numpy.oldnumeric.pi
 _addUnit('c', '299792458.*m/s', 'speed of light')
 _addUnit('mu0', '4.e-7*pi*N/A**2', 'permeability of vacuum')
 _addUnit('eps0', '1/mu0/c**2', 'permittivity of vacuum')
-_addUnit('Fa','96485.3399*C/mol', 'Faraday constant')
-_addUnit('G', '6.67428e-11*m**3/kg/s**2', 'gravitational constant')
-_addUnit('h', '6.62606896e-34*J*s', 'Planck constant')
-_addUnit('hbar', 'h/(2*pi)', 'Planck constant / 2pi')
-_addUnit('e', '1.602176487e-19*C', 'elementary charge')
-_addUnit('me', '9.10938215e-31*kg', 'electron mass')
-_addUnit('mp', '1.672621637e-27*kg', 'proton mass')
-_addUnit('NA', '6.02214179e23/mol', 'Avogadro number')
-_addUnit('k', '1.3806504e-23*J/K', 'Boltzmann constant')
-_addUnit('Ryd','10973731.568527/m','Rydberg constant')
+_addUnit('Grav', '6.67259e-11*m**3/kg/s**2', 'gravitational constant')
+_addUnit('hplanck', '6.6260755e-34*J*s', 'Planck constant')
+_addUnit('hbar', 'hplanck/(2*pi)', 'Planck constant / 2pi')
+_addUnit('e', '1.60217733e-19*C', 'elementary charge')
+_addUnit('me', '9.1093897e-31*kg', 'electron mass')
+_addUnit('mp', '1.6726231e-27*kg', 'proton mass')
+_addUnit('Nav', '6.0221367e23/mol', 'Avogadro number')
+_addUnit('k', '1.380658e-23*J/K', 'Boltzmann constant')
 
 # Time units
 _help.append('Time units:')
 
 _addUnit('min', '60*s', 'minute')
-_addUnit('hr', '60*min', 'hour')
-_addUnit('d', '24*hr', 'day')
+_addUnit('h', '60*min', 'hour')
+_addUnit('d', '24*h', 'day')
 _addUnit('wk', '7*d', 'week')
 _addUnit('yr', '365.25*d', 'year')
 
@@ -828,7 +810,7 @@ _addUnit('nmi', '1852.*m', 'Nautical mile')
 _addUnit('Ang', '1.e-10*m', 'Angstrom')
 _addUnit('lyr', 'c*yr', 'light year')
 _addUnit('AU', '149597870691*m', 'astronomical unit')
-_addUnit('pc', '3.0856776E16*m','parsec')
+_addUnit('pc', '3.08567758128E16*m','parsec')
 _addUnit('Bohr', '4*pi*eps0*hbar**2/me/e**2', 'Bohr radius')
 
 # Area units
@@ -851,13 +833,13 @@ _addUnit('floz', '2*tbsp', 'fluid ounce')
 _addUnit('cup', '8*floz', 'cup')
 _addUnit('pt', '16*floz', 'pint')
 _addUnit('qt', '2*pt', 'quart')
-_addUnit('galUS', '231*inch**3', 'US gallon')
+_addUnit('galUS', '4*qt', 'US gallon')
 _addUnit('galUK', '4.54609*l', 'British gallon')
 
 # Mass units
 _help.append('Mass units:')
 
-_addUnit('u', '1.660538782e-27*kg', 'atomic mass units')
+_addUnit('amu', '1.6605402e-27*kg', 'atomic mass units')
 _addUnit('oz', '28.349523125*g', 'ounce')
 _addUnit('lb', '16*oz', 'pound')
 _addUnit('ton', '2000*lb', 'ton')
@@ -878,8 +860,7 @@ _help.append('Energy units:')
 
 _addUnit('erg', '1.e-7*J', 'erg (cgs unit)')
 _addUnit('eV', 'e*V', 'electron volt')
-_addUnit('Hartree', 'me*e**4/eps0**2/h**2/4', 'Hartree')
-_addUnit('invcm', 'h*c/cm', 'Wave-numbers/inverse cm')
+_addUnit('Hartree', 'me*e**4/16/pi**2/eps0**2/hbar**2', 'Wavenumbers/inverse cm')
 _addUnit('Ken', 'k*K', 'Kelvin as energy unit')
 _addUnit('cal', '4.184*J', 'thermochemical calorie')
 _addUnit('kcal', '1000*cal', 'thermochemical kilocalorie')
@@ -993,18 +974,21 @@ def description():
 # add the description of the units to the module's doc string:
 __doc__ += '\n' + description()
 
-# Some demonstration code.
+# Some demonstration code. Run with "python -i PhysicalQuantities.py"
+# to have this available.
 
 if __name__ == '__main__':
-    l = Quantity(10., 'm')
-    big_l = Quantity(10., 'km')
+
+#    from Scientific.N import *
+    l = PhysicalQuantity(10., 'm')
+    big_l = PhysicalQuantity(10., 'km')
     print big_l + l
-    t = Quantity(314159., 's')
-    print t.inUnitsOf('d','hr','min','s')
+    t = PhysicalQuantity(314159., 's')
+    print t.inUnitsOf('d','h','min','s')
 
-    p = Quantity # just a shorthand...
+    p = PhysicalQuantity # just a shorthand...
 
-    e = p('2.7 Hartree*NA')
+    e = p('2.7 Hartree*Nav')
     e.convertToUnit('kcal/mol')
     print e
     print e.inBaseUnits()
@@ -1012,18 +996,9 @@ if __name__ == '__main__':
     freeze = p('0 degC')
     print freeze.inUnitsOf ('degF')
 
-    euro = Quantity('1 EUR')
+    euro = PhysicalQuantity('1 EUR')
     print euro.inUnitsOf('DEM')
+    print euro.inUnitsOf('USD')
 
-    if rc['fetchCurrencyRates']:
-        print euro.inUnitsOf('USD')
-
-    euroSQM = Quantity('19.99 EUR/m**2')
+    euroSQM = PhysicalQuantity('19.99 EUR/m**2')
     print "%s=%s" % (euroSQM,euroSQM.inUnitsOf('EUR/cm**2'))
-
-    bitrate = Quantity('1Kibit/s')
-    print "%s=%s" % (bitrate,bitrate.inUnitsOf('kbit/s'))
-
-    byterate = Quantity('1MiB/s')
-    print "%s=%s" % (byterate,byterate.inUnitsOf('MB/s'))
-    print "%s=%s" % (byterate,byterate.inUnitsOf('Mibit/s'))

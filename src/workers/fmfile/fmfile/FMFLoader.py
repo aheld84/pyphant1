@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008-2009, Rectorate of the University of Freiburg
-# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009-2010, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -325,7 +325,7 @@ def loadFMFFromFile(filename, subscriber=0):
 
 def readSingleFile(b, pixelName):
     _logger.info(u"Parsing file %s." % pixelName)
-    preParsedData, d = preParseData(b)
+    preParsedData, d, FMFversion = preParseData(b)
     from configobj import ConfigObj,ConfigObjError
     class FMFConfigObj(ConfigObj):
         _keyword = re.compile(r'''^ # line start
@@ -344,7 +344,7 @@ def readSingleFile(b, pixelName):
     except ConfigObjError,e:
         from sys import exit
         exit('%s\nPlease check the syntax of the FMF-file, in particular the correct usage of comments.' % e)
-    return config2tables(preParsedData, config)
+    return config2tables(preParsedData, config,FMFversion)
 
 def parseBool(value):
     if value.lower() == 'true':
@@ -353,32 +353,34 @@ def parseBool(value):
         return False
     raise AttributeError
 
-_converters = [
-    int,
-    float,
-    parseBool,
-    parseVariable,
-    parseQuantity,
-    complex,                          # Complex is checked after variables and quantities,
+def getConverters(FMFversion='1.1'):
+    converters = [
+        int,
+        float,
+        parseBool,
+        lambda v: parseVariable(v,FMFversion),
+        lambda q: parseQuantity(q,FMFversion),
+        complex,                          # Complex is checked after variables and quantities,
                                       # because 1J is 1 Joule and not an imaginary number.
-    parseDateTime,
-    ]
+        lambda d: parseDateTime(d,FMFversion),
+        ]
+    return converters
 
-def item2value(oldVal):
+def item2value(oldVal,FMFversion='1.1'):
     if type(oldVal)==type([]):
-        for c in _converters:
+        for c in getConverters(FMFversion):
             try:
                 return map(c,oldVal)
             except:
                 pass
-    for c in _converters:
+    for c in getConverters(FMFversion):
         try:
             return c(oldVal)
         except:
             pass
     return oldVal
 
-def config2tables(preParsedData, config):
+def config2tables(preParsedData, config, FMFversion='1.1'):
 
     if config.has_key('*table definitions'):
         longnames = dict([(i,k) for k,i in config['*table definitions'].iteritems()])
@@ -395,14 +397,15 @@ def config2tables(preParsedData, config):
             tables.append(data2table(longnames[shortname],
                                      shortname,
                                      preParsedData[shortname],
-                                     config[k]))
+                                     config[k],FMFversion))
             del config[k]
-    attributes = config.walk(lambda section,key: item2value(section[key]))
+    attributes = config.walk(lambda section,key: 
+                             item2value(section[key],FMFversion))
     for t in tables:
         t.attributes = copy.deepcopy(attributes)
     return tables
 
-def data2table(longname, shortname, preParsedData, config):
+def data2table(longname, shortname, preParsedData, config, FMFversion='1.1'):
     datTable = []
     for col in preParsedData:
         try:
@@ -430,7 +433,7 @@ def data2table(longname, shortname, preParsedData, config):
             _logger.error("""Cannot interpret definition of data column "%s", which is given as "%s"!""" % (fieldLongname,spec))
         unit = match.group('unit')
         if unit != None:
-            unit = str2unit(unit[1:-1])
+            unit = str2unit(unit[1:-1],FMFversion)
         else:
             unit = 1.0
         fieldShortname=match.group('shortname')
@@ -478,7 +481,7 @@ def data2table(longname, shortname, preParsedData, config):
 
 
 def preParseData(b):
-    localVar = {'fmf-version':'1.0','coding':'utf-8',
+    localVar = {'fmf-version':'1.1','coding':'utf-8',
                 'delimiter':'\t'}
     commentChar = ';'
     if b.startswith(codecs.BOM_UTF8):
@@ -512,7 +515,7 @@ def preParseData(b):
             return match.group(0)
         return u""
     d = re.sub(dataExpr, preParseData, d)
-    return preParsedData, d
+    return preParsedData, d, str(localVar['fmf-version'])
 
 class FMFLoader(Worker.Worker):
     API = 2

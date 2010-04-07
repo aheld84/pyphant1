@@ -40,13 +40,18 @@ import unittest, numpy
 from pyphant.quantities.ParseQuantities import parseDateTime,str2unit
 from pyphant.quantities import Quantity
 """
-    >>>parseDateTime('2004-08-21 12:00:00+-12h')
+    >>>parseDateTime('2004-08-21 12:00:00+-12hr')
     (Quantity(731814.5,'d'), Quantity(0.5,'d'))
     >>>parseDateTime('2004-08-21 12:00:00')
     (Quantity(731814.5,'d'), None)
 """
 class TestParseDateTime(unittest.TestCase):
-    def testWithUncertainty(self):
+    def testWithError(self):
+        self.assertEqual(parseDateTime('2004-08-21 12:00:00+-12hr'),
+                         (Quantity(731814.5,'d'), Quantity(0.5,'d'))
+                         )
+
+    def testWithErrorOldDeprecatedAbbreviation(self):
         self.assertEqual(parseDateTime('2004-08-21 12:00:00+-12h'),
                          (Quantity(731814.5,'d'), Quantity(0.5,'d'))
                          )
@@ -58,6 +63,21 @@ class TestStr2unit(unittest.TestCase):
         expected = Quantity('1V')
         result = str2unit('1V')
         self.assertEqual(expected,result)
+
+    def setUp(self):
+        self.inputDict = {'complexJ':'1.0j','Joule':'1.0J'}
+
+    def testJouleValue(self):
+        """Physical quantities with unit Joule are indicated by 'J'."""
+        result = str2unit(self.inputDict['Joule'])
+        self.assertEqual(result,Quantity(self.inputDict['Joule']))
+
+    def testHourPlanck(self):
+        """In FMF 1.0 unit 'h' denotes hours, while in FMF 1.1 'h' denotes the Planck constant."""
+        result = str2unit('1h')
+        self.assertEqual(result,Quantity('6.62606896e-34 J*s'))
+        result = str2unit('1h',FMFversion='1.0')
+        self.assertEqual(result,Quantity('3600s'))
 
 if __name__ == "__main__":
     import sys

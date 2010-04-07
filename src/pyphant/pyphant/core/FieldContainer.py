@@ -2,7 +2,7 @@
 from __future__ import with_statement
 
 # Copyright (c) 2006-2009, Rectorate of the University of Freiburg
-# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009-2010, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without

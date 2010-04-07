@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2008-2010, Rectorate of the University of Freiburg
 # Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
-# All rights reserved.
+# Copyright (c) 2010, Klaus Zimmermann (zklaus@users.sourceforge.net)
+# all rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -49,12 +50,29 @@ import logging, copy, math
 from scipy.special import ive
 from scipy.signal import convolve
 
+def findMaxima(fieldData, lastExtrema=None):
+    leftLess = fieldData[:-2] < fieldData[1:-1]
+    leftEqual = fieldData[:-2] == fieldData[1:-1]
+    rightLess = fieldData[2:] < fieldData[1:-1]
+    rightEqual = fieldData[2:] == fieldData[1:-1]
+    maxima_c = numpy.logical_and(leftLess, rightLess)
+    maxima_le = numpy.logical_and(leftLess, rightEqual)
+    maxima_re = numpy.logical_and(rightLess, leftEqual)
+    maxima_e = numpy.logical_and(maxima_le[:-1], maxima_re[1:])
+    maxima = numpy.logical_or(maxima_c[1:], maxima_e).nonzero()[0]
+    if lastExtrema==None or len(maxima)==0 or len(lastExtrema)==len(maxima):
+        return maxima
+    trackedMaxima = []
+    for lastMaximum in lastExtrema:
+        distance = (maxima-lastMaximum)**2
+        trackedMaxima.append(distance.argmin())
+    return maxima[trackedMaxima]
+
 def findMinima(fieldData, lastExtrema=None):
     leftGreater = fieldData[:-2] > fieldData[1:-1]
     leftEqual = fieldData[:-2] == fieldData[1:-1]
     rightGreater = fieldData[2:] > fieldData[1:-1]
     rightEqual = fieldData[2:] == fieldData[1:-1]
-
     minima_c = numpy.logical_and(leftGreater, rightGreater)
     minima_le = numpy.logical_and(leftGreater, rightEqual)
     minima_re = numpy.logical_and(rightGreater, leftEqual)
@@ -75,17 +93,6 @@ def convolveMRA(field, sigma):
     kernel = ive(numpy.arange(-n, n), sigma)
     return convolve(field.data, kernel, mode='same')
 
-#def mra1d(dim, field, n):
-#    mrr = [convolveMRA(field, sigma) for sigma in
-#           numpy.linspace(1, n,10).tolist()]
-#    mrr.insert(0,field.data)
-#    firstMinima = lastMinima = findMinima(mrr[-1], None)
-#    for row in reversed(mrr[:-1]):
-#        lastMinima = findMinima(row, lastMinima)
-#    pos = dim.data[numpy.array(lastMinima)+1]
-#    error = numpy.abs(pos - dim.data[numpy.array(firstMinima)+1])
-#    return pos, error
-
 class MraError(RuntimeError):
     def __init__(self, msg, convolvedField):
         RuntimeError.__init__(self, msg)
@@ -95,20 +102,30 @@ def mra1d(dim, field, n):
     sigmaSpace = numpy.linspace(n, 1, 10)
     convolvedField = convolveMRA(field, sigmaSpace[0])
     firstMinima = lastMinima = findMinima(convolvedField, None)
-    if len(firstMinima)==0:
-        raise MraError("No Minima found at sigma level %s"%sigmaSpace[0],
+    firstMaxima = lastMaxima = findMaxima(convolvedField, None)
+    if len(firstMinima)==0 and len(firstMaxima)==0:
+        raise MraError("No Extrema found at sigma level %s"%sigmaSpace[0],
                        convolvedField)
     for sigma in sigmaSpace[1:]:
         convolvedField = convolveMRA(field, sigma)
         lastMinima = findMinima(convolvedField, lastMinima)
-        if len(lastMinima)==0:
-            import pylab
-            pylab.plot(convolvedField)
-            pylab.show()
-    pos = dim.data[numpy.array(lastMinima)+1]
-    error = numpy.abs(pos - dim.data[numpy.array(firstMinima)+1])
-    return pos, error
+        lastMaxima = findMaxima(convolvedField, lastMaxima)
+    pos_minima = dim.data[numpy.array(lastMinima)+1]
+    error_minima = numpy.abs(pos_minima - dim.data[numpy.array(firstMinima)+1])
+    pos_maxima = dim.data[numpy.array(lastMaxima)+1]
+    error_maxima = numpy.abs(pos_maxima - dim.data[numpy.array(firstMaxima)+1])
+    return ((pos_minima, error_minima), (pos_maxima, error_maxima))
 
+def pos_error_to_data_container(p_e):
+    n = max(map(lambda (p,e): len(p), p_e))
+    m = len(p_e)
+    pos = numpy.ones((m,n),'float')*numpy.NaN
+    error = pos.copy()
+    for i in xrange(m):
+        for j in xrange(len(p_e[i][0])):
+            pos[i,j] = p_e[i][0][j]
+            error[i,j] = p_e[i][1][j]
+    return n, pos, error
 
 class MRA(Worker.Worker):
     API = 2
@@ -121,7 +138,7 @@ class MRA(Worker.Worker):
                ("longname",u"Name of result",'default',None),
                ("symbol",u"Symbol of result",'default',None)]
 
-    @Worker.plug(Connectors.TYPE_IMAGE)
+    @Worker.plug(Connectors.TYPE_ARRAY)
     def mra(self, field, subscriber=0):
         dim = field.dimensions[-1]
         try:
@@ -139,30 +156,36 @@ class MRA(Worker.Worker):
                 try:
                     p_e.append(mra1d(dim, field1d, sigmaMax))
                 except MraError:
-                    p_e.append(([],[]))
+                    p_e.append((([],[]),([],[])))
                 acc += inc
                 subscriber %= acc
-            n = max(map(lambda (p,e): len(p), p_e))
-            m = len(p_e)
-            pos = numpy.ones((m,n),'float')*numpy.NaN
-            error = pos.copy()
-            for i in xrange(m):
-                for j in xrange(len(p_e[i][0])):
-                    pos[i,j] = p_e[i][0][j]
-                    error[i,j] = p_e[i][1][j]
-            dims = [DataContainer.generateIndex(0,n), field.dimensions[0]]
+            minima, maxima = zip(*p_e)
+            n_min, pos_min, err_min = pos_error_to_data_container(minima)
+            n_max, pos_max, err_max = pos_error_to_data_container(maxima)
+            dims_min = [DataContainer.generateIndex(0,n_min), field.dimensions[0]]
+            dims_max = [DataContainer.generateIndex(0,n_max), field.dimensions[0]]
         else:
-            pos, error = mra1d(dim, field, sigmaMax)
-            n = len(pos)
-            dims = [DataContainer.generateIndex(0,n)]
+            (pos_min, err_min), (pos_max, err_max) = mra1d(dim, field, sigmaMax)
+            dims_min = [DataContainer.generateIndex(0,len(pos_min))]
+            dims_max = [DataContainer.generateIndex(0,len(pos_max))]
             subscriber %= 100.
-        roots = DataContainer.FieldContainer(pos.transpose(),
-                                             error = error.transpose(),
-                                             unit = dim.unit,
-                                             dimensions = dims,
-                                             mask = numpy.isnan(pos).transpose(),
-                                             longname="%s of the local %s of %s" % (dim.longname,"minima",field.longname),
-                                             shortname="%s_0" % dim.shortname)
+        minima = DataContainer.FieldContainer(pos_min.transpose(),
+                                              error = err_min.transpose(),
+                                              unit = dim.unit,
+                                              dimensions = dims_min,
+                                              mask = numpy.isnan(pos_min).transpose(),
+                                              longname="%s of the local %s of %s" % (dim.longname,"minima",field.longname),
+                                              shortname="%s_{min}" % dim.shortname)
+        maxima = DataContainer.FieldContainer(pos_max.transpose(),
+                                              error = err_max.transpose(),
+                                              unit = dim.unit,
+                                              dimensions = dims_max,
+                                              mask = numpy.isnan(pos_max).transpose(),
+                                              longname="%s of the local %s of %s" % (dim.longname,"maxima",field.longname),
+                                              shortname="%s_{max}" % dim.shortname)
+        roots = DataContainer.SampleContainer([minima, maxima],
+                                               longname="%s of the local %s of %s" % (dim.longname,"extrema",field.longname),
+                                               shortname="%s_{extrem}" % dim.shortname)
         if self.paramLongname.value != 'default':
             roots.longname = self.paramLongname.value
         if self.paramSymbol.value != 'default':

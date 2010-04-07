@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008, Rectorate of the University of Freiburg
+# Copyright (c) 2008-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,14 +47,13 @@ import scipy.interpolate
 from pyphant import quantities
 import copy
 
-
 class ComputeFunctional(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "Compute Functional"
 
-    _sockets = [("field", Connectors.TYPE_IMAGE)]
+    _sockets = [("field", Connectors.TYPE_ARRAY)]
     _params = [("extentX", u"Extension of x-axis [%%]", 10, None),
                ("extentY", u"Extension of y-axis [%%]", 10, None)]
 
@@ -92,13 +92,15 @@ class ComputeFunctional(Worker.Worker):
                 subscriber %= percentage
         result = DataContainer.FieldContainer(functional.transpose(),
                                               dimensions=[yDim, xDim],
-                                              longname = 'functional',
-                                              shortname= 'F'
+                                              longname = 'functional of %s'%field.longname,
+                                              shortname= 'F_{%s}'%field.shortname
                                               )
         return result
 
-    @Worker.plug(Connectors.TYPE_IMAGE)
+    @Worker.plug(Connectors.TYPE_ARRAY)
     def compute(self, field, subscriber=1):
-        functional = self.computeDistances(field, subscriber)
-        functional.seal()
-        return functional
+        functionals = DataContainer.SampleContainer([self.computeDistances(column, subscriber) for column in field],
+                                                    longname='Functionals of %s'%field.longname,
+                                                    shortname='F_{%s}'%field.shortname)
+        functionals.seal()
+        return functionals
