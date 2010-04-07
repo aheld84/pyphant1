@@ -40,25 +40,15 @@ __version__ = "$Revision$"
 
 from pyphant.core.Connectors import (TYPE_IMAGE, TYPE_ARRAY)
 from pyphant.wxgui2.DataVisReg import DataVisReg
-from pyphant.core.KnowledgeManager import KnowledgeManager as KM
-import webbrowser
+from pyphant.core.KnowledgeManager import KnowledgeManager
 
 
 class KMVisualizer(object):
     name='Register @ KnowledgeManager'
     def __init__(self, DataContainer, show=True):
-        self.DataContainer = DataContainer
-        self.show = show
-        km = KM.getInstance()
-        km.registerDataContainer(DataContainer)
-        dc_id = DataContainer.id
-        if km.node is not None:
-            if km.node.app.serve:
-                url = '%ssummary?id=%s' \
-                      % (km.node.url, dc_id)
-            webbrowser.open_new_tab(url)
-        else:
-            print "ID of registered DC is: " + dc_id
+        if show:
+            kmanager = KnowledgeManager.getInstance()
+            kmanager.registerDataContainer(DataContainer)
 
 
 DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, KMVisualizer)
