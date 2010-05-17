@@ -3,9 +3,11 @@ XML Test Runner for PyUnit
 """
 
 # Written by Sebastian Rittau <srittau@jroger.in-berlin.de> and placed in
-# the Public Domain. With contributions by Paolo Borelli.
+# the Public Domain. With contributions by Paolo Borelli and others.
 
-__revision__ = "$Id: /private/python/stdlib/xmlrunner.py 16654 2007-11-12T12:46:35.368945Z srittau  $"
+from __future__ import with_statement
+
+__version__ = "0.1"
 
 import os.path
 import re
@@ -13,10 +15,12 @@ import sys
 import time
 import traceback
 import unittest
-from StringIO import StringIO
 from xml.sax.saxutils import escape
 
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 
 class _TestInfo(object):
@@ -63,9 +67,9 @@ class _TestInfo(object):
                 "method": self._method,
                 "time": self._time,
             })
-        if self._failure != None:
+        if self._failure is not None:
             self._print_error(stream, 'failure', self._failure)
-        if self._error != None:
+        if self._error is not None:
             self._print_error(stream, 'error', self._error)
         stream.write('</testcase>\n')
 
@@ -74,12 +78,16 @@ class _TestInfo(object):
         text = escape(str(error[1]))
         stream.write('\n')
         stream.write('    <%s type="%s">%s\n' \
-            % (tagname, escape(str(error[0])), text))
+            % (tagname, _clsname(error[0]), text))
         tb_stream = StringIO()
         traceback.print_tb(error[2], None, tb_stream)
         stream.write(escape(tb_stream.getvalue()))
         stream.write('    </%s>\n' % tagname)
         stream.write('  ')
+
+
+def _clsname(cls):
+    return cls.__module__ + "." + cls.__name__
 
 
 class _XMLTestResult(unittest.TestResult):
@@ -176,13 +184,7 @@ class XMLTestRunner(object):
         result = _XMLTestResult(classname)
         start_time = time.time()
 
-        # TODO: Python 2.5: Use the with statement
-        old_stdout = sys.stdout
-        old_stderr = sys.stderr
-        sys.stdout = StringIO()
-        sys.stderr = StringIO()
-
-        try:
+        with _fake_std_streams():
             test(result)
             try:
                 out_s = sys.stdout.getvalue()
@@ -192,13 +194,10 @@ class XMLTestRunner(object):
                 err_s = sys.stderr.getvalue()
             except AttributeError:
                 err_s = ""
-        finally:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
 
         time_taken = time.time() - start_time
         result.print_report(stream, time_taken, out_s, err_s)
-        if self._stream == None:
+        if self._stream is None:
             stream.close()
 
         return result
@@ -213,7 +212,21 @@ class XMLTestRunner(object):
             stream.""")
 
 
+class _fake_std_streams(object):
+
+    def __enter__(self):
+        self._orig_stdout = sys.stdout
+        self._orig_stderr = sys.stderr
+        sys.stdout = StringIO()
+        sys.stderr = StringIO()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout = self._orig_stdout
+        sys.stderr = self._orig_stderr
+
+
 class XMLTestRunnerTest(unittest.TestCase):
+
     def setUp(self):
         self._stream = StringIO()
 
@@ -221,7 +234,7 @@ class XMLTestRunnerTest(unittest.TestCase):
 
         """Run the test suite against the supplied test class and compare the
         XML result against the expected XML string. Fail if the expected
-        string doesn't match the actual string. All time attribute in the
+        string doesn't match the actual string. All time attributes in the
         expected string should have the value "0.000". All error and failure
         messages are reduced to "Foobar".
 
@@ -238,6 +251,8 @@ class XMLTestRunnerTest(unittest.TestCase):
         # string.
         got = re.sub(r'(?s)<failure (.*?)>.*?</failure>', r'<failure \1>Foobar</failure>', got)
         got = re.sub(r'(?s)<error (.*?)>.*?</error>', r'<error \1>Foobar</error>', got)
+        # And finally Python 3 compatibility.
+        got = got.replace('type="builtins.', 'type="exceptions.')
 
         self.assertEqual(expected, got)
 
@@ -310,7 +325,7 @@ class XMLTestRunnerTest(unittest.TestCase):
         """
         class TestTest(unittest.TestCase):
             def test_foo(self):
-                print "Test"
+                sys.stdout.write("Test\n")
         self._try_test_run(TestTest, """<testsuite errors="0" failures="0" name="unittest.TestSuite" tests="1" time="0.000">
   <testcase classname="__main__.TestTest" name="test_foo" time="0.000"></testcase>
   <system-out><![CDATA[Test
@@ -326,7 +341,7 @@ class XMLTestRunnerTest(unittest.TestCase):
         """
         class TestTest(unittest.TestCase):
             def test_foo(self):
-                print >>sys.stderr, "Test"
+                sys.stderr.write("Test\n")
         self._try_test_run(TestTest, """<testsuite errors="0" failures="0" name="unittest.TestSuite" tests="1" time="0.000">
   <testcase classname="__main__.TestTest" name="test_foo" time="0.000"></testcase>
   <system-out><![CDATA[]]></system-out>
@@ -365,14 +380,5 @@ class XMLTestRunnerTest(unittest.TestCase):
         runner.run(unittest.makeSuite(TestTest))
 
 
-class XMLTestProgram(unittest.TestProgram):
-    def runTests(self):
-        if self.testRunner is None:
-            self.testRunner = XMLTestRunner()
-        unittest.TestProgram.runTests(self)
-
-main = XMLTestProgram
-
-
 if __name__ == "__main__":
-    main(module=None)
+    unittest.main()
