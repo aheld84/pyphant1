@@ -179,8 +179,8 @@ class ZTube(object):
         coordZ = self.focusedZ
         edgeL0 = self.focusedFSlice.getEdgeLength(0)
         edgeL1 = self.focusedFSlice.getEdgeLength(1)
-        cEZ, cEY, cEX = self.ztol, edgeL0 / 4.0, edgeL1 / 4.0
-        diameter = (edgeL0 * edgeL0 + edgeL1 * edgeL1) ** .5
+        cEZ, cEY, cEX = self.ztol / 2.0, edgeL0 / 4.0, edgeL1 / 4.0
+        diameter = (edgeL0 + edgeL1) / 2.0
         diameterError = .1 * diameter
         return (coordZ, coordY, coordX, diameter, self.focusedFSlice.focus,
                 cEZ, cEY, cEX, diameterError)
