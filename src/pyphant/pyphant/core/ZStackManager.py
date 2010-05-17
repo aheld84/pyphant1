@@ -70,30 +70,27 @@ class ZStack(object):
         def getMum(xmlelement):
             return Quantity(getFloat(xmlelement), 'mum')
 
-        def xml_filter(name):
-            return os.path.isfile(name) and name.endswith('.xml')
-
-        mfns = filter(xml_filter,
-                     [os.path.join(path, entry) \
-                      for entry in os.listdir(path)])
+        meta_file = os.path.join(path, '_meta.xml')
+        xml_root = getXMLRoot(meta_file)
         images_meta = []
-        for mfn in mfns:
-            xml_root = getXMLRoot(mfn)
+        for ztag in [value for key, value in xml_root.children.iteritems()\
+                     if key.startswith('z') and int(key[-1:]) % 4 == 0]:
             meta = {}
-            tags = xml_root['Tags']
-            s_tags = xml_root['_single']['Tags']
-            directory = os.path.dirname(mfn)
-            meta['xml_filename'] = mfn
-            meta['zvi_filename'] = os.path.join(directory,
-                                                tags['V120'].content.strip())
-            meta['img_filename'] = os.path.join(directory,
-                                                tags['V5'].content.strip())
-            meta['timestamp'] = tags['V3'].content.strip()
-            meta['width'] = int(s_tags['V3'].content.strip())
-            meta['height'] = int(s_tags['V4'].content.strip())
-            meta['x-pos'] = getMum(s_tags['V15'])
-            meta['y-pos'] = getMum(s_tags['V16'])
-            meta['z-pos'] = getMum(tags['V114'])
+            fname = xml_root['Tags']['V5'].content.strip()
+            root, ext = os.path.splitext(fname)
+            fname = "%s_%s%s" % (root, ztag.name, ext)
+            meta['img_filename'] = os.path.join(path, fname)
+            meta['zvi_filename'] = os.path.join(
+                path, xml_root['Tags']['V150'].content.strip())
+            meta['xml_filename'] = meta_file
+            meta['zid'] = ztag.name
+            ztag = ztag['Tags']
+            meta['timestamp'] = ztag['V44'].content.strip()
+            meta['width'] = int(ztag['V3'].content.strip())
+            meta['height'] = int(ztag['V4'].content.strip())
+            meta['x-pos'] = getMum(ztag['V15'])
+            meta['y-pos'] = getMum(ztag['V16'])
+            meta['z-pos'] = getMum(ztag['V93'])
             meta['pixel_width'] = getMum(xml_root['Scaling']['Factor_0'])
             meta['pixel_height'] = getMum(xml_root['Scaling']['Factor_1'])
             images_meta.append(meta)
@@ -128,7 +125,8 @@ class ZStack(object):
                       'xml_filename':img_meta['xml_filename'],
                       'zvi_filename':img_meta['zvi_filename'],
                       'zvalue':zvalue,
-                      'timestamp':img_meta['timestamp']}
+                      'timestamp':img_meta['timestamp'],
+                      'zid':img_meta['zid']}
             img_fc = FieldContainer(data=data,
                                     longname=os.path.basename(
                                         img_meta['img_filename']),
