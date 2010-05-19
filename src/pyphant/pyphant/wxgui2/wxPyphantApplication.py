@@ -41,6 +41,7 @@ import os, os.path, pkg_resources
 from pyphant.core.Helpers import getPyphantPath
 LOGDIR = getPyphantPath()
 import logging
+import logging.handlers
 #    logging.basicConfig(level=logging.DEBUG)
 #else:
 logging.basicConfig(level=logging.DEBUG,
@@ -50,10 +51,13 @@ logging.basicConfig(level=logging.DEBUG,
                     "d:%(module)s.%(funcName)s(l %(lineno)d):%(message)s")
 console = logging.StreamHandler()
 console.setLevel(logging.WARNING)
+logbuffer = logging.handlers.MemoryHandler(1000)
 logging.getLogger('').addHandler(console)
+logging.getLogger('').addHandler(logbuffer)
 
 import sys
 import wx
+import wx.aui
 import sogl
 import pyphant.wxgui2.paramvisualization.ParamVisReg as ParamVisReg
 import pyphant.core.PyTablesPersister
@@ -74,7 +78,6 @@ class wxPyphantApplication(wx.PySimpleApp):
         if not wx.PySimpleApp.OnInit(self):
             return False
         self._logger = logging.getLogger("pyphant")
-        self._excframe = wx.Frame(None, -2, "")
         sys.excepthook = self.excepthook
         sogl.SOGLInitialize()
         self._knowledgeNode = None
@@ -87,16 +90,6 @@ class wxPyphantApplication(wx.PySimpleApp):
         self._logger.debug(u"An unhandled exception occured.",
                            exc_info=(type, value, trace))
         sys.__excepthook__(type, value, trace)
-        try:
-            cpt = type.__name__
-            #import traceback
-            #traceStr = ''.join(traceback.format_exception(type, value, trace))
-            msg = "Additional information:\n%s\n\n" % value
-            dlg = wx.MessageDialog(self._excframe, msg, cpt, wx.OK)
-            dlg.ShowModal()
-        except:
-            # avoid loop if displaying error message fails
-            self._logger.debug(u"Failed to display error message in wxPyphant.")
 
     def getMainFrame(self):
         return self._frame
@@ -120,6 +113,8 @@ class wxPyphantFrame(wx.Frame):
     ID_WINDOW_BOTTOM = 103
     ID_CLOSE_COMPOSITE_WORKER = wx.NewId()
     ID_UPDATE_PYPHANT = wx.NewId()
+    ID_VIEW_WORKERREP = wx.NewId()
+    ID_VIEW_LOGFILE = wx.NewId()
 
     def __init__(self, _wxPyphantApp):
         wx.Frame.__init__(self, None, -1, "wxPyphant %s" % __version__,
@@ -131,11 +126,12 @@ class wxPyphantFrame(wx.Frame):
         self._initSash()
         self.recipeState = None
         self.onOpenCompositeWorker(None)
+        self._initAui()
         self._workerRepository.Bind(wx.EVT_SASH_DRAGGED_RANGE,
                                     self.onFoldPanelBarDrag,
                                     id=self.ID_WINDOW_TOP,
                                     id2=self.ID_WINDOW_BOTTOM)
-        self.Bind(wx.EVT_SIZE, self.onSize)
+        #self.Bind(wx.EVT_SIZE, self.onSize)
         self.compositeWorkerStack = []
         wx.MessageBox("Located log directory at %s.\n"
                       "Logging will go to %s." %
@@ -144,14 +140,52 @@ class wxPyphantFrame(wx.Frame):
 
     def _initSash(self):
         self._workerRepository = wx.SashLayoutWindow(
-            self, self.ID_WINDOW_RIGHT, wx.DefaultPosition, wx.Size(200,1000),
-            wx.NO_BORDER | wx.SW_3D | wx.CLIP_CHILDREN)
-        self._workerRepository.SetDefaultSize(wx.Size(220,1000))
-        self._workerRepository.SetOrientation(wx.LAYOUT_VERTICAL)
-        self._workerRepository.SetAlignment(wx.LAYOUT_RIGHT)
-        self._workerRepository.SetSashVisible(wx.SASH_LEFT, True)
-        self._workerRepository.SetExtraBorderSize(10)
+            self, self.ID_WINDOW_RIGHT, wx.DefaultPosition, wx.Size(220,1000),
+            wx.NO_BORDER)
+        #self._workerRepository.SetDefaultSize(wx.Size(220,1000))
+        #self._workerRepository.SetOrientation(wx.LAYOUT_VERTICAL)
+        #self._workerRepository.SetAlignment(wx.LAYOUT_RIGHT)
+        #self._workerRepository.SetSashVisible(wx.SASH_LEFT, True)
+        #self._workerRepository.SetExtraBorderSize(10)
         WorkerRepository.WorkerRepository(self._workerRepository)
+
+    def _initAui(self):
+        self._auiManager = wx.aui.AuiManager(self)
+        class ClickableText(wx.TextCtrl):
+            def __init__(self, *args, **kwargs):
+                wx.TextCtrl.__init__(self, *args, **kwargs)
+                self.Bind(wx.EVT_LEFT_DOWN,  self.OnClick)
+            def OnClick(self, event):
+                logbuffer.flush()
+                event.Skip()
+        self._logpane = ClickableText(self, -1, "",
+                                      wx.DefaultPosition, wx.Size(640, 200),
+                                      wx.NO_BORDER | wx.TE_MULTILINE \
+                                      | wx.TE_READONLY)
+        class WxHandler(logging.Handler):
+            def __init__(self, ctrl):
+                logging.Handler.__init__(self)
+                self.ctrl = ctrl
+            def emit(self, record):
+                try:
+                    self.ctrl.AppendText(self.format(record) + "\n")
+                except wx.PyDeadObjectError:
+                    pass
+        handler = WxHandler(self._logpane)
+        handler.setFormatter(logging.Formatter(
+            "%(asctime)s - %(levelname)s:%(name)s:%(thread)"\
+            "d:%(module)s.%(funcName)s(l %(lineno)d):%(message)s"))
+        logbuffer.setTarget(handler)
+        logbuffer.flush()
+        self._auiManager.AddPane(self._logpane, wx.BOTTOM, 'Logfile '\
+                                 '(click into text to update)')
+        self._auiManager.AddPane(self._workerRepository, wx.RIGHT,
+                                 'Worker Repository')
+        self._auiManager.AddPane(self._remainingSpace, wx.CENTER, 'Main')
+        wrpane = self._auiManager.GetPane(self._workerRepository)
+        wrpane.Floatable(False)
+        wrpane.Movable(False)
+        self._auiManager.Update()
 
     def onSize(self, event):
         wx.LayoutAlgorithm().LayoutWindow(self,self._remainingSpace)
@@ -164,7 +198,7 @@ class wxPyphantFrame(wx.Frame):
             self._workerRepository.SetDefaultSize(
                 wx.Size(event.GetDragRect().width, 1000))
         # Leaves bits of itself behind sometimes
-        wx.LayoutAlgorithm().LayoutWindow(self, self._remainingSpace)
+        #wx.LayoutAlgorithm().LayoutWindow(self, self._remainingSpace)
         self._remainingSpace.Refresh()
         event.Skip()
 
@@ -195,16 +229,24 @@ class wxPyphantFrame(wx.Frame):
                     self._wxPyphantApp.pathToRecipe = path
             dlg.Destroy()
         import PyphantCanvas
-        if self._wxPyphantApp.pathToRecipe[-3:] == '.h5':
-            if os.path.exists(self._wxPyphantApp.pathToRecipe):
-                recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File(
-                    self._wxPyphantApp.pathToRecipe)
-                self._remainingSpace = PyphantCanvas.PyphantCanvas(self, recipe)
+        try:
+            if self._wxPyphantApp.pathToRecipe[-3:] == '.h5':
+                if os.path.exists(self._wxPyphantApp.pathToRecipe):
+                    recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File(
+                        self._wxPyphantApp.pathToRecipe)
+                    self._remainingSpace = PyphantCanvas.PyphantCanvas(self, recipe)
+                else:
+                    self._remainingSpace = PyphantCanvas.PyphantCanvas(self)
             else:
-                self._remainingSpace = PyphantCanvas.PyphantCanvas(self)
-        else:
-            raise IOError("Unknown file format in file \"%\""\
-                          % self._wxPyphantApp.pathToRecipe)
+                raise IOError('Unknown file format in file "%s"'\
+                              % self._wxPyphantApp.pathToRecipe)
+        except:
+            wx.MessageBox("An error has occurred while opening "\
+                          "the recipe.\nPlease investigate the logfile "\
+                          "for further details.\nThe logfile is located at %s"\
+                          % os.path.join(LOGDIR, 'pyphant.log'),
+                          "Recipe broken, unknown format or outdated!")
+            raise
         self.recipeState = 'clean'
         self._remainingSpace.diagram.recipe.registerListener(self.recipeChanged)
 
@@ -257,6 +299,8 @@ class wxPyphantFrame(wx.Frame):
                               "&Close Composite Worker")
         self._updateMenu = self.createUpdateMenu()
         self._menuBar.Append(self._updateMenu, "&Update")
+        self._viewMenu = self.createViewMenu()
+        self._menuBar.Append(self._viewMenu, "&View")
         self.SetMenuBar(self._menuBar)
         self._menuBar.EnableTop(1, False)
         #self.Bind(wx.EVT_MENU, self.onCreateNew, id=wx.ID_NEW)
@@ -285,9 +329,27 @@ class wxPyphantFrame(wx.Frame):
             self.Bind(wx.EVT_MENU, self.onUpdatePyphant, id=nId)
         return updateMenu
 
+    def createViewMenu(self):
+        viewMenu = wx.Menu()
+        viewMenu.Append(self.ID_VIEW_WORKERREP, "&Worker Repository")
+        viewMenu.Append(self.ID_VIEW_LOGFILE, "&Logfile")
+        self.Bind(wx.EVT_MENU, self.onWorkerRep, id=self.ID_VIEW_WORKERREP)
+        self.Bind(wx.EVT_MENU, self.onLogfile, id=self.ID_VIEW_LOGFILE)
+        return viewMenu
+
     def onUpdatePyphant(self, event):
         import pyphant.core.UpdateManager
         pyphant.core.UpdateManager.updatePackage(self.updateIds[event.Id])
+
+    def onWorkerRep(self, event):
+        wrpane = self._auiManager.GetPane(self._workerRepository)
+        wrpane.Show(True)
+        self._auiManager.Update()
+
+    def onLogfile(self, event):
+        logpane = self._auiManager.GetPane(self._logpane)
+        logpane.Show(True)
+        self._auiManager.Update()
 
     def onQuit(self,event):
         self.Close()
@@ -309,7 +371,7 @@ class wxPyphantFrame(wx.Frame):
                 self._wxPyphantApp._knowledgeNode.stop()
             except AttributeError:
                 pass
-            self._wxPyphantApp._excframe.Destroy()
+            self._auiManager.UnInit()
             self.Destroy()
 
     def editCompositeWorker(self, worker):
