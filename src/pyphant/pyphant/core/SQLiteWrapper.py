@@ -45,6 +45,8 @@ from pyphant.core.Helpers import (utf82uc, uc2utf8, emd52dict)
 from pyphant.quantities import (Quantity,PhysicalUnit,_base_units)
 from types import (FloatType, IntType, LongType, StringTypes)
 
+DBASE_VERSION = 1 #increment if there have been structural changes to the dbase!
+
 def quantity2powers(quantity):
     numberOfBaseUnits = len(_base_units)
     if isinstance(quantity, Quantity):
@@ -142,8 +144,11 @@ def get_wildcards(length, char, braces=False, commas=True):
         wc += ')'
     return wc
 
-def create_table(table_name, columns, cursor):
-    query = "CREATE TABLE IF NOT EXISTS %s (" % (table_name, )
+def create_table(table_name, columns, cursor, ignore_exists=False):
+    if ignore_exists:
+        query = "CREATE TABLE IF NOT EXISTS %s (" % (table_name, )
+    else:
+        query = "CREATE TABLE %s (" % (table_name, )
     for name, type in columns:
         query += name + " " + type + ", "
     query = query[:-2] + ")"
@@ -151,7 +156,7 @@ def create_table(table_name, columns, cursor):
 
 def create_trigger(trigger_name, action, table_name,
                   statements, cursor):
-    query = "CREATE TRIGGER IF NOT EXISTS %s AFTER %s ON %s "\
+    query = "CREATE TRIGGER %s AFTER %s ON %s "\
         "FOR EACH ROW BEGIN %s END"
     st_query = ''
     for st in statements:
@@ -227,9 +232,13 @@ class SQLiteWrapper(object):
                 return SCRowWrapper(emd5, self.cursor)
         raise KeyError(emd5)
 
-    def setup_dbase(self):
+    def setup_sqlite(self):
         sqlite3.register_converter('QUANTITY', dbase2quantity)
         sqlite3.register_converter('LATEX', dbase2latex)
+        #clean tmp:
+        self.cursor.execute("DELETE FROM km_temporary")
+
+    def setup_dbase(self):
         #create tables:
         columns = [('sc_id', 'TEXT PRIMARY KEY UNIQUE NOT NULL'),
                    ('longname', 'TEXT'),
@@ -279,6 +288,10 @@ class SQLiteWrapper(object):
                    ('bit', 'INT'),
                    ('', 'UNIQUE(m, g, s, A, K, mol, cd, rad, sr, EUR,bit)')]
         create_table('km_base_units', columns, self.cursor)
+        columns = [('version', 'INT')]
+        create_table('db_info', columns, self.cursor)
+        self.cursor.execute("INSERT INTO db_info (version) VALUES (?)",
+                            (DBASE_VERSION, ))
         #create triggers:
         create_trigger('trigger_del_fc', 'DELETE', 'km_fc',
                       ['DELETE FROM km_attributes WHERE dc_id=OLD.fc_id',
@@ -292,8 +305,15 @@ class SQLiteWrapper(object):
                       ['DELETE FROM km_fc WHERE fc_id=OLD.dc_id',
                        'DELETE FROM km_sc WHERE sc_id=OLD.dc_id'],
                       self.cursor)
-        #clean tmp:
-        self.cursor.execute("DELETE FROM km_temporary")
+        self.setup_sqlite()
+
+    def dbase_broken(self):
+        try:
+            self.cursor.execute("SELECT version FROM db_info")
+            version = self.cursor.fetchone()[0]
+            return version is not DBASE_VERSION
+        except sqlite3.OperationalError:
+            return True
 
     def has_entry(self, id):
         exe = self.cursor.execute

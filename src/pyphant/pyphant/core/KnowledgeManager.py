@@ -161,8 +161,6 @@ class KnowledgeManager(Singleton):
         else:
             self.dbase = KM_DBASE
         self.any_value = AnyValue()
-        with SQLiteWrapper(self.dbase) as wrapper:
-            wrapper.setup_dbase()
         self.node = None # for hooking up a KnowledgeNode
         self.uuid = uuid1().urn
         tmpdir = getPyphantPath(os.path.join(KM_PATH, 'tmp'))
@@ -172,6 +170,50 @@ class KnowledgeManager(Singleton):
                 rmtree(tmpdir)
             except OSError:
                 self.logger.warn("Could not delete '%s'." % tmpdir)
+        with SQLiteWrapper(self.dbase) as wrapper:
+            rebuild = wrapper.dbase_broken()
+        if rebuild:
+            self.logger.info("dbase needs rebuild")
+            self.rebuildIndex()
+        else:
+            with SQLiteWrapper(self.dbase) as wrapper:
+                wrapper.setup_sqlite()
+
+    def rebuildIndex(self):
+        self.logger.info("rebuilding dbase...")
+        oldname = self.dbase + ".bak"
+        if os.path.exists(oldname):
+            os.remove(oldname)
+        os.rename(self.dbase, oldname)
+        with SQLiteWrapper(self.dbase) as wrapper:
+            wrapper.setup_dbase()
+        self.updateIndex()
+        self.logger.info("done rebuilding dbase")
+
+    def updateIndex(self):
+        file_list = []
+        def accumulate_files(flist, directory, files):
+            for fname in [afname for afname in files if afname.endswith('.h5')]:
+                flist.append(os.path.realpath(os.path.join(directory, fname)))
+        os.path.walk(getPyphantPath(KM_PATH), accumulate_files, file_list)
+        from wx import (ProgressDialog, PyNoAppError)
+        try:
+            pdial = ProgressDialog('Rebuilding index...', ' ' * 100,
+                                   maximum=len(file_list))
+        except PyNoAppError:
+            pdial = None
+        count = 1
+        for realname in file_list:
+            if pdial is not None:
+                pdial.Update(count, os.path.basename(realname))
+                count += 1
+            try:
+                self.registerH5(realname)
+            except:
+                self.logger.warn("Could not extract meta data from '%s'."\
+                                 % realname)
+        if pdial is not None:
+            pdial.Destroy()
 
     def hasDataContainer(self, dcid):
         """

@@ -228,7 +228,7 @@ class KnowledgeNode(RoutingHTTPServer):
         try:
             columns = [('host', 'TEXT'), ('port', 'INT'), ('status', 'INT'),
                        ('', 'UNIQUE(host, port)')]
-            create_table('kn_remotes', columns, cursor)
+            create_table('kn_remotes', columns, cursor, ignore_exists=True)
             cursor.execute("SELECT * FROM kn_remotes")
             self.remotes = [RemoteKN(host, port, status) \
                             for host, port, status in cursor]
