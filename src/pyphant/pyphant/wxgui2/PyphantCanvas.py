@@ -46,7 +46,7 @@ import pyphant.core.CompositeWorker as CompositeWorker
 
 class PyphantCanvas(sogl.ShapeCanvas):
     def __init__(self,parent,recipe=CompositeWorker.CompositeWorker(), id=-1,pos=wx.DefaultPosition,
-                 size=wx.DefaultSize,style=wx.SUNKEN_BORDER,name="PyphantCanvas"):
+                 size=wx.DefaultSize,style=wx.NO_BORDER,name="PyphantCanvas"):
         sogl.ShapeCanvas.__init__(self,parent, id, pos, size, style, name)
         #self.SetVirtualSize((1100,1000))
         self.SetScrollRate(20,20)
