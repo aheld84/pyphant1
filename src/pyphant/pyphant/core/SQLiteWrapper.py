@@ -46,7 +46,7 @@ from pyphant.quantities import (Quantity,PhysicalUnit,_base_units)
 PhysicalQuantity = Quantity
 from types import (FloatType, IntType, LongType, StringTypes)
 
-DBASE_VERSION = 1 #increment if there have been structural changes to the dbase!
+DBASE_VERSION = 2 #increment if there have been structural changes to the dbase!
 
 def quantity2powers(quantity):
     numberOfBaseUnits = len(_base_units)

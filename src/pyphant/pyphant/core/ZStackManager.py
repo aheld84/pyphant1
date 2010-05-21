@@ -51,38 +51,38 @@ kmanager = KnowledgeManager.getInstance()
 
 
 class ZStack(object):
-    def __init__(self, sc_id=None, name=None, image_path=None):
+    def __init__(self, sc_id=None, name=None, xml_file=None):
         """Initializes a ZStack from an existing id or a local source"""
-        assert (sc_id is None) is not (image_path is None)
+        assert (sc_id is None) is not (xml_file is None)
         self._recipe_path = None
         if sc_id is not None:
             self.repr_sc = kmanager.getDataContainer(sc_id)
         else:
             assert name is not None
             self.repr_sc = self._import_zstack(name,
-                                               os.path.realpath(image_path))
+                                               os.path.realpath(xml_file))
 
     @staticmethod
-    def _get_images_meta(path):
+    def _get_images_meta(xml_file):
         def getFloat(xmlelement):
             return float(xmlelement.content.strip().replace(',', '.'))
 
         def getMum(xmlelement):
             return Quantity(getFloat(xmlelement), 'mum')
 
-        meta_file = os.path.join(path, '_meta.xml')
-        xml_root = getXMLRoot(meta_file)
+        base_path = os.path.dirname(xml_file)
+        xml_root = getXMLRoot(xml_file)
         images_meta = []
         for ztag in [value for key, value in xml_root.children.iteritems()\
-                     if key.startswith('z') and int(key[-1:]) % 4 == 0]:
+                     if key.startswith('z')]:
             meta = {}
             fname = xml_root['Tags']['V5'].content.strip()
             root, ext = os.path.splitext(fname)
             fname = "%s_%s%s" % (root, ztag.name, ext)
-            meta['img_filename'] = os.path.join(path, fname)
+            meta['img_filename'] = os.path.join(base_path, fname)
             meta['zvi_filename'] = os.path.join(
-                path, xml_root['Tags']['V150'].content.strip())
-            meta['xml_filename'] = meta_file
+                base_path, xml_root['Tags']['V150'].content.strip())
+            meta['xml_filename'] = xml_file
             meta['zid'] = ztag.name
             ztag = ztag['Tags']
             meta['timestamp'] = ztag['V44'].content.strip()
@@ -102,7 +102,17 @@ class ZStack(object):
         zvalues = []
         emd5s = []
         files = []
+        from wx import (ProgressDialog, PyNoAppError)
+        try:
+            pdial = ProgressDialog('Importing ZStack...', ' ' * 50,
+                                   maximum=len(images_meta))
+        except PyNoAppError:
+            pdial = None
+        count = 1
         for img_meta in images_meta:
+            if pdial is not None:
+                pdial.Update(count, os.path.basename(img_meta['img_filename']))
+                count += 1
             files.append(img_meta['xml_filename'])
             img = Image.open(img_meta['img_filename'])
             data = scipy.misc.fromimage(img, flatten=True)
@@ -143,6 +153,8 @@ class ZStack(object):
         filefc = FieldContainer(scipy.array(files), longname='filename',
                                 shortname='f')
         emd5fc = FieldContainer(scipy.array(emd5s), longname='emd5', shortname='i')
+        if pdial is not None:
+            pdial.Destroy()
         return zfc, filefc, emd5fc
 
     @staticmethod
@@ -155,8 +167,8 @@ class ZStack(object):
             diffs.append(zmums[index + 1] - zmums[index])
         return Quantity(2.0 * sum(diffs) / float(len(diffs)), 'mum')
 
-    def _import_zstack(self, name, path):
-        images_meta = ZStack._get_images_meta(path)
+    def _import_zstack(self, name, xml_file):
+        images_meta = ZStack._get_images_meta(xml_file)
         zfc, filefc, emd5fc = ZStack._get_image_fcs(images_meta)
         if zfc == None:
             return None
