@@ -51,7 +51,7 @@ from pyphant.quantities import isQuantity, Quantity
 
 
 class PlotPanel (wx.PyPanel):
-    """The PlotPanel has a Figure and a Canvas. OnSize events simply set a 
+    """The PlotPanel has a Figure and a Canvas. OnSize events simply set a
     flag, and the actual resizing of the figure is triggered by an Idle event."""
     def __init__( self, parent, color=None, dpi=None, **kwargs ):
         from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg,
@@ -76,50 +76,10 @@ class PlotPanel (wx.PyPanel):
         vSizer = wx.BoxSizer(wx.VERTICAL)
         vSizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
         vSizer.Add(self.toolbar, 0, wx.EXPAND)
-        vSizer.AddSpacer(10)
-
+        self.draw()
+        self.SetAutoLayout(True)
         self.SetSizer(vSizer)
-        vSizer.Fit(self.parent)
-        self.Update()
-        
-        self.SetColor( color )
-
-        self._SetSize()
-        self.draw()
-
-        self._resizeflag = False
-
-        self.Bind(wx.EVT_IDLE, self._onIdle)
-        self.Bind(wx.EVT_SIZE, self._onSize)
-
-    def Update(self):
-        self.ax.clear()
-        self.draw()
-        self.canvas.draw()
-
-    def SetColor( self, rgbtuple=None ):
-        """Set figure and canvas colours to be the same."""
-        if rgbtuple is None:
-            rgbtuple = wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ).Get()
-        clr = [c/255. for c in rgbtuple]
-        self.figure.set_facecolor( clr )
-        self.figure.set_edgecolor( clr )
-        self.canvas.SetBackgroundColour( wx.Colour( *rgbtuple ) )
-
-    def _onSize( self, event ):
-        self._resizeflag = True
-
-    def _onIdle( self, evt ):
-        if self._resizeflag:
-            self._resizeflag = False
-            self._SetSize()
-
-    def _SetSize( self ):
-        pixels = tuple( self.parent.GetClientSize() )
-        self.SetSize( pixels )
-        self.canvas.SetSize( pixels )
-        self.figure.set_size_inches( float( pixels[0] )/self.figure.get_dpi(),
-                                     float( pixels[1] )/self.figure.get_dpi() )
+        self.Layout()
 
     def draw(self):
         pass # abstract, to be overridden by child classes
@@ -130,56 +90,102 @@ class F(pylab.Formatter):
         self.container=container
     def __call__(self, x, pos=None):
         try:
-            return str(x*self.container.unit)#.replace('mu',r'\textmu{}')
+            return str(x*self.container.unit)
         except IndexError, error:
             return str(x)
 
 
 class OscPlotPanel(PlotPanel):
-    x_longname='dark reference intensity'
-    y_longname='white reference intensity'
-    c_longname='wavelength'
+    x_key=0
+    y_key=1
+    c_key=2
     def __init__(self, parent, dataContainer):
         self.dataContainer = dataContainer
         PlotPanel.__init__(self, parent)
 
     def draw(self):
-        x = self.dataContainer[self.x_longname]
-        y = self.dataContainer[self.y_longname]
-        c = self.dataContainer[self.c_longname]
+        x = self.dataContainer[self.x_key]
+        y = self.dataContainer[self.y_key]
+        c = self.dataContainer[self.c_key]
         vmin = None
         vmax = None
         if vmin is not None:
             vmin /= c.unit
         if vmax is not None:
             vmax /= c.unit
-        scat = self.ax.scatter(x.data, y.data, c=c.data, vmin=vmin, vmax=vmax)
-        self.figure.colorbar(scat, format=F(c), ax=self.ax)
+        self.figure.clear()
+        self.ax = self.figure.add_subplot(111)
+        self.figure.subplots_adjust(hspace=0.8)
+        try:
+            scat = self.ax.scatter(x.data, y.data, c=c.data, vmin=vmin, vmax=vmax)
+            self.figure.colorbar(scat, format=F(c), ax=self.ax)
+        except:
+            pass
         self.ax.set_xlabel(x.label)
         self.ax.set_ylabel(y.label)
         try:
             self.ax.set_title(self.dataContainer.attributes['title'])
         except KeyError,TypeError:
             pass
+        self.canvas.draw()
 
+class ConfigurationPanel(wx.PyPanel):
+    def __init__( self, parent, dataContainer, plot_panel):
+        wx.Panel.__init__( self, parent)
+        self.dataContainer = dataContainer
+        self.plot_panel = plot_panel
+        self.columns = self.dataContainer.longnames.keys()
+        sizer = wx.FlexGridSizer(2, 3)
+        sizer.Add(wx.StaticText(self, label="Independent variable: "))
+        sizer.Add(wx.StaticText(self, label="Dependent variable: "))
+        sizer.Add(wx.StaticText(self, label="Color variable: "))
+        self.independentCombo = wx.ComboBox(self,
+                                            style=wx.CB_READONLY | wx.CB_SORT,
+                                            choices=self.columns)
+        self.independentCombo.SetStringSelection(self.dataContainer[0].longname)
+        sizer.Add(self.independentCombo)
+        self.dependentCombo = wx.ComboBox(self,
+                                          style=wx.CB_READONLY | wx.CB_SORT,
+                                          choices=self.columns)
+        self.dependentCombo.SetStringSelection(self.dataContainer[1].longname)
+        sizer.Add(self.dependentCombo)
+        self.colorCombo = wx.ComboBox(self,
+                                      style=wx.CB_READONLY | wx.CB_SORT,
+                                      choices=self.columns)
+        self.colorCombo.SetStringSelection(self.dataContainer[2].longname)
+        sizer.Add(self.colorCombo)
+        self.SetSizer(sizer)
+        self.Centre()
+
+        self.Bind(wx.EVT_COMBOBOX, self.updatePlot, self.independentCombo)
+        self.Bind(wx.EVT_COMBOBOX, self.updatePlot, self.dependentCombo)
+        self.Bind(wx.EVT_COMBOBOX, self.updatePlot, self.colorCombo)
+
+    def updatePlot(self, event=None):
+        independentVariable = self.independentCombo.GetValue()
+        dependentVariable = self.dependentCombo.GetValue()
+        colorVariable = self.colorCombo.GetValue()
+        if (u''==independentVariable
+            or u''==dependentVariable
+            or u''==colorVariable):
+            return
+        self.plot_panel.x_key = independentVariable
+        self.plot_panel.y_key = dependentVariable
+        self.plot_panel.c_key = colorVariable
+        self.plot_panel.draw()
+        self.GetSizer().Fit(self)
 
 class PlotFrame(wx.Frame):
     name='Plot frame'
     def __init__(self, dataContainer, show=True):
         wx.Frame.__init__(self, None, -1, "Visualize "+dataContainer.longname)
-        self.dataContainer = dataContainer
-        toolbar = self.CreateToolBar()
-        toolbar.AddLabelTool(wx.ID_EXIT, 'Exit',
-                             wx.ArtProvider_GetBitmap(wx.ART_GO_BACK))
-        self.visualizers = self.createVisualizerList()
-        toolbar.AddControl(wx.ComboBox(toolbar,
-                                       choices=[v.name
-                                                for v in self.visualizers.values()]))
-        toolbar.Realize()
-        sizer = wx.BoxSizer()
-        self.plot_panel = OscPlotPanel(self, self.dataContainer)
-        sizer.Add(self.plot_panel)
-        sizer.Fit(self)
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.plot_panel = OscPlotPanel(self, dataContainer)
+        self.configuration_panel = ConfigurationPanel(self, dataContainer,
+                                                      self.plot_panel)
+        self.sizer.Add(self.configuration_panel, 0, wx.EXPAND)
+        self.sizer.Add(self.plot_panel, 1, wx.LEFT | wx.TOP | wx.GROW)
+        self.SetSizer(self.sizer)
         self.Centre()
         self.Show(True)
 
