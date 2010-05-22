@@ -70,7 +70,12 @@ class KnowledgeManagerTestCase(unittest.TestCase):
         ptp.saveResult(self._fc, h5)
         h5.close()
         km = KnowledgeManager.getInstance()
-        km.registerURL('file://' + h5name, temporary=True)
+        from urllib import pathname2url
+        url = pathname2url(h5name)
+        if not url.startswith('///'):
+            url = '//' + url
+        url = 'file:' + url
+        km.registerURL(url, temporary=True)
         km_fc = km.getDataContainer(self._fc.id)
         self.assertEqual(self._fc, km_fc)
         os.remove(h5name)
