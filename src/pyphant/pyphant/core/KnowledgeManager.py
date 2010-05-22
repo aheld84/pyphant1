@@ -66,10 +66,12 @@ def getFilenameFromDcId(dcId, temporary=False):
     """
     Returns a unique filename for the given emd5.
     """
-    emd5list = urlparse(dcId + '.h5')[2][2:].split('/')
+    emd5list = (dcId + '.h5')[7:].split('/')
     emd5path = os.path.join(
         *(emd5list[:-2] + [emd5list[-2][:10],
                            emd5list[-2][11:] + '.' + emd5list[-1]]))
+    #needed for windows version of pytables:
+    emd5path = emd5path.replace(':', '.')
     directory = os.path.dirname(emd5path)
     filename = os.path.basename(emd5path)
     if temporary:
@@ -283,10 +285,14 @@ class KnowledgeManager(Singleton):
         tmp_extension = ''
         if temporary:
             tmp_extension = 'tmp'
+        try:
+            remote_path = parsed.path
+        except AttributeError:
+            remote_path = parsed[2]
         directory = os.path.join(KM_PATH, tmp_extension,
-                                 'registered', parsed[1])
+                                 'registered')
         filename = os.path.join(getPyphantPath(directory),
-                                os.path.basename(parsed[2]))
+                                os.path.basename(remote_path))
         if os.path.exists(filename):
             i = 0
             directory = os.path.dirname(filename)

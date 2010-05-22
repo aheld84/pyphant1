@@ -264,9 +264,14 @@ class PlugShape(ConnectorShape, sogl.CircleShape):
             progress.Destroy()
             if computer.isAlive():
                 computer.join()
-            self._ids[event.GetId()](computer.result)
+            result = computer.result
         else:
-            self._ids[event.GetId()](self._plug._result)
+            result = self._plug._result
+        if not result == None:
+            self._ids[event.GetId()](result)
+        else:
+            wx.MessageBox(u"No result is available.\nPlease check the logs.",
+                          u"No Result", wx.ICON_ERROR)
 
     def OnRightClick(self, x, y, keys, attachments):
         if not hasattr(self, '_menu'):
