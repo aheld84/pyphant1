@@ -117,7 +117,8 @@ class wxPyphantFrame(wx.Frame):
     ID_VIEW_LOGFILE = wx.NewId()
 
     def __init__(self, _wxPyphantApp):
-        wx.Frame.__init__(self, None, -1, "wxPyphant %s" % __version__,
+        self.titleStr = "wxPyphant %s | Recipe: %s" % (__version__, "%s")
+        wx.Frame.__init__(self, None, -1, self.titleStr % "None",
                           size=(640,480))
         import PyphantCanvas
         self._statusBar = self.CreateStatusBar()
@@ -237,6 +238,9 @@ class wxPyphantFrame(wx.Frame):
                     self._remainingSpace = PyphantCanvas.PyphantCanvas(self, recipe)
                 else:
                     self._remainingSpace = PyphantCanvas.PyphantCanvas(self)
+                from pyphant.core.WebInterface import shorten
+                self.SetTitle(self.titleStr \
+                              % shorten(self._wxPyphantApp.pathToRecipe, 30, 30))
             else:
                 raise IOError('Unknown file format in file "%s"'\
                               % self._wxPyphantApp.pathToRecipe)
@@ -275,6 +279,8 @@ class wxPyphantFrame(wx.Frame):
                 self._fileMenu.IsChecked(wx.ID_FILE4))
             self._wxPyphantApp.pathToRecipe = filename
             self.recipeState = 'clean'
+            from pyphant.core.WebInterface import shorten
+            self.SetTitle(self.titleStr % shorten(filename, 30, 30))
         else:
             dlg.Destroy()
 
