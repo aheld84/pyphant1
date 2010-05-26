@@ -41,6 +41,7 @@ import tables
 from pyphant.core import DataContainer
 from tables import StringCol
 from pyphant.quantities import Quantity
+PhysicalQuantity = Quantity
 import scipy
 import logging
 import os

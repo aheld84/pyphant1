@@ -109,16 +109,16 @@ class ZTubeTestCase(unittest.TestCase):
         km = KnowledgeManager.getInstance()
         km.registerDataContainer(mask_fc, temporary=True)
         mask_parent = mask_fc.id
-        fslice = AF.FocusSlice(slices, 10.0, mask_parent, slices)
+        fslice = AF.FocusSlice(slices, 10.0, mask_parent, slices, 1, 1)
         self.ztube = AF.ZTube(fslice, 0, 1, 0.5, 0.5)
         testslices1 = [slice(3, 12), slice(2, 9)]
         mask1 = numpy.ones((9, 7), dtype=bool)
         self.testfslice1 = AF.FocusSlice(testslices1, 12.0, mask_parent,
-                                         testslices1)
+                                         testslices1, 1, 1)
         testslices2 = [slice(7, 17), slice(8, 16)]
         mask2 = numpy.ones((10, 8), dtype=bool)
         self.testfslice2 = AF.FocusSlice(testslices2, 8.0, mask_parent,
-                                         testslices2)
+                                         testslices2, 1, 1)
 
     def tearDown(self):
         pass
@@ -154,9 +154,12 @@ class AutoFocusTestCase(unittest.TestCase):
         km = KnowledgeManager.getInstance()
         km.registerDataContainer(mask_fc, temporary=True)
         fsl1 = AF.FocusSlice(sl1, Quantity('10.0mm**-3'), mask_parent,
-                             [slice(0, 10), slice(0, 20)])
+                             [slice(0, 10), slice(0, 20)],
+                             Quantity('1.0mm'),
+                             Quantity('1.0mm'))
         self.fsl2 = AF.FocusSlice(sl2, Quantity('12.0mm**-3'),
-                                  mask_parent, [slice(0, 11), slice(0, 17)])
+                                  mask_parent, [slice(0, 11), slice(0, 17)],
+                                  Quantity('0.1mm'), Quantity('0.1mm'))
         fc1 = FieldContainer(numpy.array([fsl1]))
         fc2 = FieldContainer(numpy.array([self.fsl2]))
         fc1.seal()
@@ -207,7 +210,8 @@ class FocusSliceTestCase(unittest.TestCase):
                   slice(Quantity('150mm'),
                         Quantity('350mm'))]
         fslice = AF.FocusSlice(slices, Quantity('10mm**-3'),
-                               mask_parent, [slice(0, 100), slice(0, 150)])
+                               mask_parent, [slice(0, 100), slice(0, 150)],
+                               Quantity('1mm'), Quantity('1mm'))
         fc = FieldContainer(numpy.array([fslice for xr in xrange(1000)]))
         fc.seal()
         km.registerDataContainer(fc, temporary=True)

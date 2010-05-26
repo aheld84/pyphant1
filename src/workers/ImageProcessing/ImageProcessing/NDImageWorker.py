@@ -142,7 +142,7 @@ class NDImage(Worker.Worker):
         for par in self._filters[self.paramNdfilter.value]:
             if par != None:
                 args[par] = self.getParam(par).value
-        print args
+        #print args
         return call(data, **args)
 
     @Worker.plug(Connectors.TYPE_IMAGE)

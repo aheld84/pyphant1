@@ -115,6 +115,10 @@ class wxPyphantFrame(wx.Frame):
     ID_UPDATE_PYPHANT = wx.NewId()
     ID_VIEW_WORKERREP = wx.NewId()
     ID_VIEW_LOGFILE = wx.NewId()
+    ID_KM_URL = wx.NewId()
+    ID_KM_LOCAL = wx.NewId()
+    ID_KM_ZSTACK_XML = wx.NewId()
+    ID_KM_SHARE = wx.NewId()
 
     def __init__(self, _wxPyphantApp):
         self.titleStr = "wxPyphant %s | Recipe: %s" % (__version__, "%s")
@@ -294,9 +298,6 @@ class wxPyphantFrame(wx.Frame):
         self._fileMenu.Append(wx.ID_SAVE, "&Save\tCTRL+s")
         self._fileMenu.Append(wx.ID_SAVEAS, "Save &as\tCTRL+a")
         self._fileMenu.Append(wx.ID_EXIT, "E&xit")
-        self._fileMenu.Append(wx.ID_FILE1, "Import HDF5 or FMF from &URL")
-        self._fileMenu.Append(wx.ID_FILE2, "&Import local HDF5 or FMF file")
-        self._fileMenu.Append(wx.ID_FILE3, "Start/pause sharing &knowledge")
         self._menuBar.Append(self._fileMenu, "&File")
         self._closeCompositeWorker = wx.Menu()
         self._closeCompositeWorker.Append(self.ID_CLOSE_COMPOSITE_WORKER,
@@ -307,6 +308,8 @@ class wxPyphantFrame(wx.Frame):
         self._menuBar.Append(self._updateMenu, "&Update")
         self._viewMenu = self.createViewMenu()
         self._menuBar.Append(self._viewMenu, "&View")
+        self._kmanagerMenu = self.createKmanagerMenu()
+        self._menuBar.Append(self._kmanagerMenu, "&Knowledge Manager")
         self.SetMenuBar(self._menuBar)
         self._menuBar.EnableTop(1, False)
         #self.Bind(wx.EVT_MENU, self.onCreateNew, id=wx.ID_NEW)
@@ -317,9 +320,6 @@ class wxPyphantFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onQuit, id=wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.onCloseCompositeWorker,
                   id=self.ID_CLOSE_COMPOSITE_WORKER)
-        self.Bind(wx.EVT_MENU, self.onImportURL, id=wx.ID_FILE1)
-        self.Bind(wx.EVT_MENU, self.onImportLocal, id=wx.ID_FILE2)
-        self.Bind(wx.EVT_MENU, self.onShare, id=wx.ID_FILE3)
 
     def createUpdateMenu(self):
         updateMenu = wx.Menu()
@@ -342,6 +342,18 @@ class wxPyphantFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onWorkerRep, id=self.ID_VIEW_WORKERREP)
         self.Bind(wx.EVT_MENU, self.onLogfile, id=self.ID_VIEW_LOGFILE)
         return viewMenu
+
+    def createKmanagerMenu(self):
+        kmanagerMenu = wx.Menu()
+        kmanagerMenu.Append(self.ID_KM_URL, "Import HDF5 or FMF from &URL")
+        kmanagerMenu.Append(self.ID_KM_LOCAL, "Import &local HDF5 or FMF file")
+        kmanagerMenu.Append(self.ID_KM_ZSTACK_XML, "Import ZStack from &XML")
+        kmanagerMenu.Append(self.ID_KM_SHARE, "Start/pause sharing &knowledge")
+        self.Bind(wx.EVT_MENU, self.onImportURL, id=self.ID_KM_URL)
+        self.Bind(wx.EVT_MENU, self.onImportLocal, id=self.ID_KM_LOCAL)
+        self.Bind(wx.EVT_MENU, self.onImportZStackXML, id=self.ID_KM_ZSTACK_XML)
+        self.Bind(wx.EVT_MENU, self.onShare, id=self.ID_KM_SHARE)
+        return kmanagerMenu
 
     def onUpdatePyphant(self, event):
         import pyphant.core.UpdateManager
@@ -395,7 +407,7 @@ class wxPyphantFrame(wx.Frame):
 
     def onImportURL(self, event):
         cpt = "Import HDF5 or FMF from URL"
-        msg = "Enter an URL to a valid HDF5 or FMF file "\
+        msg = "Enter a URL to a valid HDF5 or FMF file "\
               "(e.g. http://www.example.org/data.h5).\n"\
               "The file is stored permanently in your home directory in the "\
               ".pyphant directory\nand all DataContainers contained in that "\
@@ -419,6 +431,8 @@ class wxPyphantFrame(wx.Frame):
             finally:
                 dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
                 dlgid2 = dlg2.ShowModal()
+                dlg2.Destroy()
+        dlg.Destroy()
 
     def onImportLocal(self, event):
         msg = "Select HDF5 or FMF file to import DataContainer(s) from."
@@ -441,8 +455,32 @@ class wxPyphantFrame(wx.Frame):
             finally:
                 dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
                 dlgid2 = dlg2.ShowModal()
+                dlg2.Destroy()
         else:
             dlg.Destroy()
+
+    def onImportZStackXML(self, event):
+        msg = "Select XML file to import ZStack from."
+        wc = "*.xml|*.xml"
+        dlg = wx.FileDialog(self, message=msg, defaultDir=os.getcwd(),
+                            defaultFile="", wildcard=wc, style=wx.OPEN)
+        if dlg.ShowModal() == wx.ID_OK:
+            filename = os.path.realpath(dlg.GetPath())
+            from pyphant.core.ZStackManager import (ZStack, ZStackManager)
+            tedlg = wx.TextEntryDialog(self, "Enter name for ZStack:",
+                                       "", "ZStack")
+            if tedlg.ShowModal() == wx.ID_OK:
+                name = tedlg.GetValue()
+                zstack = ZStack(name=name, xml_file=filename)
+                zsm = ZStackManager()
+                zsm.addZStack(zstack)
+                cpt2 = "Info"
+                msg2 = "Successfully imported ZStack."
+                dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
+                dlg2.ShowModal()
+                dlg2.Destroy()
+            tedlg.Destroy()
+        dlg.Destroy()
 
     def onShare(self, event):
         cpt = "Share Knowledge"
@@ -482,6 +520,7 @@ class wxPyphantFrame(wx.Frame):
             msg += "Disabled sharing."
         dlg = wx.MessageDialog(self, msg, cpt, wx.OK)
         dlg.ShowModal()
+        dlg.Destroy()
 
 
 import optparse

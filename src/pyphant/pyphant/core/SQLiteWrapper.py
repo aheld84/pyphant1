@@ -43,9 +43,10 @@ import sqlite3
 import time
 from pyphant.core.Helpers import (utf82uc, uc2utf8, emd52dict)
 from pyphant.quantities import (Quantity,PhysicalUnit,_base_units)
+PhysicalQuantity = Quantity
 from types import (FloatType, IntType, LongType, StringTypes)
 
-DBASE_VERSION = 1 #increment if there have been structural changes to the dbase!
+DBASE_VERSION = 2 #increment if there have been structural changes to the dbase!
 
 def quantity2powers(quantity):
     numberOfBaseUnits = len(_base_units)
@@ -325,6 +326,11 @@ class SQLiteWrapper(object):
             (id, ))
         return self.cursor.fetchone() != None
 
+    def is_temporary(self, id):
+        exe = self.cursor.execute
+        exe("SELECT dc_id FROM km_temporary WHERE dc_id=?", (id, ))
+        return self.cursor.fetchone() != None
+
     def _set_fc_keys(self, insert_dict, summary):
         exe = self.cursor.execute
         insert_dict['fc_id'] = summary['id']
@@ -374,6 +380,8 @@ class SQLiteWrapper(object):
         attr_query = "INSERT INTO km_attributes VALUES (?, ?, ?)"
         for key, value in summary['attributes'].iteritems():
             assert isinstance(key, StringTypes)
+            if isinstance(value, StringTypes):
+                value = utf82uc(value)
             exe(attr_query, (summary['id'], key, value.__repr__()))
         if type == 'fc':
             self._set_fc_keys(insert_dict, summary)
@@ -395,6 +403,24 @@ class SQLiteWrapper(object):
         value_query = value_query[:-2] + ")"
         insert_query = insert_query % (type, key_query, value_query)
         exe(insert_query, tuple(value_list))
+
+    def set_temporary(self, entry_id, temporary):
+        """Sets the given entry to temporary, which means it will be
+        deleted upon restart or removes the temporary flag.
+        - entry_id: emd5 of DataContainer
+        - temporary: boolean"""
+        if not self.has_entry(entry_id):
+            return
+        exe = self.cursor.execute
+        if temporary:
+            try:
+                exe("INSERT OR ABORT INTO km_temporary VALUES (?)",
+                    (entry_id,))
+            except sqlite3.IntegrityError:
+                pass # Already set to temporary!
+        else:
+            exe("DELETE FROM km_temporary WHERE dc_id=?",
+                (entry_id,))
 
     def get_emd5_list(self):
         self.cursor.execute("SELECT fc_id FROM km_fc")
@@ -445,6 +471,8 @@ class SQLiteWrapper(object):
                 new_value.append(attr_key)
             else:
                 value_expr = ' AND value=?'
+                if isinstance(attr_value, StringTypes):
+                    attr_value = utf82uc(attr_value)
                 new_value.extend([attr_key, attr_value.__repr__()])
             expr += '(%s IN (SELECT dc_id FROM km_attributes '\
                 'WHERE key=?%s))' \

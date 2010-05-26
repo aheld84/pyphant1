@@ -61,7 +61,9 @@ workers=[
     "SkeletonizeFeature",
     "ThresholdingWorker",
     "UltimatePointsCalculator",
-    "Watershed"
+    "Watershed",
+    "ZStacks",
+    "SliceSelector"
     ]
 
 def isFeature(point):

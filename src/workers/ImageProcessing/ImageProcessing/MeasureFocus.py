@@ -83,8 +83,14 @@ def sliceAndMeasure(image, labels, grow, human_output):
                                  for subsl, dim, dl in zip(sl,
                                                            image.dimensions,
                                                            [dy, dx])]
+                ydim = image.dimensions[0]
+                xdim = image.dimensions[1]
+                pixel_height = ydim.unit * (ydim.data[1] - ydim.data[0])
+                pixel_width = xdim.unit * (xdim.data[1] - xdim.data[0])
                 resdata[label - 1] = FocusSlice(dimslices, focus * unit,
-                                                mask_parent, mask_slices=sl)
+                                                mask_parent, mask_slices=sl,
+                                                pixel_width=pixel_width,
+                                                pixel_height=pixel_height)
     longname = "MeasureFocus"
     if human_output:
         result = DataContainer.FieldContainer(resdata,

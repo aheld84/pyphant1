@@ -225,6 +225,24 @@ class KnowledgeManager(Singleton):
             has_entry = wrapper.has_entry(dcid)
         return has_entry
 
+    def isTemporary(self, dcid):
+        """
+        Returns whether the given DC is stored temporarily.
+        """
+        with SQLiteWrapper(self.dbase) as wrapper:
+            is_tmp = wrapper.is_temporary(dcid)
+        return is_tmp
+
+    def setTemporary(self, dcid, temporary):
+        """
+        Sets the given entry to temporary, which means it will be
+        deleted upon restart or removes the temporary flag.
+        - dcid: emd5 of DataContainer
+        - temporary: boolean
+        """
+        with SQLiteWrapper(self.dbase) as wrapper:
+            wrapper.set_temporary(dcid, temporary)
+
     def getH5FileHandler(self, filename, mode='r'):
         """
         Returns an H5FileHandler for the given filename to perform IO
