@@ -39,6 +39,7 @@ __version__ = "$Revision$"
 # $Source$
 
 import matplotlib
+import matplotlib.transforms
 import wx
 
 import copy
@@ -99,69 +100,117 @@ class OscPlotPanel(PlotPanel):
     x_key=0
     y_key=1
     c_key=2
+    radius=Quantity('0.4mm')
+    vmin = None
+    vmax = None
     def __init__(self, parent, dataContainer):
         self.dataContainer = dataContainer
         PlotPanel.__init__(self, parent)
 
     def draw(self):
-        x = self.dataContainer[self.x_key]
-        y = self.dataContainer[self.y_key]
-        c = self.dataContainer[self.c_key]
-        vmin = None
-        vmax = None
-        if vmin is not None:
-            vmin /= c.unit
-        if vmax is not None:
-            vmax /= c.unit
+        self.x = self.dataContainer[self.x_key]
+        self.y = self.dataContainer[self.y_key]
+        self.c = self.dataContainer[self.c_key]
+        if self.vmin is not None:
+            self.vmin /= self.c.unit
+        if self.vmax is not None:
+            self.vmax /= self.c.unit
         self.figure.clear()
         self.ax = self.figure.add_subplot(111)
         self.figure.subplots_adjust(hspace=0.8)
+        aspect = self.y.unit/self.x.unit
+        if not isinstance(aspect, Quantity):
+            self.ax.set_aspect(aspect)
         try:
-            scat = self.ax.scatter(x.data, y.data, c=c.data, vmin=vmin, vmax=vmax)
-            self.figure.colorbar(scat, format=F(c), ax=self.ax)
-        except:
-            pass
-        self.ax.set_xlabel(x.label)
-        self.ax.set_ylabel(y.label)
+            self.scat = self.ax.scatter(self.x.data, self.y.data,
+                                        s=numpy.pi*(self.radius/self.x.unit)**2,
+                                        c=self.c.data,
+                                        vmin=self.vmin, vmax=self.vmax)
+            self.colorbar = self.figure.colorbar(self.scat, format=F(self.c),
+                                                 ax=self.ax)
+            self.rescale(self.ax)
+        except Exception, e:
+            print e
+        self.ax.set_xlabel(self.x.label)
+        self.ax.set_ylabel(self.y.label)
         try:
             self.ax.set_title(self.dataContainer.attributes['title'])
         except KeyError,TypeError:
             pass
+        self.ax.callbacks.connect('xlim_changed', self.rescale)
+        self.ax.callbacks.connect('ylim_changed', self.rescale)
         self.canvas.draw()
+
+    def rescale(self, ax):
+        scale = self.ax.transData.get_affine().get_matrix().copy()
+        scale[0,2]=0
+        scale[1,2]=0
+        scale[1,1]=scale[0,0]
+        self.scat.set_transform(matplotlib.transforms.Affine2D(scale))
+
 
 class ConfigurationPanel(wx.PyPanel):
     def __init__( self, parent, dataContainer, plot_panel):
         wx.Panel.__init__( self, parent)
         self.dataContainer = dataContainer
         self.plot_panel = plot_panel
-        self.columns = self.dataContainer.longnames.keys()
-        sizer = wx.FlexGridSizer(2, 3)
-        sizer.Add(wx.StaticText(self, label="Independent variable: "))
-        sizer.Add(wx.StaticText(self, label="Dependent variable: "))
+        self.columns = [name for name in self.dataContainer.longnames.keys()
+                        if isinstance(self.dataContainer[name],
+                                      DataContainer.FieldContainer)]
+        sizer = wx.FlexGridSizer(2, 6)
+        sizer.Add(wx.StaticText(self, label="x axis: "))
+        sizer.Add(wx.StaticText(self, label="y axis: "))
         sizer.Add(wx.StaticText(self, label="Color variable: "))
+        sizer.Add(wx.StaticText(self, label="Minimal value: "))
+        sizer.Add(wx.StaticText(self, label="Maximal value: "))
+        sizer.Add(wx.StaticText(self, label="Radius: "))
         self.independentCombo = wx.ComboBox(self,
                                             style=wx.CB_READONLY | wx.CB_SORT,
                                             choices=self.columns)
-        self.independentCombo.SetStringSelection(self.dataContainer[0].longname)
+        self.independentCombo.SetStringSelection(self.columns[0])
+        longest = ''
+        for s in self.columns:
+            if len(s)>len(longest):
+                longest = s
+        offset = self.independentCombo.Size \
+            - self.independentCombo.GetTextExtent(longest)
+        maxSize = wx.Size(*self.independentCombo.GetTextExtent("White Reference Count somemore"))
+        maxSize += offset
+        self.independentCombo.MinSize = maxSize
         sizer.Add(self.independentCombo)
         self.dependentCombo = wx.ComboBox(self,
                                           style=wx.CB_READONLY | wx.CB_SORT,
                                           choices=self.columns)
-        self.dependentCombo.SetStringSelection(self.dataContainer[1].longname)
+        self.dependentCombo.SetStringSelection(self.columns[1])
+        self.dependentCombo.MinSize = maxSize
         sizer.Add(self.dependentCombo)
         self.colorCombo = wx.ComboBox(self,
                                       style=wx.CB_READONLY | wx.CB_SORT,
                                       choices=self.columns)
-        self.colorCombo.SetStringSelection(self.dataContainer[2].longname)
+        self.colorCombo.SetStringSelection(self.columns[2])
+        self.colorCombo.MinSize = maxSize
         sizer.Add(self.colorCombo)
+        self.vsize = wx.Size(*self.colorCombo.GetTextExtent('1234567890 nm')) + offset
+        self.vmin_text = wx.TextCtrl(self, size=self.vsize,
+                                     style=wx.TE_PROCESS_ENTER)
+        sizer.Add(self.vmin_text)
+        self.vmax_text = wx.TextCtrl(self, size=self.vsize,
+                                     style=wx.TE_PROCESS_ENTER)
+        sizer.Add(self.vmax_text)
+        self.radius_text = wx.TextCtrl(self, size=self.vsize,
+                                       style=wx.TE_PROCESS_ENTER)
+        self.radius_text.Value = '0.4 mm'
+        sizer.Add(self.radius_text)
         self.SetSizer(sizer)
         self.Centre()
+        self.Bind(wx.EVT_COMBOBOX, self.changeColumns, self.independentCombo)
+        self.Bind(wx.EVT_COMBOBOX, self.changeColumns, self.dependentCombo)
+        self.Bind(wx.EVT_COMBOBOX, self.changeColumns, self.colorCombo)
+        self.Bind(wx.EVT_TEXT_ENTER, self.changeColumns, self.vmin_text)
+        self.Bind(wx.EVT_TEXT_ENTER, self.changeColumns, self.vmax_text)
+        self.Bind(wx.EVT_TEXT_ENTER, self.changeColumns, self.radius_text)
 
-        self.Bind(wx.EVT_COMBOBOX, self.updatePlot, self.independentCombo)
-        self.Bind(wx.EVT_COMBOBOX, self.updatePlot, self.dependentCombo)
-        self.Bind(wx.EVT_COMBOBOX, self.updatePlot, self.colorCombo)
-
-    def updatePlot(self, event=None):
+    def changeColumns(self, event=None):
         independentVariable = self.independentCombo.GetValue()
         dependentVariable = self.dependentCombo.GetValue()
         colorVariable = self.colorCombo.GetValue()
@@ -171,7 +220,16 @@ class ConfigurationPanel(wx.PyPanel):
             return
         self.plot_panel.x_key = independentVariable
         self.plot_panel.y_key = dependentVariable
-        self.plot_panel.c_key = colorVariable
+        if self.plot_panel.c_key != colorVariable:
+            self.plot_panel.c_key = colorVariable
+            field = self.dataContainer[colorVariable]
+            vmin = field.data.min().round()*field.unit
+            self.vmin_text.Value=str(vmin)
+            vmax = field.data.max().round()*field.unit
+            self.vmax_text.Value=str(vmax)
+        self.plot_panel.vmin = Quantity(self.vmin_text.Value)
+        self.plot_panel.vmax = Quantity(self.vmax_text.Value)
+        self.plot_panel.radius = Quantity(self.radius_text.Value)
         self.plot_panel.draw()
         self.GetSizer().Fit(self)
 

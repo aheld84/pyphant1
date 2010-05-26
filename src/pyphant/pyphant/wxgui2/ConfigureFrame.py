@@ -61,14 +61,14 @@ class ConfigureFrame(wx.Dialog):
             computer.join()
         pl = worker.getParamList()
         if len(pl) <= 0:
-            self.Add(wx.StaticText("Nothing to be configured"))
+            self.Add(wx.StaticText(self, label="Nothing to be configured"))
         else:
             sizer = wx.FlexGridSizer(len(pl),3,5,5)
-            sizer.Add(wx.StaticText(self,label="Label"))
-            sizer.Add(wx.StaticText(self,label="Value"))
-            sizer.Add(wx.StaticText(self,label="is external"))
+            sizer.Add(wx.StaticText(self, label="Label"))
+            sizer.Add(wx.StaticText(self, label="Value"))
+            sizer.Add(wx.StaticText(self, label="is external"))
             for param in pl:
-                sizer.Add(wx.StaticText(self,label=param.displayName))
+                sizer.Add(wx.StaticText(self, label=param.displayName))
                 vis=self._paramVisReg.createVisualizerFor(self, param)
                 sizer.Add(vis)
                 checkBox=wx.CheckBox(self)
