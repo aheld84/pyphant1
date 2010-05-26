@@ -51,8 +51,9 @@ kmanager = KnowledgeManager.getInstance()
 
 
 class ZStack(object):
-    def __init__(self, sc_id=None, name=None, xml_file=None):
+    def __init__(self, sc_id=None, name=None, xml_file=None, temporary=False):
         """Initializes a ZStack from an existing id or a local source"""
+        self.temporary = temporary
         assert (sc_id is None) is not (xml_file is None)
         self._recipe_path = None
         if sc_id is not None:
@@ -98,7 +99,7 @@ class ZStack(object):
         return images_meta
 
     @staticmethod
-    def _get_image_fcs(images_meta):
+    def _get_image_fcs(images_meta, temporary=False):
         zvalues = []
         emd5s = []
         files = []
@@ -143,7 +144,7 @@ class ZStack(object):
                                     shortname="img",
                                     dimensions=dimensions, attributes=fcattr)
             img_fc.seal()
-            kmanager.registerDataContainer(img_fc)
+            kmanager.registerDataContainer(img_fc, temporary=temporary)
             emd5s.append(img_fc.id)
             zvalues.append(zvalue.inUnitsOf('mum').value)
         if len(zvalues) == 0:
@@ -169,7 +170,7 @@ class ZStack(object):
 
     def _import_zstack(self, name, xml_file):
         images_meta = ZStack._get_images_meta(xml_file)
-        zfc, filefc, emd5fc = ZStack._get_image_fcs(images_meta)
+        zfc, filefc, emd5fc = ZStack._get_image_fcs(images_meta, self.temporary)
         if zfc == None:
             return None
         attributes = {}
@@ -180,7 +181,7 @@ class ZStack(object):
                               "z-stack",
                               attributes)
         ssc.seal()
-        kmanager.registerDataContainer(ssc)
+        kmanager.registerDataContainer(ssc, temporary=self.temporary)
         return ssc
 
     def _set_recipe_path(self, rpath):
@@ -190,36 +191,36 @@ class ZStack(object):
         return self._recipe_path
     recipe_path = property(_get_recipe_path, _set_recipe_path)
 
-    def _get_mf_id(self, gradient_alg, label_alg, human):
+    def _get_mf_id(self, gradient_alg, label_alg, human, subscriber=0):
         assert self._recipe_path is not None
         uattr = {'isZStack':'no'}
         in_ids = {'grey_invert':{'image':self.repr_sc.id}}
-        gradient_id = gradient_alg.get_batch_result_id(in_ids, update_attrs=uattr)
+        gradient_id = gradient_alg.get_batch_result_id(
+            in_ids, update_attrs=uattr, subscriber=subscriber,
+            start=1, end=30, temporary=self.temporary)
         in_ids = {'threshold':{'image':gradient_id}}
-        label_id = label_alg.get_batch_result_id(in_ids, update_attrs=uattr)
+        label_id = label_alg.get_batch_result_id(
+            in_ids, update_attrs=uattr, subscriber=subscriber,
+            start=31, end=66, temporary=self.temporary)
         mf_alg = RecipeAlg(os.path.join(self.recipe_path, 'MeasureFocus.h5'),
                            'MeasureFocus', 'measure_focus',
                            {'MeasureFocus':{'humanOutput':human}})
         in_ids = {'MeasureFocus':{'image':gradient_id,
                                   'labels':label_id}}
-        return mf_alg.get_batch_result_id(in_ids, update_attrs=uattr)
+        return mf_alg.get_batch_result_id(
+            in_ids, update_attrs=uattr, subscriber=subscriber,
+            start=67, end=100, temporary=self.temporary)
 
-    def get_statistics(self, gradient_alg, label_alg):
-        mf_id = self._get_mf_id(gradient_alg, label_alg, False)
+    def get_statistics(self, gradient_alg, label_alg, subscriber=0):
+        mf_id = self._get_mf_id(gradient_alg, label_alg, False, subscriber)
         af_alg = RecipeAlg(os.path.join(self.recipe_path, 'AutoFocus.h5'),
                            'AutoFocus', 'AutoFocusWorker')
         in_ids = {'AutoFocus':{'focusSC':mf_id}}
-        af_sc = af_alg.get_result(in_ids)
+        af_sc = af_alg.get_result(in_ids, temporary=self.temporary)
         return af_sc
-        #params = {'Cutoff':{'expression':'"d" <= %s' % cutoff},
-        #          'ColumnExtractor':{'column':'diameter'}}
-        #stat_alg = RecipeAlg(os.path.join(self.recipe_path, 'Statistics.h5'),
-        #                     'ColumnExtractor', 'extract', params)
-        #in_ids = {'Cutoff':{'table':af_id}}
-        #return stat_alg.get_result(in_ids, temporary=True)
 
-    def get_human_imgs(self, gradient_alg, label_alg):
-        mf_id = self._get_mf_id(gradient_alg, label_alg, True)
+    def get_human_imgs(self, gradient_alg, label_alg, subscriber=0):
+        mf_id = self._get_mf_id(gradient_alg, label_alg, True, subscriber)
         return kmanager.getDataContainer(mf_id)
 
 

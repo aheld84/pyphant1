@@ -102,7 +102,9 @@ class RecipeAlg(object):
             else:
                 return result_dc
 
-    def get_batch_result_id(self, input_ids, column='emd5', update_attrs={}):
+    def get_batch_result_id(self, input_ids, column='emd5', update_attrs={},
+                            subscriber=0, start=1, end=100, temporary=False):
+        subscriber %= start
         from pyphant.core.Helpers import utf82uc
         search_dict = {'attributes':{
             'batch_recipe':utf82uc(self.recipe_fname),
@@ -112,6 +114,7 @@ class RecipeAlg(object):
             'params':utf82uc(self.params.__repr__())}}
         result_ids = kmanager.search(['id'], search_dict)
         if len(result_ids) > 0:
+            subscriber %= end
             return result_ids[0][0]
         import copy
         input_scs = dict([(wname, dict([(sname, kmanager.getDataContainer(emd5)) \
@@ -121,7 +124,11 @@ class RecipeAlg(object):
         ref_sc = input_scs.values()[0].values()[0]
         output_sc = copy.deepcopy(ref_sc)
         import numpy
-        for index in xrange(len(ref_sc[column].data)):
+        sharpruns = len(ref_sc[column].data)
+        import math
+        for index in xrange(sharpruns):
+            subscriber %= 1 + math.floor(start + float((end - start) * index) \
+                                         / sharpruns)
             ids = dict([(wname, dict([(sname, unicode(isc[column].data[index])) \
                                       for sname, isc in sockets.iteritems()])) \
                         for wname, sockets in input_scs.iteritems()])
@@ -136,5 +143,6 @@ class RecipeAlg(object):
         output_sc.attributes['params'] = utf82uc(self.params.__repr__())
         output_sc.attributes.update(update_attrs)
         output_sc.seal()
-        kmanager.registerDataContainer(output_sc)
+        kmanager.registerDataContainer(output_sc, temporary=temporary)
+        subscriber %= end
         return output_sc.id

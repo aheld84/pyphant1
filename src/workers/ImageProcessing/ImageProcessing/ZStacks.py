@@ -98,7 +98,7 @@ class ZStacks(Worker.Worker):
             return None
         self.paramZstack.value.hiddenvalue.recipe_path = rpath
         return self.paramZstack.value.hiddenvalue.get_statistics(
-            gradient_alg, label_alg)
+            gradient_alg, label_alg, subscriber=subscriber)
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def raw_image(self, subscriber=0):
@@ -112,4 +112,4 @@ class ZStacks(Worker.Worker):
             return None
         self.paramZstack.value.hiddenvalue.recipe_path = rpath
         return self.paramZstack.value.hiddenvalue.get_human_imgs(
-            gradient_alg, label_alg)
+            gradient_alg, label_alg, subscriber=subscriber)

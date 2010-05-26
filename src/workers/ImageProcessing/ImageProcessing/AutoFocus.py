@@ -44,8 +44,7 @@ from pyphant.core import Worker, Connectors,\
 import ImageProcessing
 import numpy, copy
 from scipy import ndimage as ndi
-from pyphant.quantities import (isQuantity,
-                                                   Quantity)
+from pyphant.quantities import (isQuantity, Quantity)
 PhysicalQuantity = Quantity
 from pyphant.core.DataContainer import FieldContainer
 
@@ -102,28 +101,35 @@ class Cube(object):
 
 
 class FocusSlice(Cube):
-    def __init__(self, slices, focus, mask_parent, mask_slices):
+    def __init__(self, slices, focus, mask_parent, mask_slices,
+                 pixel_width, pixel_height):
         Cube.__init__(self, slices)
         self.focus = focus
         self.mask_parent = mask_parent
         self.mask_slices = mask_slices
         self._mask = None
+        self.pixel_height = pixel_height
+        self.pixel_width = pixel_width
 
     def __str__(self):
         return self.__repr__()
 
     def __repr__(self):
-        retstr = "FocusSlice(%s, %s, %s, %s)"
+        retstr = "FocusSlice(%s, %s, %s, %s, %s, %s)"
         return retstr % (self.slices.__repr__(),
                          self.focus.__repr__(),
                          self.mask_parent.__repr__(),
-                         self.mask_slices.__repr__())
+                         self.mask_slices.__repr__(),
+                         self.pixel_width.__repr__(),
+                         self.pixel_height.__repr__())
 
     def __eq__(self, other):
         if isinstance(other, FocusSlice):
             eqflag = self.slices == other.slices
             eqflag &= self.focus == other.focus
             eqflag &= (self.mask == other.mask).all()
+            eqflag &= self.pixel_width == other.pixel_width
+            eqflag &= self.pixel_height == other.pixel_height
             return eqflag
         else:
             return False
@@ -177,8 +183,12 @@ class ZTube(object):
         #This is just a preliminary example of how to calculate the values...
         coordY, coordX = self.focusedFSlice.getCenter()
         coordZ = self.focusedZ
-        edgeL0 = self.focusedFSlice.getEdgeLength(0)
-        edgeL1 = self.focusedFSlice.getEdgeLength(1)
+        edgeL0 = max(self.focusedFSlice.getEdgeLength(0) \
+                     - 2 * self.focusedFSlice.pixel_height,
+                     Quantity("0.0 mum"))
+        edgeL1 = max(self.focusedFSlice.getEdgeLength(1) \
+                     - 2 * self.focusedFSlice.pixel_width,
+                     Quantity("0.0 mum"))
         cEZ, cEY, cEX = self.ztol / 2.0, edgeL0 / 4.0, edgeL1 / 4.0
         diameter = (edgeL0 + edgeL1) / 2.0
         diameterError = .1 * diameter
