@@ -64,9 +64,10 @@ class OscThicknessCorrector(Worker.Worker):
         y = osc[u'y-position']
         t = copy.deepcopy(osc[u'thickness'])
         r = numpy.sqrt(x.data**2+y.data**2)
+        r_min = r.min()
         r_max = r.max()
         correction = Quantity(self.paramMax_correction.value)/t.unit
-        t.data = t.data + correction*(r/r_max-1)
+        t.data = t.data + correction*((r-r_min)/(r_max-r_min))
         t.longname='corrected thickness'
         t.shortname='t_c'
         t.seal()
