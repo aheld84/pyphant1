@@ -47,27 +47,27 @@ class WorkerRepository(wx.ScrolledWindow):
                  size=wx.DefaultSize,
                  style=0):
         wx.ScrolledWindow.__init__(self, parent, id)
-        self._workerRegistry=pyphant.core.WorkerRegistry.WorkerRegistry.getInstance()
-        self._boxSizer=wx.BoxSizer(wx.VERTICAL)
+        workerRegistry = pyphant.core.WorkerRegistry.WorkerRegistry
+        self._workerRegistry = workerRegistry.getInstance()
+        self._boxSizer = wx.BoxSizer(wx.VERTICAL)
         self.initFoldPanelBar()
         self.SetSizer(self._boxSizer)
-	self.SetScrollRate(1, 1)
+        self.SetScrollRate(1, 1)
         self._boxSizer.SetVirtualSizeHints(self)
 
     def initFoldPanelBar(self):
         map(self.addWorkerButton, self._workerRegistry.getWorkers())
 
-
     def addWorkerButton(self, workerInfo):
         btn = WorkerButton(self, workerInfo)
-        self._boxSizer.Add(btn,1, wx.EXPAND, wx.ALL, 10)
+        self._boxSizer.Add(btn, 1, wx.EXPAND, wx.ALL, 10)
 
 
 class WorkerButton(wx.Button):
     def __init__(self, parent, workerInfo):
-        name=workerInfo.name
+        name = workerInfo.name
         wx.Button.__init__(self, parent, label=name)
-        self._workerInfo=workerInfo
+        self._workerInfo = workerInfo
         self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
 
     def onLeftDown(self, evt):

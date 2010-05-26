@@ -41,18 +41,19 @@ import logging
 import singletonmixin
 import pkg_resources
 
+
 class WorkerRegistry(singletonmixin.Singleton):
     def __init__(self):
-        self._workerPool=[]
-        self._logger=logging.getLogger("pyphant")
+        self._workerPool = []
+        self._logger = logging.getLogger("pyphant")
         self._dirty = True
 
     def registerWorker(self, workerInfo):
         if not workerInfo in self._workerPool:
             self._workerPool.append(workerInfo)
-            self._logger.info( "added worker" )
+            self._logger.info("added worker")
         else:
-            self._logger.info( "did nothing" )
+            self._logger.info("did nothing")
 
     def getWorkers(self):
         if self._dirty:
@@ -60,17 +61,19 @@ class WorkerRegistry(singletonmixin.Singleton):
                 wm = worker.load()
                 for module in wm.workers:
                     try:
-                        moduleName = worker.module_name+"."+module
-                        self._logger.info("Trying to import "+moduleName)
-                        exec 'import '+moduleName
+                        moduleName = worker.module_name + "." + module
+                        self._logger.info("Trying to import " + moduleName)
+                        exec 'import ' + moduleName
                         try:
-                            version=eval(moduleName+".__version__")
+                            version = eval(moduleName + ".__version__")
                         except:
-                            version="unknown"
-                        self._logger.info("Import module %s in version %s" %(moduleName, version))
+                            version = "unknown"
+                        self._logger.info("Import module %s in version %s" \
+                                          %(moduleName, version))
                     except ImportError, e:
-                        self._logger.warning("worker archive " + worker.module_name
-                                             + " contains invalid worker "+module+": " + str(e))
+                        self._logger.warning(
+                            "worker archive " + worker.module_name \
+                            + " contains invalid worker " + module \
+                            + ": " + str(e))
             self._dirty = False
         return self._workerPool
-
