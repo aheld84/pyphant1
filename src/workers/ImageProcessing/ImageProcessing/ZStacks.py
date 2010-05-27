@@ -91,7 +91,7 @@ class ZStacks(Worker.Worker):
             rpath, gradient_alg, label_alg = self.get_rp_ga_la()
         except IOError:
             import logging
-            logger = loggin.getLogger("pyphant")
+            logger = logging.getLogger("pyphant")
             logger.warn("Could not load ZStack recipes.")
             return None
         zsm = ZStackManager()
