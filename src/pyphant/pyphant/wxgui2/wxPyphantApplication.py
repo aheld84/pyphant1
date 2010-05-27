@@ -471,11 +471,16 @@ class wxPyphantFrame(wx.Frame):
                                        "", "ZStack")
             if tedlg.ShowModal() == wx.ID_OK:
                 name = tedlg.GetValue()
-                zstack = ZStack(name=name, xml_file=filename)
                 zsm = ZStackManager()
-                zsm.addZStack(zstack)
-                cpt2 = "Info"
-                msg2 = "Successfully imported ZStack."
+                try:
+                    dummy = zsm.getZStackByName(name)
+                    cpt2 = "Error"
+                    msg2 = "ZStack %s already exists!" % name
+                except ValueError:
+                    zstack = ZStack(name=name, xml_file=filename)
+                    zsm.addZStack(zstack)
+                    cpt2 = "Info"
+                    msg2 = "Successfully imported ZStack."
                 dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
                 dlg2.ShowModal()
                 dlg2.Destroy()

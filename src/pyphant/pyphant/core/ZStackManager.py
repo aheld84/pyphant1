@@ -53,8 +53,8 @@ kmanager = KnowledgeManager.getInstance()
 class ZStack(object):
     def __init__(self, sc_id=None, name=None, xml_file=None, temporary=False):
         """Initializes a ZStack from an existing id or a local source"""
-        self.temporary = temporary
         assert (sc_id is None) is not (xml_file is None)
+        self.temporary = temporary
         self._recipe_path = None
         if sc_id is not None:
             self.repr_sc = kmanager.getDataContainer(sc_id)
@@ -236,3 +236,12 @@ class ZStackManager(object):
         if len(search_result) == 0:
             return []
         return [ZStack(zs_id[0]) for zs_id in search_result]
+
+    def getZStackByName(self, name):
+        search_dict = {'type':'sample', 'attributes':{'isZStack':'yes'},
+                       'longname':name}
+        sresult = kmanager.search(['id'], search_dict)
+        if sresult == []:
+            raise ValueError("There is no ZStack called %s!" \
+                                 % name)
+        return ZStack(sc_id=sresult[0][0])

@@ -40,9 +40,8 @@ __version__ = "$Revision$"
 
 from pyphant.core import Worker, Connectors,\
                          Param
-from pyphant.core.ZStackManager import ZStackManager
+from pyphant.core.ZStackManager import (ZStackManager, ZStack)
 from pyphant.core.RecipeAlg import RecipeAlg
-from tools.Emd5Src import HiddenValue
 import ImageProcessing
 import os
 
@@ -57,16 +56,13 @@ class ZStacks(Worker.Worker):
                 Connectors.SUBTYPE_FILE),
                ("gradient_recipe", u"Gradient recipe", [u'None'], None),
                ("label_recipe", u"Label recipe", [u'None'], None),
-               #("cutoff", u"Cutoff", "100 mum", None),
-               ("median_size", u"Median size", 5, None)]
+               ("threshold", u"Gradient threshold", "15 mum**-1", None)]
 
     def refreshParams(self, subscriber=None):
         zstacks = ZStackManager().getZStacks()
         pvalues = []
         for zstack in zstacks:
-            hvalue = HiddenValue(zstack.repr_sc.longname)
-            hvalue.setHiddenValue(zstack)
-            pvalues.append(hvalue)
+            pvalues.append(zstack.repr_sc.longname)
         pvalues.sort()
         self.paramZstack.possibleValues = pvalues
         directory = os.path.dirname(self.paramRpath.value)
@@ -83,26 +79,32 @@ class ZStacks(Worker.Worker):
         label_recipe = self.paramLabel_recipe.value
         rpath = os.path.dirname(os.path.realpath(self.paramRpath.value))
         gradient_alg = RecipeAlg(os.path.join(rpath, gradient_recipe),
-                                 'gradient', 'gradientWorker',
-                                 {'median':{'size':self.paramMedian_size.value}})
-        label_alg = RecipeAlg(os.path.join(rpath, label_recipe),
-                              'label', 'ndimage')
+                                 'gradient', 'gradientWorker')
+        label_alg = RecipeAlg(
+            os.path.join(rpath, label_recipe), 'label', 'ndimage',
+            {'threshold':{'threshold':self.paramThreshold.value}})
         return (rpath, gradient_alg, label_alg)
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def statistics(self, subscriber=0):
-        #cutoff = self.paramCutoff.value
         try:
             rpath, gradient_alg, label_alg = self.get_rp_ga_la()
         except IOError:
+            import logging
+            logger = loggin.getLogger("pyphant")
+            logger.warn("Could not load ZStack recipes.")
             return None
-        self.paramZstack.value.hiddenvalue.recipe_path = rpath
-        return self.paramZstack.value.hiddenvalue.get_statistics(
+        zsm = ZStackManager()
+        zstack = zsm.getZStackByName(self.paramZstack.value)
+        zstack.recipe_path = rpath
+        return zstack.get_statistics(
             gradient_alg, label_alg, subscriber=subscriber)
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def raw_image(self, subscriber=0):
-        return self.paramZstack.value.hiddenvalue.repr_sc
+        zsm = ZStackManager()
+        zstack = zsm.getZStackByName(self.paramZstack.value)
+        return zstack.repr_sc
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def mf_human(self, subscriber=0):
@@ -110,6 +112,8 @@ class ZStacks(Worker.Worker):
             rpath, gradient_alg, label_alg = self.get_rp_ga_la()
         except IOError:
             return None
-        self.paramZstack.value.hiddenvalue.recipe_path = rpath
-        return self.paramZstack.value.hiddenvalue.get_human_imgs(
-            gradient_alg, label_alg, subscriber=subscriber)
+        zsm = ZStackManager()
+        zstack = zsm.getZStackByName(self.paramZstack.value)
+        zstack.recipe_path = rpath
+        return zstack.get_human_imgs(gradient_alg, label_alg,
+                                     subscriber=subscriber)

@@ -46,16 +46,13 @@ from scipy import ndimage
 from ImageProcessing.AutoFocus import FocusSlice
 
 def sliceAndMeasure(image, labels, grow, human_output):
-    from pyphant.core.KnowledgeManager import KnowledgeManager
-    km = KnowledgeManager.getInstance()
-    km.registerDataContainer(image)
-    mask_parent = image.id
     data = image.data
-    dy = (image.dimensions[0].data[1] - image.dimensions[0].data[0])
-    dy *= image.dimensions[0].unit
-    dx = (image.dimensions[1].data[1] - image.dimensions[1].data[0])
-    dx *= image.dimensions[1].unit
-    unit = image.unit / (dy * dx)
+    dims = image.dimensions
+    dy = (dims[0].data[1] - dims[0].data[0])
+    dy *= dims[0].unit
+    dx = (dims[1].data[1] - dims[1].data[0])
+    dx *= dims[1].unit
+    focus_unit = image.unit / (dy * dx)
     slices = ndimage.find_objects(labels.data)
     if human_output:
         resdata = numpy.zeros(data.shape)
@@ -64,37 +61,41 @@ def sliceAndMeasure(image, labels, grow, human_output):
     label = 0
     for sl in slices:
         label += 1
-        if sl[0].stop - sl[0].start >= 3 and sl[1].stop - sl[1].start >= 3:
+        if sl[0].stop - sl[0].start >= 4 and sl[1].stop - sl[1].start >= 4:
             start = [sl[0].start - grow, sl[1].start - grow]
             stop = [sl[0].stop + grow, sl[1].stop + grow]
             if start[0] < 0: start[0] = 0
             if start[1] < 0: start[1] = 0
             bigsl = (slice(start[0], stop[0]), slice(start[1], stop[1]))
-            focus = numpy.sum(data[bigsl]) / data[bigsl].size
+            focus = float(numpy.sum(data[bigsl])) / data[bigsl].size
             if human_output:
                 resdata[sl] = numpy.where(labels.data[sl] == label,
                                           focus, resdata[sl])
             else:
-                #area = numpy.where(labels.data[sl] == label, 1, 0).sum()
-                #area *= dx * dy
-                mask = numpy.where(labels.data[sl] == label, True, False)
+                detail = numpy.where(labels.data[sl] == label, 1, 0)
+                eroded = ndimage.binary_erosion(detail)
+                area = eroded.sum()
+                if area <= 1:
+                    continue
+                area *= dx * dy
                 dimslices = [slice(dim.data[subsl.start] * dim.unit,
                                    dim.data[subsl.stop - 1] * dim.unit + dl) \
                                  for subsl, dim, dl in zip(sl,
                                                            image.dimensions,
                                                            [dy, dx])]
-                ydim = image.dimensions[0]
-                xdim = image.dimensions[1]
-                pixel_height = ydim.unit * (ydim.data[1] - ydim.data[0])
-                pixel_width = xdim.unit * (xdim.data[1] - xdim.data[0])
-                resdata[label - 1] = FocusSlice(dimslices, focus * unit,
-                                                mask_parent, mask_slices=sl,
-                                                pixel_width=pixel_width,
-                                                pixel_height=pixel_height)
+                dimslices = []
+                dimslices.append(slice(dims[0].data[sl[0].start] * dims[0].unit,
+                                       dims[0].data[sl[0].stop - 1] \
+                                           * dims[0].unit + dy))
+                dimslices.append(slice(dims[0].data[sl[0].start] * dims[0].unit,
+                                       dims[0].data[sl[0].stop - 1] \
+                                           * dims[0].unit + dy))                                       
+                resdata[label - 1] = FocusSlice(dimslices, focus * focus_unit,
+                                                area)
     longname = "MeasureFocus"
     if human_output:
         result = DataContainer.FieldContainer(resdata,
-                                              unit,
+                                              focus_unit,
                                               None,
                                               copy.deepcopy(image.mask),
                                               copy.deepcopy(image.dimensions),

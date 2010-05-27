@@ -58,10 +58,10 @@ class ZStackTestCase(unittest.TestCase):
         label_recipe = "pre-MF-no-median.h5"
         rpath = os.path.join(ppath, "tests", "resources", "recipes")
         gradient_alg = RecipeAlg(os.path.join(rpath, gradient_recipe),
-                                 'gradient', 'gradientWorker',
-                                 {'median':{'size':5}})
-        label_alg = RecipeAlg(os.path.join(rpath, label_recipe),
-                              'label', 'ndimage')
+                                 'gradient', 'gradientWorker')
+        label_alg = RecipeAlg(
+            os.path.join(rpath, label_recipe), 'label', 'ndimage',
+            {'threshold':{'threshold':"15 mum**-1"}})
         return (rpath, gradient_alg, label_alg)
 
     def check(self, rng, value):
@@ -91,12 +91,11 @@ class ZStackTestCase(unittest.TestCase):
         self.check((200.0, 1.0), statistics['x-value'].data[imax])
         self.check((200.0, 1.0), statistics['y-value'].data[imax])
         self.check((300.0, 0.0), statistics['z-value'].data[imax])
-        self.check((20.5, 1.0), statistics['diameter'].data[imax])
+        self.check((20.7, 1.0), statistics['diameter'].data[imax])
         self.check((53.0, 1.0), statistics['x-value'].data[imin])
         self.check((53.0, 1.0), statistics['y-value'].data[imin])
         self.check((300.0, 0.0), statistics['z-value'].data[imin])
-        self.check((6.5, 1.0), statistics['diameter'].data[imin])
-        print statistics['diameter'].data
+        self.check((7.0, 1.0), statistics['diameter'].data[imin])
 
 
 if __name__ == "__main__":

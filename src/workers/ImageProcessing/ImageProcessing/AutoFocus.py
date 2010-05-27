@@ -101,56 +101,45 @@ class Cube(object):
 
 
 class FocusSlice(Cube):
-    def __init__(self, slices, focus, mask_parent, mask_slices,
-                 pixel_width, pixel_height):
+    def __init__(self, slices, focus, area):
         Cube.__init__(self, slices)
         self.focus = focus
-        self.mask_parent = mask_parent
-        self.mask_slices = mask_slices
-        self._mask = None
-        self.pixel_height = pixel_height
-        self.pixel_width = pixel_width
+        self.area = area
 
     def __str__(self):
         return self.__repr__()
 
     def __repr__(self):
-        retstr = "FocusSlice(%s, %s, %s, %s, %s, %s)"
+        retstr = "FocusSlice(%s, %s, %s)"
         return retstr % (self.slices.__repr__(),
                          self.focus.__repr__(),
-                         self.mask_parent.__repr__(),
-                         self.mask_slices.__repr__(),
-                         self.pixel_width.__repr__(),
-                         self.pixel_height.__repr__())
+                         self.area.__repr__())
 
     def __eq__(self, other):
         if isinstance(other, FocusSlice):
             eqflag = self.slices == other.slices
             eqflag &= self.focus == other.focus
-            eqflag &= (self.mask == other.mask).all()
-            eqflag &= self.pixel_width == other.pixel_width
-            eqflag &= self.pixel_height == other.pixel_height
+            eqflag &= self.area == other.area
             return eqflag
         else:
             return False
 
-    def getMask(self):
-        if self._mask == None:
-            from pyphant.core.KnowledgeManager import KnowledgeManager
-            km = KnowledgeManager.getInstance()
-            self._mask = km.getDataContainer(
-                self.mask_parent).data[self.mask_slices]
-        return self._mask
-    mask = property(getMask)
+    def get_diameter(self):
+        # d = 2 * sqrt(A / pi)
+        try:
+            d = 1.1283791670 * self.area.sqrt()
+        except AttributeError:
+            import math
+            d = 1.1283791670 * math.sqrt(self.area)
+        return d
 
 
 class ZTube(object):
-    def __init__(self, fslice, zvalue, ztol, boundRatio, featureRatio):
+    def __init__(self, fslice, zvalue, ztol, boundRatio):
         self.yxCube = Cube(fslice.slices)
         self.maxFocus = fslice.focus
         self.focusedFSlice = fslice
         self.boundRatio = boundRatio
-        self.featureRatio = featureRatio
         self.zCube = Cube([slice(zvalue - ztol, zvalue + ztol)])
         self.ztol = ztol
         self.focusedZ = zvalue
@@ -180,23 +169,16 @@ class ZTube(object):
         (z, y, x, diameter, focus, zError, yError, xError, diameterError)
         corresponding to the most focused feature in the ZTube
         """
-        #This is just a preliminary example of how to calculate the values...
         coordY, coordX = self.focusedFSlice.getCenter()
         coordZ = self.focusedZ
-        edgeL0 = max(self.focusedFSlice.getEdgeLength(0) \
-                     - 2 * self.focusedFSlice.pixel_height,
-                     Quantity("0.0 mum"))
-        edgeL1 = max(self.focusedFSlice.getEdgeLength(1) \
-                     - 2 * self.focusedFSlice.pixel_width,
-                     Quantity("0.0 mum"))
-        cEZ, cEY, cEX = self.ztol / 2.0, edgeL0 / 4.0, edgeL1 / 4.0
-        diameter = (edgeL0 + edgeL1) / 2.0
+        diameter = self.focusedFSlice.get_diameter()
+        cEZ, cEY, cEX = self.ztol / 2.0, diameter / 5.0, diameter / 5.0
         diameterError = .1 * diameter
         return (coordZ, coordY, coordX, diameter, self.focusedFSlice.focus,
                 cEZ, cEY, cEX, diameterError)
 
 
-def autofocus(focusSC, boundRatio, featureRatio):
+def autofocus(focusSC, boundRatio):
     from pyphant.core.KnowledgeManager import KnowledgeManager
     km = KnowledgeManager.getInstance()
     ztubes = []
@@ -209,7 +191,6 @@ def autofocus(focusSC, boundRatio, featureRatio):
         for fslice in focusFC.data:
             if fslice != 0:
                 if not isinstance(fslice, FocusSlice):
-                    print fslice
                     raise ValueError("Should be FocusSlice object!")
                 matched = False
                 for ztube in ztubes:
@@ -218,7 +199,7 @@ def autofocus(focusSC, boundRatio, featureRatio):
                         break
                 if not matched:
                     ztubes.append(ZTube(fslice, zvalue, ztol,
-                                        boundRatio, featureRatio))
+                                        boundRatio))
     if ztubes == []:
         return []
     fInclusions = [ztube.getFocusedInclusion() for ztube in ztubes]
@@ -246,16 +227,13 @@ class AutoFocus(Worker.Worker):
     REVISION = "$Revision$"[11:-1]
     name = "AutoFocus"
     _params = [("boundRatio", "Minimal overlap ratio in percent (bounding box)",
-                50, None),
-               ("featureRatio",
-                "Not implemented", 75, None)]
+                50, None)]
     _sockets = [("focusSC", Connectors.TYPE_ARRAY)]
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def AutoFocusWorker(self, focusSC, subscriber=0):
         columns = autofocus(focusSC,
-                            self.paramBoundRatio.value / 100.0,
-                            self.paramFeatureRatio.value / 100.0)
+                            self.paramBoundRatio.value / 100.0)
         longname = "AutoFocus"
         result = DataContainer.SampleContainer(columns=columns,
                                               longname=longname)

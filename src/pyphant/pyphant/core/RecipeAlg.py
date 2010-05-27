@@ -132,7 +132,8 @@ class RecipeAlg(object):
             ids = dict([(wname, dict([(sname, unicode(isc[column].data[index])) \
                                       for sname, isc in sockets.iteritems()])) \
                         for wname, sockets in input_scs.iteritems()])
-            out_column.append(self.get_result(ids, id_only=True))
+            out_column.append(self.get_result(ids, id_only=True,
+                                              temporary=temporary))
         output_sc[column].data = numpy.array(out_column)
         output_sc.longname = "%s_%s" % (os.path.basename(self.recipe_fname),
                                         ref_sc.longname)
