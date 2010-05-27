@@ -83,7 +83,8 @@ class NDImage(Worker.Worker):
                 "grey_invert":(None, ),
                 "cut_histogram":(None, "tolerance"),
                 "label":(None, "connectivity"),
-                "threshold":(None, "threshold")}
+                "threshold":(None, "threshold"),
+                "area_opening":(None, "size")}
     _ndparams = {"iterations":1,
                  "size":5,
                  "mode":["reflect",
@@ -101,6 +102,20 @@ class NDImage(Worker.Worker):
     _params = [("pile", "Treat 3d images as pile of 2d images", True, None),
                ("ndfilter", "Filter", _filters.keys(), None)]
     _params += [(pn, pn, dflt, None) for pn, dflt in _ndparams.iteritems()]
+
+    def area_opening(self, data, size):
+        structure = ndimage.morphology.generate_binary_structure(data.ndim,
+                                                                 2)
+        labels = ndimage.label(data, structure=structure)[0]
+        slices = ndimage.find_objects(labels)
+        areas = [numpy.where(labels[sli] == label + 1, True, False).sum() \
+                     for label, sli in enumerate(slices)]
+        print areas
+        output = numpy.zeros(data.shape, dtype=data.dtype)
+        for label, sli, area in zip(range(len(slices)), slices, areas):
+            if area >= size:
+                output[sli] |= numpy.where(labels[sli] == label + 1, data[sli], 0)
+        return output
 
     def threshold(self, data, threshold):
         from pyphant.quantities import (Quantity,
