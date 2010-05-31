@@ -593,6 +593,8 @@ class WebInterface(object):
                        + [key for key in common_keys \
                           if qry[key] == self.anystr] \
                        + ['id']
+        if not order_by in missing_keys:
+            order_by = 'date'
         search_result = self.kn.km.search(
             missing_keys, search_dict, order_by=order_by,
             order_asc=order_asc, limit=limit, offset=offset)
