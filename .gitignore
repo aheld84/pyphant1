@@ -17,3 +17,4 @@ dist
 *.out
 *.bst
 *.bbl
+.ropeproject/
