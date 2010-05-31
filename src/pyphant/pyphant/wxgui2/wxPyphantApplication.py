@@ -375,8 +375,31 @@ class wxPyphantFrame(wx.Frame):
         return kmanagerMenu
 
     def onUpdatePyphant(self, event):
-        import pyphant.core.UpdateManager
-        pyphant.core.UpdateManager.updatePackage(self.updateIds[event.Id])
+        packageName = self._updateMenu.FindItemById(event.Id)\
+                      .GetItemLabelText()[7:]
+        cpt = u"Update Manager"
+        msg = u"Trying to update package '%s'.\nYou will be notified "\
+              "when the process has finished.\n"\
+              "Please press 'OK' now to begin." % packageName
+        dlg = wx.MessageDialog(self, msg, cpt, style=wx.OK|wx.CANCEL)
+        dlgid = dlg.ShowModal()
+        dlg.Destroy()
+        if dlgid != wx.ID_OK:
+            return
+        try:
+            import pyphant.core.UpdateManager
+            error = pyphant.core.UpdateManager.updatePackage(
+                self.updateIds[event.Id])
+        except Exception, exc:
+            error = "%s:\n%s" % (exc.__class__.__name__, exc.message)
+        if error is not None and len(error) > 0:
+            msg = u"An error occured during the update of '%s':\n%s"\
+                  % (packageName, error)
+        else:
+            msg = u"Finished updating '%s'." % packageName
+        dlg = wx.MessageDialog(self, msg, cpt, style=wx.OK)
+        dlg.ShowModal()
+        dlg.Destroy()
 
     def onWorkerRep(self, event):
         wrpane = self._auiManager.GetPane(self._workerRepository)
