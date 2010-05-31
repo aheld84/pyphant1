@@ -138,10 +138,6 @@ class wxPyphantFrame(wx.Frame):
                                     id2=self.ID_WINDOW_BOTTOM)
         #self.Bind(wx.EVT_SIZE, self.onSize)
         self.compositeWorkerStack = []
-        wx.MessageBox("Located log directory at %s.\n"
-                      "Logging will go to %s." %
-                      (LOGDIR, os.path.join(LOGDIR, 'pyphant.log')),
-                      "Logging info")
 
     def _initSash(self):
         self._workerRepository = wx.SashLayoutWindow(
@@ -152,7 +148,23 @@ class wxPyphantFrame(wx.Frame):
         #self._workerRepository.SetAlignment(wx.LAYOUT_RIGHT)
         #self._workerRepository.SetSashVisible(wx.SASH_LEFT, True)
         #self._workerRepository.SetExtraBorderSize(10)
-        WorkerRepository.WorkerRepository(self._workerRepository)
+        try:
+            WorkerRepository.WorkerRepository(self._workerRepository)
+        except:
+            import sys
+            self._wxPyphantApp._logger.debug(u"An exception occured while "\
+                                             "loading the toolboxes.",
+                                             exc_info=sys.exc_info())
+            wx.MessageBox("An error has occurred while importing "\
+                          "the toolboxes.\nPlease investigate the logfile "\
+                          "for further details.\nThe logfile is located at %s\n"\
+                          "You may also try to update and restart wxPyphant."\
+                          % os.path.join(LOGDIR, 'pyphant.log'),
+                          "Toolbox Error!")
+            self._workerRepository = wx.SashLayoutWindow(
+                self, self.ID_WINDOW_RIGHT, wx.DefaultPosition,
+                wx.Size(220,1000),
+                wx.NO_BORDER)
 
     def _initAui(self):
         self._auiManager = wx.aui.AuiManager(self)
@@ -182,8 +194,9 @@ class wxPyphantFrame(wx.Frame):
             "d:%(module)s.%(funcName)s(l %(lineno)d):%(message)s"))
         logbuffer.setTarget(handler)
         logbuffer.flush()
-        self._auiManager.AddPane(self._logpane, wx.BOTTOM, 'Logfile '\
-                                 '(click into text to update)')
+        self._auiManager.AddPane(self._logpane, wx.BOTTOM, 'Logfile @ %s'\
+                                 ' (click into text to update)' \
+                                 % os.path.join(LOGDIR, 'pyphant.log'))
         self._auiManager.AddPane(self._workerRepository, wx.RIGHT,
                                  'Worker Repository')
         self._auiManager.AddPane(self._remainingSpace, wx.CENTER, 'Main')
@@ -234,27 +247,33 @@ class wxPyphantFrame(wx.Frame):
                     self._wxPyphantApp.pathToRecipe = path
             dlg.Destroy()
         import PyphantCanvas
-        try:
-            if self._wxPyphantApp.pathToRecipe[-3:] == '.h5':
-                if os.path.exists(self._wxPyphantApp.pathToRecipe):
+        if self._wxPyphantApp.pathToRecipe[-3:] == '.h5':
+            if os.path.exists(self._wxPyphantApp.pathToRecipe):
+                try:
                     recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File(
                         self._wxPyphantApp.pathToRecipe)
                     self._remainingSpace = PyphantCanvas.PyphantCanvas(self, recipe)
-                else:
+                except:
+                    self._wxPyphantApp._logger.debug(u"An exception occured while "\
+                                       "loading a recipe.",
+                                       exc_info=sys.exc_info())
+                    wx.MessageBox("An error has occurred while opening "\
+                                  "the recipe.\nRecipe has been set to an "\
+                                  "empty file in order to prevent data loss.\n"\
+                                  "Please investigate the logfile "\
+                                  "for further details.\nThe logfile is located at %s"\
+                                  % os.path.join(LOGDIR, 'pyphant.log'),
+                                  "Recipe broken, unknown format or outdated!")
+                    self._wxPyphantApp.pathToRecipe += ".error.h5"
                     self._remainingSpace = PyphantCanvas.PyphantCanvas(self)
-                from pyphant.core.WebInterface import shorten
-                self.SetTitle(self.titleStr \
-                              % shorten(self._wxPyphantApp.pathToRecipe, 30, 30))
             else:
-                raise IOError('Unknown file format in file "%s"'\
+                self._remainingSpace = PyphantCanvas.PyphantCanvas(self)
+            from pyphant.core.WebInterface import shorten
+            self.SetTitle(self.titleStr \
+                          % shorten(self._wxPyphantApp.pathToRecipe, 30, 30))
+        else:
+            raise IOError('Unknown file format in file "%s"'\
                               % self._wxPyphantApp.pathToRecipe)
-        except:
-            wx.MessageBox("An error has occurred while opening "\
-                          "the recipe.\nPlease investigate the logfile "\
-                          "for further details.\nThe logfile is located at %s"\
-                          % os.path.join(LOGDIR, 'pyphant.log'),
-                          "Recipe broken, unknown format or outdated!")
-            raise
         self.recipeState = 'clean'
         self._remainingSpace.diagram.recipe.registerListener(self.recipeChanged)
 
