@@ -45,7 +45,6 @@ from pyphant.core.DataContainer import (FieldContainer, SampleContainer)
 import scipy
 import Image
 from pyphant.core.KnowledgeManager import KnowledgeManager
-from pyphant.core.RecipeAlg import RecipeAlg
 import os
 kmanager = KnowledgeManager.getInstance()
 
@@ -137,11 +136,13 @@ class ZStack(object):
                       'zvi_filename':img_meta['zvi_filename'],
                       'zvalue':zvalue,
                       'timestamp':img_meta['timestamp'],
-                      'zid':img_meta['zid']}
+                      'zid':img_meta['zid'],
+                      'ZStackType':'RawImage',
+                      'vmin':0, 'vmax':255}
             img_fc = FieldContainer(data=data,
                                     longname=os.path.basename(
                                         img_meta['img_filename']),
-                                    shortname="img",
+                                    shortname="i",
                                     dimensions=dimensions, attributes=fcattr)
             img_fc.seal()
             kmanager.registerDataContainer(img_fc, temporary=temporary)
@@ -153,7 +154,8 @@ class ZStack(object):
                              shortname='z', unit=Quantity(1.0, 'mum'))
         filefc = FieldContainer(scipy.array(files), longname='filename',
                                 shortname='f')
-        emd5fc = FieldContainer(scipy.array(emd5s), longname='emd5', shortname='i')
+        emd5fc = FieldContainer(scipy.array(emd5s), longname='emd5',
+                                shortname='i')
         if pdial is not None:
             pdial.Destroy()
         return zfc, filefc, emd5fc
@@ -175,53 +177,14 @@ class ZStack(object):
             return None
         attributes = {}
         attributes['ztol'] = ZStack._estimate_ztol(zfc)
-        attributes['isZStack'] = 'yes'
+        attributes['ZStackType'] = 'RawSC'
         ssc = SampleContainer([zfc, filefc, emd5fc],
                               name,
-                              "z-stack",
+                              "z",
                               attributes)
         ssc.seal()
         kmanager.registerDataContainer(ssc, temporary=self.temporary)
         return ssc
-
-    def _set_recipe_path(self, rpath):
-        self._recipe_path = os.path.realpath(rpath)
-
-    def _get_recipe_path(self):
-        return self._recipe_path
-    recipe_path = property(_get_recipe_path, _set_recipe_path)
-
-    def _get_mf_id(self, gradient_alg, label_alg, human, subscriber=0):
-        assert self._recipe_path is not None
-        uattr = {'isZStack':'no'}
-        in_ids = {'grey_invert':{'image':self.repr_sc.id}}
-        gradient_id = gradient_alg.get_batch_result_id(
-            in_ids, update_attrs=uattr, subscriber=subscriber,
-            start=1, end=30, temporary=self.temporary)
-        in_ids = {'threshold':{'image':gradient_id}}
-        label_id = label_alg.get_batch_result_id(
-            in_ids, update_attrs=uattr, subscriber=subscriber,
-            start=31, end=66, temporary=self.temporary)
-        mf_alg = RecipeAlg(os.path.join(self.recipe_path, 'MeasureFocus.h5'),
-                           'MeasureFocus', 'measure_focus',
-                           {'MeasureFocus':{'humanOutput':human}})
-        in_ids = {'MeasureFocus':{'image':gradient_id,
-                                  'labels':label_id}}
-        return mf_alg.get_batch_result_id(
-            in_ids, update_attrs=uattr, subscriber=subscriber,
-            start=67, end=100, temporary=self.temporary)
-
-    def get_statistics(self, gradient_alg, label_alg, subscriber=0):
-        mf_id = self._get_mf_id(gradient_alg, label_alg, False, subscriber)
-        af_alg = RecipeAlg(os.path.join(self.recipe_path, 'AutoFocus.h5'),
-                           'AutoFocus', 'AutoFocusWorker')
-        in_ids = {'AutoFocus':{'focusSC':mf_id}}
-        af_sc = af_alg.get_result(in_ids, temporary=self.temporary)
-        return af_sc
-
-    def get_human_imgs(self, gradient_alg, label_alg, subscriber=0):
-        mf_id = self._get_mf_id(gradient_alg, label_alg, True, subscriber)
-        return kmanager.getDataContainer(mf_id)
 
 
 class ZStackManager(object):
@@ -231,14 +194,14 @@ class ZStackManager(object):
 
     def getZStacks(self):
         """Returns a list of all ZStacks in the pool"""
-        search_dict = {'type':'sample', 'attributes':{'isZStack':'yes'}}
+        search_dict = {'type':'sample', 'attributes':{'ZStackType':'RawSC'}}
         search_result = kmanager.search(['id'], search_dict)
         if len(search_result) == 0:
             return []
         return [ZStack(zs_id[0]) for zs_id in search_result]
 
     def getZStackByName(self, name):
-        search_dict = {'type':'sample', 'attributes':{'isZStack':'yes'},
+        search_dict = {'type':'sample', 'attributes':{'ZStackType':'RawSC'},
                        'longname':name}
         sresult = kmanager.search(['id'], search_dict)
         if sresult == []:

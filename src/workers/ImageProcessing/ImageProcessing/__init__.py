@@ -43,6 +43,7 @@ FEATURE_COLOR=0
 
 workers=[
     "ApplyMask",
+    "AutoFocus",
     "CoverageWorker",
     "DiffWorker",
     "DistanceMapper",
@@ -56,14 +57,12 @@ workers=[
     "ImageLoaderWorker",
     "InvertWorker",
     "Medianiser",
-    "MeasureFocus",
     "NDImageWorker",
     "SkeletonizeFeature",
+    "SliceSelector",
     "ThresholdingWorker",
     "UltimatePointsCalculator",
-    "Watershed",
-    "ZStacks",
-    "SliceSelector"
+    "Watershed"
     ]
 
 def isFeature(point):

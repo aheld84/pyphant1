@@ -51,19 +51,6 @@ class ZStackTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def get_rp_ga_la(self, ppath):
-        import os
-        from pyphant.core.RecipeAlg import RecipeAlg
-        gradient_recipe = "pre-MF-no-median.h5"
-        label_recipe = "pre-MF-no-median.h5"
-        rpath = os.path.join(ppath, "tests", "resources", "recipes")
-        gradient_alg = RecipeAlg(os.path.join(rpath, gradient_recipe),
-                                 'gradient', 'gradientWorker')
-        label_alg = RecipeAlg(
-            os.path.join(rpath, label_recipe), 'label', 'ndimage',
-            {'threshold':{'threshold':"15 mum**-1"}})
-        return (rpath, gradient_alg, label_alg)
-
     def check(self, rng, value):
         assert value >= rng[0] - rng[1] and value <= rng[0] + rng[1], \
                "Value %f not in range (%f, %f)" % (value, rng[0] - rng[1],
@@ -81,20 +68,20 @@ class ZStackTestCase(unittest.TestCase):
                         temporary=True)
         print "Done."
         print "Calculating ZStack-statistics..."
-        rpath, gradient_alg, label_alg = self.get_rp_ga_la(ppath[0])
-        zstack.recipe_path = rpath
-        statistics = zstack.get_statistics(gradient_alg, label_alg)
+        from ImageProcessing.AutoFocus import AutoFocus
+        afw = AutoFocus()
+        statistics = afw.get_statistics_sc(zstack.repr_sc)
         print "Done."
         assert len(statistics['diameter'].data) == 2
         imax = statistics['diameter'].data.argmax()
         imin = statistics['diameter'].data.argmin()
-        self.check((200.0, 1.0), statistics['x-value'].data[imax])
-        self.check((200.0, 1.0), statistics['y-value'].data[imax])
-        self.check((300.0, 0.0), statistics['z-value'].data[imax])
+        self.check((200.0, 1.0), statistics['x-pos'].data[imax])
+        self.check((200.0, 1.0), statistics['y-pos'].data[imax])
+        self.check((300.0, 0.0), statistics['z-pos'].data[imax])
         self.check((20.7, 1.0), statistics['diameter'].data[imax])
-        self.check((53.0, 1.0), statistics['x-value'].data[imin])
-        self.check((53.0, 1.0), statistics['y-value'].data[imin])
-        self.check((300.0, 0.0), statistics['z-value'].data[imin])
+        self.check((53.0, 1.0), statistics['x-pos'].data[imin])
+        self.check((53.0, 1.0), statistics['y-pos'].data[imin])
+        self.check((300.0, 0.0), statistics['z-pos'].data[imin])
         self.check((7.0, 1.0), statistics['diameter'].data[imin])
 
 
