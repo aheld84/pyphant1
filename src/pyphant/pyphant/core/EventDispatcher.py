@@ -47,6 +47,14 @@ class EventDispatcher:
         except KeyError:
             self._listeners[eventType] = [listener]
 
+    # The following method is a quick workaround for the shortcoming
+    # of this EventDispatcher which offers no control, in which
+    # order listeners for the same event are called and the
+    # event interface is not specified at all, so there is no
+    # functionality like event.skip()
+    def registerExclusiveListener(self, listener, eventType):
+        self._listeners[eventType] = [listener]
+
     def unregisterListener(self, listener, eventType=None):
         if eventType:
             self._listeners[eventType].remove( listener )

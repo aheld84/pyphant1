@@ -60,7 +60,7 @@ class TestEmd5Source(unittest.TestCase):
         self.V = DC.FieldContainer(numpy.random.randn(10,10))
         self.V.seal()
         from pyphant.core import KnowledgeManager
-        KnowledgeManager.KnowledgeManager.getInstance().registerDataContainer(self.V)
+        KnowledgeManager.KnowledgeManager.getInstance().registerDataContainer(self.V, temporary=True)
 
     def testEmd5Source(self):
         """Retrieves the previously registered FieldContainer via the
@@ -69,8 +69,7 @@ class TestEmd5Source(unittest.TestCase):
         from tools import Emd5Src
         s = Emd5Src.Emd5Src()
         s.paramEmd5.value = self.V.id
-        s.paramSelectby.value = u'emd5'
-        result = s.plugLoad.getResult()
+        result = s.plugGetDataContainer.getResult()
         self.assertEqual(result, self.V)
 
 if __name__ == '__main__':

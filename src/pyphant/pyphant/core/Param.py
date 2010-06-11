@@ -47,17 +47,39 @@ def createParam(worker, paramName, displayName, values, subtype=None):
         return Param(worker, paramName, displayName, values, subtype)
 
 
+class ParamChangeExpected(object):
+    def __init__(self, param, expectedValue):
+        self.param = param
+        self.expectedValue = expectedValue
+
+
+class PossibleValuesChangeExpected(object):
+    def __init__(self, param, expectedPVs, update=False):
+        self.param = param
+        self.expectedPVs = expectedPVs
+        self.update = update
+
+
 class ParamChangeRequested(object):
     def __init__(self, param, oldValue, newValue):
         self.param = param
         self.oldValue = oldValue
         self.newValue = newValue
 
+
 class ParamChanged(object):
     def __init__(self, param, oldValue, newValue):
         self.param = param
         self.oldValue = oldValue
         self.newValue = newValue
+
+
+class ParamOverridden(object):
+    def __init__(self, param, oldValue, newValue):
+        self.param = param
+        self.oldValue = oldValue
+        self.newValue = newValue
+
 
 class VetoParamChange(ValueError):
     def __init__(self, paramChangeEvent):
@@ -67,6 +89,7 @@ class VetoParamChange(ValueError):
                              paramChangeEvent.newValue))
         self.paramChangeEvent = paramChangeEvent
 
+
 class Param(Connectors.Socket):
     def __getValue(self):
         if self.isFull():
@@ -75,7 +98,10 @@ class Param(Connectors.Socket):
             return self._value
 
     def overrideValue(self, value):
+        oldValue = self._value
         self._value = value
+        self._eventDispatcher.dispatchEvent(
+            ParamOverridden(self, oldValue, value))
 
     def __setValue(self, value):
         oldValue = self.value

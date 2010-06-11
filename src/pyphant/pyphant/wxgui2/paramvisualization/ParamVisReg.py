@@ -42,10 +42,10 @@ import BoundedIntegerTextField
 import CheckBox
 import ListSelect
 import FileButton
-
 from pyphant.core import Connectors, Param
-
 import wx
+
+
 class NullVal(wx.PyValidator):
     def Clone(self):
         return NullVal()
@@ -61,14 +61,15 @@ class ParamValidator(wx.PyValidator):
 
     def Clone(self):
         return ParamValidator(self.param)
-    
+
     def Validate(self, win):
         ctrl = self.GetWindow()
         newValue = ctrl.getValue()
         try:
             self.param.value = newValue
         except Param.VetoParamChange, e:
-            wx.MessageBox("%s"%str(e), "Invalid Parameter %s"%self.param.name)
+            wx.MessageBox("%s" % str(e),
+                          "Invalid Parameter %s" % self.param.name)
             ctrl.SetFocus()
             ctrl.Refresh()
             return False
@@ -88,11 +89,16 @@ class ParamValidator(wx.PyValidator):
 class ParamVisReg:
     def __init__(self):
         self._visualizers={}
-        self.setVisualizer(type(0), None, BoundedIntegerTextField.BoundedIntegerTextField)
-        self.setVisualizer(type(" "), None, OneLineStringField.OLSF)
-        self.setVisualizer(type(" "), Connectors.SUBTYPE_FILE, FileButton.FileButton)
-        self.setVisualizer(type(True), None, CheckBox.CheckBox)
-        self.setVisualizer(type([]), None, ListSelect.ListSelect)
+        register = [
+            (0, None, BoundedIntegerTextField.BoundedIntegerTextField),
+            (" ", None, OneLineStringField.OLSF),
+            (" ", Connectors.SUBTYPE_FILE, FileButton.FileButton),
+            (True, None, CheckBox.CheckBox),
+            ([], None, ListSelect.ListSelect),
+            ([], Connectors.SUBTYPE_INSTANT, ListSelect.InstantSelect)
+            ]
+        for prototype, subtype, visualizer in register:
+            self.setVisualizer(type(prototype), subtype, visualizer)
 
     def setVisualizer(self, type, subtype, visualizer):
         try:
@@ -105,4 +111,5 @@ class ParamVisReg:
     def createVisualizerFor(self, parent, param, validator=None):
         if validator==None:
             validator=ParamValidator(param)
-        return self._visualizers[param.valueType][param.subtype](parent, param, validator=validator)
+        return self._visualizers[param.valueType][param.subtype](
+            parent, param, validator=validator)

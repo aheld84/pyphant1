@@ -453,7 +453,8 @@ class wxPyphantFrame(wx.Frame):
               "(e.g. http://www.example.org/data.h5).\n"\
               "The file is stored permanently in your home directory in the "\
               ".pyphant directory\nand all DataContainers contained in that "\
-              "file are available by using the\nEmd5Src Worker even after "\
+              "file are available by using the\nSCSource or DCSource "\
+              "Worker even after "\
               "restarting wxPyphant.\nHTTP redirects are resolved "\
               "automatically, i.e. DOIs are supported as well."
         dlg = wx.TextEntryDialog(self, msg, cpt)

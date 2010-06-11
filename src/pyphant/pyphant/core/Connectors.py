@@ -48,6 +48,7 @@ TYPE_IMAGE = 'pil.image'
 TYPE_INT = type(2)
 TYPE_STRING = type("")
 SUBTYPE_FILE = "filename"
+SUBTYPE_INSTANT = "instant"
 TYPE_INACTIVE = type(None)
 TYPE_BOOL = type(True)
 DEFAULT_DATA_TYPE = TYPE_ARRAY

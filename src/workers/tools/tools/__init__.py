@@ -40,9 +40,7 @@ __version__ = "$Revision$"
 # $Source$
 
 workers=[
-    "Emd5Src"#,
-#    "BatchHead",
-#    "BatchTail",
-#    "BatchExtractor",
-#    "ParameterRun"
+    "Emd5Src",
+    "FCSource",
+    "SCSource"
     ]

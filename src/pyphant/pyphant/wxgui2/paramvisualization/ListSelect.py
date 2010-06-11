@@ -38,12 +38,17 @@ __version__ = "$Revision$"
 # $Source$
 
 import wx
+from wx import EVT_CHOICE
+from pyphant.core.Param import (
+    ParamChangeExpected, PossibleValuesChangeExpected)
 
 class ListSelect(wx.Choice):
     def __init__(self, parent, param, validator):
         self.data = dict([(str(v), v) for v in param.possibleValues])
-        wx.Choice.__init__(self, parent, choices=map(str,param.possibleValues), validator=validator)
-        self.SetStringSelection(str(param.value))
+        wx.Choice.__init__(self, parent,
+                           choices=map(str, param.possibleValues),
+                           validator=validator)
+        self.SetValue(param.value)
 
     def getValue(self):
         if self.GetSelection()==wx.NOT_FOUND:
@@ -53,3 +58,51 @@ class ListSelect(wx.Choice):
 
     def SetValue(self, value):
         self.SetStringSelection(str(value))
+
+
+class InstantSelect(ListSelect):
+    """
+    This class dispatches the ParamChangeExpected event as soon as
+    the user selects a new value and listens for the
+    PossibleValueChangeExpected event which should be raised
+    if the possible values for the underlying ListSelect
+    need to be updated.
+    """
+    def __init__(self, parent, param, validator):
+        ListSelect.__init__(self, parent, param, validator)
+        self.Bind(EVT_CHOICE, self.onChoice)
+        self.param = param
+        self.possibleValues = param.possibleValues
+        self.selected = param.value
+        param._eventDispatcher.registerExclusiveListener(
+            self.onPVCE, PossibleValuesChangeExpected)
+
+    def setSelected(self, value):
+        self._selected = value
+
+    def getSelected(self):
+        return self._selected
+    selected = property(getSelected, setSelected)
+
+    def onPVCE(self, event):
+        value = self.selected
+        assert value in event.expectedPVs, "%s not in %s" % (value,
+                                                             event.expectedPVs)
+        self.data = dict([(str(val), val) for val in event.expectedPVs])
+        self.possibleValues = event.expectedPVs
+        self.SetItems(map(str, event.expectedPVs))
+        self.SetValue(value)
+
+    def onChoice(self, event):
+        event.Skip()
+        self.selected = self.data[self.GetStringSelection()]
+        self.param._eventDispatcher.dispatchEvent(
+            ParamChangeExpected(
+            self.param, expectedValue=self.data[self.GetStringSelection()]))
+
+    def getValue(self):
+        if self.GetSelection()==wx.NOT_FOUND:
+            raise ValueError("Invalid value")
+        else:
+            self.param.possibleValues = self.possibleValues
+            return self.data[self.GetStringSelection()]

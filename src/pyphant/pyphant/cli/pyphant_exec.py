@@ -59,10 +59,10 @@ def main():
             w = recipe.getWorker(sSpec[0])
             s = getattr(w, sSpec[-1])
             src = Emd5Src.Emd5Src(recipe)
-            src.paramDc.value=emd5
+            src.paramEmd5.value=emd5
             if s.isFull():
                 s.pullPlug()
-            s.insert(src.plugLoad)
+            s.insert(src.plugGetDataContainer)
         pSpec = order[1][0].split('.')
         d = recipe.getWorker(pSpec[0])
         plug = getattr(d, pSpec[1])

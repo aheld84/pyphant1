@@ -30,8 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-This module provides a worker for importing DataConainers from the
-KnowledgeManager into wxPyphant.
+This module provides a dummy worker for batching algorithms
 """
 
 __id__ = "$Id$"
@@ -41,64 +40,21 @@ __version__ = "$Revision$"
 
 from pyphant.core import (Worker, Connectors,
                           Param)
-from pyphant.core.KnowledgeManager import KnowledgeManager as KM
-
-
-class HiddenValue(unicode):
-    def setHiddenValue(self, hiddenvalue):
-        self.hiddenvalue = hiddenvalue
+from pyphant.core.KnowledgeManager import KnowledgeManager
 
 
 class Emd5Src(Worker.Worker):
     """
-    This worker provides dropdown lists for selecting a DataContainer from
-    the KnowledgeManaer.
+    This is a dummy worker for batching algorithms
     """
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "Emd5Src"
-    _params = [("selectby", u"select by:", [u"emd5",
-                                            u"longname",
-                                            u"shortname",
-                                            u"enter emd5"], None),
-               ("emd5", u"emd5:", [u"None"], None),
-               ("longname", u"longname:", [u"None"], None),
-               ("shortname", u"shortname:", [u"None"], None),
-               ("enteremd5", u"enter emd5:", "", None)]
-
-    def refreshParams(self, subscriber = None):
-        km = KM.getInstance()
-        search_res = km.search(['id', 'type', 'longname', 'shortname',
-                                'creator', 'date'])
-        lnlist = []
-        snlist = []
-        emd5list = []
-        for emd5, type, longname, shortname, creator, date in search_res:
-            emd5list.append(emd5)
-            info = u"%s '%s' (creator: %s, date: %s)"
-            lnitem = HiddenValue(info % (type, longname, creator, date))
-            lnitem.setHiddenValue(emd5)
-            lnlist.append(lnitem)
-            snitem = HiddenValue(info % (type, shortname, creator, date))
-            snitem.setHiddenValue(emd5)
-            snlist.append(snitem)
-        emd5list.sort()
-        lnlist.sort()
-        snlist.sort()
-        self.paramEmd5.possibleValues = emd5list
-        self.paramLongname.possibleValues = lnlist
-        self.paramShortname.possibleValues = snlist
+    _params = [("emd5", u"emd5", "", None)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
-    def load(self, subscriber = 0):
-        km = KM.getInstance()
-        if self.paramSelectby.value == u'emd5':
-            emd5 = self.paramEmd5.value.encode('utf-8')
-        elif self.paramSelectby.value == u'longname':
-            emd5 = self.paramLongname.value.hiddenvalue
-        elif self.paramSelectby.value == u'shortname':
-            emd5 = self.paramShortname.value.hiddenvalue
-        elif self.paramSelectby.value == u'enter emd5':
-            emd5 = self.paramEnteremd5.value.encode('utf-8')
-        return km.getDataContainer(emd5)
+    def getDataContainer(self, subscriber = 0):
+        emd5 = self.paramEmd5.value
+        kmanager = KnowledgeManager.getInstance()
+        return kmanager.getDataContainer(emd5)
