@@ -56,6 +56,7 @@ workers=[
     "Gradient",
     "ImageLoaderWorker",
     "InvertWorker",
+    "MarkAF",
     "Medianiser",
     "NDImageWorker",
     "SkeletonizeFeature",
