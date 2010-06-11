@@ -189,9 +189,10 @@ class SQLiteWrapper(object):
     one_to_one_result_keys = one_to_one_search_keys + ['date', 'id', 'type']
     common_search_keys = one_to_one_search_keys + ['id', 'attributes',
                                                    'date_from', 'date_to']
-    fc_search_keys = common_search_keys + ['unit', 'dimensions', 'dim_of', 'col_of']
+    fc_search_keys = common_search_keys + ['unit', 'dimensions',
+                                           'dim_of', 'col_of']
     sc_search_keys = common_search_keys + ['columns']
-    sortable_keys = common_keys + ['id', 'storage', 'type']
+    sortable_keys = common_keys + ['storage', 'type']
     any_value = AnyValue()
 
     def __init__(self, database, timeout=60.0):

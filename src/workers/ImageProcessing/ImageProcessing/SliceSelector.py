@@ -40,7 +40,6 @@ __version__ = "$Revision$"
 
 from pyphant.core import Worker, Connectors,\
                          Param
-from tools.Emd5Src import HiddenValue
 import ImageProcessing
 
 
@@ -59,15 +58,24 @@ class SliceSelector(Worker.Worker):
             pvalues = []
             for zvalue, emd5 in zip(repr_sc['z-value'].data,
                                     repr_sc['emd5'].data):
-                hvalue = HiddenValue(unicode((zvalue * unit).__str__()))
-                hvalue.setHiddenValue(unicode(emd5))
-                pvalues.append(hvalue)
-            #pvalues.sort()
+                from pyphant.core.Helpers import utf82uc
+                value = utf82uc((zvalue * unit).__str__())
+                pvalues.append(value)
             self.paramSlice.possibleValues = pvalues
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def image(self, subscriber=0):
-        img_id = self.paramSlice.value.hiddenvalue
+        if not self.socketZstack.isFull():
+            return None
+        repr_sc = self.socketZstack.getResult(subscriber)
+        from pyphant.core.DataContainer import SampleContainer
+        if not isinstance(repr_sc, SampleContainer):
+            return None
+        from pyphant.quantities import Quantity
+        zval = Quantity(self.paramSlice.value)
+        znum = zval.inUnitsOf(repr_sc['z-value'].unit.unit).value
+        img_index = list(repr_sc['z-value'].data).index(znum)
+        img_emd5 = repr_sc['emd5'].data[img_index]
         from pyphant.core.KnowledgeManager import KnowledgeManager
         kmanager = KnowledgeManager.getInstance()
-        return kmanager.getDataContainer(img_id)
+        return kmanager.getDataContainer(img_emd5)
