@@ -241,6 +241,46 @@ class Quantity:
     def __rsub__(self, other):
         return self._sum(other, -1, 1)
 
+    def __eq__(self, other):
+        if isQuantity(other) and self.isCompatible(other.unit):
+            return self.__cmp__(other) == 0
+        else:
+            return False
+
+    def __ne__(self, other):
+        if isQuantity(other) and self.isCompatible(other.unit):
+            return self.__cmp__(other) != 0
+        else:
+            return True
+
+    def __le__(self, other):
+        if isQuantity(other) and self.isCompatible(other.unit):
+            return self.__cmp__(other) <= 0
+        else:
+            return False
+
+    def __ge__(self, other):
+        if isQuantity(other) and self.isCompatible(other.unit):
+            return self.__cmp__(other) >= 0
+        elif other is None:
+            return True
+        else:
+            return False
+
+    def __lt__(self, other):
+        if isQuantity(other) and self.isCompatible(other.unit):
+            return self.__cmp__(other) < 0
+        else:
+            return False
+
+    def __gt__(self, other):
+        if isQuantity(other) and self.isCompatible(other.unit):
+            return self.__cmp__(other) > 0
+        elif other is None:
+            return True
+        else:
+            return False
+
     def __cmp__(self, other):
         normed = self.inBaseUnits() # Minimizing numerical errors
         diff = normed._sum(other, 1, -1) 

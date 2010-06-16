@@ -45,6 +45,15 @@ from pyphant.quantities import Quantity
     (Quantity(731814.5,'d'), None)
 """
 class TestQuantity(unittest.TestCase):
+    def setUp(self):
+        self.quants = []
+        self.quants.append(Quantity("1000 m"))
+        self.quants.append(Quantity("1 km"))
+        self.quants.append(Quantity("1000.1 m"))
+        self.quants.append(0)
+        self.quants.append(None)
+        self.quants.append(Quantity("1000 s"))
+
     def testTextualQuantitySpecification(self):
         self.assertEqual(Quantity('1V'),
                          Quantity(1.0,'V')
@@ -57,6 +66,90 @@ class TestQuantity(unittest.TestCase):
         self.assertEqual(Quantity('1V'.encode('utf-8')),
                          Quantity(1.0,'V')
                          )
+
+    def compare(self, quant0, cop, quant1, result):
+        if cop == '==':
+            expression = quant0 == quant1
+        elif cop == '!=':
+            expression = quant0 != quant1
+        elif cop == '<=':
+            expression = quant0 <= quant1
+        elif cop == '>=':
+            expression = quant0 >= quant1
+        elif cop == '<':
+            expression = quant0 < quant1
+        elif cop == '>':
+            expression = quant0 > quant1
+        if expression != result:
+            print "%s %s %s = %s, should be %s" % (quant0, cop, quant1,
+                                                   expression, result)
+        self.assertEqual(expression, result)
+
+    def matrixTest(self, matrix, cop):
+        for index0, quant0 in enumerate(self.quants):
+            for index1, quant1 in enumerate(self.quants):
+                self.compare(quant0, cop, quant1, matrix[index0][index1])
+
+    def testComparisonOperationEqual(self):
+        matrix = [[1, 1, 0, 0, 0, 0],
+                  [1, 1, 0, 0, 0, 0],
+                  [0, 0, 1, 0, 0, 0],
+                  [0, 0, 0, 1, 0, 0],
+                  [0, 0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 0, 1]]
+        self.matrixTest(matrix, '==')
+
+    def testComparisonOperationNotEqual(self):
+        matrix = [[0, 0, 1, 1, 1, 1],
+                  [0, 0, 1, 1, 1, 1],
+                  [1, 1, 0, 1, 1, 1],
+                  [1, 1, 1, 0, 1, 1],
+                  [1, 1, 1, 1, 0, 1],
+                  [1, 1, 1, 1, 1, 0]]
+        self.matrixTest(matrix, '!=')
+
+    def testComparisonOperationLessOrEqual(self):
+        matrix = [[1, 1, 1, 0, 0, 0],
+                  [1, 1, 1, 0, 0, 0],
+                  [0, 0, 1, 0, 0, 0],
+                  [0, 0, 0, 1, 0, 0],
+                  [1, 1, 1, 1, 1, 1],
+                  [0, 0, 0, 0, 0, 1]]
+        self.matrixTest(matrix, '<=')
+
+    def testComparisonOperationGreaterOrEqual(self):
+        matrix = [[1, 1, 0, 0, 1, 0],
+                  [1, 1, 0, 0, 1, 0],
+                  [1, 1, 1, 0, 1, 0],
+                  [0, 0, 0, 1, 1, 0],
+                  [0, 0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 1, 1]]
+        self.matrixTest(matrix, '>=')
+
+    def testComparisonOperationLess(self):
+        matrix = [[0, 0, 1, 0, 0, 0],
+                  [0, 0, 1, 0, 0, 0],
+                  [0, 0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0, 0],
+                  [1, 1, 1, 1, 0, 1],
+                  [0, 0, 0, 0, 0, 0]]
+        self.matrixTest(matrix, '<')
+
+    def testComparisonOperationGreater(self):
+        matrix = [[0, 0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 1, 0],
+                  [1, 1, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 1, 0]]
+        self.matrixTest(matrix, '>')
+
+    def testList(self):
+        self.assertEqual(self.quants[1] in self.quants, True)
+        self.assertEqual(self.quants[0] in self.quants[1:], True)
+        self.assertEqual(self.quants[2] in self.quants[3:], False)
+        self.assertEqual(self.quants[1] in [], False)
+
 
 if __name__ == "__main__":
     import sys
