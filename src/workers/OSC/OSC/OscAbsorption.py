@@ -111,8 +111,6 @@ class OscAbsorptionCalculator(Worker.Worker):
                 min_value = row[min_index]
                 max_value = row[max_index]
                 step_size = (max_value-min_value)/steps
-                print min_value, max_value, step_size, steps, min_index, max_index
-                print (lamp_interval-min_index)*step_size
                 row[lamp_interval] = min_value + (lamp_interval-min_index)*step_size
         Abso.seal()
         return Abso
