@@ -40,7 +40,7 @@ __version__ = "$Revision$"
 # $Source$
 
 workers=[
-    "Emd5Src",
+    #"Emd5Src",
     "FCSource",
     "SCSource"
     ]

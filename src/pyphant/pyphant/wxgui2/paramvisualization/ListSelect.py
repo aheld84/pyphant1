@@ -73,29 +73,27 @@ class InstantSelect(ListSelect):
         self.Bind(EVT_CHOICE, self.onChoice)
         self.param = param
         self.possibleValues = param.possibleValues
-        self.selected = param.value
         param._eventDispatcher.registerExclusiveListener(
             self.onPVCE, PossibleValuesChangeExpected)
 
-    def setSelected(self, value):
-        self._selected = value
-
-    def getSelected(self):
-        return self._selected
-    selected = property(getSelected, setSelected)
-
     def onPVCE(self, event):
-        value = self.selected
+        value = self.data[self.GetStringSelection()]
         assert value in event.expectedPVs, "%s not in %s" % (value,
                                                              event.expectedPVs)
         self.data = dict([(str(val), val) for val in event.expectedPVs])
         self.possibleValues = event.expectedPVs
         self.SetItems(map(str, event.expectedPVs))
-        self.SetValue(value)
+        if event.autoSelect and len(event.expectedPVs) == 2:
+            self.SetSelection(1)
+            pce = ParamChangeExpected(
+                self.param, expectedValue=self.data[self.GetStringSelection()])
+            pce.norefresh = True
+            self.param._eventDispatcher.dispatchEvent(pce)
+        else:
+            self.SetValue(value)
 
     def onChoice(self, event):
         event.Skip()
-        self.selected = self.data[self.GetStringSelection()]
         self.param._eventDispatcher.dispatchEvent(
             ParamChangeExpected(
             self.param, expectedValue=self.data[self.GetStringSelection()]))

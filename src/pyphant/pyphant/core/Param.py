@@ -54,10 +54,10 @@ class ParamChangeExpected(object):
 
 
 class PossibleValuesChangeExpected(object):
-    def __init__(self, param, expectedPVs, update=False):
+    def __init__(self, param, expectedPVs, autoSelect=False):
         self.param = param
         self.expectedPVs = expectedPVs
-        self.update = update
+        self.autoSelect = autoSelect
 
 
 class ParamChangeRequested(object):

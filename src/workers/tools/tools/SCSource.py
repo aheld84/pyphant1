@@ -39,16 +39,12 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import (Worker, Connectors,
-                          Param)
+from pyphant.core import (Worker, Connectors, Param)
+from DCSource import (ANYSTR, DCSource)
 from pyphant.core.KnowledgeManager import KnowledgeManager
-from pyphant.core.Param import (
-    ParamChangeExpected, PossibleValuesChangeExpected, ParamOverridden)
 from pyphant.core.Connectors import SUBTYPE_INSTANT
-ANYSTR = u"-- any --"
 
-
-class SCSource(Worker.Worker):
+class SCSource(DCSource, Worker.Worker):
     """
     This worker provides instantly updated dropdown lists for selecting
     a SampleContainer from the KnowledgeManager.
@@ -57,55 +53,20 @@ class SCSource(Worker.Worker):
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "SampleContainer"
-    _params = [("machine", u"Machine", [ANYSTR], SUBTYPE_INSTANT),
-               ("creator", u"Creator", [ANYSTR], SUBTYPE_INSTANT),
-               ("longname", u"Longname", [ANYSTR], SUBTYPE_INSTANT),
-               ("shortname", u"Shortname", [ANYSTR], SUBTYPE_INSTANT),
-               ("id", u"emd5", [ANYSTR], SUBTYPE_INSTANT)]
+    _params = [("machine", u"machine ==", [ANYSTR], SUBTYPE_INSTANT),
+               ("creator", u"and creator ==", [ANYSTR], SUBTYPE_INSTANT),
+               ("longname", u"and longname ==", [ANYSTR], SUBTYPE_INSTANT),
+               ("shortname", u"and shortname ==", [ANYSTR], SUBTYPE_INSTANT),
+               ("has_col", u"and has column", [ANYSTR], SUBTYPE_INSTANT),
+               ("col_of", u"and is column of", [ANYSTR], SUBTYPE_INSTANT),
+               ("id", u"and emd5 ==", [ANYSTR], SUBTYPE_INSTANT)]
 
     def __init__(self, *args, **kargs):
         Worker.Worker.__init__(self, *args, **kargs)
-        self.expectedValues = {}
-        for name, param in self._params.iteritems():
-            if name in ["name"]:
-                continue
-            param.registerListener(self.onPCE, ParamChangeExpected)
-            param.registerListener(self.onPO, ParamOverridden)
-            self.expectedValues[name] = param.value
-
-    def onPCE(self, event):
-        if event.expectedValue != self.expectedValues[event.param.name]:
-            self.expectedValues[event.param.name] = event.expectedValue
-            self.refreshParams(update=False)
-
-    def onPO(self, event):
-        self.expectedValues[event.param.name] = event.newValue
-
-    def refreshParams(self, subscriber=None, update=True):
-        if update:
-            self.expectedValues = dict(
-                [(name, param.value) for name, param \
-                 in self._params.iteritems() if name != 'name'])
-        kmanager = KnowledgeManager.getInstance()
-        for name, param in self._params.iteritems():
-            if name == 'name':
-                continue
-            search_dict = {'type':'sample'}
-            update_dict = dict(
-                [(key, val) for key, val in self.expectedValues.iteritems() \
-                 if key not in ['name', name] and val != ANYSTR])
-            search_dict.update(update_dict)
-            newEVs = [[ANYSTR]]
-            newEVs.extend(kmanager.search([name], search_dict=search_dict,
-                                          distinct=True))
-            newEVs = [newEV[0] for newEV in newEVs]
-            param._eventDispatcher.dispatchEvent(
-                PossibleValuesChangeExpected(param, newEVs))
-            if update:
-                param.possibleValues = newEVs
+        DCSource.__init__(self, 'sample')
 
     @Worker.plug(Connectors.TYPE_ARRAY)
-    def getDataContainer(self, subscriber = 0):
+    def getSampleContainer(self, subscriber = 0):
         emd5 = self.paramId.value
         kmanager = KnowledgeManager.getInstance()
         return kmanager.getDataContainer(emd5)
