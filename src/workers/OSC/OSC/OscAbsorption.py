@@ -80,7 +80,8 @@ class OscAbsorptionCalculator(Worker.Worker):
     name = "Compute Absorption"
 
     _sockets = [("osc", Connectors.TYPE_ARRAY)]
-    _params = [("clipping", "Clipping", 1, None)]
+    _params = [("clipping", "Clipping", 1, None),
+               ("mask_lamp", "Mask lamp", 0, None)]
 
     def inithook(self):
         self._logger = logging.getLogger("pyphant")
@@ -98,6 +99,21 @@ class OscAbsorptionCalculator(Worker.Worker):
                                             longname=u'absorption',
                                             shortname=ur'\tilde{A}')
         Abso.dimensions[-1] = I.dimensions[-1]
+        if self.paramMask_lamp.value==1:
+            dim = Abso.dimensions[-1]
+            minVal = quantities.Quantity('654nm')/dim.unit
+            maxVal = quantities.Quantity('660nm')/dim.unit
+            lamp_interval = numpy.intersect1d(numpy.argwhere(minVal < dim.data), numpy.argwhere(dim.data<maxVal))
+            min_index = lamp_interval[0]
+            max_index = lamp_interval[-1]
+            steps = max_index-min_index
+            for row in Abso.data:
+                min_value = row[min_index]
+                max_value = row[max_index]
+                step_size = (max_value-min_value)/steps
+                print min_value, max_value, step_size, steps, min_index, max_index
+                print (lamp_interval-min_index)*step_size
+                row[lamp_interval] = min_value + (lamp_interval-min_index)*step_size
         Abso.seal()
         return Abso
 
