@@ -435,52 +435,7 @@ class KnowledgeManager(Singleton):
     def search(self, result_keys, search_dict={}, order_by=None,
                order_asc=True, limit=-1, offset=0, distinct=False):
         """
-        returns a list of tuples filled with values of the result keys
-        matching the constraints of search_dict.
-        Arguments:
-        - result_keys: List (of length >= 1) of keys to include in the
-          result tuples.
-        - search_dict: Dict mapping keys to constraint values.
-          Use empty dict for no constraints at all
-          possible keys: values (used relational operator[, type constraint]):
-          'longname': str types (==)
-          'shortname': str types (==)
-          'machine': str types (==)
-          'creator: str types (==)
-          'date_from:' str types:
-                       YYYY[-MM[-DD[_hh:[mm:[ss[.s[s[s[s[s[s]]]]]]]]]]] (>=)
-          'date_to:' str types:
-                     YYYY[-MM[-DD[_hh:[mm:[ss[.s[s[s[s[s[s]]]]]]]]]]] (<)
-          'hash': str types (==)
-          'id': str types: emd5 (==)
-          'type': 'field' or 'sample' (==)
-          'attributes': dict mapping attr. key to attr. value (==)
-                        use (SQLiteWrapper instance).any_value
-                        or (KM instance).any_value to skip value check
-          'storage': str types (==)
-          'unit': PhysicalUnit or number or Quantity (==, FC only)
-          'dimensions': list of FC search dicts
-                        (see above definitions, FC only)
-          'columns': list of FC search dicts (see above definitions, SC only)
-        - order_by: element of result_keys to order the results by
-                    or None for no special ordering
-        - order_asc: whether to order ascending
-        - limit: maximum number of results to return,
-          set to -1 for no limit, default: -1
-        - offset: number of search results to skip, default: 0
-        - distinct: flag that indicates whether the result list
-          should only contain distinct tuples.
-        Usage Examples:
-        Get list of all longnames:
-           get_andsearch_result(['longname'], distinct=True)
-           --> [('name1', ), ('name2', ), ...]
-        Get id and shortname of all FCs that are parametrized by
-        a time dimension along the primary axis:
-           tunit = Quantity(1, 's')
-           get_andsearch_result(['id', 'shortname'],
-                                {'type':'field',
-                                 'dimensions':[{'unit':tunit}]})
-           --> [('emd5_1', 'name_1'), ('emd5_2', 'name_2'), ...]
+        see SQLiteWrapper.get_andsearch_result
         """
         with SQLiteWrapper(self.dbase) as wrapper:
             return wrapper.get_andsearch_result(

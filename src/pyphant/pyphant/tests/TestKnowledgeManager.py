@@ -45,7 +45,7 @@ from pyphant.core.KnowledgeManager import (KnowledgeManager,
                                            CACHE_MAX_SIZE,
                                            CACHE_MAX_NUMBER)
 import pyphant.core.PyTablesPersister as ptp
-from pyphant.core.DataContainer import FieldContainer
+from pyphant.core.DataContainer import (FieldContainer, SampleContainer)
 import numpy as N
 import tables
 import urllib
@@ -103,6 +103,21 @@ class KnowledgeManagerTestCase(unittest.TestCase):
         km.registerDataContainer(self._fc, temporary=True)
         km_fc = km.getDataContainer(self._fc.id)
         self.assertEqual(self._fc, km_fc)
+
+    def testSCwithSCColumn(self):
+        fc_child1 = FieldContainer(longname='fc_child1', data=N.ones((10, 10)))
+        fc_child2 = FieldContainer(longname='fc_child2', data=N.ones((20, 20)))
+        sc_child = SampleContainer(longname='sc_child', columns=[fc_child1])
+        sc_parent = SampleContainer(longname='sc_parent', columns=[sc_child,
+                                                                   fc_child2])
+        sc_parent.seal()
+        km = KnowledgeManager.getInstance()
+        km.registerDataContainer(sc_parent, temporary=True)
+        lnlist = km.search(['longname'], {'col_of':{'longname':'sc_parent'}})
+        lnlist = [entry[0] for entry in lnlist]
+        assert len(lnlist) == 2
+        assert 'fc_child2' in lnlist
+        assert 'sc_child' in lnlist
 
     def testExceptions(self):
         km = KnowledgeManager.getInstance()

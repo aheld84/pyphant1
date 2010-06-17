@@ -193,10 +193,11 @@ class SQLiteWrapperTestCase(unittest.TestCase):
             rowwrapper = self.wrapper[id]
             assert rowwrapper['dimensions'] == self.summary['dimensions']
             search_result = self.wrapper.get_andsearch_result(
-                ['longname'], {'type':'field', 'dim_of':id})
+                ['longname'], {'type':'field', 'dim_of':{'id':id}})
             assert search_result == [(im_summary['longname'], )]
             search_result = self.wrapper.get_andsearch_result(
-                ['shortname'], {'type':'field', 'col_of':self.sc_summary['id']})
+                ['shortname'], {'type':'field',
+                                'col_of':{'id':self.sc_summary['id']}})
             assert search_result == [(self.summary['shortname'], )]
 
 

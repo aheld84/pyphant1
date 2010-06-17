@@ -187,11 +187,11 @@ class SQLiteWrapper(object):
     one_to_one_search_keys = ['longname', 'shortname', 'machine',
                               'creator', 'hash', 'storage']
     one_to_one_result_keys = one_to_one_search_keys + ['date', 'id', 'type']
-    common_search_keys = one_to_one_search_keys + ['id', 'attributes',
-                                                   'date_from', 'date_to']
+    common_search_keys = one_to_one_search_keys + \
+                         ['id', 'attributes', 'date_from', 'date_to', 'col_of']
     fc_search_keys = common_search_keys + ['unit', 'dimensions',
-                                           'dim_of', 'col_of']
-    sc_search_keys = common_search_keys + ['columns']
+                                           'dim_of', 'has_dim']
+    sc_search_keys = common_search_keys + ['columns', 'has_col']
     sortable_keys = common_keys + ['storage', 'type']
     any_value = AnyValue()
 
@@ -506,6 +506,59 @@ class SQLiteWrapper(object):
             expr += ' AND '
         return (expr[:-5] + ')', new_value, True)
 
+    def translate_parent_search(self, key, dc_search_dict, type):
+        id_str = replace_type('%s_id', type)
+        if dc_search_dict.has_key('type'):
+            check = dc_search_dict.pop('type')
+        else:
+            check = None
+        if key == 'col_of':
+            assert check in [None, 'sample']
+            parent_type = 'sample'
+            parent_id_str = 'sc_id'
+            child_id_str = 'fc_id'
+            table = 'km_sc_columns'
+        elif key == 'dim_of':
+            assert check in [None, 'field']
+            parent_type = 'field'
+            parent_id_str = 'fc_id'
+            child_id_str = 'dim_id'
+            table = 'km_fc_dimensions'
+        dc_query, dc_values = self.get_andsearch_query(
+            parent_type, ['id'], dc_search_dict, False)
+        expr = "(%s IN (SELECT %s FROM %s WHERE %s IN (%s)))" \
+               % (id_str, child_id_str, table, parent_id_str, dc_query)
+        return (expr, dc_values, True)
+
+    def translate_child_search(self, key, child_search_dict):
+        if key == 'has_col':
+            if child_search_dict.has_key('type'):
+                child_type = child_search_dict.pop('type')
+                child_qry, child_values = self.get_andsearch_query(
+                    child_type, ['id'], child_search_dict, False)
+            else:
+                fc_child_qry, fc_child_values = self.get_andsearch_query(
+                    'field', ['id'], child_search_dict, False)
+                sc_child_qry, sc_child_values = self.get_andsearch_query(
+                    'sample', ['id'], child_search_dict, False)
+                child_qry = "%s UNION ALL %s"
+                child_qry = child_qry % (fc_child_qry, sc_child_qry)
+                child_values = fc_child_values + sc_child_values
+            id_str = 'sc_id'
+            child_id_str = 'fc_id'
+            table = 'km_sc_columns'
+        elif key == 'has_dim':
+            if child_search_dict.has_key('type'):
+                assert child_search_dict.pop('type') == 'field'
+            child_qry, child_values = self.get_andsearch_query(
+                'field', ['id'], child_search_dict, False)
+            id_str = 'fc_id'
+            child_id_str = 'dim_id'
+            table = 'km_fc_dimensions'
+        expr = "(%s IN (SELECT %s FROM %s WHERE %s IN (%s)))" \
+               % (id_str, id_str, table, child_id_str, child_qry)
+        return (expr, child_values, True)
+
     def translate_search_dict(self, type, search_dict):
         where = ''
         values = []
@@ -528,19 +581,19 @@ class SQLiteWrapper(object):
             elif key == 'columns' or key == 'dimensions':
                 expr, value, extend = self.translate_list_search(
                     key, value, type)
-            elif key == 'dim_of':
-                expr = '(fc_id IN (SELECT dim_id FROM km_fc_dimensions '\
-                       'WHERE fc_id=?))'
-            elif key == 'col_of':
-                expr = '(fc_id IN (SELECT fc_id FROM km_sc_columns '\
-                           'WHERE sc_id=?))'
+            elif key in ['dim_of', 'col_of']:
+                expr, value, extend = self.translate_parent_search(
+                    key, value, type)
+            elif key in ['has_dim', 'has_col']:
+                expr, value, extend = self.translate_child_search(
+                    key, value)
             else:
                 raise NotImplementedError(key)
             where += expr + " AND "
-            if extend:
-                values.extend(value)
-            else:
+            if not extend:
                 values.append(value)
+            elif value is not None:
+                values.extend(value)
         return where[:-5], values
 
     def get_andsearch_query(self, type, result_keys, search_dict, distinct):
@@ -595,9 +648,11 @@ class SQLiteWrapper(object):
           'unit': PhysicalUnit or number or Quantity (==, FC only)
           'dimensions': list of FC search dicts
                         (see above definitions, FC only)
-          'dim_of': str types: emd5 of parent FC (==, FC only)
-          'col_of': str types: emd5 of parent SC (==, FC only)
+          'dim_of': FC search dict (see above definitions, FC only)
+          'col_of': SC search dict (see above definitions)
           'columns': list of FC search dicts (see above definitions, SC only)
+          'has_col': DC search dict (see above defs, SC only)
+          'had_dim': FC search dict (see above definitions, FC only)
         - order_by: element of result_keys to order the results by
                     or None for no special ordering
         - order_asc: whether to order ascending
@@ -623,11 +678,8 @@ class SQLiteWrapper(object):
         else:
             assert order_by in result_keys
             assert order_by in self.sortable_keys
-            order = ' ORDER BY %s' % order_by
-            if order_asc:
-                order += ' ASC'
-            else:
-                order += ' DESC'
+            order = ' ORDER BY %s %s' \
+                    % (order_by, {True:'ASC', False:'DESC'}[order_asc])
         assert isinstance(limit, int)
         assert isinstance(offset, int)
         if not search_dict.has_key('type'):
@@ -665,7 +717,7 @@ class SQLiteWrapper(object):
             query, values = self.get_andsearch_query(
                 search_dict['type'], result_keys, mod_search_dict, distinct)
             query = "%s%s LIMIT %d OFFSET %d" % (query, order, limit, offset)
-        if mod_search_dict != {}:
+        if values is not None and len(values) > 0:
             self.cursor.execute(query, values)
         else:
             self.cursor.execute(query)
