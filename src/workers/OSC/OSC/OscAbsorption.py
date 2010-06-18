@@ -103,7 +103,9 @@ class OscAbsorptionCalculator(Worker.Worker):
             dim = Abso.dimensions[-1]
             minVal = quantities.Quantity('654nm')/dim.unit
             maxVal = quantities.Quantity('660nm')/dim.unit
-            lamp_interval = numpy.intersect1d(numpy.argwhere(minVal < dim.data), numpy.argwhere(dim.data<maxVal))
+            high_part = numpy.argwhere(minVal<dim.data).flatten()
+            low_part = numpy.argwhere(dim.data<maxVal).flatten()
+            lamp_interval = numpy.intersect1d(high_part, low_part)
             min_index = lamp_interval[0]
             max_index = lamp_interval[-1]
             steps = max_index-min_index
