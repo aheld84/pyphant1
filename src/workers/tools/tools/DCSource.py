@@ -63,7 +63,8 @@ class DCSource(object):
         if event.expectedValue != self.expectedValues[event.param.name]:
             self.expectedValues[event.param.name] = event.expectedValue
             if not hasattr(event, 'norefresh'):
-                self.refreshParams(update=False)
+                autoSelect = event.expectedValue != ANYSTR
+                self.refreshParams(update=False, autoSelect=autoSelect)
 
     def onPO(self, event):
         self.expectedValues[event.param.name] = event.newValue
@@ -95,7 +96,7 @@ class DCSource(object):
         else:
             return name
 
-    def refreshParams(self, subscriber=None, update=True):
+    def refreshParams(self, subscriber=None, update=True, autoSelect=True):
         if update:
             self.expectedValues = dict(
                 [(name, param.value) for name, param \
@@ -110,6 +111,6 @@ class DCSource(object):
                 [self.getResKey(name)], search_dict=search_dict, distinct=True))
             newEVs = [newEV[0] for newEV in newEVs]
             param._eventDispatcher.dispatchEvent(
-                PossibleValuesChangeExpected(param, newEVs, autoSelect=True))
+                PossibleValuesChangeExpected(param, newEVs, autoSelect))
             if update:
                 param.possibleValues = newEVs
