@@ -73,7 +73,7 @@ def str2unit(unit,FMFversion='1.1'):
                 unit = Quantity(unit.encode('utf-8'))
             elif FMFversion=='1.0':
                 unit1_0 = PhysicalQuantity(unit.encode('utf-8'))
-                unit = Quantity(str(unit1_0.inBaseUnits()))
+                unit = Quantity(str(unit1_0))
         except:
             unit = float(unit)
     return unit
