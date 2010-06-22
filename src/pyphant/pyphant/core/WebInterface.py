@@ -268,7 +268,7 @@ class HTMLSummaryLink(HTMLLink):
 class HTMLFCScheme(object):
     def __init__(self, fc_id, kn):
         self.dom = kn.km.search(['shortname', 'latex_unit'],
-                                {'type':'field', 'dim_of':fc_id})
+                                {'type':'field', 'dim_of':{'id':fc_id}})
         self.rng = kn.km.search(['shortname', 'latex_unit'],
                                 {'type':'field', 'id':fc_id})[0]
         self.latex = '$%s$(%s)[%s]'
@@ -286,7 +286,8 @@ class HTMLFCScheme(object):
 
 class HTMLSCScheme(object):
     def __init__(self, sc_id, kn):
-        columns = kn.km.search(['id'], {'type':'field', 'col_of':sc_id})
+        columns = kn.km.search(['id'], {'type':'field',
+                                        'col_of':{'id':sc_id}})
         self.fc_schemes = [HTMLFCScheme(col[0], kn) for col in columns]
         self.shortname = kn.km.search(['shortname'], {'type':'sample',
                                                       'id':sc_id})[0][0]
@@ -306,7 +307,7 @@ class HTMLChildrenTable(HTMLTable):
     def __init__(self, dc_id, kn):
         child = cond(dc_id.endswith('field'), ('dim_of', 'col_of'))
         result = kn.km.search(
-            ['id', 'longname'], {'type':'field', child:dc_id})
+            ['id', 'longname'], {'type':'field', child:{'id':dc_id}})
         rows = [[HTMLSummaryLink(res) for res in result]]
         HTMLTable.__init__(self, rows, headings=False)
 
