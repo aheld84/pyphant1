@@ -62,9 +62,8 @@ class DCSource(object):
     def onPCE(self, event):
         if event.expectedValue != self.expectedValues[event.param.name]:
             self.expectedValues[event.param.name] = event.expectedValue
-            if not hasattr(event, 'norefresh'):
-                autoSelect = event.expectedValue != ANYSTR
-                self.refreshParams(update=False, autoSelect=autoSelect)
+            autoSelect = event.expectedValue != ANYSTR
+            self.refreshParams(update=False, autoSelect=autoSelect)
 
     def onPO(self, event):
         self.expectedValues[event.param.name] = event.newValue

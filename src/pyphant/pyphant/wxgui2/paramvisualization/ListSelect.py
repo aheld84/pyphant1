@@ -87,7 +87,6 @@ class InstantSelect(ListSelect):
             self.SetSelection(1)
             pce = ParamChangeExpected(
                 self.param, expectedValue=self.data[self.GetStringSelection()])
-            pce.norefresh = True
             self.param._eventDispatcher.dispatchEvent(pce)
         else:
             self.SetValue(value)
