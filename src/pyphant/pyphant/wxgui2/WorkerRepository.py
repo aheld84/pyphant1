@@ -39,40 +39,28 @@ __version__ = "$Revision$"
 
 import wx
 import cPickle
-import pyphant.core.WorkerRegistry
-
-class WorkerRepository(wx.ScrolledWindow):
-    def __init__(self, parent, id=-1,
-                 pos=wx.DefaultPosition,
-                 size=wx.DefaultSize,
-                 style=0):
-        wx.ScrolledWindow.__init__(self, parent, id)
-        workerRegistry = pyphant.core.WorkerRegistry.WorkerRegistry
-        self._workerRegistry = workerRegistry.getInstance()
-        self._boxSizer = wx.BoxSizer(wx.VERTICAL)
-        self.initFoldPanelBar()
-        self.SetSizer(self._boxSizer)
-        self.SetScrollRate(1, 1)
-        self._boxSizer.SetVirtualSizeHints(self)
-
-    def initFoldPanelBar(self):
-        map(self.addWorkerButton, self._workerRegistry.getWorkers())
-
-    def addWorkerButton(self, workerInfo):
-        btn = WorkerButton(self, workerInfo)
-        self._boxSizer.Add(btn, 1, wx.EXPAND, wx.ALL, 10)
+from pyphant.core.WorkerRegistry import WorkerRegistry
 
 
-class WorkerButton(wx.Button):
-    def __init__(self, parent, workerInfo):
-        name = workerInfo.name
-        wx.Button.__init__(self, parent, label=name)
-        self._workerInfo = workerInfo
-        self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
+class WorkerRepository(wx.TreeCtrl):
+    def __init__(self, *args, **kargs):
+        wx.TreeCtrl.__init__(self, *args, **kargs)
+        tBIL = WorkerRegistry.getInstance().getToolBoxInfoList()
+        rootId = self.AddRoot('toolboxes')
+        for tBI in tBIL:
+            toolBoxId = self.AppendItem(rootId, tBI.name)
+            for workerInfo in tBI.workerInfos:
+                wIId = self.AppendItem(toolBoxId, workerInfo.name)
+                self.SetItemData(wIId, wx.TreeItemData(workerInfo))
+        self.Bind(wx.EVT_TREE_BEGIN_DRAG,
+                  self.onDragInit, id=self.GetId())
 
-    def onLeftDown(self, evt):
-        dropSource = wx.DropSource(self)
-        pickledObj = cPickle.dumps(self._workerInfo)
-        data = wx.TextDataObject(pickledObj)
-        dropSource.SetData(data)
-        dragResult = dropSource.DoDragDrop(True)
+    def onDragInit(self, event):
+        workerInfo = self.GetItemData(event.Item).Data
+        if workerInfo is not None:
+            dropSource = wx.DropSource(self)
+            pickledObj = cPickle.dumps(workerInfo)
+            data = wx.TextDataObject(pickledObj)
+            dropSource.SetData(data)
+            dragResult = dropSource.DoDragDrop(True)
+        event.Skip()

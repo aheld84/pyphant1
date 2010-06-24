@@ -60,7 +60,8 @@ import wx
 import wx.aui
 import sogl
 import pyphant.wxgui2.paramvisualization.ParamVisReg as ParamVisReg
-import pyphant.core.PyTablesPersister
+from pyphant.core.PyTablesPersister import (loadRecipeFromHDF5File,
+                                            saveRecipeToHDF5File)
 import WorkerRepository
 import ConfigureFrame
 import platform
@@ -128,43 +129,31 @@ class wxPyphantFrame(wx.Frame):
         self._statusBar = self.CreateStatusBar()
         self._wxPyphantApp = _wxPyphantApp
         self._initMenuBar()
-        self._initSash()
+        self._initWorkerRep()
         self.recipeState = None
         self.onOpenCompositeWorker(None)
         self._initAui()
-        self._workerRepository.Bind(wx.EVT_SASH_DRAGGED_RANGE,
-                                    self.onFoldPanelBarDrag,
-                                    id=self.ID_WINDOW_TOP,
-                                    id2=self.ID_WINDOW_BOTTOM)
-        #self.Bind(wx.EVT_SIZE, self.onSize)
         self.compositeWorkerStack = []
 
-    def _initSash(self):
-        self._workerRepository = wx.SashLayoutWindow(
-            self, self.ID_WINDOW_RIGHT, wx.DefaultPosition, wx.Size(220,1000),
-            wx.NO_BORDER)
-        #self._workerRepository.SetDefaultSize(wx.Size(220,1000))
-        #self._workerRepository.SetOrientation(wx.LAYOUT_VERTICAL)
-        #self._workerRepository.SetAlignment(wx.LAYOUT_RIGHT)
-        #self._workerRepository.SetSashVisible(wx.SASH_LEFT, True)
-        #self._workerRepository.SetExtraBorderSize(10)
+    def _initWorkerRep(self):
         try:
-            WorkerRepository.WorkerRepository(self._workerRepository)
+            self._workerRepository = WorkerRepository.WorkerRepository(
+                self, self.ID_WINDOW_RIGHT, wx.DefaultPosition,
+                wx.Size(220, -1))
+            self._workerRepository.Expand(self._workerRepository.RootItem)
         except:
             import sys
-            self._wxPyphantApp._logger.debug(u"An exception occured while "\
-                                             "loading the toolboxes.",
-                                             exc_info=sys.exc_info())
-            wx.MessageBox("An error has occurred while importing "\
-                          "the toolboxes.\nPlease investigate the logfile "\
-                          "for further details.\nThe logfile is located at %s\n"\
-                          "You may also try to update and restart wxPyphant."\
-                          % os.path.join(LOGDIR, 'pyphant.log'),
-                          "Toolbox Error!")
-            self._workerRepository = wx.SashLayoutWindow(
-                self, self.ID_WINDOW_RIGHT, wx.DefaultPosition,
-                wx.Size(220,1000),
-                wx.NO_BORDER)
+            self._wxPyphantApp._logger.debug(
+                u"An exception occured while loading the toolboxes.",
+                exc_info=sys.exc_info())
+            wx.MessageBox(
+                "An error has occurred while importing "\
+                "the toolboxes.\nPlease investigate the logfile "\
+                "for further details.\nThe logfile is located at %s\n"\
+                "You may also try to update and restart wxPyphant."\
+                % os.path.join(LOGDIR, 'pyphant.log'),
+                "Toolbox Error!")
+            self._workerRepository = wx.TreeCtrl(self)
 
     def _initAui(self):
         self._auiManager = wx.aui.AuiManager(self)
@@ -175,10 +164,9 @@ class wxPyphantFrame(wx.Frame):
             def OnClick(self, event):
                 logbuffer.flush()
                 event.Skip()
-        self._logpane = ClickableText(self, -1, "",
-                                      wx.DefaultPosition, wx.Size(640, 200),
-                                      wx.NO_BORDER | wx.TE_MULTILINE \
-                                      | wx.TE_READONLY)
+        self._logpane = ClickableText(
+            self, -1, "", wx.DefaultPosition, wx.Size(640, 200),
+            wx.NO_BORDER | wx.TE_MULTILINE | wx.TE_READONLY)
         class WxHandler(logging.Handler):
             def __init__(self, ctrl):
                 logging.Handler.__init__(self)
@@ -201,24 +189,7 @@ class wxPyphantFrame(wx.Frame):
                                  'Worker Repository')
         self._auiManager.AddPane(self._remainingSpace, wx.CENTER, 'Main')
         wrpane = self._auiManager.GetPane(self._workerRepository)
-        wrpane.Floatable(False)
-        wrpane.Movable(False)
         self._auiManager.Update()
-
-    def onSize(self, event):
-        wx.LayoutAlgorithm().LayoutWindow(self,self._remainingSpace)
-        event.Skip()
-
-    def onFoldPanelBarDrag(self, event):
-        if event.GetDragStatus() == wx.SASH_STATUS_OUT_OF_RANGE:
-            return
-        if event.GetId() == self.ID_WINDOW_RIGHT:
-            self._workerRepository.SetDefaultSize(
-                wx.Size(event.GetDragRect().width, 1000))
-        # Leaves bits of itself behind sometimes
-        #wx.LayoutAlgorithm().LayoutWindow(self, self._remainingSpace)
-        self._remainingSpace.Refresh()
-        event.Skip()
 
     def onOpenCompositeWorker(self, event):
         if not self._wxPyphantApp.pathToRecipe:
@@ -250,20 +221,22 @@ class wxPyphantFrame(wx.Frame):
         if self._wxPyphantApp.pathToRecipe[-3:] == '.h5':
             if os.path.exists(self._wxPyphantApp.pathToRecipe):
                 try:
-                    recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File(
+                    recipe = loadRecipeFromHDF5File(
                         self._wxPyphantApp.pathToRecipe)
-                    self._remainingSpace = PyphantCanvas.PyphantCanvas(self, recipe)
+                    self._remainingSpace = PyphantCanvas.PyphantCanvas(
+                        self, recipe)
                 except:
-                    self._wxPyphantApp._logger.debug(u"An exception occured while "\
-                                       "loading a recipe.",
-                                       exc_info=sys.exc_info())
-                    wx.MessageBox("An error has occurred while opening "\
-                                  "the recipe.\nRecipe has been set to an "\
-                                  "empty file in order to prevent data loss.\n"\
-                                  "Please investigate the logfile "\
-                                  "for further details.\nThe logfile is located at %s"\
-                                  % os.path.join(LOGDIR, 'pyphant.log'),
-                                  "Recipe broken, unknown format or outdated!")
+                    self._wxPyphantApp._logger.debug(
+                        u"An exception occured while loading a recipe.",
+                        exc_info=sys.exc_info())
+                    wx.MessageBox(
+                        "An error has occurred while opening "\
+                        "the recipe.\nRecipe has been set to an "\
+                        "empty file in order to prevent data loss.\n"\
+                        "Please investigate the logfile "\
+                        "for further details.\nThe logfile is located at %s"\
+                        % os.path.join(LOGDIR, 'pyphant.log'),
+                        "Recipe broken, unknown format or outdated!")
                     self._wxPyphantApp.pathToRecipe += ".error.h5"
                     self._remainingSpace = PyphantCanvas.PyphantCanvas(self)
             else:
@@ -281,10 +254,9 @@ class wxPyphantFrame(wx.Frame):
         self.recipeState = 'dirty'
 
     def onSaveCompositeWorker(self, event=None):
-        pyphant.core.PyTablesPersister.saveRecipeToHDF5File(
-            self._remainingSpace.diagram.recipe,
-            self._wxPyphantApp.pathToRecipe,
-            self._fileMenu.IsChecked(wx.ID_FILE4))
+        saveRecipeToHDF5File(self._remainingSpace.diagram.recipe,
+                             self._wxPyphantApp.pathToRecipe,
+                             self._fileMenu.IsChecked(wx.ID_FILE4))
         self.recipeState = 'clean'
 
     def onSaveAsCompositeWorker(self, event=None):
@@ -296,10 +268,9 @@ class wxPyphantFrame(wx.Frame):
             filename = dlg.GetPath()
             if not filename.endswith(".h5"):
                 filename += ".h5"
-            pyphant.core.PyTablesPersister.saveRecipeToHDF5File(
+            saveRecipeToHDF5File(
                 self._remainingSpace.diagram.recipe,
-                filename,
-                self._fileMenu.IsChecked(wx.ID_FILE4))
+                filename, self._fileMenu.IsChecked(wx.ID_FILE4))
             self._wxPyphantApp.pathToRecipe = filename
             self.recipeState = 'clean'
             from pyphant.core.WebInterface import shorten

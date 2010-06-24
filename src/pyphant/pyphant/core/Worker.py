@@ -43,9 +43,10 @@ from pyphant.core import Connectors, Param, WorkerRegistry
 
 class WorkerInfo(object):
 ##    __slots__ = ["name", "createWorker"] #not possible due to pickling restrictions.
-    def __init__(self, name, createWorker):
-        self.name=name
-        self.createWorker=createWorker
+    def __init__(self, cls):
+        self.name = cls.name
+        self.toolBoxName = cls.__module__.split('.')[0]
+        self.createWorker = cls
 
 def plug(returnType):
     def setPlug(_plug):
@@ -69,7 +70,7 @@ class WorkerFactory(type):
             cls._plugs.append((f, cdict[f]))
         super(WorkerFactory, cls).__init__(name, bases, cdict)
         if cls.__name__ != 'Worker':
-            WorkerFactory.workerRegistry.registerWorker(WorkerInfo(cls.name,cls))
+            WorkerFactory.workerRegistry.registerWorker(WorkerInfo(cls))
 
 class Worker(object):
     API = 2

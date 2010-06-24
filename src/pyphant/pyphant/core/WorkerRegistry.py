@@ -42,20 +42,48 @@ import singletonmixin
 import pkg_resources
 
 
+class ToolBoxInfo(object):
+    def __init__(self, name):
+        self.name = name
+        self.workerInfos = []
+        self._logger = logging.getLogger("pyphant")
+
+    def sortWorkerInfos(self):
+        self.workerInfos.sort(key=lambda x:x.name.lower())
+
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __ne__(self, other):
+        return self.name != other.name
+
+    def addWorkerInfo(self, workerInfo):
+        if not workerInfo in self.workerInfos:
+            self.workerInfos.append(workerInfo)
+            self._logger.info("Added worker %s from toolbox %s." \
+                              % (workerInfo.name, self.name))
+
+
 class WorkerRegistry(singletonmixin.Singleton):
     def __init__(self):
-        self._workerPool = []
+        self._toolBoxInfoList = []
+        self._toolBoxInfoDict = {}
         self._logger = logging.getLogger("pyphant")
         self._dirty = True
 
     def registerWorker(self, workerInfo):
-        if not workerInfo in self._workerPool:
-            self._workerPool.append(workerInfo)
-            self._logger.info("added worker")
-        else:
-            self._logger.info("did nothing")
+        tBI = ToolBoxInfo(workerInfo.toolBoxName)
+        if not tBI in self._toolBoxInfoList:
+            self._toolBoxInfoList.append(tBI)
+            self._toolBoxInfoDict[tBI.name] = tBI
+        self._toolBoxInfoDict[tBI.name].addWorkerInfo(workerInfo)
 
-    def getWorkers(self):
+    def sortToolBoxInfos(self):
+        for tBI in self._toolBoxInfoList:
+            tBI.sortWorkerInfos()
+        self._toolBoxInfoList.sort(key=lambda x: x.name.lower())
+
+    def getToolBoxInfoList(self):
         if self._dirty:
             for worker in pkg_resources.iter_entry_points("pyphant.workers"):
                 wm = worker.load()
@@ -75,5 +103,6 @@ class WorkerRegistry(singletonmixin.Singleton):
                             "worker archive " + worker.module_name \
                             + " contains invalid worker " + module \
                             + ": " + str(e))
+            self.sortToolBoxInfos()
             self._dirty = False
-        return self._workerPool
+        return self._toolBoxInfoList
