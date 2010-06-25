@@ -53,11 +53,11 @@ class ParamChangeExpected(object):
         self.expectedValue = expectedValue
 
 
-class PossibleValuesChangeExpected(object):
-    def __init__(self, param, expectedPVs, autoSelect=False):
+class VisualizerChangeValue(object):
+    def __init__(self, param, **kargs):
         self.param = param
-        self.expectedPVs = expectedPVs
-        self.autoSelect = autoSelect
+        for key, value in kargs.iteritems():
+            setattr(self, key, value)
 
 
 class ParamChangeRequested(object):

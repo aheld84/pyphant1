@@ -94,6 +94,7 @@ class ParamVisReg:
             (" ", None, OneLineStringField.OLSF),
             (" ", Connectors.SUBTYPE_FILE, FileButton.FileButton),
             (True, None, CheckBox.CheckBox),
+            (True, Connectors.SUBTYPE_INSTANT, CheckBox.InstantCheckBox),
             ([], None, ListSelect.ListSelect),
             ([], Connectors.SUBTYPE_INSTANT, ListSelect.InstantSelect)
             ]

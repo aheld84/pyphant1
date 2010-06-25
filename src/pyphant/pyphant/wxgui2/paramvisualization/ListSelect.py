@@ -40,7 +40,7 @@ __version__ = "$Revision$"
 import wx
 from wx import EVT_CHOICE
 from pyphant.core.Param import (
-    ParamChangeExpected, PossibleValuesChangeExpected)
+    ParamChangeExpected, VisualizerChangeValue)
 
 class ListSelect(wx.Choice):
     def __init__(self, parent, param, validator):
@@ -64,7 +64,7 @@ class InstantSelect(ListSelect):
     """
     This class dispatches the ParamChangeExpected event as soon as
     the user selects a new value and listens for the
-    PossibleValueChangeExpected event which should be raised
+    VisualizerChangeValue event which should be raised
     if the possible values for the underlying ListSelect
     need to be updated.
     """
@@ -74,16 +74,19 @@ class InstantSelect(ListSelect):
         self.param = param
         self.possibleValues = param.possibleValues
         param._eventDispatcher.registerExclusiveListener(
-            self.onPVCE, PossibleValuesChangeExpected)
+            self.onVCV, VisualizerChangeValue)
 
-    def onPVCE(self, event):
-        value = self.data[self.GetStringSelection()]
-        assert value in event.expectedPVs, "%s not in %s" % (value,
-                                                             event.expectedPVs)
-        self.data = dict([(str(val), val) for val in event.expectedPVs])
-        self.possibleValues = event.expectedPVs
-        self.SetItems(map(str, event.expectedPVs))
-        if event.autoSelect and len(event.expectedPVs) == 2:
+    def onVCV(self, event):
+        if not hasattr(event, 'value'):
+            value = self.data[self.GetStringSelection()]
+        else:
+            value = event.value
+        assert value in event.possibleValues, "%s not in %s" \
+               % (value, event.possibleValues)
+        self.data = dict([(str(val), val) for val in event.possibleValues])
+        self.possibleValues = event.possibleValues
+        self.SetItems(map(str, event.possibleValues))
+        if event.autoSelect and len(event.possibleValues) == 2:
             self.SetSelection(1)
             pce = ParamChangeExpected(
                 self.param, expectedValue=self.data[self.GetStringSelection()])

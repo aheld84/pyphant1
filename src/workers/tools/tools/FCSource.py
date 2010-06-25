@@ -53,16 +53,17 @@ class FCSource(DCSource, Worker.Worker):
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "FieldContainer"
-    _params = [("machine", u"machine ==", [ANYSTR], SUBTYPE_INSTANT),
-               ("creator", u"and creator ==", [ANYSTR], SUBTYPE_INSTANT),
-               ("longname", u"and longname ==", [ANYSTR], SUBTYPE_INSTANT),
+    _params = [("longname", u"and longname ==", [ANYSTR], SUBTYPE_INSTANT),
                ("shortname", u"and shortname ==", [ANYSTR], SUBTYPE_INSTANT),
                ("unit", u"and unit is compatible to", [ANYSTR],
                 SUBTYPE_INSTANT),
                ("has_dim", u"and has dimension", [ANYSTR], SUBTYPE_INSTANT),
                ("col_of", u"and is column of", [ANYSTR], SUBTYPE_INSTANT),
                ("dim_of", u"and is dimension of", [ANYSTR], SUBTYPE_INSTANT),
-               ("id", u"and emd5 ==", [ANYSTR], SUBTYPE_INSTANT)]
+               ("machine", u"machine ==", [ANYSTR], SUBTYPE_INSTANT),
+               ("creator", u"and creator ==", [ANYSTR], SUBTYPE_INSTANT),
+               ("id", u"and emd5 ==", [ANYSTR], SUBTYPE_INSTANT),
+               ('reset', u'clear all parameters', False, SUBTYPE_INSTANT)]
 
     def __init__(self, *args, **kargs):
         Worker.Worker.__init__(self, *args, **kargs)

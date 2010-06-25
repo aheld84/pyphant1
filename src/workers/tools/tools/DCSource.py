@@ -40,7 +40,7 @@ __version__ = "$Revision$"
 
 from pyphant.core.KnowledgeManager import KnowledgeManager
 from pyphant.core.Param import (
-    ParamChangeExpected, PossibleValuesChangeExpected, ParamOverridden)
+    ParamChangeExpected, VisualizerChangeValue, ParamOverridden)
 ANYSTR = u"-- any --"
 
 
@@ -53,14 +53,19 @@ class DCSource(object):
         self.dc_type = dc_type
         self.expectedValues = {}
         for name, param in self._params.iteritems():
-            if name in ["name"]:
+            if name == 'name':
                 continue
             param.registerListener(self.onPCE, ParamChangeExpected)
             param.registerListener(self.onPO, ParamOverridden)
             self.expectedValues[name] = param.value
 
     def onPCE(self, event):
-        if event.expectedValue != self.expectedValues[event.param.name]:
+        if event.param.name == 'reset' and event.expectedValue:
+            self.refreshParams(update=False, autoSelect=False, reset=True)
+            vcv = VisualizerChangeValue(event.param, value=False)
+            event.param._eventDispatcher.dispatchEvent(vcv)
+        elif event.param.name != 'reset' and \
+                 event.expectedValue != self.expectedValues[event.param.name]:
             self.expectedValues[event.param.name] = event.expectedValue
             autoSelect = event.expectedValue != ANYSTR
             self.refreshParams(update=False, autoSelect=autoSelect)
@@ -78,7 +83,7 @@ class DCSource(object):
         search_dict.update(dict(
             [self.getKeyValue(key, val, name) \
              for key, val in self.expectedValues.iteritems() \
-             if key not in ['name', name] and val != ANYSTR]))
+             if key not in ['name', 'reset', name] and val != ANYSTR]))
         if name == 'dim_of':
             search_dict = {'type':'field', 'has_dim':search_dict}
         elif name == 'col_of':
@@ -95,21 +100,29 @@ class DCSource(object):
         else:
             return name
 
-    def refreshParams(self, subscriber=None, update=True, autoSelect=True):
+    def refreshParams(self, subscriber=None, update=True, autoSelect=True,
+                      reset=False):
         if update:
             self.expectedValues = dict(
                 [(name, param.value) for name, param \
-                 in self._params.iteritems() if name != 'name'])
+                 in self._params.iteritems() if name not in ['name', 'reset']])
+        elif reset:
+            self.expectedValues = dict(
+                [(name, ANYSTR) for name in self._params.iterkeys() \
+                 if name not in ['name', 'reset']])
         kmanager = KnowledgeManager.getInstance()
         for name, param in self._params.iteritems():
-            if name == 'name':
+            if name in ['name', 'reset']:
                 continue
             search_dict = self.getSearchDict(name)
             newEVs = [[ANYSTR]]
             newEVs.extend(kmanager.search(
                 [self.getResKey(name)], search_dict=search_dict, distinct=True))
             newEVs = [newEV[0] for newEV in newEVs]
-            param._eventDispatcher.dispatchEvent(
-                PossibleValuesChangeExpected(param, newEVs, autoSelect))
+            event = VisualizerChangeValue(param, possibleValues=newEVs,
+                                          autoSelect=autoSelect)
+            if reset:
+                event.value = ANYSTR
+            param._eventDispatcher.dispatchEvent(event)
             if update:
                 param.possibleValues = newEVs

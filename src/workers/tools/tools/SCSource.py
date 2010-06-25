@@ -53,13 +53,14 @@ class SCSource(DCSource, Worker.Worker):
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "SampleContainer"
-    _params = [("machine", u"machine ==", [ANYSTR], SUBTYPE_INSTANT),
-               ("creator", u"and creator ==", [ANYSTR], SUBTYPE_INSTANT),
-               ("longname", u"and longname ==", [ANYSTR], SUBTYPE_INSTANT),
+    _params = [("longname", u"and longname ==", [ANYSTR], SUBTYPE_INSTANT),
                ("shortname", u"and shortname ==", [ANYSTR], SUBTYPE_INSTANT),
                ("has_col", u"and has column", [ANYSTR], SUBTYPE_INSTANT),
                ("col_of", u"and is column of", [ANYSTR], SUBTYPE_INSTANT),
-               ("id", u"and emd5 ==", [ANYSTR], SUBTYPE_INSTANT)]
+               ("machine", u"machine ==", [ANYSTR], SUBTYPE_INSTANT),
+               ("creator", u"and creator ==", [ANYSTR], SUBTYPE_INSTANT),
+               ("id", u"and emd5 ==", [ANYSTR], SUBTYPE_INSTANT),
+               ('reset', u'clear all parameters', False, SUBTYPE_INSTANT)]
 
     def __init__(self, *args, **kargs):
         Worker.Worker.__init__(self, *args, **kargs)
