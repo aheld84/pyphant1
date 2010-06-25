@@ -41,7 +41,7 @@ from fmfile import FMFLoader
 from pyphant.core.DataContainer import FieldContainer,assertEqual
 from pyphant.quantities import Quantity
 from pyphant.quantities.ParseQuantities import str2unit
-        
+
 class FieldContainerCondenseDim(unittest.TestCase):
     def setUp(self):
         self.x = numpy.linspace(0,0.9,10)
@@ -135,13 +135,13 @@ creator: Andreas W. Liehr
 created: 2010-03-16
 place: ICE 676, Offenburg-Karlsruhe, Germany
 [Mathematical and Physical Constants]
-Area of unit circle:  pi = 3.1415926535897931 
+Area of unit circle:  pi = 3.1415926535897931
 Speed of light: c = 299792458 m/s
 Permeability of vacuum: \mu_0 = 4.e-7 pi*N/A**2
 Permittivity of vacuum: \eps_0 = 1.0 1/mu0/c**2
-Gravitational constant: Grav = 6.67259e-11 m**3/kg/s**2 
+Gravitational constant: Grav = 6.67259e-11 m**3/kg/s**2
 Planck constant: hplanck = 6.6260755e-34 J*s
-Planck constant / 2pi: hbar = 0.5 hplanck/pi 
+Planck constant / 2pi: hbar = 0.5 hplanck/pi
 Elementary charge: e = 1.60217733e-19 C
 Electron mass:       m_e = 9.1093897e-31 kg
 Proton mass: m_p = 1.6726231e-27 kg
@@ -163,7 +163,7 @@ Complex: C
 Missing Value: V_m
 Infinite Value: V_i
 [*data: T]
-H_2	1	1.	1e1	1+0j	nan	inf	
+H_2	1	1.	1e1	1+0j	nan	inf
 O_2	2	.2	2E1	2+.1j	NaN	INF
 O 2	2	.2	2E1	2.+2j	NAN	Inf
 [*data definitions: M]
@@ -209,14 +209,14 @@ creator: Andreas W. Liehr
 created: 2010-03-17
 place: ICE 604, Offenburg-Karlsruhe, Germany
 [Mathematical and Physical Constants]
-Area of unit circle:  pi = 3.1415926535897931 
+Area of unit circle:  pi = 3.1415926535897931
 Speed of light: c = 299792458 m/s
 Permeability of vacuum: \mu_0 = 4.e-7 pi*N/A**2
 Permittivity of vacuum: \eps_0 = 1.0 1/mu0/c**2
 Faraday constant: Fa = 96485.3399 C/mol
-Gravitational constant: G = 6.67428e-11 m**3/kg/s**2 
+Gravitational constant: G = 6.67428e-11 m**3/kg/s**2
 Planck constant: h = 6.62606896e-34 J*s
-Planck constant / 2pi: hbar = 0.5 h/pi 
+Planck constant / 2pi: hbar = 0.5 h/pi
 Elementary charge: e = 1.602176487e-19 C
 Electron mass:       m_e = 9.10938215e-31 kg
 Proton mass: m_p = 1.672621637e-27 kg
@@ -240,7 +240,7 @@ Complex: C
 Missing Value: V_m
 Infinite Value: V_i
 [*data: T]
-H_2	1	1.	1e1	1+0j	nan	inf	
+H_2	1	1.	1e1	1+0j	nan	inf
 O_2	2	.2	2E1	2+.1j	NaN	INF
 O 2	2	.2	2E1	2.+2j	NAN	Inf
 [*data definitions: M]
@@ -272,7 +272,45 @@ N_2	1	2
         self.assertEqual(consts[u'Parsec'][1],str2unit("1 pc",FMFversion="1.1"))
         self.assertEqual(consts[u'US gallon'][1],str2unit("1 galUS",FMFversion="1.1"))
         self.assertEqual(consts[u'Atomic mass units'][1],str2unit("1 u",FMFversion="1.1"))
-                  
+
+
+class Emd5ConsistencyTestCase(unittest.TestCase):
+    def setUp(self):
+        from fmfile import __path__ as path
+        import os
+        self.filename = os.path.join(path[0], 'tests', 'resources',
+                                     'fmf','dep.fmf')
+
+    def testImportFMF(self):
+        from fmfile import FMFLoader
+        table = FMFLoader.loadFMFFromFile(self.filename)
+        print "Testing imported SampleContainer for consistency..."
+        for column in ['y0', 'y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7', 'y8']:
+            self.assertEqual(table[column].dimensions[0].id,
+                             table['x'].id)
+
+    def testRegisterFMF(self):
+        from pyphant.core.KnowledgeManager import KnowledgeManager
+        kmanager = KnowledgeManager.getInstance()
+        table_id = kmanager.registerFMF(self.filename, temporary=True)
+        table = kmanager.getDataContainer(table_id)
+        print "Testing registered SampleContainer for consistency..."
+        for column in ['y0', 'y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7', 'y8']:
+            self.assertEqual(table[column].dimensions[0].id,
+                             table['x'].id)
+
+    def testRegisterFMFSummary(self):
+        from pyphant.core.KnowledgeManager import KnowledgeManager
+        kmanager = KnowledgeManager.getInstance()
+        table_id = kmanager.registerFMF(self.filename, temporary=True)
+        table = kmanager.getDataContainer(table_id)
+        print "Testing registered SampleContainer summary for consistency..."
+        for column in ['y0', 'y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7', 'y8']:
+            summary = kmanager.getSummary(table[column].id)
+            emd5 = summary['dimensions'][0]
+            self.assertEqual(emd5, table['x'].id)
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) == 1:
