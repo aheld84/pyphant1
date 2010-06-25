@@ -86,13 +86,7 @@ class InstantSelect(ListSelect):
         self.data = dict([(str(val), val) for val in event.possibleValues])
         self.possibleValues = event.possibleValues
         self.SetItems(map(str, event.possibleValues))
-        if event.autoSelect and len(event.possibleValues) == 2:
-            self.SetSelection(1)
-            pce = ParamChangeExpected(
-                self.param, expectedValue=self.data[self.GetStringSelection()])
-            self.param._eventDispatcher.dispatchEvent(pce)
-        else:
-            self.SetValue(value)
+        self.SetValue(value)
 
     def onChoice(self, event):
         event.Skip()

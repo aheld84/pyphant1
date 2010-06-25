@@ -61,14 +61,13 @@ class DCSource(object):
 
     def onPCE(self, event):
         if event.param.name == 'reset' and event.expectedValue:
-            self.refreshParams(update=False, autoSelect=False, reset=True)
+            self.refreshParams(update=False, reset=True)
             vcv = VisualizerChangeValue(event.param, value=False)
             event.param._eventDispatcher.dispatchEvent(vcv)
         elif event.param.name != 'reset' and \
                  event.expectedValue != self.expectedValues[event.param.name]:
             self.expectedValues[event.param.name] = event.expectedValue
-            autoSelect = event.expectedValue != ANYSTR
-            self.refreshParams(update=False, autoSelect=autoSelect)
+            self.refreshParams(update=False)
 
     def onPO(self, event):
         self.expectedValues[event.param.name] = event.newValue
@@ -100,8 +99,7 @@ class DCSource(object):
         else:
             return name
 
-    def refreshParams(self, subscriber=None, update=True, autoSelect=True,
-                      reset=False):
+    def refreshParams(self, subscriber=None, update=True, reset=False):
         if update:
             self.expectedValues = dict(
                 [(name, param.value) for name, param \
@@ -119,8 +117,7 @@ class DCSource(object):
             newEVs.extend(kmanager.search(
                 [self.getResKey(name)], search_dict=search_dict, distinct=True))
             newEVs = [newEV[0] for newEV in newEVs]
-            event = VisualizerChangeValue(param, possibleValues=newEVs,
-                                          autoSelect=autoSelect)
+            event = VisualizerChangeValue(param, possibleValues=newEVs)
             if reset:
                 event.value = ANYSTR
             param._eventDispatcher.dispatchEvent(event)
