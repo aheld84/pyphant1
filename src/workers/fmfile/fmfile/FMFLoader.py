@@ -74,6 +74,7 @@ def loadDataFromZip(filename, subscriber=1):
         else:
             data[pixelName] = rawContainer
         subscriber %= float(i+1)/total*100.0
+
     return data,names
 
 def collectAttributes(data,names):
@@ -145,7 +146,7 @@ class column2Field:
                 indexError = 2
                 for i,element in enumerate(column):
                     if not type(element)==type((0,)):
-                        column[i]=(shortname,numpy.NaN,None) 
+                        column[i]=(shortname,numpy.NaN,None)
             try:
                 data = [element[indexDatum] for element in column]
             except:
@@ -257,35 +258,13 @@ def reshapeField(field):
     if field.isIndependent():
         return field
     dimData = [numpy.unique(d.data) for d in field.dimensions]
-    fieldData = numpy.ones([len(d) for d in dimData])*numpy.nan
-    data = numpy.vstack([field.data]+[d.data for d in field.dimensions]).transpose()
-    for row in data:
-        try:
-            fieldData[[numpy.argwhere(dimData[i]==v) for i,v in enumerate(row[1:])]] = row[0]
-        except AttributeError:
-            from pyphant.wxgui2.wxPyphantApplication import LOGDIR
-            import os, os.path
-            DEBDIR=os.path.join(LOGDIR, "pyphant_debug")
-            if not os.path.exists(DEBDIR):
-                os.mkdir(DEBDIR)
-            for i,v in enumerate(row[1:]):
-                try:
-                    numpy.argwhere(dimData[i]==v)
-                except AttributeError, e:
-                    _logger.debug(u"AttributeError occured:",
-                                  exc_info=True)
-                    f = open(os.path.join(DEBDIR, "deblog"), 'w')
-                    f.write("dShape: %s; vShape: %s\n\n"%(dimData[i].shape, v.shape))
-                    f.write("%s"%dimData[i])
-                    f.write("\n\nv:\n")
-                    f.write("%s"%v)
-                    f.write("\n")
-                    f.close()
-                    numpy.savetxt(os.path.join(DEBDIR, "dimData.txt"), dimData[i])
-                    numpy.savetxt(os.path.join(DEBDIR, "data.txt"), data)
-                    numpy.savetxt(os.path.join(DEBDIR, "row.txt"), row)
-                    numpy.savetxt(os.path.join(DEBDIR, "v.txt"), v)
-                    raise
+    dimDicts = [dict([(data, index) for index, data in enumerate(dimdata)]) \
+                for dimdata in dimData]
+    fieldData = numpy.ones([len(d) for d in dimData]) * numpy.nan
+    indicess = [map(lambda x: dimDicts[index][x], dim.data) \
+                for index, dim in enumerate(field.dimensions)]
+    for datum, indices in zip(field.data, indicess):
+        fieldData[indices] = datum
     newDims = [ DataContainer.FieldContainer(dimData[i],
                                              f.unit,
                                              longname=f.longname,
@@ -381,7 +360,6 @@ def item2value(oldVal,FMFversion='1.1'):
     return oldVal
 
 def config2tables(preParsedData, config, FMFversion='1.1'):
-
     if config.has_key('*table definitions'):
         longnames = dict([(i,k) for k,i in config['*table definitions'].iteritems()])
         del config['*table definitions']
@@ -399,7 +377,7 @@ def config2tables(preParsedData, config, FMFversion='1.1'):
                                      preParsedData[shortname],
                                      config[k],FMFversion))
             del config[k]
-    attributes = config.walk(lambda section,key: 
+    attributes = config.walk(lambda section,key:
                              item2value(section[key],FMFversion))
     for t in tables:
         t.attributes = copy.deepcopy(attributes)
