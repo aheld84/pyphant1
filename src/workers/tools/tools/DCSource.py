@@ -52,10 +52,13 @@ class DCSource(object):
     def __init__(self, dc_type):
         self.dc_type = dc_type
         self.expectedValues = {}
+        self._remaining = -1
         for name, param in self._params.iteritems():
             if name == 'name':
                 continue
             param.registerListener(self.onPCE, ParamChangeExpected)
+            if name in ['reset', 'remaining']:
+                continue
             param.registerListener(self.onPO, ParamOverridden)
             self.expectedValues[name] = param.value
 
@@ -63,6 +66,9 @@ class DCSource(object):
         if event.param.name == 'reset' and event.expectedValue:
             self.refreshParams(update=False, reset=True)
             vcv = VisualizerChangeValue(event.param, value=False)
+            event.param._eventDispatcher.dispatchEvent(vcv)
+        elif event.param.name == 'remaining':
+            vcv = VisualizerChangeValue(event.param, value=self.remaining)
             event.param._eventDispatcher.dispatchEvent(vcv)
         elif event.param.name != 'reset' and \
                  event.expectedValue != self.expectedValues[event.param.name]:
@@ -82,7 +88,8 @@ class DCSource(object):
         search_dict.update(dict(
             [self.getKeyValue(key, val, name) \
              for key, val in self.expectedValues.iteritems() \
-             if key not in ['name', 'reset', name] and val != ANYSTR]))
+             if key not in ['name', 'reset', 'remaining', name] \
+             and val != ANYSTR]))
         if name == 'dim_of':
             search_dict = {'type':'field', 'has_dim':search_dict}
         elif name == 'col_of':
@@ -103,14 +110,15 @@ class DCSource(object):
         if update:
             self.expectedValues = dict(
                 [(name, param.value) for name, param \
-                 in self._params.iteritems() if name not in ['name', 'reset']])
+                 in self._params.iteritems() if name not in \
+                 ['name', 'reset', 'remaining']])
         elif reset:
             self.expectedValues = dict(
                 [(name, ANYSTR) for name in self._params.iterkeys() \
-                 if name not in ['name', 'reset']])
+                 if name not in ['name', 'reset', 'remaining']])
         kmanager = KnowledgeManager.getInstance()
         for name, param in self._params.iteritems():
-            if name in ['name', 'reset']:
+            if name in ['name', 'reset', 'remaining']:
                 continue
             search_dict = self.getSearchDict(name)
             newEVs = [[ANYSTR]]
@@ -123,3 +131,25 @@ class DCSource(object):
             param._eventDispatcher.dispatchEvent(event)
             if update:
                 param.possibleValues = newEVs
+            if name == 'id':
+                if self.expectedValues['id'] != ANYSTR:
+                    self.remaining = 1
+                else:
+                    self.remaining = len(newEVs) - 1
+                if update:
+                    self.paramRemaining.value = self.remaining
+
+    def _getRemaining(self):
+        if self._remaining == 1:
+            return "1: You may click OK!"
+        elif self._remaining == -1:
+            return "unknown"
+        else:
+            return "%d" % self._remaining
+
+    def _setRemaining(self, rem):
+        self._remaining = rem
+        vcv = VisualizerChangeValue(self.paramRemaining, value=self.remaining)
+        self.paramRemaining._eventDispatcher.dispatchEvent(vcv)
+
+    remaining = property(_getRemaining, _setRemaining)

@@ -38,6 +38,8 @@ __version__ = "$Revision$"
 # $Source$
 
 import wx
+from pyphant.core.Param import (ParamChangeExpected,
+                                VisualizerChangeValue)
 
 class OLSF(wx.TextCtrl):
     def __init__(self, parent, param, validator):
@@ -46,3 +48,20 @@ class OLSF(wx.TextCtrl):
 
     def getValue(self):
         return self.GetValue()
+
+class InstantOLSF(OLSF):
+    def __init__(self, parent, param, validator):
+        OLSF.__init__(self, parent, param, validator)
+        self.param = param
+        self.Bind(wx.EVT_KILL_FOCUS, self.onInput)
+        param._eventDispatcher.registerExclusiveListener(
+            self.onVCV, VisualizerChangeValue)
+
+    def onInput(self, Event=None):
+        pce = ParamChangeExpected(self.param, expectedValue=self.getValue())
+        self.param._eventDispatcher.dispatchEvent(pce)
+        if not Event is None:
+            Event.Skip()
+
+    def onVCV(self, event):
+        self.SetValue(event.value)

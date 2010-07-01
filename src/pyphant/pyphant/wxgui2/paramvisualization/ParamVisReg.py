@@ -92,6 +92,7 @@ class ParamVisReg:
         register = [
             (0, None, BoundedIntegerTextField.BoundedIntegerTextField),
             (" ", None, OneLineStringField.OLSF),
+            (" ", Connectors.SUBTYPE_INSTANT, OneLineStringField.InstantOLSF),
             (" ", Connectors.SUBTYPE_FILE, FileButton.FileButton),
             (True, None, CheckBox.CheckBox),
             (True, Connectors.SUBTYPE_INSTANT, CheckBox.InstantCheckBox),

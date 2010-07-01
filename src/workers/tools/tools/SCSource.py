@@ -60,7 +60,8 @@ class SCSource(DCSource, Worker.Worker):
                ("machine", u"machine ==", [ANYSTR], SUBTYPE_INSTANT),
                ("creator", u"and creator ==", [ANYSTR], SUBTYPE_INSTANT),
                ("id", u"and emd5 ==", [ANYSTR], SUBTYPE_INSTANT),
-               ('reset', u'clear all parameters', False, SUBTYPE_INSTANT)]
+               ('reset', u'clear all parameters', False, SUBTYPE_INSTANT),
+               ('remaining', u'# matches', '', SUBTYPE_INSTANT)]
 
     def __init__(self, *args, **kargs):
         Worker.Worker.__init__(self, *args, **kargs)
@@ -68,6 +69,9 @@ class SCSource(DCSource, Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def getSampleContainer(self, subscriber = 0):
-        emd5 = self.paramId.value
+        if len(self.paramId.possibleValues) == 2:
+            emd5 = self.paramId.possibleValues[1]
+        else:
+            emd5 = self.paramId.value
         kmanager = KnowledgeManager.getInstance()
         return kmanager.getDataContainer(emd5)
