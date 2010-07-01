@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2008, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,8 +29,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""
-The ImageProcessing toolbox holds workers to process data resulting from scalar fields.
+"""
+TODO
 """
 
 __id__ = "$Id$"
@@ -38,38 +38,31 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-BACKGROUND_COLOR=255
-FEATURE_COLOR=0
+from pyphant.core import (Worker, Connectors,
+                          Param)
+import numpy
 
-workers=[
-    "ApplyMask",
-    "AutoFocus",
-    "CoverageWorker",
-    "DiffWorker",
-    "DistanceMapper",
-    "EdgeFillWorker",
-    "EdgeTouchingFeatureRemover",
-    "EnhanceContrast",
-    "FilterWorker",
-    "FindLocalExtrema",
-    "FitBackground",
-    "Gradient",
-    "ImageLoaderWorker",
-    "InvertWorker",
-    "MarkAF",
-    "Medianiser",
-    "NDImageWorker",
-    "SkeletonizeFeature",
-    "SliceSelector",
-    "ThresholdingWorker",
-    "UltimatePointsCalculator",
-    "Watershed",
-    "Reduce",
-    "FeatureRatio"
-    ]
 
-def isFeature(point):
-    if point == FEATURE_COLOR:
-        return True
-    else:
-        return False
+class FeatureRatio(Worker.Worker):
+    """
+    TODO
+    """
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "FeatureRatio"
+    _params = [('bgc', 'Background color', 0, None)]
+    _sockets = [("image", Connectors.TYPE_IMAGE)]
+
+    @Worker.plug(Connectors.TYPE_IMAGE)
+    def getRatio(self, image, subscriber=0):
+        from pyphant.core.DataContainer import FieldContainer
+        bgc = self.paramBgc.value
+        ratio = float(numpy.where(image.data != bgc, 1, 0).sum()) /\
+                float(image.data.size)
+        data = numpy.array([ratio])
+        fc = FieldContainer(data,
+                            longname='Feature Ratio of %s' % image.longname,
+                            shortname='r')
+        fc.seal()
+        return fc

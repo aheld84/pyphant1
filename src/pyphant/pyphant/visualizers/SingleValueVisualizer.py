@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The ImageProcessing toolbox holds workers to process data resulting from scalar fields.
 """
 
 __id__ = "$Id$"
@@ -38,38 +37,20 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-BACKGROUND_COLOR=255
-FEATURE_COLOR=0
 
-workers=[
-    "ApplyMask",
-    "AutoFocus",
-    "CoverageWorker",
-    "DiffWorker",
-    "DistanceMapper",
-    "EdgeFillWorker",
-    "EdgeTouchingFeatureRemover",
-    "EnhanceContrast",
-    "FilterWorker",
-    "FindLocalExtrema",
-    "FitBackground",
-    "Gradient",
-    "ImageLoaderWorker",
-    "InvertWorker",
-    "MarkAF",
-    "Medianiser",
-    "NDImageWorker",
-    "SkeletonizeFeature",
-    "SliceSelector",
-    "ThresholdingWorker",
-    "UltimatePointsCalculator",
-    "Watershed",
-    "Reduce",
-    "FeatureRatio"
-    ]
+from pyphant.core.Connectors import (TYPE_IMAGE, TYPE_ARRAY)
+from pyphant.wxgui2.DataVisReg import DataVisReg
+import wx
 
-def isFeature(point):
-    if point == FEATURE_COLOR:
-        return True
-    else:
-        return False
+class SingleValueVisualizer(object):
+    name='Single Value'
+    def __init__(self, DataContainer, show=True):
+        if show:
+            value = DataContainer.data[0] * DataContainer.unit
+            print value
+            wx.MessageBox(caption=DataContainer.longname,
+                          message="%s = %s" % (DataContainer.shortname,
+                                               value))
+
+
+DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, SingleValueVisualizer)

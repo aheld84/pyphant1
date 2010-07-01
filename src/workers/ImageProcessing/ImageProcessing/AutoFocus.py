@@ -158,7 +158,6 @@ class AutoFocus(Worker.Worker):
             numpy.array(numpy.gradient(image.data)))))
         label_data = self.get_label_data(grad_data, zsp, zsu)
         slicess = ndimage.find_objects(label_data)
-        focus_data = numpy.zeros(grad_data.shape)
         inclusions[zind] = {}
         for label, slices in enumerate(slicess, start=1):
             bigslices = [slice(max(sli.start - zsp.grow, 0),
@@ -175,8 +174,6 @@ class AutoFocus(Worker.Worker):
             if area < zsp.ath:
                 inclusions[zind][label] = InvalidInclusion()
                 continue
-            focus_data[slices] = numpy.where(islabel, focus,
-                                             focus_data[slices])
             new_inclusion = Inclusion(slices, focus, area)
             if last_label is None:
                 inclusions[zind][label] = new_inclusion
@@ -188,7 +185,7 @@ class AutoFocus(Worker.Worker):
             ld_inclusions.append(new_inclusion)
             self.invalidate_unfocused(ld_inclusions)
             inclusions[zind][label] = new_inclusion
-        return focus_data, label_data
+        return label_data
 
     def make_fc(self, prototype, data, unit, prefix="",
                 shortname=None, attributes={}, emd5_list=[]):
@@ -250,7 +247,6 @@ class AutoFocus(Worker.Worker):
         inclusions = {}
         focused_inclusions = []
         sharp_iters = len(zstack['emd5'].data)
-        focus_fcs = []
         label_fcs = []
         zsp = ZSParams(self)
         dimss = {}
@@ -259,14 +255,11 @@ class AutoFocus(Worker.Worker):
         for zid, emd5 in enumerate(zstack['emd5'].data):
             raw_image = self.kmanager.getDataContainer(emd5)
             dimss[zid] = raw_image.dimensions
-            focus_data, label_data = self.autofocus(
-                raw_image, zsp, zid, inclusions, label_data)
-            cdata = [[raw_image, focus_data, ZSUnits.FQUANT, 'Focus_', 'f',
-                      self.get_attributes('FocusImage', zstack.id), focus_fcs],
-                     [raw_image, label_data, 1, 'Label_', 'l',
-                      self.get_attributes('LabelImage', zstack.id), label_fcs]]
-            for data in cdata:
-                self.make_fc(*data)
+            label_data = self.autofocus(raw_image, zsp, zid, inclusions,
+                                        label_data)
+            self.make_fc(
+                raw_image, label_data, 1, 'Label_', 'l',
+                self.get_attributes('LabelImage', zstack.id), label_fcs)
             subscriber %= ((zid + 1) * 90) / sharp_iters
         # Extract statistics:
         for zind, inc_dict in inclusions.iteritems():
@@ -278,21 +271,21 @@ class AutoFocus(Worker.Worker):
                     focused_inclusions.append(info)
             subscriber %= 90 + ((zind + 1) * 10) / sharp_iters
         # Put all results into SampleContainers:
-        columnss = [zip(zvals, focus_fcs), zip(zvals, label_fcs),
+        columnss = [zip(zvals, label_fcs),
                     focused_inclusions]
-        columnlnss = [['z-value', 'emd5'], ['z-value', 'emd5'],
+        columnlnss = [['z-value', 'emd5'],
                       ['z-pos', 'y-pos', 'x-pos', 'diameter',
                        'focus', 'label', 'z-index',
                        'y-slice-start', 'y-slice-stop',
                        'x-slice-start', 'x-slice-stop']]
-        columnsnss = [['z', 'e'], ['z', 'e'],
+        columnsnss = [['z', 'e'],
                       ['z', 'y', 'x', 'd', 'f', 'l',
-                        'zi', 'yt', 'yp', 'xt', 'xp']]
-        longnames = ['Focus_' + zstack.longname, 'Label_' + zstack.longname,
-                     "Statistics_" + zstack.longname]
-        shortnames = ['f', 'l', 's']
+                       'zi', 'yt', 'yp', 'xt', 'xp']]
+        longnames = ['Label_' + zstack.longname,
+                     'Statistics_' + zstack.longname]
+        shortnames = ['l', 's']
         attributess = [self.get_attributes(zstype, zstack.id) \
-                       for zstype in ['FocusSC', 'LabelSC', 'StatisticsSC']]
+                       for zstype in ['LabelSC', 'StatisticsSC']]
         return [self.make_sc(*data) for data in \
                 zip(columnss, columnlnss, columnsnss,
                     longnames, shortnames, attributess)]
@@ -327,13 +320,9 @@ class AutoFocus(Worker.Worker):
             return lookup
 
     @Worker.plug(Connectors.TYPE_ARRAY)
-    def get_focus_sc(self, zstack, subscriber=0):
-        return self.get_result_sc(zstack, 'FocusSC', 0, subscriber)
-
-    @Worker.plug(Connectors.TYPE_ARRAY)
     def get_label_sc(self, zstack, subscriber=0):
-        return self.get_result_sc(zstack, 'LabelSC', 1, subscriber)
+        return self.get_result_sc(zstack, 'LabelSC', 0, subscriber)
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def get_statistics_sc(self, zstack, subscriber=0):
-        return self.get_result_sc(zstack, 'StatisticsSC', 2, subscriber)
+        return self.get_result_sc(zstack, 'StatisticsSC', 1, subscriber)

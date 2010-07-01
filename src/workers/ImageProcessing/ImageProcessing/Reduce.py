@@ -63,19 +63,23 @@ class BinaryMethod(object):
 
 
 class iterateImages(object):
-    def __init__(self, zstack):
+    def __init__(self, zstack, subscriber=0):
         self.zstack=zstack
         from pyphant.core.KnowledgeManager import KnowledgeManager
         self.kmanager = KnowledgeManager.getInstance()
+        self.subscriber = subscriber
+        self.steps = len(self.zstack['emd5'].data)
 
     def __iter__(self):
         return self.next()
 
     def next(self):
-        for emd5 in self.zstack['emd5'].data[1:]:
+        for count, emd5 in enumerate(self.zstack['emd5'].data[1:]):
             yield self.kmanager.getDataContainer(emd5)
+            self.subscriber %= 99 / self.steps * (count + 2) + 1
 
     def first(self):
+        self.subscriber %= 99 / self.steps + 1
         return self.kmanager.getDataContainer(self.zstack['emd5'].data[0])
 
 
@@ -95,7 +99,7 @@ class Reduce(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def getReducedImage(self, zstack, subscriber=0):
         method = self._methodPool[self.paramMethod.value]
-        iterator = iterateImages(zstack)
+        iterator = iterateImages(zstack, subscriber)
         last = iterator.first()
         for next in iterator:
             last = method.calcStep(last, next)
