@@ -63,7 +63,8 @@ workers=[
     "SliceSelector",
     "ThresholdingWorker",
     "UltimatePointsCalculator",
-    "Watershed"
+    "Watershed",
+    "Reduce"
     ]
 
 def isFeature(point):
