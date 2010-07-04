@@ -50,7 +50,7 @@ import logging, copy, math
 from scipy.special import ive
 from scipy.signal import convolve
 
-def findMaxima(fieldData, lastExtrema=None):
+def findMaxima(fieldData, numb_edge, lastExtrema=None):
     leftLess = fieldData[:-2] < fieldData[1:-1]
     leftEqual = fieldData[:-2] == fieldData[1:-1]
     rightLess = fieldData[2:] < fieldData[1:-1]
@@ -60,6 +60,9 @@ def findMaxima(fieldData, lastExtrema=None):
     maxima_re = numpy.logical_and(rightLess, leftEqual)
     maxima_e = numpy.logical_and(maxima_le[:-1], maxima_re[1:])
     maxima = numpy.logical_or(maxima_c[1:], maxima_e).nonzero()[0]
+    edge = len(fieldData)/numb_edge
+    maxima = maxima[edge<maxima]
+    maxima = maxima[maxima<(len(fieldData)-edge)]
     if lastExtrema==None or len(maxima)==0 or len(lastExtrema)==len(maxima):
         return maxima
     trackedMaxima = []
@@ -68,7 +71,7 @@ def findMaxima(fieldData, lastExtrema=None):
         trackedMaxima.append(distance.argmin())
     return maxima[trackedMaxima]
 
-def findMinima(fieldData, lastExtrema=None):
+def findMinima(fieldData, numb_edge, lastExtrema=None):
     leftGreater = fieldData[:-2] > fieldData[1:-1]
     leftEqual = fieldData[:-2] == fieldData[1:-1]
     rightGreater = fieldData[2:] > fieldData[1:-1]
@@ -78,6 +81,9 @@ def findMinima(fieldData, lastExtrema=None):
     minima_re = numpy.logical_and(rightGreater, leftEqual)
     minima_e = numpy.logical_and(minima_le[:-1], minima_re[1:])
     minima = numpy.logical_or(minima_c[1:], minima_e).nonzero()[0]
+    edge = len(fieldData)/numb_edge
+    minima = minima[edge<minima]
+    minima = minima[minima<(len(fieldData)-edge)]
     if lastExtrema==None or len(minima)==0 or len(lastExtrema)==len(minima):
         return minima
     trackedMinima = []
@@ -98,18 +104,18 @@ class MraError(RuntimeError):
         RuntimeError.__init__(self, msg)
         self.convolvedField = convolvedField
 
-def mra1d(dim, field, n):
+def mra1d(dim, field, n, numb_edge):
     sigmaSpace = numpy.linspace(n, 1, 10)
     convolvedField = convolveMRA(field, sigmaSpace[0])
-    firstMinima = lastMinima = findMinima(convolvedField, None)
-    firstMaxima = lastMaxima = findMaxima(convolvedField, None)
+    firstMinima = lastMinima = findMinima(convolvedField, numb_edge, None)
+    firstMaxima = lastMaxima = findMaxima(convolvedField, numb_edge, None)
     if len(firstMinima)==0 and len(firstMaxima)==0:
         raise MraError("No Extrema found at sigma level %s"%sigmaSpace[0],
                        convolvedField)
     for sigma in sigmaSpace[1:]:
         convolvedField = convolveMRA(field, sigma)
-        lastMinima = findMinima(convolvedField, lastMinima)
-        lastMaxima = findMaxima(convolvedField, lastMaxima)
+        lastMinima = findMinima(convolvedField, numb_edge, lastMinima)
+        lastMaxima = findMaxima(convolvedField, numb_edge, lastMaxima)
     pos_minima = dim.data[numpy.array(lastMinima)+1]
     error_minima = numpy.abs(pos_minima - dim.data[numpy.array(firstMinima)+1])
     pos_maxima = dim.data[numpy.array(lastMaxima)+1]
@@ -135,6 +141,7 @@ class MRA(Worker.Worker):
 
     _sockets = [("field", Connectors.TYPE_IMAGE)]
     _params = [("scale", u"Scale", "200 nm", None),
+               ("numb_edge", u"Width of edge to discard extrema in [%%]", 5, None),
                ("longname",u"Name of result",'default',None),
                ("symbol",u"Symbol of result",'default',None)]
 
@@ -145,6 +152,7 @@ class MRA(Worker.Worker):
             scale = quantities.Quantity(self.paramScale.value.encode('utf-8'))
         except:
             scale = float(self.paramScale.value)
+        numb_edge = 100.0/self.paramNumb_edge.value
         d = scipy.diff(dim.data)
         numpy.testing.assert_array_almost_equal(d.min(), d.max(),4)
         sigmaMax = scale/(d[0]*dim.unit)
@@ -154,7 +162,7 @@ class MRA(Worker.Worker):
             acc = 0.
             for field1d in field:
                 try:
-                    p_e.append(mra1d(dim, field1d, sigmaMax))
+                    p_e.append(mra1d(dim, field1d, sigmaMax, numb_edge))
                 except MraError:
                     p_e.append((([],[]),([],[])))
                 acc += inc
@@ -165,7 +173,7 @@ class MRA(Worker.Worker):
             dims_min = [DataContainer.generateIndex(0,n_min), field.dimensions[0]]
             dims_max = [DataContainer.generateIndex(0,n_max), field.dimensions[0]]
         else:
-            (pos_min, err_min), (pos_max, err_max) = mra1d(dim, field, sigmaMax)
+            (pos_min, err_min), (pos_max, err_max) = mra1d(dim, field, sigmaMax, numb_edge)
             dims_min = [DataContainer.generateIndex(0,len(pos_min))]
             dims_max = [DataContainer.generateIndex(0,len(pos_max))]
             subscriber %= 100.
