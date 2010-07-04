@@ -53,22 +53,44 @@ class OscThicknessCorrector(Worker.Worker):
     name = "Correct Thickness"
 
     _sockets = [("osc", Connectors.TYPE_ARRAY)]
-    _params = [("max_correction", "Max correction", "30 nm", None)]
+    _params = [("method","Correct thickness for", ["Spin Coating", "Printing"], None),
+               ("max_correction", "Max correction", "30 nm", None)]
+
 
     def inithook(self):
         self._logger = logging.getLogger("pyphant")
 
-    @Worker.plug(Connectors.TYPE_IMAGE)
-    def correct(self, osc, subscriber=0):
-        x = osc[u'x-position']
-        y = osc[u'y-position']
-        t = copy.deepcopy(osc[u'thickness'])
+    def perform_spincoat_correction(self, x, y, uncorrected_t):
+        t = copy.deepcopy(uncorrected_t)
         r = numpy.sqrt(x.data**2+y.data**2)
         r_min = r.min()
         r_max = r.max()
         correction = Quantity(self.paramMax_correction.value)/t.unit
         t.data = t.data + correction*((r-r_min)/(r_max-r_min))
-        t.longname='corrected thickness'
+        t.longname='thickness corrected for spin coating'
         t.shortname='t_c'
-        t.seal()
         return t
+
+    def perform_print_correction(self, x, y, uncorrected_t):
+        t = copy.deepcopy(uncorrected_t)
+        d = 1.9*y.data**2 - 19.3*y.data + 247.9
+        #d *= y.unit/t.unit
+        t.data = t.data + d
+        t.longname='thickness corrected for printing'
+        t.shortname='t_c'
+        return t
+
+    @Worker.plug(Connectors.TYPE_IMAGE)
+    def correct(self, osc, subscriber=0):
+        x = osc[u'x-position']
+        y = osc[u'y-position']
+        t = osc[u'thickness']
+        method = self.paramMethod.value
+        if  method == "Spin Coating":
+            corrected_t = self.perform_spincoat_correction(x, y, t)
+        elif method == "Printing":
+            corrected_t = self.perform_print_correction(x, y, t)
+        else:
+            raise RuntimeError, "Unknown correction method %s." % method
+        corrected_t.seal()
+        return corrected_t
