@@ -261,8 +261,8 @@ def reshapeField(field):
     dimDicts = [dict([(data, index) for index, data in enumerate(dimdata)]) \
                 for dimdata in dimData]
     fieldData = numpy.ones([len(d) for d in dimData]) * numpy.nan
-    indicess = [map(lambda x: dimDicts[index][x], dim.data) \
-                for index, dim in enumerate(field.dimensions)]
+    indicess = zip(*[map(lambda x: dimDicts[index][x], dim.data) \
+                     for index, dim in enumerate(field.dimensions)])
     for datum, indices in zip(field.data, indicess):
         fieldData[indices] = datum
     newDims = [ DataContainer.FieldContainer(dimData[i],
