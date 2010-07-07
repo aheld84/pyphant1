@@ -255,7 +255,7 @@ def readZipFile(filename, subscriber=1):
     return result
 
 def reshapeField(field):
-    if field.isIndependent():
+    if field.isIndependent() or len(field.dimensions)==1:
         return field
     dimData = [numpy.unique(d.data) for d in field.dimensions]
     dimDicts = [dict([(data, index) for index, data in enumerate(dimdata)]) \
