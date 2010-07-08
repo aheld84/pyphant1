@@ -66,7 +66,6 @@ def str2unit(unit,FMFversion='1.1'):
     if FMFversion not in ['1.0','1.1']:
         raise ValueError, 'FMFversion %s not supported.' % FMFversion
     else:
-        unit = unit.replace('^', '**')
         try:
             unit = unit.replace('^', '**')
             if FMFversion=='1.1':
