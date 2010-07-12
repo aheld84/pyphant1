@@ -45,6 +45,7 @@ workers=[
     "ComputeFunctional",
     "ErrorEstimator",
     "EstimateParameter",
+    "EstimateParameterFromValues",
     "ExtremumFinder",
     "MRA",
     "OscAbsorption",
