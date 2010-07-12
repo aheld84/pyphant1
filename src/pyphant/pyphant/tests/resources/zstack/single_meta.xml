@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ROOT>
+   <Tags>
+     <V5>TestZStack_z04.tif</V5>
+     <V11>400</V11>
+     <V12>400</V12>
+     <V15>1,0</V15>
+     <V16>400,0</V16>
+     <V14>76</V14>
+     <V18>1,0</V18>
+     <V19>400,0</V19>
+     <V17>76</V17>
+     <V41>0,0</V41>
+     <V42>0,0</V42>
+     <V93>TestObjective</V93>
+     <V50>12.07.2010 09:40:00</V50>
+     <V99>0,0</V99>
+   </Tags>
+   <Scaling>
+     <Factor_0>1,00</Factor_0>
+     <Factor_1>1,00</Factor_1>
+     <Type_0>76</Type_0>
+     <Type_1>76</Type_1>
+   </Scaling>
+   <_single>
+     <Tags>
+     </Tags>
+   </_single>
+</ROOT>

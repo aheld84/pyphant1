@@ -60,12 +60,12 @@ class ZStackTestCase(unittest.TestCase):
         import os
         from pyphant.core import KnowledgeManager
         from pyphant import __path__ as ppath
-        from pyphant.core.ZStackManager import ZStack
+        from pyphant.core.ZStackManager import ZStackManager
         print "Importing ZStack..."
-        zstack = ZStack(name="TestCase_ZStack",
-                        xml_file=os.path.join(ppath[0], "tests", "resources",
+        zstack = ZStackManager().importZStack(name="TestCase_ZStack",
+                        xmlFName=os.path.join(ppath[0], "tests", "resources",
                                               "zstack", "_meta.xml"),
-                        temporary=True)
+                        temporary=True, crystal='TestCrystal')
         print "Done."
         print "Calculating ZStack-statistics..."
         from ImageProcessing.AutoFocus import AutoFocus
@@ -83,6 +83,24 @@ class ZStackTestCase(unittest.TestCase):
         self.check((53.0, 1.0), statistics['y-pos'].data[imin])
         self.check((300.0, 0.0), statistics['z-pos'].data[imin])
         self.check((7.0, 1.0), statistics['diameter'].data[imin])
+
+    def testSingle(self):
+        import os
+        from pyphant.core import KnowledgeManager
+        from pyphant import __path__ as ppath
+        from pyphant.core.ZStackManager import ZStackManager
+        print "Importing single image..."
+        zstack = ZStackManager().importZStack(name="TestCase_Single",
+                        xmlFName=os.path.join(ppath[0], "tests", "resources",
+                                              "zstack", "single_meta.xml"),
+                        temporary=True, crystal='TestCrystal2')
+        print "Done."
+        print "Calculating single image statistics..."
+        from ImageProcessing.AutoFocus import AutoFocus
+        afw = AutoFocus()
+        statistics = afw.get_statistics_sc(zstack.repr_sc)
+        print "Done."
+        assert len(statistics['diameter'].data) == 2
 
 
 if __name__ == "__main__":

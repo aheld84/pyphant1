@@ -2,11 +2,23 @@
 <ROOT>
    <Tags>
      <V5>TestZStack.tif</V5>
-     <V150></V150>
+     <V25>400</V25>
+     <V26>400</V26>
+     <V29>1,0</V29>
+     <V30>400,0</V30>
+     <V28>76</V28>
+     <V32>1,0</V32>
+     <V33>400,0</V33>
+     <V31>76</V31>
+     <V48>0,0</V48>
+     <V49>0,0</V49>
+     <V101>TestObjective</V101>
    </Tags>
    <Scaling>
      <Factor_0>1,00</Factor_0>
      <Factor_1>1,00</Factor_1>
+     <Type_0>76</Type_0>
+     <Type_1>76</Type_1>
    </Scaling>
    <z00>
      <Tags>
