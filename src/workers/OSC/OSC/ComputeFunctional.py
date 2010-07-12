@@ -57,7 +57,7 @@ class ComputeFunctional(Worker.Worker):
     _params = [("extentX", u"Extension of x-axis [%%]", 10, None),
                ("extentY", u"Extension of y-axis [%%]", 10, None)]
 
-    def computeDistances(self, field, subscriber=1):
+    def computeDistances(self, field, subscriber=1, percentage=0):
         xGrid,yGrid = numpy.meshgrid(field.dimensions[-1].data,field.dimensions[-2].data)
         x    = numpy.extract(numpy.logical_not(numpy.isnan(field.data)),xGrid)
         xCon = DataContainer.FieldContainer(x,unit=field.dimensions[-1].unit,
@@ -80,8 +80,7 @@ class ComputeFunctional(Worker.Worker):
         distances = numpy.zeros(x.shape,'f')
         ni = functional.shape[0]
         nj = functional.shape[1]
-        increment = 100.0/(ni*nj)
-        percentage = 0
+        increment = 50.0/(ni*nj)
         for i in xrange(ni):
             for j in xrange(nj):
                 for k in xrange(len(x)):
@@ -99,7 +98,8 @@ class ComputeFunctional(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def compute(self, field, subscriber=1):
-        functionals = DataContainer.SampleContainer([self.computeDistances(column, subscriber) for column in field],
+        percentage = 0
+        functionals = DataContainer.SampleContainer([self.computeDistances(column, subscriber, percentage) for column in field],
                                                     longname='Functionals of %s'%field.longname,
                                                     shortname='F_{%s}'%field.shortname)
         functionals.seal()
