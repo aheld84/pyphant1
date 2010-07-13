@@ -53,6 +53,7 @@ class DCSource(object):
         self.dc_type = dc_type
         self.expectedValues = {}
         self._remaining = -1
+        self.dirty = True
         for name, param in self._params.iteritems():
             if name == 'name':
                 continue
@@ -77,6 +78,7 @@ class DCSource(object):
 
     def onPO(self, event):
         self.expectedValues[event.param.name] = event.newValue
+        self.dirty = True
 
     def getKeyValue(self, key, value, name):
         if key in ['col_of', 'dim_of', 'has_dim', 'has_col']:
@@ -138,6 +140,8 @@ class DCSource(object):
                     self.remaining = len(newEVs) - 1
                 if update:
                     self.paramRemaining.value = self.remaining
+                self.possibleIds = newEVs
+        self.dirty = False
 
     def _getRemaining(self):
         if self._remaining == 1:

@@ -72,8 +72,10 @@ class FCSource(DCSource, Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def getFieldContainer(self, subscriber = 0):
-        if len(self.paramId.possibleValues) == 2:
-            emd5 = self.paramId.possibleValues[1]
+        if self.dirty:
+            self.refreshParams(update=False)
+        if len(self.possibleIds) == 2:
+            emd5 = self.possibleIds[1]
         else:
             emd5 = self.paramId.value
         kmanager = KnowledgeManager.getInstance()
