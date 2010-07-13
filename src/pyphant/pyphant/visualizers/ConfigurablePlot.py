@@ -122,9 +122,13 @@ class OscPlotPanel(PlotPanel):
         if not isinstance(aspect, Quantity):
             self.ax.set_aspect(aspect)
         try:
-            self.scat = self.ax.scatter(self.x.data, self.y.data,
+            mask = numpy.logical_not(self.c.mask)
+            x = self.x.data[mask]
+            y = self.y.data[mask]
+            c = self.c.data[mask]
+            self.scat = self.ax.scatter(x,y,
                                         s=numpy.pi*(self.radius/self.x.unit)**2,
-                                        c=self.c.data,
+                                        c=c,
                                         vmin=self.vmin, vmax=self.vmax)
             self.colorbar = self.figure.colorbar(self.scat, format=F(self.c),
                                                  ax=self.ax)
@@ -223,9 +227,9 @@ class ConfigurationPanel(wx.PyPanel):
         if self.plot_panel.c_key != colorVariable:
             self.plot_panel.c_key = colorVariable
             field = self.dataContainer[colorVariable]
-            vmin = field.data.min().round()*field.unit
+            vmin = numpy.nanmin(field.data).round()*field.unit
             self.vmin_text.Value=str(vmin)
-            vmax = field.data.max().round()*field.unit
+            vmax = numpy.nanmax(field.data).round()*field.unit
             self.vmax_text.Value=str(vmax)
         self.plot_panel.vmin = Quantity(self.vmin_text.Value)
         self.plot_panel.vmax = Quantity(self.vmax_text.Value)

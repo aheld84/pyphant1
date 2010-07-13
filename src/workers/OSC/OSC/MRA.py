@@ -116,10 +116,18 @@ def mra1d(dim, field, n, numb_edge):
         convolvedField = convolveMRA(field, sigma)
         lastMinima = findMinima(convolvedField, numb_edge, lastMinima)
         lastMaxima = findMaxima(convolvedField, numb_edge, lastMaxima)
-    pos_minima = dim.data[numpy.array(lastMinima)+1]
-    error_minima = numpy.abs(pos_minima - dim.data[numpy.array(firstMinima)+1])
-    pos_maxima = dim.data[numpy.array(lastMaxima)+1]
-    error_maxima = numpy.abs(pos_maxima - dim.data[numpy.array(firstMaxima)+1])
+    if len(lastMinima)>0 and len(firstMinima)>0:
+        pos_minima = dim.data[numpy.array(lastMinima)+1]
+        error_minima = numpy.abs(pos_minima - dim.data[numpy.array(firstMinima)+1])
+    else:
+        pos_minima = numpy.array([],dtype=dim.data.dtype)
+        error_minima = numpy.array([],dtype=dim.data.dtype)
+    if len(lastMaxima)>0 and len(firstMaxima)>0:
+        pos_maxima = dim.data[numpy.array(lastMaxima)+1]
+        error_maxima = numpy.abs(pos_maxima - dim.data[numpy.array(firstMaxima)+1])
+    else:
+        pos_maxima = numpy.array([],dtype=dim.data.dtype)
+        error_maxima = numpy.array([],dtype=dim.data.dtype)
     return ((pos_minima, error_minima), (pos_maxima, error_maxima))
 
 def pos_error_to_data_container(p_e):

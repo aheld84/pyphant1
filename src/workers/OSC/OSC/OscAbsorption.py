@@ -73,6 +73,22 @@ def grid2Index(field, extension=0):
         indexDict = IndexDict(offset,fmax,fstep)
     return (offset, fstep, indexDict)
 
+def removePeak(Abso, lower, upper):
+    dim = Abso.dimensions[-1]
+    minVal = lower/dim.unit
+    maxVal = upper/dim.unit
+    high_part = numpy.argwhere(minVal<dim.data).flatten()
+    low_part = numpy.argwhere(dim.data<maxVal).flatten()
+    lamp_interval = numpy.intersect1d(high_part, low_part)
+    min_index = lamp_interval[0]
+    max_index = lamp_interval[-1]
+    steps = max_index-min_index
+    for row in Abso.data:
+        min_value = row[min_index]
+        max_value = row[max_index]
+        step_size = (max_value-min_value)/steps
+        row[lamp_interval] = min_value + (lamp_interval-min_index)*step_size
+
 class OscAbsorptionCalculator(Worker.Worker):
     API = 2
     VERSION = 1
@@ -100,20 +116,12 @@ class OscAbsorptionCalculator(Worker.Worker):
                                             shortname=ur'\tilde{A}')
         Abso.dimensions[-1] = I.dimensions[-1]
         if self.paramMask_lamp.value==1:
-            dim = Abso.dimensions[-1]
-            minVal = quantities.Quantity('654nm')/dim.unit
-            maxVal = quantities.Quantity('660nm')/dim.unit
-            high_part = numpy.argwhere(minVal<dim.data).flatten()
-            low_part = numpy.argwhere(dim.data<maxVal).flatten()
-            lamp_interval = numpy.intersect1d(high_part, low_part)
-            min_index = lamp_interval[0]
-            max_index = lamp_interval[-1]
-            steps = max_index-min_index
-            for row in Abso.data:
-                min_value = row[min_index]
-                max_value = row[max_index]
-                step_size = (max_value-min_value)/steps
-                row[lamp_interval] = min_value + (lamp_interval-min_index)*step_size
+            removePeak(Abso,
+                       quantities.Quantity('654nm'),
+                       quantities.Quantity('660nm'))
+            removePeak(Abso,
+                       quantities.Quantity('920nm'),
+                       quantities.Quantity('980nm'))
         Abso.seal()
         return Abso
 
