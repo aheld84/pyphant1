@@ -166,30 +166,48 @@ def finalizePylab(postscript, visualizer=None):
         pylab.show()
 
 def compareAbsorption(recipe, curvNo, noIndicators):
-    worker = recipe.getWorker("Slicing")
-    noisyAbsorption = worker.plugExtract.getResult()
+    worker = recipe.getWorker("AddColumn")
+    table = worker.plugCompute.getResult(subscriber=TextSubscriber("Result Functional"))
+    xPos = table[u"x-position"]
+    yPos = table[u"y-position"]
+    index = curvNo2Index(table[u"pixel"], curvNo)
+    title_template = "$%%s_{%s}$(%s %s,%s %s)=%%s %%s" % (curvNo,
+                                               xPos.data[index],xPos.unit.unit.name(),
+                                               yPos.data[index],yPos.unit.unit.name())
+
     worker = recipe.getWorker("ThicknessModeller")
     simulation = worker.plugCalcAbsorption.getResult()
+
+    thickness = table[u"thickness"]
+    residuum = (simulation.dimensions[0].data-thickness.data[index])**2
+    absorption = simulation.data[residuum.argmin(),:]
+    pylab.plot(simulation.dimensions[1].data,
+               absorption,label="$%s$"%simulation.shortname)
+    title = "Functional based: " + title_template % (thickness[index].shortname,
+                                                     thickness.data[index],
+                                                     thickness.unit.unit.name())
+
+    try:
+        worker = recipe.getWorker("Res Direct")
+        table = worker.plugCompute.getResult(subscriber=TextSubscriber("Result without Functional"))
+        thickness = table[u"thickness"]
+        residuum = (simulation.dimensions[0].data-thickness.data[index])**2
+        absorption = simulation.data[residuum.argmin(),:]
+        pylab.plot(simulation.dimensions[1].data,
+                   absorption,label="$%s$"%simulation.shortname)
+        title += "\nImmediate: " +  title_template % (thickness[index].shortname,
+                                                      thickness.data[index],
+                                                      thickness.unit.unit.name())
+    except:
+        pass
+
+    worker = recipe.getWorker("Slicing")
+    noisyAbsorption = worker.plugExtract.getResult()
     worker = recipe.getWorker("MRA Exp")
     minimaPos = worker.plugMra.getResult()[r'\lambda_{min}'].inUnitsOf(simulation.dimensions[1])
     maximaPos = worker.plugMra.getResult()[r'\lambda_{max}'].inUnitsOf(simulation.dimensions[1])
-    worker = recipe.getWorker("AddColumn")
-    table = worker.plugCompute.getResult(subscriber=TextSubscriber("Add Column"))
-    xPos = table[u"x-position"]
-    yPos = table[u"y-position"]
-    thickness = table[u"thickness"]
-    index = curvNo2Index(table[u"pixel"], curvNo)
-    result = "$%s_{%s}$(%s %s,%s %s)=%s %s" % (thickness[index].shortname,curvNo,
-                                               xPos.data[index],xPos.unit.unit.name(),
-                                               yPos.data[index],yPos.unit.unit.name(),
-                                               thickness.data[index],
-                                               thickness.unit.unit.name())
-    residuum = (simulation.dimensions[0].data-thickness.data[index])**2
-    absorption = simulation.data[residuum.argmin(),:]
     pylab.plot(noisyAbsorption.dimensions[1].inUnitsOf(simulation.dimensions[1]).data,
                noisyAbsorption.data[index,:],label="$%s$"%noisyAbsorption.shortname)
-    pylab.plot(simulation.dimensions[1].data,
-               absorption,label="$%s$"%simulation.shortname)
     if not noIndicators:
         pylab.vlines(minimaPos.data[:,index],0.1,1.0,
                      label ="$%s$"%minimaPos.shortname)
@@ -203,7 +221,7 @@ def compareAbsorption(recipe, curvNo, noIndicators):
                      label ="$\\Delta%s$"%maximaPos.shortname, linestyle='dashed')
         pylab.vlines(maximaPos.data[:,index]-maximaPos.error[:,index],0.1,1.0,
                      label ="$\\Delta%s$"%maximaPos.shortname, linestyle='dashed')
-    pylab.title(result)
+    pylab.title(title)
     pylab.xlabel(simulation.dimensions[1].label)
 
 def noisyAbsorption(recipe, curvNo, noIndicators):
