@@ -182,7 +182,7 @@ def compareAbsorption(recipe, curvNo, noIndicators):
     residuum = (simulation.dimensions[0].data-thickness.data[index])**2
     absorption = simulation.data[residuum.argmin(),:]
     pylab.plot(simulation.dimensions[1].data,
-               absorption,label="$%s$"%simulation.shortname)
+               absorption,label="$%s$ functional"%simulation.shortname)
     title = "Functional based: " + title_template % (thickness[index].shortname,
                                                      thickness.data[index],
                                                      thickness.unit.unit.name())
@@ -194,7 +194,7 @@ def compareAbsorption(recipe, curvNo, noIndicators):
         residuum = (simulation.dimensions[0].data-thickness.data[index])**2
         absorption = simulation.data[residuum.argmin(),:]
         pylab.plot(simulation.dimensions[1].data,
-                   absorption,label="$%s$"%simulation.shortname)
+                   absorption,label="$%s$ immediate"%simulation.shortname)
         title += "\nImmediate: " +  title_template % (thickness[index].shortname,
                                                       thickness.data[index],
                                                       thickness.unit.unit.name())
@@ -223,6 +223,7 @@ def compareAbsorption(recipe, curvNo, noIndicators):
                      label ="$\\Delta%s$"%maximaPos.shortname, linestyle='dashed')
     pylab.title(title)
     pylab.xlabel(simulation.dimensions[1].label)
+    pylab.legend(loc="lower left")
 
 def noisyAbsorption(recipe, curvNo, noIndicators):
     worker = recipe.getWorker("Slicing")
