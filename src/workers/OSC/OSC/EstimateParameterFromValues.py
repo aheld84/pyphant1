@@ -75,14 +75,14 @@ class EstimateParameterFromValues(Worker.Worker):
         minima_model = model[self.paramMinima_model.value]
         maxima_model = model[self.paramMaxima_model.value]
         minima_experimental = experimental[self.paramMinima_experimental.value]
-        minima_experimantal = minima_experimental.inUnitsOf(minima_model)
+        minima_experimental = minima_experimental.inUnitsOf(minima_model)
         minima = minima_experimental.data.transpose()
         if minima_experimental.error != None:
             minima_error = iter(minima_experimental.error.transpose())
         else:
             minima_error = None
         maxima_experimental = experimental[self.paramMaxima_experimental.value]
-        maxima_experimantal = maxima_experimental.inUnitsOf(maxima_model)
+        maxima_experimental = maxima_experimental.inUnitsOf(maxima_model)
         maxima = maxima_experimental.data.transpose()
         if maxima_experimental.error != None:
             maxima_error = iter(maxima_experimental.error.transpose())
@@ -119,7 +119,6 @@ class EstimateParameterFromValues(Worker.Worker):
                     grades.append(numpy.nan)
                     continue
                 grades.append(grade)
-                print grades[-1]
             grades = numpy.array(grades)
             i = numpy.nanargmin(grades)
             if numpy.isnan(i):
