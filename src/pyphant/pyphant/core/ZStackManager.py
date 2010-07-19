@@ -213,6 +213,7 @@ class ZStackMetaReader(MetaReader):
     imageTagDict = {'timestamp':'Tags:V44',
                     'z-pos':'Tags:V93'}
     tagRe = re.compile(r'^z[0-9]+$')
+    refractive_index = 2.84
 
     def getImgFName(self, ztagname):
         fname = self.xmlRoot['Tags']['V5'].content.strip()
@@ -248,6 +249,8 @@ class ZStackMetaReader(MetaReader):
                    img_meta['x-factor'])), "x scaling is void"
             assert img_meta['height[pixel]'] == int(round(img_meta['height'] /\
                    img_meta['y-factor'])), "y scaling is void"
+            img_meta['z-pos'] *= self.refractive_index
+            img_meta['refractive index'] = self.refractive_index
 
 
 class SingleMetaReader(ZStackMetaReader):

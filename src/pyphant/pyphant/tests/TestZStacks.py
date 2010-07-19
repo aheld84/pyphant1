@@ -77,11 +77,11 @@ class ZStackTestCase(unittest.TestCase):
         imin = statistics['diameter'].data.argmin()
         self.check((200.0, 1.0), statistics['x-pos'].data[imax])
         self.check((200.0, 1.0), statistics['y-pos'].data[imax])
-        self.check((300.0, 0.0), statistics['z-pos'].data[imax])
+        self.check((300.0 * 2.84, 0.0), statistics['z-pos'].data[imax])
         self.check((20.7, 1.0), statistics['diameter'].data[imax])
         self.check((53.0, 1.0), statistics['x-pos'].data[imin])
         self.check((53.0, 1.0), statistics['y-pos'].data[imin])
-        self.check((300.0, 0.0), statistics['z-pos'].data[imin])
+        self.check((300.0 * 2.84, 0.0), statistics['z-pos'].data[imin])
         self.check((7.0, 1.0), statistics['diameter'].data[imin])
 
     def testSingle(self):
