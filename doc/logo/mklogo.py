@@ -31,6 +31,8 @@ copyright="""# -*- coding: utf-8 -*-
 
 """
 
+"""Creates pyphantLogo.py, a python modul including a base 64 encoded PNG file of the Pyphant logo."""
+
 import base64
 picname = 'pyphant-shade-Information-Analysis-Framework-ARTS-small.png'
 file = open(picname,'rb')
@@ -38,8 +40,10 @@ logo = file.read()
 file.close()
 pic_b64 = logo.encode('base64')
 
-logoname = picname.split('.')[0]+'.py'
-file = open(logoname.replace('-','_'),'w')
+file = open("pyphantLogo.py",'w')
 file.write(copyright)
+file.write("\"\"\""+
+"""Python modul including a base 64 encoded PNG file of the Pyphant logo based on %s.""" % picname +"\"\"\"\n\n" 
+           )
 file.write("pic_b64 = \"\"\"%s\"\"\"\n" % pic_b64)
 file.close()
