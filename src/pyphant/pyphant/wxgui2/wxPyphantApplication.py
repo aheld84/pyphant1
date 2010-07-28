@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2010, Rectorate of the University of Freiburg
+# Copyright (c) 2010, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -83,8 +84,11 @@ class wxPyphantApplication(wx.PySimpleApp):
         sogl.SOGLInitialize()
         self._knowledgeNode = None
         self._paramVisReg = ParamVisReg.ParamVisReg()
-        self._frame = wxPyphantFrame(self)
-        self._frame.Show()
+        self.splash = mySplashScreen(self)
+        self.splash.Center()
+        self.splash.Show()
+#        self._frame = wxPyphantFrame(self)
+#        self._frame.Show()
         return True
 
     def excepthook(self, type, value, trace):
@@ -540,6 +544,69 @@ class wxPyphantFrame(wx.Frame):
         dlg = wx.MessageDialog(self, msg, cpt, wx.OK)
         dlg.ShowModal()
         dlg.Destroy()
+
+class mySplashScreen(wx.Frame):
+    def __init__(self, parent):
+        self.parent = parent
+        wx.Frame.__init__(self, None, -1, "Shaped Window",
+                         style =
+                           wx.FRAME_SHAPED
+                         | wx.SIMPLE_BORDER
+                         | wx.FRAME_NO_TASKBAR
+                         | wx.STAY_ON_TOP
+                         )
+
+        self.hasShape = False
+        self.delta = (0,0)
+
+        self.Bind(wx.EVT_RIGHT_UP,      self.OnExit)
+        self.Bind(wx.EVT_PAINT,         self.OnPaint)
+
+        self.timer = wx.Timer(self)
+        self.timer.Start(10000,oneShot=True)
+        self.Bind(wx.EVT_TIMER, self.OnExit)
+
+        wxImage = wx.Image(name = 
+                  "pyphant-shade-Information-Analysis-Framework-ARTS-small.png")
+        wxImage.ConvertAlphaToMask(10)
+        self.bmp = wxImage.ConvertToBitmap()
+
+        w, h = self.bmp.GetWidth(), self.bmp.GetHeight()
+        self.SetClientSize( (w, h) )
+
+        if wx.Platform != "__WXMAC__":
+            # wxMac clips the tooltip to the window shape, YUCK!!!
+            self.SetToolTipString("Loading Pyphant")
+
+        if wx.Platform == "__WXGTK__":
+            # wxGTK requires that the window be created before you can
+            # set its shape, so delay the call to SetWindowShape until
+            # this event.
+            self.Bind(wx.EVT_WINDOW_CREATE, self.SetWindowShape)
+        else:
+            # On wxMSW and wxMac the window has already been created, so go for it.
+            self.SetWindowShape()
+
+        dc = wx.ClientDC(self)
+        dc.DrawBitmap(self.bmp, 0,0, True)
+
+    def SetWindowShape(self, *evt):
+        # Use the bitmap's mask to determine the region
+        r = wx.RegionFromBitmap(self.bmp)
+        self.hasShape = self.SetShape(r)
+
+    def OnPaint(self, evt):
+        dc = wx.PaintDC(self)
+        dc.DrawBitmap(self.bmp, 0,0, True)
+
+    def OnExit(self, evt):
+        self.Hide()
+        # wxPyphantFrame is the main frame.
+        self.parent._frame = wxPyphantFrame(self.parent)
+        self.parent._frame.Show()
+                
+        # The program will freeze without this line.
+        evt.Skip()  # Make sure the default handler runs too...
 
 
 import optparse
