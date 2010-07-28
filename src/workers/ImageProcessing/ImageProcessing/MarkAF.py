@@ -106,7 +106,7 @@ class MarkAF(Worker.Worker):
         output_img = deepcopy(image)
         if vmin is not None:
             output_img.attributes.update({'vmin':vmin, 'vmax':vmax})
-        mf_z = int(image.attributes['zid'][-2:])
+        mf_z = image.attributes['zid']
         slicess = [(slice(yt, yp), slice(xt, xp)) \
                    for yt, yp, xt, xp, z in zip(
             statistics['yt'].data, statistics['yp'].data,
@@ -125,7 +125,7 @@ class MarkAF(Worker.Worker):
         output_img = deepcopy(image)
         output_img.data = numpy.zeros(image.data.shape,
                                       dtype=image.data.dtype)
-        mf_z = int(image.attributes['zid'][-2:])
+        mf_z = image.attributes['zid']
         labelslicess = [(label, (slice(yt, yp), slice(xt, xp))) \
                        for label, yt, yp, xt, xp, z in zip(
             statistics['label'].data,

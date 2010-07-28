@@ -66,21 +66,28 @@ def str2unit(unit,FMFversion='1.1'):
     if FMFversion not in ['1.0','1.1']:
         raise ValueError, 'FMFversion %s not supported.' % FMFversion
     else:
-        unit = unit.replace('^', '**')
         try:
             unit = unit.replace('^', '**')
             if FMFversion=='1.1':
                 unit = Quantity(unit.encode('utf-8'))
             elif FMFversion=='1.0':
                 unit1_0 = PhysicalQuantity(unit.encode('utf-8'))
-                unit_base = Quantity(str(unit1_0.inBaseUnits()))
-                unit = Quantity(str(unit1_0))
-                if unit_base != unit:
-                    unit = unit_base
+                unit = Quantity(str(unit1_0.inBaseUnits()))
+                try:
+                    unit_new = Quantity(str(unit1_0))
+                    if unit_new == unit:
+                        unit = unit_new
+                    else:
+                        _logger.warn('Usage of old unit "%s" required '
+                                     'conversion to base units.' % unit1_0)
+                except:
                     _logger.warn('Usage of old unit "%s" required '
                                  'conversion to base units.' % unit1_0)
-        except:
-            unit = float(unit)
+        except Exception, e:
+            try:
+                unit = float(unit)
+            except:
+                raise e
     return unit
 
 def parseQuantity(value,FMFversion='1.1'):

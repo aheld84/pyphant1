@@ -49,7 +49,7 @@ import pyphant.core.Connectors
 from pyphant.core import DataContainer
 from pyphant.wxgui2.DataVisReg import DataVisReg
 from pyphant.quantities import isQuantity, Quantity
-
+from pyphant.quantities.ParseQuantities import str2unit
 
 class PlotPanel (wx.PyPanel):
     """The PlotPanel has a Figure and a Canvas. OnSize events simply set a
@@ -122,9 +122,18 @@ class OscPlotPanel(PlotPanel):
         if not isinstance(aspect, Quantity):
             self.ax.set_aspect(aspect)
         try:
-            self.scat = self.ax.scatter(self.x.data, self.y.data,
+            if self.c.mask!=None:
+                mask = numpy.logical_not(self.c.mask)
+                x = self.x.data[mask]
+                y = self.y.data[mask]
+                c = self.c.data[mask]
+            else:
+                x = self.x.data
+                y = self.y.data
+                c = self.c.data
+            self.scat = self.ax.scatter(x,y,
                                         s=numpy.pi*(self.radius/self.x.unit)**2,
-                                        c=self.c.data,
+                                        c=c,
                                         vmin=self.vmin, vmax=self.vmax)
             self.colorbar = self.figure.colorbar(self.scat, format=F(self.c),
                                                  ax=self.ax)
@@ -223,13 +232,13 @@ class ConfigurationPanel(wx.PyPanel):
         if self.plot_panel.c_key != colorVariable:
             self.plot_panel.c_key = colorVariable
             field = self.dataContainer[colorVariable]
-            vmin = field.data.min().round()*field.unit
+            vmin = numpy.nanmin(field.data).round()*field.unit
             self.vmin_text.Value=str(vmin)
-            vmax = field.data.max().round()*field.unit
+            vmax = numpy.nanmax(field.data).round()*field.unit
             self.vmax_text.Value=str(vmax)
-        self.plot_panel.vmin = Quantity(self.vmin_text.Value)
-        self.plot_panel.vmax = Quantity(self.vmax_text.Value)
-        self.plot_panel.radius = Quantity(self.radius_text.Value)
+        self.plot_panel.vmin = str2unit(self.vmin_text.Value)
+        self.plot_panel.vmax = str2unit(self.vmax_text.Value)
+        self.plot_panel.radius = str2unit(self.radius_text.Value)
         self.plot_panel.draw()
         self.GetSizer().Fit(self)
 

@@ -480,7 +480,7 @@ class wxPyphantFrame(wx.Frame):
                             defaultFile="", wildcard=wc, style=wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             filename = os.path.realpath(dlg.GetPath())
-            from pyphant.core.ZStackManager import (ZStack, ZStackManager)
+            from pyphant.core.ZStackManager import ZStackManager
             tedlg = wx.TextEntryDialog(self, "Enter name for ZStack:",
                                        "", "ZStack")
             if tedlg.ShowModal() == wx.ID_OK:
@@ -491,10 +491,15 @@ class wxPyphantFrame(wx.Frame):
                     cpt2 = "Error"
                     msg2 = "ZStack %s already exists!" % name
                 except ValueError:
-                    zstack = ZStack(name=name, xml_file=filename)
-                    zsm.addZStack(zstack)
-                    cpt2 = "Info"
-                    msg2 = "Successfully imported ZStack."
+                    tedlg2 = wx.TextEntryDialog(self, "Enter crystal name:",
+                                                "", "Crystal01")
+                    if tedlg2.ShowModal() == wx.ID_OK:
+                        crystal = tedlg2.GetValue()
+                        zsm.importZStack(name=name, xmlFName=filename,
+                                         crystal=crystal)
+                        cpt2 = "Info"
+                        msg2 = "Successfully imported ZStack."
+                    tedlg2.Destroy()
                 dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
                 dlg2.ShowModal()
                 dlg2.Destroy()

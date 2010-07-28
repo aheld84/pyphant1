@@ -313,8 +313,16 @@ class Emd5ConsistencyTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     import sys
+    import logging
+    logger = logging.getLogger('pyphant')
+    hdlr = logging.StreamHandler(sys.stderr)
+    formatter = logging.Formatter('[%(name)s|%(levelname)s] %(message)s')
+    hdlr.setFormatter(formatter)
+    logger.addHandler(hdlr)
+    logger.setLevel(logging.DEBUG)
     if len(sys.argv) == 1:
         unittest.main()
     else:
-        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
+        suite = unittest.TestLoader().loadTestsFromTestCase(
+            eval(sys.argv[1:][0]))
         unittest.TextTestRunner().run(suite)

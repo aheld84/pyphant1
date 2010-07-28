@@ -71,11 +71,11 @@ class OscThicknessCorrector(Worker.Worker):
         t.shortname='t_c'
         return t
 
-    def perform_print_correction(self, x, y, uncorrected_t):
+    def perform_print_correction(self, x, raw_y, uncorrected_t):
         t = copy.deepcopy(uncorrected_t)
-        d = 1.9*y.data**2 - 19.3*y.data + 247.9
-        #d *= y.unit/t.unit
-        t.data = t.data + d
+        y = raw_y.data
+        d = 1.9*y**2 + 19.3*y + 49
+        t.data = t.data - d
         t.longname='thickness corrected for printing'
         t.shortname='t_c'
         return t
