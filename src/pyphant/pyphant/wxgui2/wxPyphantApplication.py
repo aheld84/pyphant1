@@ -563,11 +563,16 @@ class mySplashScreen(wx.Frame):
         self.Bind(wx.EVT_PAINT,         self.OnPaint)
 
         self.timer = wx.Timer(self)
-        self.timer.Start(10000,oneShot=True)
+        self.timer.Start(5000,oneShot=True)
         self.Bind(wx.EVT_TIMER, self.OnExit)
 
-        wxImage = wx.Image(name = 
-                  "pyphant-shade-Information-Analysis-Framework-ARTS-small.png")
+        import StringIO
+        import base64
+        import pyphantLogo
+
+        png = base64.decodestring(pyphantLogo.pic_b64)
+        stream = StringIO.StringIO(png)
+        wxImage = wx.ImageFromStream(stream)
         wxImage.ConvertAlphaToMask(10)
         self.bmp = wxImage.ConvertToBitmap()
 
