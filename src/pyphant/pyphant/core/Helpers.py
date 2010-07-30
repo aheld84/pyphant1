@@ -45,19 +45,8 @@ def getPyphantPath(subdir = ''):
     return path
 
 def getUsername():
-    import os
-    enc = lambda s: unicode(s, "utf-8")
-    import platform
-    pltform = platform.system()
-    if pltform == 'Linux' or pltform == 'Darwin':
-        user = enc(os.environ['LOGNAME'])
-    elif pltform == 'Windows':
-        try:
-            user = enc(os.environ['USERNAME'])
-        except:
-            user = u"Unidentified User"
-    else:
-        raise NotImplementedError, "Unsupported Platform %s" %pltform
+    import getpass
+    user = getpass.getuser()
     return user
 
 def getMachine():
