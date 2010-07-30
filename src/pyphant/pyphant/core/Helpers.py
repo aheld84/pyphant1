@@ -46,8 +46,7 @@ def getPyphantPath(subdir = ''):
 
 def getUsername():
     import getpass
-    user = getpass.getuser()
-    return user
+    return getpass.getuser()
 
 def getMachine():
     import socket
