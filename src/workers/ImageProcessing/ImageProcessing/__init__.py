@@ -43,6 +43,7 @@ FEATURE_COLOR=0
 
 workers=[
     "ApplyMask",
+    "AlgebraWorker",
     "AutoFocus",
     "CoverageWorker",
     "DiffWorker",
@@ -50,7 +51,6 @@ workers=[
     "EdgeFillWorker",
     "EdgeTouchingFeatureRemover",
     "EnhanceContrast",
-    "FilterWorker",
     "FindLocalExtrema",
     "FitBackground",
     "Gradient",

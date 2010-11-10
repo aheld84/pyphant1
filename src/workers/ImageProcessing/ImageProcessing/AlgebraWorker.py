@@ -38,20 +38,23 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
+from pyphant.core import Worker, Connectors
 
-class FilterWorker(Worker.Worker):
+class AlgebraWorker(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "SC Filter"
+    name = "Algebra"
     _sockets = [("table", Connectors.TYPE_ARRAY)]
-    _params = [("expression", "Filter Expression", '', None)]
+    _params = [("shortname", "Shortname", '', None),
+               ("longname", "Longname", '', None),
+               ("expression", "Filter Expression", '', None)]
 
     @Worker.plug(Connectors.TYPE_ARRAY)
-    def applyfilter(self, table, subscriber=0):
-        result = table.filter(self.paramExpression.value)
+    def addColumn(self, table, subscriber=0):
+        expression = self.paramExpression.value
+        shortname = self.paramShortname.value
+        longname = self.paramLongname.value
+        result = table.addColumn(expression, shortname, longname)
         result.seal()
         return result
-
