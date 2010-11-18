@@ -74,6 +74,7 @@ import os, platform, datetime, socket, urlparse
 from pyphant.quantities import (isQuantity,
                                                    Quantity)
 import Helpers
+from ast import NodeTransformer
 
 import logging
 _logger = logging.getLogger("pyphant")
@@ -293,11 +294,14 @@ class SampleContainer(DataContainer):
     def numberOfColumns(self):
         return len(self.columns)
 
-    def addColumn(self, expression, shortname, longname):
-        localDict = dict([(fc.shortname, fc.data) for fc in self.columns])
+    def addColumn(self, exprStr, shortname, longname):
+        import ast
+        expr = compile(exprStr, "<addColumn>", 'eval', ast.PyCF_ONLY_AST)
+
+        #localDict = dict([(fc.shortname, fc.data) for fc in self.columns])
         #localDict.update(dict([(fc.longname, fc.data) for fc in self.columns]))
-        from numexpr import evaluate
-        newData = evaluate(expression, local_dict=localDict)
+        #from numexpr import evaluate
+        #newData = evaluate(expression, local_dict=localDict)
 
 def assertEqual(con1, con2, rtol=1e-5, atol=1e-8):
     diagnosis = StringIO.StringIO()
@@ -309,3 +313,24 @@ def assertEqual(con1, con2, rtol=1e-5, atol=1e-8):
         return True
     else:
         raise AssertionError, diagnosis.getvalue()
+
+
+class ReplaceName(NodeTransformer):
+    def __init__(self, sampleContainer):
+        self.localDict = {}
+        self.count = 0
+        self.sc = sampleContainer
+
+    def visit_Str(self, node):
+        self.generic_visit(node)
+        from ast import (Name, Load, copy_location)
+        return copy_location(Name(self.getName(node.s), Load()), node)
+
+    def getName(self, oldName):
+       newName = "N%s" % self.count
+       self.count += 1
+       column = self.sc[oldName]
+       unit = Quantity(column.unit.value, column.unit.unit)
+       unit.data = column.data
+       self.localDict[newName] = unit
+       return newName
