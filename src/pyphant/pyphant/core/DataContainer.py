@@ -294,14 +294,16 @@ class SampleContainer(DataContainer):
     def numberOfColumns(self):
         return len(self.columns)
 
-    def addColumn(self, exprStr, shortname, longname):
+    def calcColumn(self, exprStr, shortname, longname):
         import ast
-        expr = compile(exprStr, "<addColumn>", 'eval', ast.PyCF_ONLY_AST)
+        rpn = ReplaceName(self)
+        expr = compile(exprStr, "<calcColumn>", 'eval', ast.PyCF_ONLY_AST)
+        replacedExpr = rpn.visit(expr)
+        rpb = ReplaceBinOp(rpn.localDict)
+        factorExpr = rpb.visit(replacedExpr)
+        localDict = dict([(key, value.data) \
+                          for key, value in rpn.localDict.iteritems()])
 
-        #localDict = dict([(fc.shortname, fc.data) for fc in self.columns])
-        #localDict.update(dict([(fc.longname, fc.data) for fc in self.columns]))
-        #from numexpr import evaluate
-        #newData = evaluate(expression, local_dict=localDict)
 
 def assertEqual(con1, con2, rtol=1e-5, atol=1e-8):
     diagnosis = StringIO.StringIO()
@@ -322,9 +324,10 @@ class ReplaceName(NodeTransformer):
         self.sc = sampleContainer
 
     def visit_Str(self, node):
+        import ast
         self.generic_visit(node)
-        from ast import (Name, Load, copy_location)
-        return copy_location(Name(self.getName(node.s), Load()), node)
+        return ast.copy_location(ast.Name(self.getName(node.s),
+                                          ast.Load()), node)
 
     def getName(self, oldName):
        newName = "N%s" % self.count
@@ -334,3 +337,31 @@ class ReplaceName(NodeTransformer):
        unit.data = column.data
        self.localDict[newName] = unit
        return newName
+
+
+class ReplaceBinOp(NodeTransformer):
+    def __init__(self, localDict):
+        self.localDict = localDict
+
+    def evalNode(self, node):
+        import ast
+        expr = ast.Expression(node)
+        codeObj = compile(expr, '<evalNode>', 'eval')
+        return eval(codeObj, {}, self.localDict)
+
+    def visit_BinOp(self, node):
+        import ast
+        self.generic_visit(node)
+        if isinstance(node.op,(ast.Add, ast.Sub)):
+            unitleft = self.evalNode(node.left)
+            unitright = self.evalNode(node.right)
+            assert unitleft.isCompatible(unitright.unit), \
+                   "units %s, %s not compatible" % (unitleft, unitright)
+            factor = unitleft / unitright
+            if factor == 1.0:
+                return node
+            right = ast.BinOp(ast.Num(factor), ast.Mult(), node.right)
+            binOp = ast.BinOp(node.left, node.op, right)
+            return ast.copy_location(binOp, node)
+        else:
+            return node

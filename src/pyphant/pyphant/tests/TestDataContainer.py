@@ -534,16 +534,21 @@ class SampleContainerTest(unittest.TestCase):
     def runTest(self):
         return
 
+
 class AlgebraSampleContainerTests(SampleContainerTest):
     def testNodeTransformer(self):
-        from pyphant.core.DataContainer import ReplaceName
+        from pyphant.core.DataContainer import (ReplaceName, ReplaceBinOp)
         rpn = ReplaceName(self.sampleContainer)
         import ast
-        exprStr = '"i" / "t"'
+        exprStr = '"i" / ("t" + "t")'
         expr = compile(exprStr, "<TestCase>", 'eval', ast.PyCF_ONLY_AST)
         replacedExpr = rpn.visit(expr)
         print rpn.localDict
         print ast.dump(replacedExpr)
+        rpb = ReplaceBinOp(rpn.localDict)
+        factorExpr = rpb.visit(replacedExpr)
+        print ast.dump(factorExpr)
+
 
 class CommonSampleContainerTests(SampleContainerTest):
     def testLabeling(self):
