@@ -50,11 +50,9 @@ class AlgebraWorker(Worker.Worker):
                ("longname", "Longname", '', None),
                ("expression", "Filter Expression", '', None)]
 
-    @Worker.plug(Connectors.TYPE_ARRAY)
-    def addColumn(self, table, subscriber=0):
+    @Worker.plug(Connectors.TYPE_IMAGE)
+    def calcColumn(self, table, subscriber=0):
         expression = self.paramExpression.value
         shortname = self.paramShortname.value
         longname = self.paramLongname.value
-        result = table.addColumn(expression, shortname, longname)
-        result.seal()
-        return result
+        return table.calcColumn(expression, shortname, longname)

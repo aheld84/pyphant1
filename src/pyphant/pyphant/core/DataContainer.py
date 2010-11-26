@@ -74,7 +74,7 @@ import os, platform, datetime, socket, urlparse
 from pyphant.quantities import (isQuantity,
                                                    Quantity)
 import Helpers
-from ast import NodeTransformer
+from ast import (NodeTransformer, NodeVisitor)
 
 import logging
 _logger = logging.getLogger("pyphant")
@@ -303,7 +303,13 @@ class SampleContainer(DataContainer):
         factorExpr = rpb.visit(replacedExpr)
         localDict = dict([(key, value.data) \
                           for key, value in rpn.localDict.iteritems()])
-
+        data = eval(compile(factorExpr, '<calcColumn>', 'eval'), {}, localDict)
+        unitcalc = UnitCalculator(rpn.localDict)
+        unit = unitcalc.getUnit(replacedExpr)
+        field = FieldContainer(data, unit, longname=longname,
+                               shortname=shortname)
+        field.seal()
+        return field
 
 def assertEqual(con1, con2, rtol=1e-5, atol=1e-8):
     diagnosis = StringIO.StringIO()
@@ -332,10 +338,7 @@ class ReplaceName(NodeTransformer):
     def getName(self, oldName):
        newName = "N%s" % self.count
        self.count += 1
-       column = self.sc[oldName]
-       unit = Quantity(column.unit.value, column.unit.unit)
-       unit.data = column.data
-       self.localDict[newName] = unit
+       self.localDict[newName] = self.sc[oldName]
        return newName
 
 
@@ -343,21 +346,14 @@ class ReplaceBinOp(NodeTransformer):
     def __init__(self, localDict):
         self.localDict = localDict
 
-    def evalNode(self, node):
-        import ast
-        expr = ast.Expression(node)
-        codeObj = compile(expr, '<evalNode>', 'eval')
-        return eval(codeObj, {}, self.localDict)
-
     def visit_BinOp(self, node):
         import ast
         self.generic_visit(node)
         if isinstance(node.op,(ast.Add, ast.Sub)):
-            unitleft = self.evalNode(node.left)
-            unitright = self.evalNode(node.right)
-            assert unitleft.isCompatible(unitright.unit), \
-                   "units %s, %s not compatible" % (unitleft, unitright)
-            factor = unitleft / unitright
+            unitcalc = UnitCalculator(self.localDict)
+            unitleft = unitcalc.getUnit(node.left)
+            unitright = unitcalc.getUnit(node.right)
+            factor = unitright / unitleft
             if factor == 1.0:
                 return node
             right = ast.BinOp(ast.Num(factor), ast.Mult(), node.right)
@@ -365,3 +361,32 @@ class ReplaceBinOp(NodeTransformer):
             return ast.copy_location(binOp, node)
         else:
             return node
+
+
+class UnitCalculator(object):
+    def __init__(self, localDict):
+        self.localDict = localDict
+
+    def getUnit(self, node):
+        from ast import (Expression, Name, Num,
+                         BinOp, Add, Mult, Div, Sub)
+        if isinstance(node, Expression):
+            return self.getUnit(node.body)
+        elif isinstance(node, Name):
+            return self.localDict[node.id].unit
+        elif isinstance(node, Num):
+            return 1.0
+        elif isinstance(node, BinOp):
+            if isinstance(node.op, (Add, Sub)):
+                left = self.getUnit(node.left)
+                right = self.getUnit(node.right)
+                if not isinstance(left / right, float):
+                    raise ValueError("units %s, %s not compatible" \
+                                     % (left, right))
+                return left
+            elif isinstance(node.op, Mult):
+                return self.getUnit(node.left) * self.getUnit(node.right)
+            elif isinstance(node.op, Div):
+                return self.getUnit(node.left) / self.getUnit(node.right)
+        else:
+            raise NotImplementedError()

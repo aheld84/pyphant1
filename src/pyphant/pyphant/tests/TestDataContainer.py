@@ -549,6 +549,13 @@ class AlgebraSampleContainerTests(SampleContainerTest):
         factorExpr = rpb.visit(replacedExpr)
         print ast.dump(factorExpr)
 
+    def testCalcColumn(self):
+        exprStr = '"i" / ("t" + "t")'
+        column = self.sampleContainer.calcColumn(exprStr, 'v', 'velocity')
+        print self.sampleContainer['i']
+        print self.sampleContainer['t']
+        print column
+
 
 class CommonSampleContainerTests(SampleContainerTest):
     def testLabeling(self):
