@@ -299,8 +299,8 @@ class SampleContainer(DataContainer):
         rpn = ReplaceName(self)
         expr = compile(exprStr, "<calcColumn>", 'eval', ast.PyCF_ONLY_AST)
         replacedExpr = rpn.visit(expr)
-        rpb = ReplaceBinOp(rpn.localDict)
-        factorExpr = rpb.visit(replacedExpr)
+        rpo = ReplaceOperator(rpn.localDict)
+        factorExpr = rpo.visit(replacedExpr)
         localDict = dict([(key, value.data) \
                           for key, value in rpn.localDict.iteritems()])
         data = eval(compile(factorExpr, '<calcColumn>', 'eval'), {}, localDict)
@@ -310,6 +310,14 @@ class SampleContainer(DataContainer):
                                shortname=shortname)
         field.seal()
         return field
+
+    def filterColumns(self, exprStr, shortname='', longname=''):
+        shortname = shortname or self.shortname
+        longname = longname or self.longname
+        mask = self.calcColumn(exprStr, 'm', 'mask')
+        assert isinstance(mask.unit, float)
+        mask = mask.data
+
 
 def assertEqual(con1, con2, rtol=1e-5, atol=1e-8):
     diagnosis = StringIO.StringIO()
@@ -342,25 +350,41 @@ class ReplaceName(NodeTransformer):
        return newName
 
 
-class ReplaceBinOp(NodeTransformer):
+class ReplaceOperator(NodeTransformer):
     def __init__(self, localDict):
         self.localDict = localDict
 
     def visit_BinOp(self, node):
-        import ast
+        from ast import (Add, Sub)
         self.generic_visit(node)
-        if isinstance(node.op,(ast.Add, ast.Sub)):
+        if isinstance(node.op,(Add, Sub)):
             unitcalc = UnitCalculator(self.localDict)
             unitleft = unitcalc.getUnit(node.left)
             unitright = unitcalc.getUnit(node.right)
             factor = unitright / unitleft
-            if factor == 1.0:
-                return node
-            right = ast.BinOp(ast.Num(factor), ast.Mult(), node.right)
-            binOp = ast.BinOp(node.left, node.op, right)
-            return ast.copy_location(binOp, node)
+            right = self.withFactor(factor, node.right)
+            binOp = BinOp(node.left, node.op, right)
+            return copy_location(binOp, node)
         else:
             return node
+
+    def visit_Compare(self, node):
+        from ast import (Compare, copy_location)
+        self.generic_visit(node)
+        unitcalc = UnitCalculator(self.localDict)
+        unitleft = unitcalc.getUnit(node.left)
+        factorlist = [unitcalc.getUnit(comp) / unitleft \
+                      for comp in node.comparators]
+        newComplist = [self.withFactor(*t) \
+                       for t in zip(factorlist, node.comparators)]
+        compOp = Compare(node.left, node.ops, newComplist)
+        return copy_location(compOp, node)
+
+    def withFactor(self, factor, node):
+        from ast import (BinOp, copy_location, Num, Mult)
+        if factor == 1.0:
+            return node
+        return copy_location(BinOp(Num(factor), Mult(), node), node)
 
 
 class UnitCalculator(object):
@@ -369,7 +393,9 @@ class UnitCalculator(object):
 
     def getUnit(self, node):
         from ast import (Expression, Name, Num,
-                         BinOp, Add, Mult, Div, Sub)
+                         BinOp, Add, Mult, Div, Sub,
+                         Compare, BoolOp, UnaryOp,
+                         BitOr, BitXor, BitAnd)
         if isinstance(node, Expression):
             return self.getUnit(node.body)
         elif isinstance(node, Name):
@@ -388,5 +414,30 @@ class UnitCalculator(object):
                 return self.getUnit(node.left) * self.getUnit(node.right)
             elif isinstance(node.op, Div):
                 return self.getUnit(node.left) / self.getUnit(node.right)
+            elif isinstance(node.op, (BitOr, BitXor, BitAnd)):
+                left = self.getUnit(node.left)
+                right = self.getUnit(node.right)
+                if not isinstance(left, float):
+                    raise ValueError(
+                        "Type %s cannot be interpreted as a Boolean" % left)
+                if not isinstance(right, float):
+                    raise ValueError(
+                        "Type %s cannot be interpreted as a Boolean" % right)
+                return 1.0
+            else:
+                raise NotImplementedError()
+        elif isinstance(node, Compare):
+            left = self.getUnit(node.left)
+            for comparator in node.comparators:
+                right = self.getUnit(comparator)
+                if not isinstance(left / right, float):
+                    raise ValueError("units %s, %s not compatible" \
+                                     % (left, right))
+            return 1.0
+        elif isinstance(node, BoolOp):
+            raise NotImplementedError(
+                'BoolOps not supported. Use bitwise ops instead (&, |)!')
+        elif isinstance(node, UnaryOp):
+            return self.getUnit(node.operand)
         else:
             raise NotImplementedError()
