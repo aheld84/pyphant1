@@ -311,12 +311,31 @@ class SampleContainer(DataContainer):
         field.seal()
         return field
 
-    def filterColumns(self, exprStr, shortname='', longname=''):
+    def filter(self, exprStr, shortname='', longname=''):
         shortname = shortname or self.shortname
         longname = longname or self.longname
         mask = self.calcColumn(exprStr, 'm', 'mask')
         assert isinstance(mask.unit, float)
         mask = mask.data
+        maskedcolumns = []
+        for col in self.columns:
+            try:
+                maskedcol = col.getMaskedFC(mask)
+            except ValueError:
+                raise ValueError(
+                    'Column "' + col.longname + '" has not enough rows!'
+                    )
+            except AttributeError:
+                raise AttributeError(
+                    "Masking of SampleContainers as columns is not supported."
+                    )
+            maskedcolumns.append(maskedcol)
+        #build new SampleContainer from masked columns and return it
+        result = SampleContainer(maskedcolumns,
+                                 longname=longname,
+                                 shortname=shortname,
+                                 attributes=copy.deepcopy(self.attributes))
+        return result
 
 
 def assertEqual(con1, con2, rtol=1e-5, atol=1e-8):
@@ -355,7 +374,7 @@ class ReplaceOperator(NodeTransformer):
         self.localDict = localDict
 
     def visit_BinOp(self, node):
-        from ast import (Add, Sub)
+        from ast import (Add, Sub, BinOp, copy_location)
         self.generic_visit(node)
         if isinstance(node.op,(Add, Sub)):
             unitcalc = UnitCalculator(self.localDict)
