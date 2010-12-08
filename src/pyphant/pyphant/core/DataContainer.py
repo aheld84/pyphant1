@@ -314,9 +314,12 @@ class SampleContainer(DataContainer):
     def filter(self, exprStr, shortname='', longname=''):
         shortname = shortname or self.shortname
         longname = longname or self.longname
-        mask = self.calcColumn(exprStr, 'm', 'mask')
-        assert isinstance(mask.unit, float)
-        mask = mask.data
+        if exprStr == '':
+            mask = numpy.ones(self.columns[0].data.shape[0], dtype=bool)
+        else:
+            mask = self.calcColumn(exprStr, 'm', 'mask')
+            assert isinstance(mask.unit, float)
+            mask = mask.data
         maskedcolumns = []
         for col in self.columns:
             try:
@@ -350,31 +353,50 @@ def assertEqual(con1, con2, rtol=1e-5, atol=1e-8):
         raise AssertionError, diagnosis.getvalue()
 
 
-class ReplaceName(NodeTransformer):
+class LocationFixingNodeTransformer(NodeTransformer):
+    def visit(self, *args, **kargs):
+        result = NodeTransformer.visit(self, *args, **kargs)
+        from ast import fix_missing_locations
+        fix_missing_locations(result)
+        return result
+
+
+class ReplaceName(LocationFixingNodeTransformer):
     def __init__(self, sampleContainer):
         self.localDict = {}
         self.count = 0
         self.sc = sampleContainer
 
-    def visit_Str(self, node):
-        import ast
-        self.generic_visit(node)
-        return ast.copy_location(ast.Name(self.getName(node.s),
-                                          ast.Load()), node)
+    def visit_Call(self, node):
+        from ast import (Name, Load)
+        if isinstance(node.func, Name) and node.func.id.lower() == 'col':
+            newName = self.getName(self.sc[node.args[0].s])
+            return Name(newName, Load())
 
-    def getName(self, oldName):
+    def visit_Str(self, node):
+        from ast import (Name, Load)
+        quantity = Quantity(node.s)
+        class QuantityDummy(object):
+            pass
+        dummy = QuantityDummy()
+        dummy.unit = Quantity(1.0, quantity.unit)
+        dummy.data = quantity.value
+        newName = self.getName(dummy)
+        return Name(newName, Load())
+
+    def getName(self, ref):
        newName = "N%s" % self.count
        self.count += 1
-       self.localDict[newName] = self.sc[oldName]
+       self.localDict[newName] = ref
        return newName
 
 
-class ReplaceOperator(NodeTransformer):
+class ReplaceOperator(LocationFixingNodeTransformer):
     def __init__(self, localDict):
         self.localDict = localDict
 
     def visit_BinOp(self, node):
-        from ast import (Add, Sub, BinOp, copy_location)
+        from ast import (Add, Sub, BinOp)
         self.generic_visit(node)
         if isinstance(node.op,(Add, Sub)):
             unitcalc = UnitCalculator(self.localDict)
@@ -383,12 +405,13 @@ class ReplaceOperator(NodeTransformer):
             factor = unitright / unitleft
             right = self.withFactor(factor, node.right)
             binOp = BinOp(node.left, node.op, right)
-            return copy_location(binOp, node)
+            return binOp
         else:
             return node
 
     def visit_Compare(self, node):
-        from ast import (Compare, copy_location)
+        #TODO: Resolve multiple comparisons to single comparisons
+        from ast import Compare
         self.generic_visit(node)
         unitcalc = UnitCalculator(self.localDict)
         unitleft = unitcalc.getUnit(node.left)
@@ -397,13 +420,15 @@ class ReplaceOperator(NodeTransformer):
         newComplist = [self.withFactor(*t) \
                        for t in zip(factorlist, node.comparators)]
         compOp = Compare(node.left, node.ops, newComplist)
-        return copy_location(compOp, node)
+        return compOp
 
     def withFactor(self, factor, node):
-        from ast import (BinOp, copy_location, Num, Mult)
+        from ast import (BinOp, Num, Mult)
+        if not isinstance(factor, float):
+            raise ValueError('Incompatible units!')
         if factor == 1.0:
             return node
-        return copy_location(BinOp(Num(factor), Mult(), node), node)
+        return BinOp(Num(factor), Mult(), node)
 
 
 class UnitCalculator(object):
