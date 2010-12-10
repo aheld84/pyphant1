@@ -654,7 +654,7 @@ class CommonSampleContainerTests(SampleContainerTest):
 
 class SampleContainerSlicingTests(SampleContainerTest):
     def setUp(self):
-        super(SampleContainerSlicingTests, self).setUp()
+        SampleContainerTest.setUp(self)
         time_data = numpy.array([10.0, 20.0, 30.0, 5.0, 9000.0])
         time_error = numpy.array([1.0, 2.0, 3.0, .5, 900.0])
         time_unit = Quantity('2s')
@@ -761,7 +761,7 @@ class SampleContainerSlicingTests(SampleContainerTest):
                               [True, True, False, True, True])
 
     def testNot2dExpression(self):
-        self._compareExpected('not col("t") == "10s"',
+        self._compareExpected('~ (col("t") == "10s")',
                               [True, True, True, False, True])
 
     def testAnd2dExpression(self):
@@ -774,25 +774,8 @@ class SampleContainerSlicingTests(SampleContainerTest):
             '(col("Zeit") < "60s") | (col("Strecke") == "5500m")',
             [True, True, False, True, True])
 
-    def xtestPrecedence2dExpression(self):
-        self._compareExpected(
-            '"0m" > col("l") | not (col("t") == "20s" | col("t") == "40s") & '
-            '((col("l") == "-20000m" | col("t") == "40s") | '
-            'col("l") == "5500m")',
-            [True, False, False, False, True])
-
-    def xtestNestedTuple2dExpression(self):
-        self._compareExpected(('AND',
-                               ('Atomar',
-                                ('SCColumn', self.sc2d["t"]), '==',
-                                ('PhysQuant', Quantity('20s'))),
-                               ('Atomar',
-                                ('SCColumn', self.sc2d["l"]), '==',
-                                ('PhysQuant', Quantity('-20000m')))),
-                              [True, False, False, False, False])
-
     def testMultipleCompareOpPrecedence2dExpression(self):
-        self._compareExpected('not "0m" <= col("l") <= "10000m"',
+        self._compareExpected('~ ("0m" <= col("l") <= "10000m")',
                               [True, False, True, False, False])
 
     def testColumnToColumn2dExpression(self):

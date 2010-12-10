@@ -320,6 +320,9 @@ class SampleContainer(DataContainer):
             mask = self.calcColumn(exprStr, 'm', 'mask')
             assert isinstance(mask.unit, float)
             mask = mask.data
+        return self.extractRows(mask, shortname, longname)
+
+    def extractRows(self, mask, shortname, longname):
         maskedcolumns = []
         for col in self.columns:
             try:
@@ -338,6 +341,7 @@ class SampleContainer(DataContainer):
                                  longname=longname,
                                  shortname=shortname,
                                  attributes=copy.deepcopy(self.attributes))
+        #result.seal()
         return result
 
 
@@ -385,10 +389,10 @@ class ReplaceName(LocationFixingNodeTransformer):
         return Name(newName, Load())
 
     def getName(self, ref):
-       newName = "N%s" % self.count
-       self.count += 1
-       self.localDict[newName] = ref
-       return newName
+        newName = "N%s" % self.count
+        self.count += 1
+        self.localDict[newName] = ref
+        return newName
 
 
 class ReplaceOperator(LocationFixingNodeTransformer):
@@ -410,7 +414,6 @@ class ReplaceOperator(LocationFixingNodeTransformer):
             return node
 
     def visit_Compare(self, node):
-        #TODO: Resolve multiple comparisons to single comparisons
         from ast import Compare
         self.generic_visit(node)
         unitcalc = UnitCalculator(self.localDict)
@@ -420,7 +423,8 @@ class ReplaceOperator(LocationFixingNodeTransformer):
         newComplist = [self.withFactor(*t) \
                        for t in zip(factorlist, node.comparators)]
         compOp = Compare(node.left, node.ops, newComplist)
-        return compOp
+        compOpTrans = self.compBreaker(compOp)
+        return compOpTrans
 
     def withFactor(self, factor, node):
         from ast import (BinOp, Num, Mult)
@@ -429,6 +433,19 @@ class ReplaceOperator(LocationFixingNodeTransformer):
         if factor == 1.0:
             return node
         return BinOp(Num(factor), Mult(), node)
+
+    def compBreaker(self, node):
+        from ast import (Compare, BinOp, BitAnd)
+        assert isinstance(node, Compare)
+        if len(node.comparators) == 1:
+            return node
+        else:
+            comp1 = Compare(node.left, node.ops[0:1],
+                            node.comparators[0:1])
+            comp2 = Compare(node.comparators[0],
+                            node.ops[1:], node.comparators[1:])
+            newNode = BinOp(comp1, BitAnd(), self.compBreaker(comp2))
+            return newNode
 
 
 class UnitCalculator(object):
