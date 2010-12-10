@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The ImageProcessing toolbox holds workers to process data resulting from scalar fields.
+
 """
 
 __id__ = "$Id$"
@@ -38,39 +38,22 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-BACKGROUND_COLOR=255
-FEATURE_COLOR=0
+from pyphant.core import Worker, Connectors
 
-workers=[
-    "ApplyMask",
-    "AlgebraWorker",
-    "AutoFocus",
-    "CoverageWorker",
-    "DiffWorker",
-    "DistanceMapper",
-    "EdgeFillWorker",
-    "EdgeTouchingFeatureRemover",
-    "EnhanceContrast",
-    "ExtractRows",
-    "FindLocalExtrema",
-    "FitBackground",
-    "Gradient",
-    "ImageLoaderWorker",
-    "InvertWorker",
-    "MarkAF",
-    "Medianiser",
-    "NDImageWorker",
-    "SkeletonizeFeature",
-    "SliceSelector",
-    "ThresholdingWorker",
-    "UltimatePointsCalculator",
-    "Watershed",
-    "Reduce",
-    "FeatureRatio"
-    ]
+class ExtractRows(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "ExtractRows"
+    _sockets = [("table", Connectors.TYPE_ARRAY),
+                ("mask", Connectors.TYPE_IMAGE)]
+    _params = [("shortname", "Shortname", '', None),
+               ("longname", "Longname", '', None)]
 
-def isFeature(point):
-    if point == FEATURE_COLOR:
-        return True
-    else:
-        return False
+    @Worker.plug(Connectors.TYPE_ARRAY)
+    def extractRows(self, table, mask, subscriber=0):
+        shortname = self.paramShortname.value
+        longname = self.paramLongname.value
+        result = table.extractRows(mask.data, shortname, longname)
+        result.seal()
+        return result
