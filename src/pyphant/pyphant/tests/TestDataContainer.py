@@ -582,7 +582,8 @@ class AlgebraSampleContainerTests(SampleContainerTest):
 
     def testCalcColumnExplicit(self):
         exprStr = 'col("short1") * col("short2") - "10 kg * m * s**2"'
-        columnOut = self.sampleContainerNeu.calcColumn(exprStr, 'Test1', 'Mult und Minus')
+        columnOut = self.sampleContainerNeu.calcColumn(
+            exprStr, 'Test1', 'Mult und Minus')
         #print(columnOut)
         columnCheck = FieldContainer(scipy.array([-5., 10., 0.]),
                                      unit='1 kg * m * s**2',
@@ -595,27 +596,24 @@ class AlgebraSampleContainerTests(SampleContainerTest):
             print('Explicit check No1 ok.')
         else:
             raise ValueError
-        exprStr = '(col("short1") / col("short2") - "10.0 s**2/(kg*m)") > ("-5.0 s**2/(kg*m)")'
-        columnOut = self.sampleContainerNeu.calcColumn(exprStr, 'Test1', 'Mult und Minus')
+        exprStr = '(col("short1") / col("short2") - "10.0 s**2/(kg*m)") ' + \
+                  '> ("-5.0 s**2/(kg*m)")'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            exprStr, 'Test1', 'Mult und Minus')
         #print(columnOut)
         #print(columnOut.unit)
         columnCheck = FieldContainer(scipy.array([False, False, True]),
-                                     unit='1.0',
                                      shortname='Test2Check',
                                      longname='Test2Checken')
         checkIfDataEqual = columnOut.data == columnCheck.data
-        #print(checkIfDataEqual)
-        #print(columnOut.unit == columnCheck.unit)
-        #print(type(columnOut.unit))
-        #print(type(columnCheck.unit))
-        #warum ist das type=str???
-        if checkIfDataEqual.all() and columnOut.unit == float(columnCheck.unit):
+        if checkIfDataEqual.all() and columnOut.unit == columnCheck.unit:
             print('Explicit check No2 ok.')
         else:
             raise ValueError
         exprStr = 'col("short1") * col("short2") - "10 kg * s**2"'
-        self.assertRaises(ValueError, self.sampleContainerNeu.calcColumn, exprStr,
-                          'Test1assert', 'Test1AssertRaise')
+        self.assertRaises(
+            ValueError, self.sampleContainerNeu.calcColumn, exprStr,
+            'Test1assert', 'Test1AssertRaise')
         exprStr = '"1.0m" / "0.0m"'
         self.assertRaises(ZeroDivisionError,
                           self.sampleContainerNeu.calcColumn, exprStr,\
@@ -624,7 +622,8 @@ class AlgebraSampleContainerTests(SampleContainerTest):
     def testAlgebraPlus(self):
         from pyphant.core.DataContainer import FieldContainer
         expr = 'col("i") + col("i2") + "-10 m"'
-        columnOut = self.sampleContainerNeu.calcColumn(expr, 'OutPlus', 'OutcomePlus')
+        columnOut = self.sampleContainerNeu.calcColumn(
+            expr, 'OutPlus', 'OutcomePlus')
         columnCheck = FieldContainer(3 * scipy.arange(0, self.rows) - 10,
                                 unit='1 m',
                                 longname="Outcome Check",
@@ -638,7 +637,8 @@ class AlgebraSampleContainerTests(SampleContainerTest):
     def testAlgebraMinus(self):
         from pyphant.core.DataContainer import FieldContainer
         expr = 'col("i") - col("i2") - "-10 km"'
-        columnOut = self.sampleContainerNeu.calcColumn(expr, 'OutMinus', 'OutcomeMinus')
+        columnOut = self.sampleContainerNeu.calcColumn(
+            expr, 'OutMinus', 'OutcomeMinus')
         columnCheck = FieldContainer(-1 * scipy.arange(0, self.rows) + 10000,
                                 unit='1 m',
                                 longname="Outcome Check",
@@ -651,10 +651,11 @@ class AlgebraSampleContainerTests(SampleContainerTest):
 
     def testAlgebraMult(self):
         from pyphant.core.DataContainer import FieldContainer
-        #TOFO FIX: PhysicalQuantity can'T handle floats
-        expr = 'col("i") * col("i") * "0.5 m/m"'
-        columnOut = self.sampleContainerNeu.calcColumn(expr, 'OutMult', 'OutcomeMult')
-        columnCheckData = scipy.array(map(lambda x: x ** 2 * 0.5, scipy.arange(0, self.rows)))
+        expr = 'col("i") * col("i") * 0.5'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            expr, 'OutMult', 'OutcomeMult')
+        columnCheckData = scipy.array(
+            map(lambda x: x ** 2 * 0.5, scipy.arange(0, self.rows)))
         columnCheck = FieldContainer(columnCheckData,
                                 unit='1 m**2',
                                 longname="Outcome Check",
@@ -664,14 +665,16 @@ class AlgebraSampleContainerTests(SampleContainerTest):
             print("Multiplying works.")
         else:
             raise ValueError
-#Anmerkung: Wenn man in Expr eine Integer zum teilen angibt, wirds komisch: 1 / 2 = 0
+
     def testAlgebraDiv(self):
         from pyphant.core.DataContainer import FieldContainer
         expr = 'col("i") / 2.'
         expr2 = '(col("i") + "1 m") / (col("i") + "1 m")'
-        columnOut = self.sampleContainerNeu.calcColumn(expr, 'OutDiv', 'OutcomeDiv')
+        columnOut = self.sampleContainerNeu.calcColumn(
+            expr, 'OutDiv', 'OutcomeDiv')
         #print(columnOut)
-        columnOut2 = self.sampleContainerNeu.calcColumn(expr2, 'OutDiv2', 'OutcomeDiv2')
+        columnOut2 = self.sampleContainerNeu.calcColumn(
+            expr2, 'OutDiv2', 'OutcomeDiv2')
         #print(columnOut.unit)
         #columnCheckData = scipy.array([1 for i in range(0,self.rows)])
         columnCheckData = 0.5 * scipy.arange(0., float(self.rows))
@@ -686,12 +689,11 @@ class AlgebraSampleContainerTests(SampleContainerTest):
                                 shortname="OC")
         checkIfDataEqual = columnOut.data == columnCheck.data
         checkIfDataEqual2 = columnOut2.data == columnCheck2.data
-        if checkIfDataEqual.all() and checkIfDataEqual2.all() and columnOut.unit == columnCheck.unit:
+        if checkIfDataEqual.all() and checkIfDataEqual2.all() \
+               and columnOut.unit == columnCheck.unit:
             print("Dividing works.")
         else:
             raise ValueError
-        #expr = 'col("i") / 2. * col("i") / col("i")'
-        #self.assertRaises(Warning, self.sampleContainerNeu.calcColumn, expr, 'OutDiv', 'OutcomeDiv')
 
 
 class CommonSampleContainerTests(SampleContainerTest):
