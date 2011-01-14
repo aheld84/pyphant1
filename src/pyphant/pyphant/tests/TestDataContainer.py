@@ -138,21 +138,21 @@ class FieldContainerTestCase(unittest.TestCase):
             pass
         else:
             self.fail("Modification of sealed FieldContainer was not \
-prohibited.")
+                        prohibited.")
         try:
             field.data[1] = 4
         except RuntimeError, e:
             pass
         else:
             self.fail("Modification of sealed FieldContainer was not \
-prohibited.")
+                        prohibited.")
         try:
             field.dimensions[0] = copy.deepcopy(field)
         except TypeError, e:
             pass
         else:
             self.fail("Modification of sealed FieldContainer's dimension \
-was not prohibited.")
+                        was not prohibited.")
 
 #This test is broken since it produces an invalid FieldContainer.
 #I am not sure how to fix it or what its intent is.
@@ -510,12 +510,24 @@ class SampleContainerTest(unittest.TestCase):
                                         #dimensions=INDEX,
                                         longname=u"Integer sample",
                                         shortname=u"i")
+        self.intSample2 = FieldContainer(2 * scipy.arange(0, self.rows),
+                                        Quantity('1m'),
+                                        longname=u"Integer sample No2",
+                                        shortname=u"i2")
         self.floatSample = FieldContainer(scipy.arange(self.rows / 2,
                                                        self.rows,
                                                        0.5),
                                           Quantity('1s'),
                                           longname=u"Float sample",
                                           shortname=u"t")
+        self.shortFloatSample1 = FieldContainer(scipy.array([1., 2., 10.]),
+                                          Quantity('1.0 s**2'),
+                                          longname=u"Short Float sample 1",
+                                          shortname=u"short1")
+        self.shortFloatSample2 = FieldContainer(scipy.array([5., 10., 1.]),
+                                          Quantity('1.0 kg * m'),
+                                          longname=u"Short Float sample 2",
+                                          shortname=u"short2")
         self.desc = scipy.dtype({'names':[u'i', u't'],
                                  'formats':[self.intSample.data.dtype,
                                             self.floatSample.data.dtype],
@@ -530,6 +542,13 @@ class SampleContainerTest(unittest.TestCase):
                                                 self.floatSample],
                                                self.longname,
                                                self.shortname)
+        self.sampleContainerNeu = SampleContainer([self.intSample,
+                                                   self.intSample2,
+                                                self.floatSample,
+                                                self.shortFloatSample1,
+                                                self.shortFloatSample2],
+                                               "New Sample",
+                                               "NewSC")
 
     def runTest(self):
         return
@@ -543,21 +562,137 @@ class AlgebraSampleContainerTests(SampleContainerTest):
         exprStr = 'col("i") / (col("t") + col("t"))'
         expr = compile(exprStr, "<TestCase>", 'eval', ast.PyCF_ONLY_AST)
         replacedExpr = rpn.visit(expr)
-        print rpn.localDict
-        print ast.dump(replacedExpr)
+        #print rpn.localDict
+        #print ast.dump(replacedExpr)
         rpb = ReplaceOperator(rpn.localDict)
         factorExpr = rpb.visit(replacedExpr)
-        print ast.dump(factorExpr)
+        #print ast.dump(factorExpr)
 
     def testCalcColumn(self):
         exprStr = 'col("i") / (col("t") + col("t")) + "1km/s"'
         column = self.sampleContainer.calcColumn(exprStr, 'v', 'velocity')
-        print self.sampleContainer['i']
-        print self.sampleContainer['t']
-        print column
+        #print self.sampleContainerNeu['i']
+        #print self.sampleContainerNeu['t']
+        #print self.sampleContainerNeu['i2']
+        #print column
         exprStr = 'col("i") / (col("t") + col("t")) + "1km"'
         self.assertRaises(ValueError, self.sampleContainer.calcColumn,
                           exprStr, 'v', 'velocity')
+
+    def testCalcColumnExplicit(self):
+        exprStr = 'col("short1") * col("short2") - "10 kg * m * s**2"'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            exprStr, 'Test1', 'Mult und Minus')
+        #print(columnOut)
+        columnCheck = FieldContainer(scipy.array([-5., 10., 0.]),
+                                     unit='1 kg * m * s**2',
+                                     shortname='Test1Check',
+                                     longname='Test1Checken')
+        #print(columnCheck.unit)
+        #print(type(columnCheck.unit))
+        checkIfDataEqual = columnOut.data == columnCheck.data
+        if checkIfDataEqual.all() and columnOut.unit == columnCheck.unit:
+            print('Explicit check No1 ok.')
+        else:
+            raise ValueError
+        exprStr = '(col("short1") / col("short2") - "10.0 s**2/(kg*m)") ' + \
+                  '> ("-5.0 s**2/(kg*m)")'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            exprStr, 'Test1', 'Mult und Minus')
+        #print(columnOut)
+        #print(columnOut.unit)
+        columnCheck = FieldContainer(scipy.array([False, False, True]),
+                                     shortname='Test2Check',
+                                     longname='Test2Checken')
+        checkIfDataEqual = columnOut.data == columnCheck.data
+        if checkIfDataEqual.all() and columnOut.unit == columnCheck.unit:
+            print('Explicit check No2 ok.')
+        else:
+            raise ValueError
+        exprStr = 'col("short1") * col("short2") - "10 kg * s**2"'
+        self.assertRaises(
+            ValueError, self.sampleContainerNeu.calcColumn, exprStr,
+            'Test1assert', 'Test1AssertRaise')
+        exprStr = '"1.0m" / "0.0m"'
+        self.assertRaises(ZeroDivisionError,
+                          self.sampleContainerNeu.calcColumn, exprStr,\
+                                            'TestZero', 'Division by Zero')
+
+    def testAlgebraPlus(self):
+        from pyphant.core.DataContainer import FieldContainer
+        expr = 'col("i") + col("i2") + "-10 m"'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            expr, 'OutPlus', 'OutcomePlus')
+        columnCheck = FieldContainer(3 * scipy.arange(0, self.rows) - 10,
+                                unit='1 m',
+                                longname="Outcome Check",
+                                shortname="OC")
+        checkIfDataEqual = columnOut.data == columnCheck.data
+        if checkIfDataEqual.all() and columnOut.unit == columnCheck.unit:
+            print("Adding works.")
+        else:
+            raise ValueError
+
+    def testAlgebraMinus(self):
+        from pyphant.core.DataContainer import FieldContainer
+        expr = 'col("i") - col("i2") - "-10 km"'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            expr, 'OutMinus', 'OutcomeMinus')
+        columnCheck = FieldContainer(-1 * scipy.arange(0, self.rows) + 10000,
+                                unit='1 m',
+                                longname="Outcome Check",
+                                shortname="OC")
+        checkIfDataEqual = columnOut.data == columnCheck.data
+        if checkIfDataEqual.all() and columnOut.unit == columnCheck.unit:
+            print("Subtracting works.")
+        else:
+            raise ValueError
+
+    def testAlgebraMult(self):
+        from pyphant.core.DataContainer import FieldContainer
+        expr = 'col("i") * col("i") * 0.5'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            expr, 'OutMult', 'OutcomeMult')
+        columnCheckData = scipy.array(
+            map(lambda x: x ** 2 * 0.5, scipy.arange(0, self.rows)))
+        columnCheck = FieldContainer(columnCheckData,
+                                unit='1 m**2',
+                                longname="Outcome Check",
+                                shortname="OC")
+        checkIfDataEqual = columnOut.data == columnCheck.data
+        if checkIfDataEqual.all() and columnOut.unit == columnCheck.unit:
+            print("Multiplying works.")
+        else:
+            raise ValueError
+
+    def testAlgebraDiv(self):
+        from pyphant.core.DataContainer import FieldContainer
+        expr = 'col("i") / 2.'
+        expr2 = '(col("i") + "1 m") / (col("i") + "1 m")'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            expr, 'OutDiv', 'OutcomeDiv')
+        #print(columnOut)
+        columnOut2 = self.sampleContainerNeu.calcColumn(
+            expr2, 'OutDiv2', 'OutcomeDiv2')
+        #print(columnOut.unit)
+        #columnCheckData = scipy.array([1 for i in range(0,self.rows)])
+        columnCheckData = 0.5 * scipy.arange(0., float(self.rows))
+        columnCheckData2 = scipy.array([1. for i in range(0, self.rows)])
+        columnCheck = FieldContainer(columnCheckData,
+                                unit='1 m',
+                                longname="Outcome Check",
+                                shortname="OC")
+        columnCheck2 = FieldContainer(columnCheckData2,
+                                unit='1.0',
+                                longname="Outcome Check",
+                                shortname="OC")
+        checkIfDataEqual = columnOut.data == columnCheck.data
+        checkIfDataEqual2 = columnOut2.data == columnCheck2.data
+        if checkIfDataEqual.all() and checkIfDataEqual2.all() \
+               and columnOut.unit == columnCheck.unit:
+            print("Dividing works.")
+        else:
+            raise ValueError
 
 
 class CommonSampleContainerTests(SampleContainerTest):
