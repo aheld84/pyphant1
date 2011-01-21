@@ -361,13 +361,12 @@ class SampleContainer(DataContainer):
                                     longname=u"Time",
                                     shortname=u"t")
         Examplary expressions:
-            exprStr = "col("Distance") / col("Time")"
-            exprStr = "col("Distance") - "1 m"
-            exprStr = "col("t") >= "4 s""
-            exprStr = "(col('s') > "1 m") & (COL("Time") == "3s")"
+            exprStr = "col('Distance') / col('Time')"
+            exprStr = "col('Distance') - '1 m'"
+            exprStr = "col('t') >= '4 s'"
+            exprStr = "(col('s') > '1 m') & (COL('Time') == '3s')"
 
         """
-        # at DocString: Are remainder operators (//, %) implemented?
         import ast
         rpn = ReplaceName(self)
         expr = compile(exprStr, "<calcColumn>", 'eval', ast.PyCF_ONLY_AST)
@@ -387,8 +386,8 @@ class SampleContainer(DataContainer):
     def filter(self, exprStr, shortname='', longname=''):
         """
         Return a sealed FieldContainer containing only those rows where
-        `exprStr` was evaluated to be True. This worker replaces the old
-        FilterWorker and is mostly capable of the same operations, yet the
+        `exprStr` was evaluated to be True. This method replaces the old
+        filter method and is mostly capable of the same operations, yet the
         syntax has changed slightly.
 
         Parameters
@@ -421,10 +420,9 @@ class SampleContainer(DataContainer):
         Parameters
         ----------
         mask : numpy array of Boolean values
-            The length of the array has to be equal to the length of the FC
-            on which the method is being performed. If the value of mask[n] is
-            True, the element FC[n] of the FieldContainer is part of the
-            product, else it is discarded.
+            The length of the array has to be equal to the length of the columns
+            of the SampleContainer. If the value of mask[n] is
+            True, the nth row is part of the result, else it is discarded.
 
         shortname, longname : str
             Specify the short and long name of the resulting FC.
