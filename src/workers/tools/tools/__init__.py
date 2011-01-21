@@ -30,8 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The OSC Toolbox holds workers for processing data coming from organic
-solar cells.
+The tools toolbox holds general purpose workers.
 """
 
 __id__ = "$Id$"
@@ -42,5 +41,10 @@ __version__ = "$Revision$"
 workers=[
     #"Emd5Src",
     "FCSource",
-    "SCSource"
+    "SCSource",
+    "AlgebraWorker",
+    "ExtractRows",
+    "AddColumn",
+    "ColumnExtractor",
+    "Slicing"
     ]

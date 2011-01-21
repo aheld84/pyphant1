@@ -124,4 +124,3 @@ class Slicing(Worker.Worker):
         result = copy.deepcopy(field[params])
         result.seal()
         return result
-

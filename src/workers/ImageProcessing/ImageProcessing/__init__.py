@@ -44,14 +44,12 @@ FEATURE_COLOR=0
 
 workers=[
     "ApplyMask",
-    "AlgebraWorker",
     "AutoFocus",
     "CoverageWorker",
     "DiffWorker",
     "DistanceMapper",
     "EdgeFillWorker",
     "EdgeTouchingFeatureRemover",
-    "ExtractRows",
     #"EnhanceContrast",
     "FindLocalExtrema",
     #"FitBackground",
@@ -62,7 +60,7 @@ workers=[
     #"Medianiser",
     "NDImageWorker",
     "SkeletonizeFeature",
-    "SliceSelector",
+    #"SliceSelector",
     "ThresholdingWorker",
     "UltimatePointsCalculator",
     "Watershed",
