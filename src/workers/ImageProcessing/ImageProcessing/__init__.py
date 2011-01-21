@@ -30,7 +30,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The ImageProcessing toolbox holds workers to process data resulting from scalar fields.
+The ImageProcessing toolbox holds workers to process data
+resulting from scalar fields.
 """
 
 __id__ = "$Id$"
@@ -50,22 +51,22 @@ workers=[
     "DistanceMapper",
     "EdgeFillWorker",
     "EdgeTouchingFeatureRemover",
-    "EnhanceContrast",
     "ExtractRows",
+    #"EnhanceContrast",
     "FindLocalExtrema",
-    "FitBackground",
+    #"FitBackground",
     "Gradient",
     "ImageLoaderWorker",
     "InvertWorker",
     "MarkAF",
-    "Medianiser",
+    #"Medianiser",
     "NDImageWorker",
     "SkeletonizeFeature",
     "SliceSelector",
     "ThresholdingWorker",
     "UltimatePointsCalculator",
     "Watershed",
-    "Reduce",
+    #"Reduce",
     "FeatureRatio"
     ]
 

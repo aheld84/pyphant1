@@ -38,19 +38,19 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import (Worker, Connectors,
-                          Param)
+from pyphant.core import (Worker, Connectors)
 import numpy
 
 
 class FeatureRatio(Worker.Worker):
     """
-    TODO
+    Counts the non-background pixels in an image
+    and returns the ratio
     """
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "FeatureRatio"
+    name = "Feature Ratio"
     _params = [('bgc', 'Background color', 0, None)]
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 

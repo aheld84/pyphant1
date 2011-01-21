@@ -41,24 +41,25 @@ __version__ = "$Revision$"
 # $Source$
 
 from pyphant.core import (Worker, Connectors)
-import copy, numpy
+
 
 class DiffWorker(Worker.Worker):
     API = 2
     VERSION = 2
     REVISION = "$Revision$"[11:-1]
-    name=u"Diff Worker"
-    _params = [("absolute", u"Return absolute of difference: ", [u"Yes", u"No"], None),
-               ("longname",u"Name of result",'default',None),
-               ("symbol",u"Symbol of result",'default',None)]
-    
+    name = u"Difference"
+    _params = [("absolute", u"Return absolute of difference: ",
+                [u"Yes", u"No"], None),
+               ("longname", u"Name of result", 'default', None),
+               ("symbol", u"Symbol of result", 'default', None)]
     _sockets = [ ("image1", Connectors.TYPE_IMAGE),
                  ("image2", Connectors.TYPE_IMAGE)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def diffImages(self, image1, image2, subscriber=0):
         result = image1 - image2
-        if self.paramAbsolute.value==u"Yes":
+        if self.paramAbsolute.value == u"Yes":
+            import numpy
             result.data = numpy.abs(result.data)
         if self.paramLongname.value != 'default':
             result.longname = self.paramLongname.value

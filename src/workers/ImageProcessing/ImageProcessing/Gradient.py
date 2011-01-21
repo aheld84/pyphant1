@@ -38,13 +38,11 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors, Param, DataContainer
-import ImageProcessing
+from pyphant.core import (Worker, Connectors)
 import numpy, copy
 
 def gradient(data):
-    res = numpy.sqrt(sum(numpy.square(numpy.array(numpy.gradient(data)))))
-    return (res * 255.0).astype(int) / 361
+    return numpy.sqrt(sum(numpy.square(numpy.array(numpy.gradient(data)))))
 
 
 class Gradient(Worker.Worker):
@@ -57,13 +55,14 @@ class Gradient(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def gradientWorker(self, image, subscriber=0):
         for dim in image.dimensions:
-            assert dim.unit == image.dimensions[0].unit, ("Other cases not "
-                                                          "implemented!")
-        newdata = gradient(image.data)
+            assert dim.unit == image.dimensions[0].unit, \
+                   "Non-uniform dimensions!"
+        newdata = gradient(image.data.astype(float))
         longname = "Gradient"
-        result = DataContainer.FieldContainer(
+        from pyphant.core.DataContainer import FieldContainer
+        result = FieldContainer(
             newdata,
-            (361.0 / 255.0) * (image.unit / image.dimensions[0].unit),
+            image.unit / image.dimensions[0].unit,
             None,
             copy.deepcopy(image.mask),
             copy.deepcopy(image.dimensions),

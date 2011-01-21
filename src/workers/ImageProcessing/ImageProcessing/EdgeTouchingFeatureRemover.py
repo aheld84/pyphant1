@@ -40,22 +40,23 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
+from pyphant.core import (Worker, Connectors)
+import EdgeFillWorker
+import copy
 
-import EdgeFillWorker, ImageProcessing, copy
 
 class EdgeTouchingFeatureRemover(EdgeFillWorker.EdgeFillWorker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "Edge-touching-feature remover"
+    name = "Remove Edge Touching Features"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def fillFeatures(self, image, subscriber=0):
-        result=copy.deepcopy(image)
-        im=result.data
-        self.fillFromEdge(im, ImageProcessing.FEATURE_COLOR, ImageProcessing.BACKGROUND_COLOR)
+        result = copy.deepcopy(image)
+        im = result.data
+        from ImageProcessing import (FEATURE_COLOR, BACKGROUND_COLOR)
+        self.fillFromEdge(im, FEATURE_COLOR, BACKGROUND_COLOR)
         result.seal()
         return result
