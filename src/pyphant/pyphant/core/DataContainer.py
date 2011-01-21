@@ -295,6 +295,79 @@ class SampleContainer(DataContainer):
         return len(self.columns)
 
     def calcColumn(self, exprStr, shortname, longname):
+        """
+        Return a sealed FieldContainer generated from `exprStr`.
+
+        Parameters
+        ----------
+        exprStr : str
+            Expression has to be a string. Specifies the mathematical
+            operations which will be evaluated to generate a new FieldContainer
+            containing the result. `exprStr` may contain FieldContainers,
+            PhysicalQuantities, Booleans and Numbers as well as the operators
+            listed below.
+
+        shortname : str
+            The `shortname` of the returned FieldContainer.
+
+        longname : str
+            The `longname`of the returned FieldContainer.
+
+        Syntax
+        ------
+        FieldContainer
+            FieldContainers can be adressed by their `shortname`or `longname`.
+            For a FieldContainer with shortname="exampleFC" the syntax within
+            `exprStr` is:
+                col("exampleFC")
+            where `col` stands for column and may be `Col` or `COL` as well.
+            Adressing by `longname` works analogously.
+
+        PhysicalQuantity
+            Within the expression PhysicalQuantities have to be enquoted:
+                "10kg", "100 m", "5 kg * m / s ** 2"
+            where the whitespaces are optional.
+
+        Booleans and Numbers
+            Can just be used without quotes or braces within `exprStr`:
+                True, False, 1.2, 10
+
+        Operators
+        ---------
+        A list of all implemented operations that can be used within `exprStr`
+        sorted by precedence from lowest precedence (least binding) to highest
+        precedence (most binding):
+
+        Comparisons: <, <=, >, >=, <>, !=, ==
+        Bitwise OR: |
+        Bitwise XOR: ^
+        Bitwise AND: &
+        Addition and Subtraction: +, -
+        Multiplication, Division: *, /
+        Positive, Negative, Bitwise NOT: +x, -x, ~x
+
+        Not implemented: and, or, not, **, //, %, if - else
+
+        Examples
+        --------
+        Some examples of valid expressions will be given.
+        Data:
+            distance = FieldContainer(scipy.array([5., 10., 1.]),
+                                    Quantity('1.0 m'),
+                                    longname=u"Distance",
+                                    shortname=u"s")
+            time = FieldContainer(scipy.array([3., 4., 5.]),
+                                    Quantity('1.0 s'),
+                                    longname=u"Time",
+                                    shortname=u"t")
+        Examplary expressions:
+            exprStr = "col("Distance") / col("Time")"
+            exprStr = "col("Distance") - "1 m"
+            exprStr = "col("t") >= "4 s""
+            exprStr = "(col('s') > "1 m") & (COL("Time") == "3s")"
+
+        """
+        # at DocString: Are remainder operators (//, %) implemented?
         import ast
         rpn = ReplaceName(self)
         expr = compile(exprStr, "<calcColumn>", 'eval', ast.PyCF_ONLY_AST)
@@ -312,6 +385,24 @@ class SampleContainer(DataContainer):
         return field
 
     def filter(self, exprStr, shortname='', longname=''):
+        """
+        Return a sealed FieldContainer containing only those rows where
+        `exprStr` was evaluated to be True. This worker replaces the old
+        FilterWorker and is mostly capable of the same operations, yet the
+        syntax has changed slightly.
+
+        Parameters
+        ----------
+        exprStr : str
+            A string with a logical expression that has to evaluate to be
+            either True or False. This can be for example an inequality or
+            a comparison. For all possible operations and a description of
+            the syntax as well as examples see `calcColumn`.
+
+        shortname, longname : str, default=''
+            Specify the short and long name of the resulting FC.
+
+        """
         shortname = shortname or self.shortname
         longname = longname or self.longname
         if exprStr == '':
@@ -323,6 +414,22 @@ class SampleContainer(DataContainer):
         return self.extractRows(mask, shortname, longname)
 
     def extractRows(self, mask, shortname, longname):
+        """
+        Return a sealed FieldContainer that contains only selected rows. The
+        selection is specified via the `mask`.
+
+        Parameters
+        ----------
+        mask : numpy array of Boolean values
+            The length of the array has to be equal to the length of the FC
+            on which the method is being performed. If the value of mask[n] is
+            True, the element FC[n] of the FieldContainer is part of the
+            product, else it is discarded.
+
+        shortname, longname : str
+            Specify the short and long name of the resulting FC.
+
+        """
         maskedcolumns = []
         for col in self.columns:
             try:
