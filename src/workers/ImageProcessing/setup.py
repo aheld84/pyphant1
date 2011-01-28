@@ -14,7 +14,7 @@ __author__ = "Klaus Zimmermann, Andreas W. Liehr"
 __id__ = '$Id$'
 __revision__ = '$Revision: 25 $'
 
-VERSION = '0.1'
+VERSION = '0.8a1'
 
 import setuptools
 

@@ -11,7 +11,7 @@ __author__ = "Klaus Zimmermann, Kai Kaminski"
 __id__ = '$Id$'
 __revision__ = '$Revision: 25 $'
 
-VERSION = '0.1'
+VERSION = '0.8a1'
 
 import setuptools
 
@@ -20,7 +20,7 @@ setuptools.setup(
     version = VERSION,
     author = __author__,
     description = __doc__,
-    install_requires=['pyphant>=0.4alpha3'],
+    install_requires=['pyphant>=0.8a1'],
     packages = ['tools'],
     entry_points = """
     [pyphant.workers]
