@@ -44,7 +44,7 @@ class ExtractRows(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "ExtractRows"
+    name = "Extract Row"
     _sockets = [("table", Connectors.TYPE_ARRAY),
                 ("mask", Connectors.TYPE_IMAGE)]
     _params = [("shortname", "Shortname", '', None),

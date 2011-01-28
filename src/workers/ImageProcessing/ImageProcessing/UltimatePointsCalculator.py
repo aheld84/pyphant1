@@ -48,7 +48,7 @@ class UltimatePointsCalculator(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "Ultimate points calculator"
+    name = "Ultimate Points"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 
     @Worker.plug(Connectors.TYPE_ARRAY)

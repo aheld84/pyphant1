@@ -48,7 +48,7 @@ class InvertWorker(Worker.Worker):
     API=2
     VERSION=1
     REVISION="$Revision$"
-    name = "Inverter"
+    name = "Invert"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)

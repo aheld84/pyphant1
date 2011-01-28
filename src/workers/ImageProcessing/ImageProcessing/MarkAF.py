@@ -66,7 +66,7 @@ class MarkAF(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "MarkAF"
+    name = "Mark Inclusion"
     _SETMASK = 'Set mask according to focused slices'
     _CUTBUTLABELS = 'Cut everything but focused labels'
     _params = [('method', 'Method',

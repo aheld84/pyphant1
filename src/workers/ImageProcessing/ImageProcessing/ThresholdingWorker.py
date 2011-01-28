@@ -52,7 +52,7 @@ class ThresholdingWorker(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "Thresholdfilter"
+    name = "Threshold"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("threshold", "Threshold", 160, None),
 #               ("mode", "Mode(absolute/coverage)", ["absolute", "coverage"], None)

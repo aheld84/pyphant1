@@ -56,7 +56,7 @@ class SkeletonizeFeature(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "Skeletoniser"
+    name = "Skeletonize"
     _sockets = [ ("image", Connectors.TYPE_IMAGE)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)

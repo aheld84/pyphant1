@@ -73,7 +73,7 @@ class ErrorEstimator(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision: 4276 $"[11:-1]
-    name = "Error Estimator"
+    name = "Estimate Error"
 
     _sockets = [("osc", Connectors.TYPE_IMAGE)]
     _params = [ ("dA", u"Window Size in number of data points", 10, None)

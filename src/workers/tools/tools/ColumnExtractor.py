@@ -46,7 +46,7 @@ class ColumnExtractor(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "Column Extractor"
+    name = "Extract Column"
 
     _sockets = [("osc", Connectors.TYPE_ARRAY)]
     _params = [("column", u"Column", [u"Absorption"], None),

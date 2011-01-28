@@ -124,7 +124,7 @@ class AutoFocus(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "AutoFocus"
+    name = "Autofocus"
     _sockets = [("zstack", Connectors.TYPE_ARRAY)]
     _params = [("gradientThreshold", "Gradient threshold",
                 "8.0 mum**-1", None),

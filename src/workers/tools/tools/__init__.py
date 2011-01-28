@@ -47,4 +47,5 @@ workers=[
     "AddColumn",
     "ColumnExtractor",
     "Slicing"
+    "MRA",
     ]

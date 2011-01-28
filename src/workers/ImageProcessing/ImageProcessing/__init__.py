@@ -58,7 +58,7 @@ workers=[
     "InvertWorker",
     "MarkAF",
     #"Medianiser",
-    "NDImageWorker",
+    #"NDImageWorker",
     "SkeletonizeFeature",
     #"SliceSelector",
     "ThresholdingWorker",

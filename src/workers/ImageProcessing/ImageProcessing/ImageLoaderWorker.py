@@ -53,7 +53,7 @@ class ImageLoaderWorker(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "Image Loader"
+    name = "Load Image"
 ##     lengthUnits=[prefix[0]+'m' for prefix
 ##                  in quantities._prefixes if prefix[1]>1]
 ##     lengthUnits.append('m')

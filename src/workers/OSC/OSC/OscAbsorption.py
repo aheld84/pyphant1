@@ -140,7 +140,7 @@ class OscMapper(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "Osc Mapper"
+    name = "Mapper"
 
     _sockets = [("osc", Connectors.TYPE_ARRAY)]
     _params = [("xAxis", u"x-Axis", [u"horizontal_table_position"], None),
