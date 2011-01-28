@@ -37,12 +37,11 @@ __author__ = "$Author: liehr $"
 __version__ = "$Revision: 20 $"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
+from pyphant.core import (Worker, Connectors, Param, DataContainer)
+from pyphant.workers import ImageProcessing
+import scipy
+import copy
 
-import pyphant.workers.ImageProcessing
-
-import scipy, copy
 
 class BiThresholdingWorker(Worker.Worker):
     API = 2
@@ -50,7 +49,7 @@ class BiThresholdingWorker(Worker.Worker):
     REVISION = "$Revision: 20 $"[11:-1]
     name = "Bi-Thresholdfilter"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
-    _params = [("lowerThreshold", "lower threshold", 125 , None),
+    _params = [("lowerThreshold", "lower threshold", 125, None),
                ("upperThreshold", "upper threshold", 180, None)]
     lowerImage = None
     lowerThreshold = None
@@ -58,53 +57,52 @@ class BiThresholdingWorker(Worker.Worker):
     upperThreshold = None
     intermediateImage = None
 
-    def getBinary(self,image,threshold):
-        binaryImage =  scipy.where( image.data < threshold,
-                                   ImageProcessing.FEATURE_COLOR,
-                                   ImageProcessing.BACKGROUND_COLOR )
+    def getBinary(self, image, threshold):
+        binaryImage = scipy.where(image.data < threshold,
+                                  ImageProcessing.FEATURE_COLOR,
+                                  ImageProcessing.BACKGROUND_COLOR)
         return binaryImage
 
-    def computeCovering(self,data):
-        nx,ny = data.shape
+    def computeCovering(self, data):
+        nx, ny = data.shape
         count = 0
-        for x in xrange(0,nx):
-            for y in xrange(0,ny):
-                if data[x,y] == 0:
+        for x in xrange(0, nx):
+            for y in xrange(0, ny):
+                if data[x, y] == 0:
                     count += 1
-        covering = float(count)/(nx * ny)
+        covering = float(count) / (nx * ny)
         return covering
 
-    def getLowerImage(self,image):
-        if self.lowerImage == None or self.lowerThreshold != self.paramLowerThreshold.value:
-            self.lowerThreshold=self.paramLowerThreshold.value
-            self.lowerImage = self.getBinary(image,self.lowerThreshold)
+    def getLowerImage(self, image):
+        if self.lowerImage == None or\
+                self.lowerThreshold != self.paramLowerThreshold.value:
+            self.lowerThreshold = self.paramLowerThreshold.value
+            self.lowerImage = self.getBinary(image, self.lowerThreshold)
         return self.lowerImage
 
-    def getUpperImage(self,image):
-        if self.upperImage == None or self.upperThreshold != self.paramUpperThreshold.value:
-            self.upperThreshold=self.paramUpperThreshold.value
-            self.upperImage = self.getBinary(image,self.upperThreshold)
+    def getUpperImage(self, image):
+        if self.upperImage == None or\
+            self.upperThreshold != self.paramUpperThreshold.value:
+            self.upperThreshold = self.paramUpperThreshold.value
+            self.upperImage = self.getBinary(image, self.upperThreshold)
         return self.upperImage
 
-    def getIntermediate(self,image):
+    def getIntermediate(self, image):
         if self.intermediateImage == None:
             lowerImage = self.getLowerImage(image)
             upperImage = self.getUpperImage(image)
-
-            intermediateArray = scipy.absolute(lowerImage-upperImage)
-            max=scipy.amax(intermediateArray)
-            min=scipy.amin(intermediateArray)
+            intermediateArray = scipy.absolute(lowerImage - upperImage)
+            max = scipy.amax(intermediateArray)
+            min = scipy.amin(intermediateArray)
             self.intermediateImage = max + min - intermediateArray
         return self.intermediateImage
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def threshold(self, image, subscriber=0):
-
         data = self.getIntermediate(image)
-
         result = DataContainer.FieldContainer(data,
-                                              dimensions=copy.deepcopy(image.dimensions),
-                                              longname=u"Binary Image", shortname=u"B")
+                                dimensions=copy.deepcopy(image.dimensions),
+                                longname=u"Binary Image", shortname=u"B")
         result.seal()
         return result
 
@@ -113,33 +111,30 @@ class BiThresholdingWorker(Worker.Worker):
         intermediate = self.computeCovering(self.getIntermediate(image))
         upper = 1.0 - lower - intermediate
 
-        return 100.0*scipy.array([lower,intermediate,upper])
+        return 100.0 * scipy.array([lower, intermediate, upper])
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def covering(self, image, subscriber=0):
-        lowerThreshold=self.paramLowerThreshold.value
-        upperThreshold=self.paramUpperThreshold.value
-
+        lowerThreshold = self.paramLowerThreshold.value
+        upperThreshold = self.paramUpperThreshold.value
         lowerCover, intermediateCover, upperCover = self.getCovering(image)
-
         data = image.data.copy()
-        nx,ny = data.shape
-
-        for x in xrange(0,nx):
-            for y in xrange(0,ny):
-                if data[x,y] < upperThreshold:
-                    if data[x,y] < lowerThreshold:
-                        data[x,y] = lowerCover
+        nx, ny = data.shape
+        for x in xrange(0, nx):
+            for y in xrange(0, ny):
+                if data[x, y] < upperThreshold:
+                    if data[x, y] < lowerThreshold:
+                        data[x, y] = lowerCover
                     else:
-                        data[x,y] = intermediateCover
+                        data[x, y] = intermediateCover
                 else:
-                    data[x,y] = upperCover
-
+                    data[x, y] = upperCover
         covering = self.getCovering(image)
         print covering
         result = DataContainer.FieldContainer(data,
-                                              dimensions=copy.deepcopy(image.dimensions),
-                                              longname=u"Covering Image %s" % covering, shortname=u"C")
+                                    dimensions=copy.deepcopy(image.dimensions),
+                                    longname=u"Covering Image %s" % covering,
+                                    shortname=u"C")
         result.seal()
         return result
 
@@ -149,15 +144,14 @@ class BiThresholdingWorker(Worker.Worker):
                                   self.paramUpperThreshold.value,
                                   scipy.amax(image.data)])
         coveringVec = self.getCovering(image)
-
-
-        theta=DataContainer.FieldContainer(thresholds, '1', longname='Value of upper threshold',shortname='\theta')
-        A    =DataContainer.FieldContainer(coveringVec, '1', longname='Covering',shortname='A')
-
-        print theta.data,thresholds
-        print A.data,coveringVec
-
-        res = DataContainer.SampleContainer([theta,A],
-                                            u"Covering of image parts",u"X_A")
+        theta = DataContainer.FieldContainer(thresholds, '1',
+                                        longname='Value of upper threshold',
+                                        shortname='\theta')
+        A = DataContainer.FieldContainer(coveringVec, '1',
+                                         longname='Covering', shortname='A')
+        print theta.data, thresholds
+        print A.data, coveringVec
+        res = DataContainer.SampleContainer([theta, A],
+                                            u"Covering of image parts", u"X_A")
         res.seal()
         return res

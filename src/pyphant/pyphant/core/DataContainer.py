@@ -36,7 +36,7 @@ u"""
 =============================================================================
 
 The *DataContainer* is Pypahnt's preferred data exchange class. It is
-designed to maximise the interoperability of the various workers
+designed to maximize the interoperability of the various workers
 provided by Pyphant.
 
 It can be seen as an interface for exchanging data between workers and
@@ -58,7 +58,7 @@ There are two kinds of DataContainers:
 =============================================================
 
 The *SampleContainer* combines different FieldContainers that have the
-same numer of sample points to a table-like representation. It stores
+same number of sample points to a table-like representation. It stores
 different observations on the same subject per row whereby each column
 comprises a quantity of the same kind. Each row can be regarded as the
 realization of a random variable.
@@ -71,11 +71,9 @@ __version__ = "$Revision$"
 
 import copy, hashlib, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse
-from pyphant.quantities import (isQuantity,
-                                                   Quantity)
+from pyphant.quantities import (isQuantity, Quantity)
 import Helpers
 from ast import (NodeTransformer, NodeVisitor)
-
 import logging
 _logger = logging.getLogger("pyphant")
 
@@ -84,7 +82,7 @@ _logger = logging.getLogger("pyphant")
 enc = lambda s: unicode(s, "utf-8")
 
 def parseId(id):
-    u"""Returns tupple (HASH, TYPESTRING) from given .id attribute."""
+    u"""Returns tuple (HASH, TYPESTRING) from given .id attribute."""
     resUri = urlparse.urlsplit(id)
     return resUri[2].split('/')[-1].split('.') #(hash, uriType)
 

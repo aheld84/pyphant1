@@ -31,7 +31,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The Slicing Worker is a class of Pyphant's OSC Toolbox. It cut out one
+The Slicing Worker is a class of Pyphant's tools toolbox. It cuts out one
 part of a field and provides it as a new field to work on.
 """
 
@@ -43,7 +43,6 @@ __version__ = "$Revision$"
 import numpy
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
-
 import scipy.interpolate
 from pyphant import quantities
 import logging, copy, math
@@ -61,28 +60,31 @@ class Slicing(Worker.Worker):
         super(Slicing, self).__init__(parent, annotations)
         self.oldField = None
 
-    def refreshParams(self,subscriber=None,field=None):
+    def refreshParams(self, subscriber=None, field=None):
         if self.socketField.isFull() or field != None:
             try:
-                templ = self.socketField.getResult( subscriber )
+                templ = self.socketField.getResult(subscriber)
             except:
                 templ = field
             if templ == self.oldField:
                 return
             self.oldField = templ
             self._params = []
-            for i,dim in enumerate(templ.dimensions):
+            for i, dim in enumerate(templ.dimensions):
                 if quantities.isQuantity(dim.unit):
-                    intStart = (dim.data.min()*dim.unit).value
-                    intEnd   = (dim.data.max()*dim.unit).value
+                    intStart = (dim.data.min() * dim.unit).value
+                    intEnd   = (dim.data.max() * dim.unit).value
                     unitname = dim.unit.unit.name()
                 else:
-                    intStart = dim.data.min()*dim.unit
-                    intEnd   = dim.data.max()*dim.unit
+                    intStart = dim.data.min() * dim.unit
+                    intEnd   = dim.data.max() * dim.unit
                     unitname = ''
-                param    = ('dim%i'%i,
-                            "%s %s (index #0:%i):" % (dim.longname,dim.shortname,len(dim.data)-1),
-                             "%.4f %s:%.4f %s"%(intStart,unitname,intEnd,unitname),
+                param = ('dim%i'%i,
+                            "%s %s (index #0:%i):" % (dim.longname,
+                                                      dim.shortname,
+                                                      len(dim.data) - 1),
+                             "%.4f %s:%.4f %s" % (intStart, unitname, intEnd,
+                                                unitname),
                              None)
                 self._params.append(param)
             self._params.reverse()
@@ -90,9 +92,9 @@ class Slicing(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def extract(self, field, subscriber=0):
-        if not hasattr(self,'paramDim0'):
+        if not hasattr(self, 'paramDim0'):
             self.refreshParams()
-        params = [str(eval('self.paramDim%i.value'%i))
+        params = [str(eval('self.paramDim%i.value' %i))
                   for i in range(len(field.dimensions))]
         for dim, arg in enumerate(params):
             if arg.startswith('#'):
@@ -100,27 +102,31 @@ class Slicing(Worker.Worker):
                 if arg == '#:':
                     start = 0
                     end = len(field.dimensions[dim].data)
-                elif arg[1]==':':
+                elif arg[1] == ':':
                     start = 0
-                    end   = long(arg[2:])+1
-                elif arg[-1]==':':
-                    start = long(arg[1:-1])
+                    end   = long(arg[2:]) + 1
+                elif arg[-1] == ':':
+                    start = long(arg[1: -1])
                     end = len(field.dimensions[dim].data)
                 else:
-                    ind = map(long,arg[1:].split(':'))
+                    ind = map(long, arg[1:].split(':'))
                     start = ind[0]
                     if len(ind) == 1:
-                        end = ind[0]+1
+                        end = ind[0] + 1
                     elif len(ind) >= 2:
-                        end = ind[1]+1
+                        end = ind[1] + 1
                     if len(ind) == 3:
                         step = ind[2]
                     if len(ind) > 3:
-                        raise ValueError("Illegal slice with more than two colons.")
-                params[dim]=slice(start, end, step)
+                        raise ValueError("Illegal slice with "
+                                         "more than two colons.")
+                params[dim] = slice(start, end, step)
             else:
                 s = DataContainer.slice2ind(arg, field.dimensions[dim])
-                params[dim] = slice(s.start, min(s.stop+1,len(field.dimensions[dim].data)), s.step)
+                params[dim] = slice(s.start,
+                                    min(s.stop + 1,
+                                        len(field.dimensions[dim].data)),
+                                    s.step)
         result = copy.deepcopy(field[params])
         result.seal()
         return result
