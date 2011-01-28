@@ -31,7 +31,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The Distance Mapper Worker is a class of Pyphant's Image Processing
+The Map Distance worker is a class of Pyphant's Image Processing
 Toolbox. It is used to determine the size of respective features in
 binary images through calculating the distance of every pixel to the
 nearest background pixel.
@@ -44,7 +44,6 @@ __version__ = "$Revision: 3671 $"
 # $Source$
 
 from pyphant.core import (Worker, Connectors, DataContainer)
-
 import scipy
 import copy
 from ImageProcessing import FEATURE_COLOR
@@ -61,11 +60,11 @@ class Metrics:
         self.dydx = self.dy / self.dx
         rt2 = scipy.sqrt(1.0 + self.dydx ** 2)
         self.metric = scipy.array(
-            [[rt2, self.dydx, rt2], [1, 2, 1], [rt2,  self.dydx, rt2]]
+            [[rt2, self.dydx, rt2], [1, 2, 1], [rt2, self.dydx, rt2]]
             )
 
     def distance(self,square):
-        assert square.shape == (3,3), 'Method distance expects a 3x3 matrix '\
+        assert square.shape == (3, 3), 'Method distance expects a 3x3 matrix '\
                'as input, but got a %ix%i matrix!' % square.shape
         metric = self.metric.copy()
         result = scipy.amin(metric + square)
@@ -95,11 +94,11 @@ class DistanceMapper(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def calculateDistanceMap(self, image, subscriber=0):
         """
-        This worker calculates the euklidean distance map of the
-        (binary) image provided.
-        Features are expected to be black(i.e. 0), background is expected white.
+        This worker calculates the Euklidean distance map of the
+        (binary) image provided. Features are expected to be black (i.e. 0),
+        background is expected white.
         The given image is modified in place!
-        The Algorithm used is modified after the solution discussed in
+        The algorithm used is modified after the solution discussed in
         "The Image Processing Handbook, Fourth Edition"
         by John C. Russ (p. 427ff).
         """
@@ -113,11 +112,11 @@ class DistanceMapper(Worker.Worker):
         g = nx * nx + ny * ny
         a = scipy.where(im == FEATURE_COLOR, g, 0).astype('d')
         rowPercentage = 50.0 / ny
-        featurePixels=[]
+        featurePixels = []
         for y in xrange(1, ny - 1):
             subscriber %= y * rowPercentage
             for x in xrange(1, nx - 1):
-                if a[x, y]>0:
+                if a[x, y] > 0:
                     a[x, y] = metric.distance(a[x - 1 : x + 2, y - 1 : y + 2])
                     featurePixels.append((x, y))
         subscriber %= 50
@@ -127,7 +126,7 @@ class DistanceMapper(Worker.Worker):
             for (x, y) in reversed(featurePixels):
                 acc += perc
                 subscriber %= acc
-                a[x, y]=metric.distance(a[x - 1 : x + 2, y - 1 : y + 2])
+                a[x, y] = metric.distance(a[x - 1 : x + 2, y - 1 : y + 2])
         a = scipy.where(a == g, 0, a)
         result = DataContainer.FieldContainer(
             a[1:-1, 1:-1] * metric.dx,

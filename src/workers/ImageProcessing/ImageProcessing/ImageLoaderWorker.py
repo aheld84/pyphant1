@@ -31,7 +31,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The ImageLoader Worker is a class of Pyphant's Image Processing
+The Load Image worker is a class of Pyphant's Image Processing
 Toolbox. It simply loads an image from the location given in the
 worker's configuration.
 """
@@ -43,10 +43,8 @@ __version__ = "$Revision$"
 
 import PIL.Image as Image
 import scipy
-from pyphant import quantities
-
-from pyphant.core import (Worker, Connectors,
-                          Param, DataContainer)
+from pyphant.quantities import Quantity
+from pyphant.core import (Worker, Connectors, DataContainer)
 
 
 class ImageLoaderWorker(Worker.Worker):
@@ -60,10 +58,10 @@ class ImageLoaderWorker(Worker.Worker):
 ##     lengthUnits+=[prefix[0]+'m' for prefix
 ##                   in quantities._prefixes if prefix[1]<1]
 
-    _params=[("filename", u"Filename", "", Connectors.SUBTYPE_FILE),
-             ("fieldUnit", u"Unit of the field", 1, None),
-             ("xScale", u"Scale of the x-axis (eg. 100nm)", '1mum', None),
-             ("yScale", u"Scale of the y-axis (eg. 100nm)", 'link2X', None)]
+    _params = [("filename", u"Filename", "", Connectors.SUBTYPE_FILE),
+               ("fieldUnit", u"Unit of the field", 1, None),
+               ("xScale", u"Scale of the x-axis (eg. 100nm)", '1mum', None),
+               ("yScale", u"Scale of the y-axis (eg. 100nm)", 'link2X', None)]
 
 ## Result is colour image
 ##     @Worker.plug(Connectors.TYPE_IMAGE)
@@ -73,35 +71,39 @@ class ImageLoaderWorker(Worker.Worker):
 ##         size=im.size
 ##         print scipy.fromimage(im).shape
 ##         result = DataContainer.FieldContainer(scipy.fromimage(im),
-##                                               quantities.Quantity(self.paramFieldUnit.value, 'mum'))
-##         result.dimensions[0].unit=quantities.Quantity(1./float(size[0]), self.paramXUnit.value)
-##         result.dimensions[1].unit=quantities.Quantity(1./float(size[1]), self.paramYUnit.value)
+##                       Quantity(self.paramFieldUnit.value, 'mum'))
+##         result.dimensions[0].unit = Quantity(1. / float(size[0]),
+##                                                    self.paramXUnit.value)
+##         result.dimensions[1].unit = Quantity(1. / float(size[1]),
+##                                                    self.paramYUnit.value)
 ##         return result
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def loadImageAsGreyScale(self, subscriber=0):
-        im=Image.open(self.paramFilename.value)
+        im = Image.open(self.paramFilename.value)
         if im.mode == "I;16":
             im = im.convert("I")
             data = scipy.misc.fromimage(im).astype("int16")
         else:
             data = scipy.misc.fromimage(im, flatten=True)
         Ny, Nx = data.shape
-        xUnit = quantities.Quantity(self.paramXScale.value.encode('utf-8'))
-        xAxis =  DataContainer.FieldContainer(scipy.linspace(0.0,xUnit.value,Nx,True),
+        xUnit = Quantity(self.paramXScale.value.encode('utf-8'))
+        xAxis =  DataContainer.FieldContainer(scipy.linspace(0.0, xUnit.value,
+                                                             Nx, True),
                                               xUnit / xUnit.value,
                                               longname = 'x-coordinate',
                                               shortname = 'x')
         if self.paramYScale.value == 'link2X':
             yUnit = xUnit * float(Ny) / Nx
         else:
-            yUnit = quantities.Quantity(self.paramYScale.value.encode('utf-8'))
-        yAxis =  DataContainer.FieldContainer(scipy.linspace(0.0,yUnit.value,Ny,True),
+            yUnit = Quantity(self.paramYScale.value.encode('utf-8'))
+        yAxis =  DataContainer.FieldContainer(scipy.linspace(0.0, yUnit.value,
+                                                             Ny, True),
                                               yUnit / yUnit.value,
                                               longname = 'y-coordinate',
                                               shortname = 'y')
         try:
-            FieldUnit = quantities.Quantity(self.paramFieldUnit.value.encode('utf-8'))
+            FieldUnit = Quantity(self.paramFieldUnit.value.encode('utf-8'))
         except AttributeError:
             FieldUnit = self.paramFieldUnit.value
         result = DataContainer.FieldContainer(data,
@@ -111,5 +113,3 @@ class ImageLoaderWorker(Worker.Worker):
                                               dimensions=[yAxis, xAxis])
         result.seal()
         return result
-
-
