@@ -37,8 +37,8 @@ __author__ = "$Author: liehr $"
 __version__ = "$Revision: 20 $"
 # $Source$
 
-from pyphant.core import (Worker, Connectors, Param, DataContainer)
-from pyphant.workers import ImageProcessing
+from pyphant.core import (Worker, Connectors, DataContainer)
+import ImageProcessing
 import scipy
 import copy
 
