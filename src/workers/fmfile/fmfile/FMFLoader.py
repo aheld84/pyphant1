@@ -40,12 +40,18 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-import zipfile, numpy, re, collections, copy, StringIO, os.path
+import zipfile
+import numpy
+import re
+import collections
+import copy
+import StringIO
+import os.path
 import codecs
-from pyphant.core import (Worker, Connectors,
-                          Param, DataContainer)
-from pyphant.quantities import Quantity,isUnit,isQuantity
-from pyphant.quantities.ParseQuantities import parseQuantity, parseVariable, parseDateTime, str2unit
+from pyphant.core import (Worker, Connectors, DataContainer)
+from pyphant.quantities import (Quantity, isUnit, isQuantity)
+from pyphant.quantities.ParseQuantities import (parseQuantity, parseVariable,
+                                                parseDateTime, str2unit)
 import logging
 _logger = logging.getLogger("pyphant")
 
@@ -54,7 +60,7 @@ def normation(normationStr):
         unit = Quantity(str(normationStr))
     except:
         try:
-            unit = Quantity(1.0,str(normationStr))
+            unit = Quantity(1.0, str(normationStr))
         except:
             unit = float(normationStr)
     return unit
@@ -64,71 +70,74 @@ def loadDataFromZip(filename, subscriber=1):
     names = z.namelist()
     names.sort()
     total = len(names)
-    assert total>0, "The loaded FMF archive named %s does not contain any files." % filename
+    assert total > 0, "The loaded FMF archive named %s \
+                        does not contain any files." % filename
     data = {}
-    for i,pixelName in enumerate(names):
+    for i, pixelName in enumerate(names):
         b = z.read(pixelName)
         rawContainer = readSingleFile(b, pixelName)
-        if len(rawContainer)==1:
+        if len(rawContainer) == 1:
             data[pixelName] = rawContainer[0]
         else:
             data[pixelName] = rawContainer
-        subscriber %= float(i+1)/total*100.0
+        subscriber %= float(i + 1) / total * 100.0
+    return data, names
 
-    return data,names
-
-def collectAttributes(data,names):
+def collectAttributes(data, names):
     """Function collectAttributes(data)
     data: dictionary referencing the FMF attributes by the respective filenames
-    returns tupple (dictionary of common attributes, dictionary of varibale attributes)
+    returns tuple (dictionary of common attributes, dictionary of variable
+    attributes).
     """
     #Collect attributes, define filename as new attribute
     atts = {u'filename': names}
     for filename in names:
         sc = data[filename]
-        for section,sectionDict in sc.attributes.iteritems():
-            for key,treetoken in sectionDict.iteritems():
+        for section, sectionDict in sc.attributes.iteritems():
+            for key, treetoken in sectionDict.iteritems():
                 attlist = atts.setdefault(key, [])
                 attlist.append(treetoken)
     #Separate common attributes from variable attributes
     commonAttr = {}
     variableAttr = {}
-    for k,l in atts.iteritems():
+    for k, l in atts.iteritems():
         v = l[0]
-        isConst=True
+        isConst = True
         for i in l[1:]:
-            if i!=v:
-                isConst=False
+            if i != v:
+                isConst = False
                 #break
         if isConst:
-            commonAttr[k]=v
+            commonAttr[k] = v
         else:
-            variableAttr[k]=l
+            variableAttr[k] = l
     return (commonAttr, variableAttr)
+
 
 class column2Field:
     def __init__(self):
         self.Np = 0
         self.Nt = 0
 
-    def norm(self,datum,unit,error=False):
+    def norm(self, datum, unit, error=False):
         if isQuantity(datum):
             try:
                 return datum.inUnitsOf(unit).value
             except:
-                raise ValueError, "The datum %s cannot be expressed in terms of %s." % (datum,unit)
+                raise ValueError, "The datum %s cannot be expressed \
+                                    in terms of %s." % (datum, unit)
         elif error:
             return 0.0
         else:
             return numpy.NaN
 
-    def __call__(self,longname,column):
-        tupples = filter(lambda c: type(c)==type((0,)),column)
-        hasTupples = len(tupples)>0
+    def __call__(self, longname, column):
+        tupples = filter(lambda c: type(c) == type((0,)), column)
+        hasTupples = len(tupples) > 0
         if hasTupples:
-            tuppleLength = max(map(len,tupples))
+            tuppleLength = max(map(len, tupples))
         if hasTupples:
-            if tuppleLength==2:
+            if tuppleLength == 2:
                 indexDatum = 0
                 indexError = 1
                 if isQuantity(tupples[0][1]) and tupples[0][1].isCompatible('s'):
@@ -137,20 +146,20 @@ class column2Field:
                 else:
                     shortname = 'p_%i' % self.Np
                     self.Np += 1
-                for i,element in enumerate(column):
-                    if not type(element)==type((0,)):
-                        column[i]=(numpy.NaN,None)
-            elif tuppleLength==3:
+                for i, element in enumerate(column):
+                    if not type(element) == type((0,)):
+                        column[i] = (numpy.NaN, None)
+            elif tuppleLength == 3:
                 shortname = tupples[0][0]
                 indexDatum = 1
                 indexError = 2
-                for i,element in enumerate(column):
-                    if not type(element)==type((0,)):
-                        column[i]=(shortname,numpy.NaN,None)
+                for i, element in enumerate(column):
+                    if not type(element) == type((0,)):
+                        column[i] = (shortname, numpy.NaN, None)
             try:
                 data = [element[indexDatum] for element in column]
             except:
-                print longname,column
+                print longname, column
                 import sys
                 sys.exit(0)
             error = [element[indexError] for element in column]
@@ -159,25 +168,27 @@ class column2Field:
                 unit = 1.0
             else:
                 unit = unitCandidates[0]
-            normation = lambda arg: self.norm(arg,unit)
-            field = numpy.array(map(normation,data))
-            ErrorNormation = lambda arg: self.norm(arg,unit,error=True)
+            normation = lambda arg: self.norm(arg, unit)
+            field = numpy.array(map(normation, data))
+            ErrorNormation = lambda arg: self.norm(arg, unit, error=True)
             result = DataContainer.FieldContainer(field,
-                                                  error=numpy.array(map(ErrorNormation,error)),
-                                                  mask = numpy.isnan(field),
-                                                  unit=Quantity(1.0, unit),
-                                                  shortname=shortname,longname=longname)
+                                error=numpy.array(map(ErrorNormation, error)),
+                                mask=numpy.isnan(field),
+                                unit=Quantity(1.0, unit),
+                                shortname=shortname,
+                                longname=longname)
         else:
             #Joining lists of strings
-            if type(column[0])==type([]):
+            if type(column[0]) == type([]):
                 firstElement = column[0][0]
             else:
                 firstElement = column[0]
-            if type(firstElement) in (type(''),type(u'')):
+            if type(firstElement) in (type(''), type(u'')):
                 for i in xrange(len(column)):
                     if type(column[i]) == type([]):
                         column[i] = ','.join(column[i])
-            result = DataContainer.FieldContainer(numpy.array(column),longname=longname)
+            result = DataContainer.FieldContainer(numpy.array(column),
+                                                  longname=longname)
         return result
 column2FieldContainer = column2Field()
 
@@ -193,17 +204,20 @@ def unpackAndCollateFields(variableAttr, data):
                 conversionFactor = normation(field.unit) / units[field.longname]
                 fieldData[field.longname].append(field.data * conversionFactor)
                 dimensionNames = [dim.longname for dim in field.dimensions
-                                  if dim.longname!=u'Index']
-                if len(dimensionNames)>1:
+                                  if dim.longname != u'Index']
+                if len(dimensionNames) > 1:
                     _logger.warning("Is specified, but has not been tested!")
                 if dependencies[field.longname] != dimensionNames:
-                    raise ValueError, "The data sets of the FMF archive have inconsistent dependencies in section [*data definitions]."
+                    raise ValueError, "The data sets of the FMF archive have \
+                                        inconsistent dependencies in section \
+                                        [*data definitions]."
             else:
-                fieldData[field.longname]=[field.data]
-                dependencies[field.longname]=[dim.longname for dim in field.dimensions
-                                               if dim.longname!=u'Index']
+                fieldData[field.longname] = [field.data]
+                dependencies[field.longname] = [dim.longname for dim
+                                                in field.dimensions
+                                                if dim.longname != u'Index']
                 units[field.longname] = normation(field.unit)
-                shortnames[field.longname]=field.shortname
+                shortnames[field.longname] = field.shortname
     return fieldData, dependencies, units, shortnames
 
 def checkAndCondense(data):
@@ -213,15 +227,17 @@ def checkAndCondense(data):
     return reference
 
 def readZipFile(filename, subscriber=1):
-    data,names = loadDataFromZip(filename, subscriber)
-    commonAttr, variableAttr = collectAttributes(data,names)
+    data, names = loadDataFromZip(filename, subscriber)
+    commonAttr, variableAttr = collectAttributes(data, names)
     #Wrap variable attributes into FieldContainer
-    containers = [ column2FieldContainer(longname, column) for longname, column in variableAttr.iteritems()]
-    #Process SampleContainers of parsed FMF files and skip independent variables, which are used as dimensions.
+    containers = [column2FieldContainer(longname, column) for longname, column
+                  in variableAttr.iteritems()]
+    #Process SampleContainers of parsed FMF files and skip independent
+    #variables, which are used as dimensions.
     fieldData, dependencies, units, shortnames = unpackAndCollateFields(variableAttr, data)
     independentFieldsNames = []
-    for fieldName,dependency in dependencies.iteritems():
-        if dependencies[fieldName]==[]:
+    for fieldName, dependency in dependencies.iteritems():
+        if dependencies[fieldName] == []:
             independentFieldsNames.append(fieldName)
     for fieldName in independentFieldsNames:
         del dependencies[fieldName]
@@ -229,36 +245,43 @@ def readZipFile(filename, subscriber=1):
     independentFields = {}
     for indepField in independentFieldsNames:
         indepData = checkAndCondense(fieldData[indepField])
-        independentFields[indepField] = DataContainer.FieldContainer(numpy.array(indepData),
-                                                                     longname=indepField,shortname=shortnames[indepField],
-                                                                     unit = units[indepField],rescale=True)
+        independentFields[indepField] = DataContainer.FieldContainer(
+                                            numpy.array(indepData),
+                                            longname=indepField,
+                                            shortname=shortnames[indepField],
+                                            unit=units[indepField],
+                                            rescale=True
+                                            )
     #Build dependent fields
     #QUESTION: Can a field depend on a dependent field?
-    for field,dependency in dependencies.iteritems():
+    for field, dependency in dependencies.iteritems():
         newField = DataContainer.FieldContainer(numpy.array(fieldData[field]),
                                                 longname=field,
                                                 shortname=shortnames[field],
-                                                unit = units[field],rescale=True)
-        for i,indepField in enumerate(dependency):
-            dim = len(newField.dimensions)-i-1
-            newField.dimensions[dim]=independentFields[indepField]
+                                                unit=units[field],
+                                                rescale=True)
+        for i, indepField in enumerate(dependency):
+            dim = len(newField.dimensions) - i - 1
+            newField.dimensions[dim] = independentFields[indepField]
         assert newField.isValid()
         containers.append(newField)
     #The next lines are a hack and should be dealt with properly...
     if u'creator' in commonAttr.keys():
         creator = commonAttr[u'creator']
         del commonAttr[u'creator']
-        result = DataContainer.SampleContainer(containers,attributes=commonAttr)
+        result = DataContainer.SampleContainer(containers,
+                                               attributes=commonAttr)
         result.creator = creator
     else:
-        result = DataContainer.SampleContainer(containers,attributes=commonAttr)
+        result = DataContainer.SampleContainer(containers,
+                                               attributes=commonAttr)
     return result
 
 def reshapeField(field):
-    if field.isIndependent() or len(field.dimensions)==1:
+    if field.isIndependent() or len(field.dimensions) == 1:
         return field
     dimData = [numpy.unique(d.data) for d in field.dimensions]
-    dimDicts = [dict([(data, index) for index, data in enumerate(dimdata)]) \
+    dimDicts = [dict([(data, index) for index, data in enumerate(dimdata)])
                 for dimdata in dimData]
     fieldData = numpy.ones([len(d) for d in dimData]) * numpy.nan
     indicess = zip(*[map(lambda x: dimDicts[index][x], dim.data) \
@@ -281,18 +304,18 @@ def reshapeField(field):
     return newField
 
 def readDataFile(filename):
-    filehandle = open(filename,'r')
+    filehandle = open(filename, 'r')
     dat = filehandle.read()
     filehandle.close()
-    rawContainer = readSingleFile(dat,filename)
-    if len(rawContainer)==1:
+    rawContainer = readSingleFile(dat, filename)
+    if len(rawContainer) == 1:
         container = rawContainer[0]
         container.seal()
         return container
     newSample = DataContainer.SampleContainer(rawContainer,
-                                              longname='List of tables',
-                                              shortname='L',
-                                              attributes=copy.deepcopy(rawContainer[0].attributes))
+                        longname='List of tables',
+                        shortname='L',
+                        attributes=copy.deepcopy(rawContainer[0].attributes))
     newSample.seal()
     return newSample
 
@@ -305,7 +328,7 @@ def loadFMFFromFile(filename, subscriber=0):
 def readSingleFile(b, pixelName):
     _logger.info(u"Parsing file %s." % pixelName)
     preParsedData, d, FMFversion = preParseData(b)
-    from configobj import ConfigObj,ConfigObjError
+    from configobj import ConfigObj, ConfigObjError
     class FMFConfigObj(ConfigObj):
         _keyword = re.compile(r'''^ # line start
             (\s*)                   # indentation
@@ -320,10 +343,11 @@ def readSingleFile(b, pixelName):
             ''', re.VERBOSE)
     try:
         config = FMFConfigObj(d.encode('utf-8').splitlines(), encoding='utf-8')
-    except ConfigObjError,e:
+    except ConfigObjError, e:
         from sys import exit
-        exit('%s\nPlease check the syntax of the FMF-file, in particular the correct usage of comments.' % e)
-    return config2tables(preParsedData, config,FMFversion)
+        exit('%s\nPlease check the syntax of the FMF-file, in particular \
+                the correct usage of comments.' % e)
+    return config2tables(preParsedData, config, FMFversion)
 
 def parseBool(value):
     if value.lower() == 'true':
@@ -339,17 +363,17 @@ def getConverters(FMFversion='1.1'):
         parseBool,
         lambda v: parseVariable(v,FMFversion),
         lambda q: parseQuantity(q,FMFversion),
-        complex,                          # Complex is checked after variables and quantities,
-                                      # because 1J is 1 Joule and not an imaginary number.
+        complex,        # Complex is checked after variables and quantities,
+                        # because 1J is 1 Joule and not an imaginary number.
         lambda d: parseDateTime(d,FMFversion),
         ]
     return converters
 
-def item2value(oldVal,FMFversion='1.1'):
-    if type(oldVal)==type([]):
+def item2value(oldVal, FMFversion='1.1'):
+    if type(oldVal) == type([]):
         for c in getConverters(FMFversion):
             try:
-                return map(c,oldVal)
+                return map(c, oldVal)
             except:
                 pass
     for c in getConverters(FMFversion):
@@ -361,7 +385,8 @@ def item2value(oldVal,FMFversion='1.1'):
 
 def config2tables(preParsedData, config, FMFversion='1.1'):
     if config.has_key('*table definitions'):
-        longnames = dict([(i,k) for k,i in config['*table definitions'].iteritems()])
+        longnames = dict([(i, k) for k, i
+                          in config['*table definitions'].iteritems()])
         del config['*table definitions']
     else:
         longnames = { None : 'Table' }
@@ -377,8 +402,8 @@ def config2tables(preParsedData, config, FMFversion='1.1'):
                                      preParsedData[shortname],
                                      config[k],FMFversion))
             del config[k]
-    attributes = config.walk(lambda section,key:
-                             item2value(section[key],FMFversion))
+    attributes = config.walk(lambda section, key:
+                             item2value(section[key], FMFversion))
     for t in tables:
         t.attributes = copy.deepcopy(attributes)
     return tables
@@ -388,13 +413,13 @@ def data2table(longname, shortname, preParsedData, config, FMFversion='1.1'):
     for col in preParsedData:
         try:
             result = col.astype('i')
-        except ValueError,e:
+        except ValueError, e:
             try:
                 result = col.astype('f')
-            except ValueError,e:
+            except ValueError, e:
                 try:
                     result = col.astype('complex')
-                except ValueError,e:
+                except ValueError, e:
                     result = col
         datTable.append(result)
     colspec_re = re.compile(ur"(?P<shortname>[^\s([]*)\s*(?P<deps>\([^)]*\))?\s*(?:(?:\\pm|\+-|\+/-)\s*(?P<error>[^\s[]*))?\s*(?P<unit>\[[^]]*])?")
@@ -403,21 +428,22 @@ def data2table(longname, shortname, preParsedData, config, FMFversion='1.1'):
     dimensions_for_fields = {}
     errors_for_fields = {}
     for i, (fieldLongname, spec) in enumerate(config.items()):
-        if type(spec)==type([]):
+        if type(spec) == type([]):
             spec = ','.join(spec)
         try:
             match = re.search(colspec_re, spec)
-        except TypeError,e:
-            _logger.error("""Cannot interpret definition of data column "%s", which is given as "%s"!""" % (fieldLongname,spec))
+        except TypeError, e:
+            _logger.error("""Cannot interpret definition of data column "%s", \
+                            which is given as "%s"!""" % (fieldLongname, spec))
         unit = match.group('unit')
         if unit != None:
-            unit = str2unit(unit[1:-1],FMFversion)
+            unit = str2unit(unit[1: -1], FMFversion)
         else:
             unit = 1.0
-        fieldShortname=match.group('shortname')
+        fieldShortname = match.group('shortname')
         dimensions = match.group('deps')
         if dimensions != None:
-            dimensions_for_fields[fieldShortname] = dimensions[1:-1].split(',')
+            dimensions_for_fields[fieldShortname] = dimensions[1: -1].split(',')
         else:
             dimensions_for_fields[fieldShortname] = None
         errors_for_fields[fieldShortname] = match.group('error')
@@ -431,69 +457,74 @@ def data2table(longname, shortname, preParsedData, config, FMFversion='1.1'):
         sn = f.shortname
         dims = dimensions_for_fields[sn]
         if dims != None:
-            f.dimensions = [ fields_by_name[d] for d in dims ]
+            f.dimensions = [fields_by_name[d] for d in dims]
         error = errors_for_fields[sn]
         if error != None:
             try:
                 error = float(error)
-                f.error = numpy.ones(f.data.shape)*error
+                f.error = numpy.ones(f.data.shape) * error
             except:
                 f.error = fields_by_name[error].inUnitsOf(f).data
     reshapedFields = []
     for field in fields:
         try:
             newField = reshapeField(field)
-        except TypeError,e:
+        except TypeError, e:
             if field.data.dtype.name.startswith('string'):
-                _logger.warning('Warning: Cannot reshape numpy.array of string: %s' % field)
+                _logger.warning('Warning: Cannot reshape numpy.array \
+                                   of string: %s' % field)
                 newField = field
             else:
                 _logger.error('Error: Cannot reshape numpy.array: %s' % field)
                 sys.exit(0)
         reshapedFields.append(newField)
-    if shortname==None:
-        shortname='T'
+    if shortname == None:
+        shortname = 'T'
     return DataContainer.SampleContainer(reshapedFields,
                                          longname=longname,
                                          shortname=shortname)
 
-
 def preParseData(b):
-    localVar = {'fmf-version':'1.1','coding':'utf-8',
-                'delimiter':'\t'}
+    localVar = {'fmf-version':'1.1', 'coding':'utf-8', 'delimiter':'\t'}
     commentChar = ';'
     if b.startswith(codecs.BOM_UTF8):
         b = b.lstrip(codecs.BOM_UTF8)
     if b[0] == ';' or b[0] == '#':
         commentChar = b[0]
-        items =  [var.strip().split(':') for var in b.split('-*-')[1].split(';')]
+        items =  [var.strip().split(':') for var
+                  in b.split('-*-')[1].split(';')]
         try:
-            for key,value in items:
-                localVar[key.strip()]=value.strip()
-                if localVar[key.strip()]=='whitespace':
+            for key, value in items:
+                localVar[key.strip()] = value.strip()
+                if localVar[key.strip()] == 'whitespace':
                     localVar[key.strip()] = None
-                if localVar[key.strip()]=='semicolon':
+                if localVar[key.strip()] == 'semicolon':
                     localVar[key.strip()] = ';'
-        except ValueError,e:
+        except ValueError, e:
             from sys import exit
-            exit('%s\nPlease, check syntax of headline, presumably a key and its value are not separated by a colon.' % e)
+            exit('%s\nPlease, check syntax of headline, presumably a key \
+                    and its value are not separated by a colon.' % e)
     d = unicode(b, localVar['coding'])
-    dataExpr = re.compile(ur"^(\[\*data(?::\s*([^\]]*))?\]\r?\n)([^[]*)", re.MULTILINE | re.DOTALL)
+    dataExpr = re.compile(ur"^(\[\*data(?::\s*([^\]]*))?\]\r?\n)([^[]*)",
+                          re.MULTILINE | re.DOTALL)
     commentExpr = re.compile(ur"^%s.*"%commentChar, re.MULTILINE)
     d = re.sub(commentExpr, '', d)
     preParsedData = {}
     def preParseData(match):
         try:
-            preParsedData[match.group(2)] = numpy.loadtxt(StringIO.StringIO(match.group(3)),
-                                                          unpack=True,
-                                                          comments=commentChar,
-                                                          dtype='S',
-                                                          delimiter=localVar['delimiter'])
+            preParsedData[match.group(2)] = numpy.loadtxt(
+                                            StringIO.StringIO(match.group(3)),
+                                            unpack=True,
+                                            comments=commentChar,
+                                            dtype='S',
+                                            delimiter=localVar['delimiter']
+                                            )
         except Exception, e:
             return match.group(0)
         return u""
     d = re.sub(dataExpr, preParseData, d)
     return preParsedData, d, str(localVar['fmf-version'])
+
 
 class FMFLoader(Worker.Worker):
     API = 2
@@ -501,14 +532,13 @@ class FMFLoader(Worker.Worker):
     REVISION = "$Revision$"[11:-1]
     name = "Load FMF files"
 
-    _params=[("filename", u"Filename", "", Connectors.SUBTYPE_FILE)]
+    _params = [("filename", u"Filename", "", Connectors.SUBTYPE_FILE)]
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def loadFMF(self, subscriber=0):
         filename = self.paramFilename.value
         if not os.path.exists(filename):
-            raise RuntimeError("Opening non existant file: "+filename)
+            raise RuntimeError("Opening non existent file: "+filename)
         result = loadFMFFromFile(filename, subscriber)
         result.seal()
         return result
-
