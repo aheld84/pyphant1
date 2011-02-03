@@ -532,7 +532,7 @@ class FMFLoader(Worker.Worker):
     REVISION = "$Revision$"[11:-1]
     name = "Load FMF files"
 
-    _params = [("filename", u"Filename", "", Connectors.SUBTYPE_FILE)]
+    _params = [("filename", u"Filename", "Browse...", Connectors.SUBTYPE_FILE)]
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def loadFMF(self, subscriber=0):
