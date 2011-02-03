@@ -47,6 +47,7 @@ workers=[
     "EstimateParameterFromValues",
     "ExtremumFinder",
     "OscAbsorption",
+    "OscMapper",
     "OscCurrent",
     "OscThicknessCorrection",
     "OscVisualisers",
