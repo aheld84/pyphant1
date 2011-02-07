@@ -61,7 +61,7 @@ class BinaryMethod(object):
 
 class iterateImages(object):
     def __init__(self, zstack, subscriber=0):
-        self.zstack=zstack
+        self.zstack = zstack
         from pyphant.core.KnowledgeManager import KnowledgeManager
         self.kmanager = KnowledgeManager.getInstance()
         self.subscriber = subscriber
