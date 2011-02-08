@@ -54,6 +54,10 @@ class FileButton(wx.Button):
                 filename = self.filename
         dlg=wx.FileDialog(self, message="Choose a file", defaultDir=dir,
                           defaultFile=filename, style=wx.OPEN)
+#        if hasattr(self.Parent, "Filemask"):
+#            dlg.SetWildcard(self.Filemask)
+#        else:
+#            dlg.SetWildcard("BMP files (*.bmp)|*.bmp")
         if dlg.ShowModal() == wx.ID_OK:
             self.path=os.path.abspath(dlg.GetPath())
             self.dir, self.filename=os.path.split(self.path)

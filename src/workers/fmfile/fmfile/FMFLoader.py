@@ -534,6 +534,9 @@ class FMFLoader(Worker.Worker):
 
     _params = [("filename", u"Filename", "Browse...", Connectors.SUBTYPE_FILE)]
 
+#    def inithook(self):
+#        self.paramFilemask = "BMP files (*.bmp)|*.bmp|GIF files (*.gif)|*.gif"    
+#        
     @Worker.plug(Connectors.TYPE_ARRAY)
     def loadFMF(self, subscriber=0):
         filename = self.paramFilename.value
