@@ -38,8 +38,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param
+from pyphant.core import (Worker, Connectors)
 import ImageProcessing
 
 

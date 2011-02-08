@@ -37,10 +37,9 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import (Worker, Connectors,
-                          DataContainer)
-
+from pyphant.core import (Worker, Connectors, DataContainer)
 import PIL.ImageOps as ImageOps
+
 
 class OptimalContrastWorker(Worker.Worker):
     API = 1
@@ -52,7 +51,7 @@ class OptimalContrastWorker(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def optimizeContrast(self, subscriber, image):
-        im=image.getSliceAsImage()
-        co=self.paramCutoff.value
-        result=ImageOps.autocontrast(im, co)
+        im = image.getSliceAsImage()
+        co = self.paramCutoff.value
+        result = ImageOps.autocontrast(im, co)
         return DataContainer.DataContainer(result, image.units)
