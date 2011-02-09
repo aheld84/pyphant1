@@ -367,6 +367,18 @@ class SampleContainer(DataContainer):
         """
         import ast
         rpn = ReplaceName(self)
+        if len(rpn.dimensions) > 1:
+            length = len(rpn.dimensions)
+            dimCheck = [rpn.dimensions[i] == rpn.dimensions[i + 1]
+                        for i in range(length - 1)]
+            if dimCheck == [True for i in range(length - 1)]:
+                commonDim = rpn.dimensions[0]
+            else:
+                raise ValueError("The dimensions of the FCs must be equal.")
+        elif len(rpn.dimensions) == 1:
+            commonDim = rpn.dimensions[0]
+        else:
+            commonDim = None
         expr = compile(exprStr, "<calcColumn>", 'eval', ast.PyCF_ONLY_AST)
         replacedExpr = rpn.visit(expr)
         rpo = ReplaceOperator(rpn.localDict)
@@ -376,7 +388,8 @@ class SampleContainer(DataContainer):
         data = eval(compile(factorExpr, '<calcColumn>', 'eval'), {}, localDict)
         unitcalc = UnitCalculator(rpn.localDict)
         unit = unitcalc.getUnit(replacedExpr)
-        field = FieldContainer(data, unit, longname=longname,
+        field = FieldContainer(data, unit, dimensions=commonDim,
+                               longname=longname,
                                shortname=shortname)
         field.seal()
         return field
@@ -473,11 +486,15 @@ class ReplaceName(LocationFixingNodeTransformer):
         self.localDict = {}
         self.count = 0
         self.sc = sampleContainer
+        self.dimensions = []
 
     def visit_Call(self, node):
         from ast import (Name, Load)
         if isinstance(node.func, Name) and node.func.id.lower() == 'col':
-            newName = self.getName(self.sc[node.args[0].s])
+            colName = node.args[0].s
+            column = self.sc[node.args[0].s]
+            self.dimensions.append(column._get_dimensions())
+            newName = self.getName(column)
             return Name(newName, Load())
 
     def visit_Str(self, node):
