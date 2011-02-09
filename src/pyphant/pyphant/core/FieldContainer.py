@@ -648,8 +648,8 @@ Concerning the ordering of data matrices and the dimension list consult http://w
 
     def getMaskedFC(self, numpymask):
         """
-        Returns a new FieldContainer instance that emerges from this instance
-        by clipping along the primary axis according to the
+        Return an unsealed FieldContainer instance that emerges from
+        this instance by clipping along the primary axis according to the
         entries in the parameter numpymask, i.e. all entries where numpymask
         is set to False are discarded.
         numpymask -- Numpy array with Boolean values

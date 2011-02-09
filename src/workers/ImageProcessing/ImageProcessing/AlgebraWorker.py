@@ -55,4 +55,6 @@ class AlgebraWorker(Worker.Worker):
         expression = self.paramExpression.value
         shortname = self.paramShortname.value
         longname = self.paramLongname.value
-        return table.calcColumn(expression, shortname, longname)
+        result = table.calcColumn(expression, shortname, longname)
+        result.seal()
+        return result

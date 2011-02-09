@@ -296,7 +296,7 @@ class SampleContainer(DataContainer):
 
     def calcColumn(self, exprStr, shortname, longname):
         """
-        Return a sealed FieldContainer generated from `exprStr`.
+        Return an unsealed FieldContainer generated from `exprStr`.
 
         Parameters
         ----------
@@ -380,12 +380,11 @@ class SampleContainer(DataContainer):
         unit = unitcalc.getUnit(replacedExpr)
         field = FieldContainer(data, unit, longname=longname,
                                shortname=shortname)
-        field.seal()
         return field
 
     def filter(self, exprStr, shortname='', longname=''):
         """
-        Return a sealed FieldContainer containing only those rows where
+        Return an unsealed SampleContainer containing only those rows where
         `exprStr` was evaluated to be True. This method replaces the old
         filter method and is mostly capable of the same operations, yet the
         syntax has changed slightly.
@@ -414,7 +413,7 @@ class SampleContainer(DataContainer):
 
     def extractRows(self, mask, shortname, longname):
         """
-        Return a sealed FieldContainer that contains only selected rows. The
+        Return an unsealed SampleContainer that contains only selected rows. The
         selection is specified via the `mask`.
 
         Parameters
@@ -446,7 +445,6 @@ class SampleContainer(DataContainer):
                                  longname=longname,
                                  shortname=shortname,
                                  attributes=copy.deepcopy(self.attributes))
-        #result.seal()
         return result
 
 
