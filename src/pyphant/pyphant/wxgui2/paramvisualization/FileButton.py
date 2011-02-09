@@ -43,8 +43,11 @@ class FileButton(wx.Button):
     def __init__(self, parent, param, validator):
         self.path=os.path.abspath(param.value)
         self.dir, self.filename=os.path.split(self.path)
-        wx.Button.__init__(self, parent, label=self.filename, validator=validator)
+        wx.Button.__init__(self, parent,
+                           label=self.filename,
+                           validator=validator)
         self.Bind(wx.EVT_BUTTON, self.selectFile)
+        self.param = param
 
     def selectFile(self, event):
         dir = filename = wx.EmptyString
@@ -52,12 +55,10 @@ class FileButton(wx.Button):
             dir = self.dir
             if os.path.exists(os.path.join(self.dir, self.filename)):
                 filename = self.filename
-        dlg=wx.FileDialog(self, message="Choose a file", defaultDir=dir,
-                          defaultFile=filename, style=wx.OPEN)
-#        if hasattr(self.Parent, "Filemask"):
-#            dlg.SetWildcard(self.Filemask)
-#        else:
-#            dlg.SetWildcard("BMP files (*.bmp)|*.bmp")
+        dlg = wx.FileDialog(self, message="Choose a file", defaultDir=dir,
+                            defaultFile=filename, style=wx.OPEN)
+        if hasattr(self.param, "fileMask"):
+            dlg.SetWildcard(self.param.fileMask)
         if dlg.ShowModal() == wx.ID_OK:
             self.path=os.path.abspath(dlg.GetPath())
             self.dir, self.filename=os.path.split(self.path)
