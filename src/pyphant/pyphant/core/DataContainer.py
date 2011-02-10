@@ -367,20 +367,20 @@ class SampleContainer(DataContainer):
         """
         import ast
         rpn = ReplaceName(self)
-        if len(rpn.dimensions) > 1:
-            length = len(rpn.dimensions)
-            dimCheck = [rpn.dimensions[i] == rpn.dimensions[i + 1]
-                        for i in range(length - 1)]
-            if dimCheck == [True for i in range(length - 1)]:
-                commonDim = rpn.dimensions[0]
-            else:
-                raise ValueError("The dimensions of the FCs must be equal.")
-        elif len(rpn.dimensions) == 1:
-            commonDim = rpn.dimensions[0]
-        else:
-            commonDim = None
         expr = compile(exprStr, "<calcColumn>", 'eval', ast.PyCF_ONLY_AST)
         replacedExpr = rpn.visit(expr)
+        if len(rpn.dimensionsList) > 1:
+            length = len(rpn.dimensionsList)
+            dimCheck = [rpn.dimensionsList[i] == rpn.dimensionsList[i + 1]
+                        for i in range(length - 1)]
+            if dimCheck == [True for i in range(length - 1)]:
+                commonDim = rpn.dimensionsList[0]
+            else:
+                raise ValueError("The dimensions of the FCs must be equal.")
+        elif len(rpn.dimensionsList) == 1:
+            commonDim = rpn.dimensionsList[0]
+        else:
+            commonDim = None
         rpo = ReplaceOperator(rpn.localDict)
         factorExpr = rpo.visit(replacedExpr)
         localDict = dict([(key, value.data) \
@@ -486,14 +486,13 @@ class ReplaceName(LocationFixingNodeTransformer):
         self.localDict = {}
         self.count = 0
         self.sc = sampleContainer
-        self.dimensions = []
+        self.dimensionsList = []
 
     def visit_Call(self, node):
         from ast import (Name, Load)
         if isinstance(node.func, Name) and node.func.id.lower() == 'col':
-            colName = node.args[0].s
             column = self.sc[node.args[0].s]
-            self.dimensions.append(column._get_dimensions())
+            self.dimensionsList.append(column._get_dimensions())
             newName = self.getName(column)
             return Name(newName, Load())
 
