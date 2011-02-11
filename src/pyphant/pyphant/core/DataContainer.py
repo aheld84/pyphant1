@@ -369,18 +369,6 @@ class SampleContainer(DataContainer):
         rpn = ReplaceName(self)
         expr = compile(exprStr, "<calcColumn>", 'eval', ast.PyCF_ONLY_AST)
         replacedExpr = rpn.visit(expr)
-        if len(rpn.dimensionsList) > 1:
-            length = len(rpn.dimensionsList)
-            dimCheck = [rpn.dimensionsList[i] == rpn.dimensionsList[i + 1]
-                        for i in range(length - 1)]
-            if dimCheck == [True for i in range(length - 1)]:
-                commonDim = rpn.dimensionsList[0]
-            else:
-                raise ValueError("The dimensions of the FCs must be equal.")
-        elif len(rpn.dimensionsList) == 1:
-            commonDim = rpn.dimensionsList[0]
-        else:
-            commonDim = None
         rpo = ReplaceOperator(rpn.localDict)
         factorExpr = rpo.visit(replacedExpr)
         localDict = dict([(key, value.data) \
@@ -388,8 +376,7 @@ class SampleContainer(DataContainer):
         data = eval(compile(factorExpr, '<calcColumn>', 'eval'), {}, localDict)
         unitcalc = UnitCalculator(rpn.localDict)
         unit = unitcalc.getUnit(replacedExpr)
-        field = FieldContainer(data, unit, dimensions=commonDim,
-                               longname=longname,
+        field = FieldContainer(data, unit, longname=longname,
                                shortname=shortname)
         field.seal()
         return field
@@ -486,14 +473,11 @@ class ReplaceName(LocationFixingNodeTransformer):
         self.localDict = {}
         self.count = 0
         self.sc = sampleContainer
-        self.dimensionsList = []
 
     def visit_Call(self, node):
         from ast import (Name, Load)
         if isinstance(node.func, Name) and node.func.id.lower() == 'col':
-            column = self.sc[node.args[0].s]
-            self.dimensionsList.append(column._get_dimensions())
-            newName = self.getName(column)
+            newName = self.getName(self.sc[node.args[0].s])
             return Name(newName, Load())
 
     def visit_Str(self, node):

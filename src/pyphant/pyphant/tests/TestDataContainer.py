@@ -504,42 +504,30 @@ class IsValidFieldContainer(unittest.TestCase):
 
 class SampleContainerTest(unittest.TestCase):
     def setUp(self):
-        from pyphant.core.DataContainer import FieldContainer as FC
         self.rows = 100
-        self.dim = FC(scipy.linspace(-self.rows * 0.5 + 1, self.rows * 0.5,
-                                     self.rows),
-                                     unit="1 s", longname="x-Axis",
-                                     shortname="x")
-        self.dimShort = FC(numpy.array([1, 2, 3]), unit="1 s",
-                           longname="short x-Axis", shortname="Sx")
-        self.dimdata = scipy.linspace(-self.rows * 0.5 + 1, self.rows * 0.5,
-                                      self.rows)
-        self.dimunit = "1 s"
-        self.dimShortdata = numpy.array([1, 2, 3])
-        self.dimShortunit = "1 s"
-        self.intSample = FC(scipy.arange(0, self.rows), Quantity('1m'),
-                            #dimensions=INDEX,
-                            longname=u"Integer sample", shortname=u"i")
-        self.intSampleCopy = FC(scipy.arange(0, self.rows), Quantity('1m'),
-                                #dimensions=INDEX,
-                                longname=u"Integer sample Copy",
-                                shortname=u"iC")
-        self.intSample2 = FC(2 * scipy.arange(0, self.rows), Quantity('1m'),
-                             longname=u"Integer sample No2", shortname=u"i2")
-        self.floatSample = FC(scipy.arange(self.rows / 2, self.rows, 0.5),
-                              Quantity('1s'), longname=u"Float sample",
-                              shortname=u"t")
-        self.floatSampleCopy = FC(scipy.arange(self.rows / 2, self.rows, 0.5),
-                                  Quantity('1s'), longname=u"Float sample Copy",
-                                  shortname=u"tC")
-        self.shortFloatSample1 = FC(scipy.array([1., 2., 10.]),
-                                    Quantity('1.0 s**2'),
-                                    longname=u"Short Float sample 1",
-                                    shortname=u"short1")
-        self.shortFloatSample2 = FC(scipy.array([5., 10., 1.]),
-                                    Quantity('1.0 kg * m'),
-                                    longname=u"Short Float sample 2",
-                                    shortname=u"short2")
+        self.intSample = FieldContainer(scipy.arange(0, self.rows),
+                                        Quantity('1m'),
+                                        #dimensions=INDEX,
+                                        longname=u"Integer sample",
+                                        shortname=u"i")
+        self.intSample2 = FieldContainer(2 * scipy.arange(0, self.rows),
+                                        Quantity('1m'),
+                                        longname=u"Integer sample No2",
+                                        shortname=u"i2")
+        self.floatSample = FieldContainer(scipy.arange(self.rows / 2,
+                                                       self.rows,
+                                                       0.5),
+                                          Quantity('1s'),
+                                          longname=u"Float sample",
+                                          shortname=u"t")
+        self.shortFloatSample1 = FieldContainer(scipy.array([1., 2., 10.]),
+                                          Quantity('1.0 s**2'),
+                                          longname=u"Short Float sample 1",
+                                          shortname=u"short1")
+        self.shortFloatSample2 = FieldContainer(scipy.array([5., 10., 1.]),
+                                          Quantity('1.0 kg * m'),
+                                          longname=u"Short Float sample 2",
+                                          shortname=u"short2")
         self.desc = scipy.dtype({'names':[u'i', u't'],
                                  'formats':[self.intSample.data.dtype,
                                             self.floatSample.data.dtype],
@@ -552,28 +540,16 @@ class SampleContainerTest(unittest.TestCase):
         self.shortname = u"phi"
         self.sampleContainer = SampleContainer([self.intSample,
                                                 self.floatSample],
-                                                self.longname,
-                                                self.shortname)
-        self.sampleContainerNeu = SampleContainer([self.intSampleCopy,
+                                               self.longname,
+                                               self.shortname)
+        self.sampleContainerNeu = SampleContainer([self.intSample,
                                                    self.intSample2,
-                                                   self.floatSampleCopy],
-                                                   longname="New Sample",
-                                                   shortname="NewSC")
-        self.sampleContainerShort = SampleContainer([self.shortFloatSample1,
-                                                     self.shortFloatSample2],
-                                                     longname="Short Sample",
-                                                     shortname="ShortSC")
-#        self.sampleContainerNeu["iC"].dimensions[0].data = self.dimdata
-#        self.sampleContainerNeu["iC"].dimensions[0].unit = self.dimunit
- #       self.sampleContainerNeu["i2"].dimensions[0].data = self.dimdata
- #       self.sampleContainerNeu["i2"].dimensions[0].unit = self.dimunit
-  #      self.sampleContainerNeu["tC"].dimensions[0].data = self.dimdata
-   #     self.sampleContainerNeu["tC"].dimensions[0].unit = self.dimunit
-    #    self.sampleContainerShort["short1"].dimensions[0].data = self.dimShortdata
-     #   self.sampleContainerShort["short1"].dimensions[0].unit = self.dimShortunit
-      #  self.sampleContainerShort["short2"].dimensions[0].data = self.dimShortdata
-       # self.sampleContainerShort["short2"].dimensions[0].unit = self.dimShortunit
-        
+                                                self.floatSample,
+                                                self.shortFloatSample1,
+                                                self.shortFloatSample2],
+                                               "New Sample",
+                                               "NewSC")
+
     def runTest(self):
         return
 
@@ -582,9 +558,9 @@ class AlgebraSampleContainerTests(SampleContainerTest):
 
     def testNodeTransformer(self):
         from pyphant.core.DataContainer import (ReplaceName, ReplaceOperator)
-        rpn = ReplaceName(self.sampleContainerNeu)
+        rpn = ReplaceName(self.sampleContainer)
         import ast
-        exprStr = 'col("iC") / (col("tC") + col("tC"))'
+        exprStr = 'col("i") / (col("t") + col("t"))'
         expr = compile(exprStr, "<TestCase>", 'eval', ast.PyCF_ONLY_AST)
         replacedExpr = rpn.visit(expr)
         #print rpn.localDict
@@ -594,19 +570,19 @@ class AlgebraSampleContainerTests(SampleContainerTest):
         #print ast.dump(factorExpr)
 
     def testCalcColumn(self):
-        exprStr = 'col("iC") / (col("tC") + col("tC")) + "1km/s"'
-        column = self.sampleContainerNeu.calcColumn(exprStr, 'v', 'velocity')
+        exprStr = 'col("i") / (col("t") + col("t")) + "1km/s"'
+        column = self.sampleContainer.calcColumn(exprStr, 'v', 'velocity')
         #print self.sampleContainerNeu['i']
         #print self.sampleContainerNeu['t']
         #print self.sampleContainerNeu['i2']
         #print column
-        exprStr = 'col("iC") / (col("tC") + col("tC")) + "1km"'
-        self.assertRaises(ValueError, self.sampleContainerNeu.calcColumn,
+        exprStr = 'col("i") / (col("t") + col("t")) + "1km"'
+        self.assertRaises(ValueError, self.sampleContainer.calcColumn,
                           exprStr, 'v', 'velocity')
 
     def testCalcColumnExplicit(self):
         exprStr = 'col("short1") * col("short2") - "10 kg * m * s**2"'
-        columnOut = self.sampleContainerShort.calcColumn(
+        columnOut = self.sampleContainerNeu.calcColumn(
             exprStr, 'Test1', 'Mult und Minus')
         #print(columnOut)
         columnCheck = FieldContainer(scipy.array([-5., 10., 0.]),
@@ -622,7 +598,7 @@ class AlgebraSampleContainerTests(SampleContainerTest):
             raise ValueError
         exprStr = '(col("short1") / col("short2") - "10.0 s**2/(kg*m)") ' + \
                   '> ("-5.0 s**2/(kg*m)")'
-        columnOut = self.sampleContainerShort.calcColumn(
+        columnOut = self.sampleContainerNeu.calcColumn(
             exprStr, 'Test1', 'Mult und Minus')
         #print(columnOut)
         #print(columnOut.unit)
@@ -636,15 +612,16 @@ class AlgebraSampleContainerTests(SampleContainerTest):
             raise ValueError
         exprStr = 'col("short1") * col("short2") - "10 kg * s**2"'
         self.assertRaises(
-            ValueError, self.sampleContainerShort.calcColumn, exprStr,
+            ValueError, self.sampleContainerNeu.calcColumn, exprStr,
             'Test1assert', 'Test1AssertRaise')
         exprStr = '"1.0m" / "0.0m"'
         self.assertRaises(ZeroDivisionError,
-                          self.sampleContainerShort.calcColumn, exprStr,\
+                          self.sampleContainerNeu.calcColumn, exprStr,\
                                             'TestZero', 'Division by Zero')
 
     def testAlgebraPlus(self):
-        expr = 'col("iC") + col("i2") + "-10 m"'
+        from pyphant.core.DataContainer import FieldContainer
+        expr = 'col("i") + col("i2") + "-10 m"'
         columnOut = self.sampleContainerNeu.calcColumn(
             expr, 'OutPlus', 'OutcomePlus')
         columnCheck = FieldContainer(3 * scipy.arange(0, self.rows) - 10,
@@ -658,7 +635,8 @@ class AlgebraSampleContainerTests(SampleContainerTest):
             raise ValueError
 
     def testAlgebraMinus(self):
-        expr = 'col("iC") - col("i2") - "-10 km"'
+        from pyphant.core.DataContainer import FieldContainer
+        expr = 'col("i") - col("i2") - "-10 km"'
         columnOut = self.sampleContainerNeu.calcColumn(
             expr, 'OutMinus', 'OutcomeMinus')
         columnCheck = FieldContainer(-1 * scipy.arange(0, self.rows) + 10000,
@@ -672,7 +650,8 @@ class AlgebraSampleContainerTests(SampleContainerTest):
             raise ValueError
 
     def testAlgebraMult(self):
-        expr = 'col("iC") * col("iC") * 0.5'
+        from pyphant.core.DataContainer import FieldContainer
+        expr = 'col("i") * col("i") * 0.5'
         columnOut = self.sampleContainerNeu.calcColumn(
             expr, 'OutMult', 'OutcomeMult')
         columnCheckData = scipy.array(
@@ -688,8 +667,9 @@ class AlgebraSampleContainerTests(SampleContainerTest):
             raise ValueError
 
     def testAlgebraDiv(self):
-        expr = 'col("iC") / 2.'
-        expr2 = '(col("iC") + "1 m") / (col("iC") + "1 m")'
+        from pyphant.core.DataContainer import FieldContainer
+        expr = 'col("i") / 2.'
+        expr2 = '(col("i") + "1 m") / (col("i") + "1 m")'
         columnOut = self.sampleContainerNeu.calcColumn(
             expr, 'OutDiv', 'OutcomeDiv')
         #print(columnOut)
@@ -715,18 +695,6 @@ class AlgebraSampleContainerTests(SampleContainerTest):
         else:
             raise ValueError
 
-    def testAlgebraDimensions(self):
-        expr = 'col("iC") < "50m"'
-        columnOut = self.sampleContainerNeu.calcColumn(expr, 'Out', 'Boolean')
-        columnOut2 = self.sampleContainerNeu.filter(expr, 'Out2', 'Filtered')
-   #     self.assertEqual(columnOut2["Out2"].dimensions[0].data, self.dimdata[0:50])
-        #self.assertEqual(columnOut.dimensions[0].unit, self.dimunit)
-   #     print(self.sampleContainerNeu["iC"].dimensions[0].data)
-   #     print(columnOut._get_dimensions())
-        #print(len(columnOut.dimensions[0].data))
-        #print(len(self.dimdata[0:50]))
-        #print("----------------")
-        #print(columnOut)
 
 class CommonSampleContainerTests(SampleContainerTest):
     def testLabeling(self):
