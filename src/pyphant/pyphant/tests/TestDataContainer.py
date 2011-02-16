@@ -695,6 +695,24 @@ class AlgebraSampleContainerTests(SampleContainerTest):
         else:
             raise ValueError
 
+    def testDimensions(self):
+        fc1 = FieldContainer(numpy.array([4, 5, 6]), unit=Quantity('1 m'),
+                             dimensions=[FieldContainer(
+                                 numpy.array([1, 2, 3]), unit=Quantity('1 s'))],
+                             shortname='s1')
+        fc2 = FieldContainer(numpy.array([1, 2, 3]), unit=Quantity('1 km'),
+                             dimensions=[FieldContainer(
+                                 numpy.array([10, 20, 30]),
+                                 unit=Quantity('0.1 s'))],
+                             shortname='s2')
+        sc = SampleContainer(columns=[fc1, fc2])
+        expr = "col('s1') + col('s2')"
+        dims = sc.calcColumn(expr, 'Add', 'a').dimensions
+        self.assertEqual(dims, fc1.dimensions)
+        self.assertEqual(dims, fc2.dimensions)
+        fc2.dimensions[0].unit = Quantity('0.11 s')
+        self.assertRaises(ValueError, sc.calcColumn, expr, 'Add', 'a')
+
 
 class CommonSampleContainerTests(SampleContainerTest):
     def testLabeling(self):
@@ -824,12 +842,12 @@ class SampleContainerSlicingTests(SampleContainerTest):
                                         None, False)
         self.sc2d = SampleContainer([length_FC, temperature_FC, time_FC],
                                     "Test Container", "TestC")
-        self.sc2d["t"].dimensions[0].unit = Quantity('5m')
+        self.sc2d["t"].dimensions[0].unit = Quantity('1m')
         self.sc2d["t"].dimensions[0].data = numpy.array([-20, -10, 0, 10, 20])
-        self.sc2d["l"].dimensions[0].unit = Quantity('2mm')
-        self.sc2d["l"].dimensions[0].data = numpy.array([-1, -0.5, 0, 0.5, 1])
-        self.sc2d["T"].dimensions[0].unit = Quantity('0.5mm')
-        self.sc2d["T"].dimensions[0].data = numpy.array([-3, -1.5, 0, 1.5, 3])
+        self.sc2d["l"].dimensions[0].unit = Quantity('5m')
+        self.sc2d["l"].dimensions[0].data = numpy.array([-4, -2, 0, 2, 4])
+        self.sc2d["T"].dimensions[0].unit = Quantity('2m')
+        self.sc2d["T"].dimensions[0].data = numpy.array([-10, -5, 0, 5, 10])
         self.sc2d["T"].dimensions[1].unit = Quantity('10nm')
         self.sc2d["T"].dimensions[1].data = numpy.array([-1, 0, 1])
 
@@ -877,6 +895,7 @@ class SampleContainerSlicingTests(SampleContainerTest):
             FC.error = FC.error[indices]
             FC.dimensions[0].data = FC.dimensions[0].data[indices]
         self.assertEqual(result, expectedSC)
+        return result
 
     def testEmpty2dExpression(self):
         result = self.sc2d.filter('')
@@ -919,6 +938,18 @@ class SampleContainerSlicingTests(SampleContainerTest):
                               [True, True, True, True, True])
         self._compareExpected('col("t") != col("Zeit")',
                               [False, False, False, False, False])
+
+    def testIncompatibleDimensionsExpression(self):
+        fc1 = FieldContainer(numpy.array([1, 2, 3]),
+                             dimensions=[FieldContainer(numpy.array([4, 5, 6]),
+                                                        unit=Quantity('1m'))],
+                             shortname='t1')
+        fc2 = copy.deepcopy(fc1)
+        fc2.dimensions[0].data[0] = 4.01
+        fc2.shortname = 't2'
+        incompatibleSC = SampleContainer(columns=[fc1, fc2])
+        self.assertRaises(ValueError, incompatibleSC.filter,
+                          "col('t1') > col('t2')")
 
 
 class FieldContainerRescaling(unittest.TestCase):
@@ -1358,5 +1389,3 @@ if __name__ == "__main__":
         suite = unittest.TestLoader().loadTestsFromTestCase(
             eval(sys.argv[1:][0]))
         unittest.TextTestRunner().run(suite)
-
-

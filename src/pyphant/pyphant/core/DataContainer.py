@@ -36,7 +36,7 @@ u"""
 =============================================================================
 
 The *DataContainer* is Pypahnt's preferred data exchange class. It is
-designed to maximise the interoperability of the various workers
+designed to maximize the interoperability of the various workers
 provided by Pyphant.
 
 It can be seen as an interface for exchanging data between workers and
@@ -58,7 +58,7 @@ There are two kinds of DataContainers:
 =============================================================
 
 The *SampleContainer* combines different FieldContainers that have the
-same numer of sample points to a table-like representation. It stores
+same number of sample points to a table-like representation. It stores
 different observations on the same subject per row whereby each column
 comprises a quantity of the same kind. Each row can be regarded as the
 realization of a random variable.
@@ -71,11 +71,9 @@ __version__ = "$Revision$"
 
 import copy, hashlib, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse
-from pyphant.quantities import (isQuantity,
-                                                   Quantity)
+from pyphant.quantities import (isQuantity, Quantity)
 import Helpers
 from ast import (NodeTransformer, NodeVisitor)
-
 import logging
 _logger = logging.getLogger("pyphant")
 
@@ -84,7 +82,7 @@ _logger = logging.getLogger("pyphant")
 enc = lambda s: unicode(s, "utf-8")
 
 def parseId(id):
-    u"""Returns tupple (HASH, TYPESTRING) from given .id attribute."""
+    u"""Returns tuple (HASH, TYPESTRING) from given .id attribute."""
     resUri = urlparse.urlsplit(id)
     return resUri[2].split('/')[-1].split('.') #(hash, uriType)
 
@@ -367,6 +365,7 @@ class SampleContainer(DataContainer):
             exprStr = "(col('s') > '1 m') & (COL('Time') == '3s')"
 
         """
+        exprStr = exprStr or 'True'
         import ast
         rpn = ReplaceName(self)
         expr = compile(exprStr, "<calcColumn>", 'eval', ast.PyCF_ONLY_AST)
@@ -377,9 +376,20 @@ class SampleContainer(DataContainer):
                           for key, value in rpn.localDict.iteritems()])
         data = eval(compile(factorExpr, '<calcColumn>', 'eval'), {}, localDict)
         unitcalc = UnitCalculator(rpn.localDict)
-        unit = unitcalc.getUnit(replacedExpr)
-        field = FieldContainer(data, unit, longname=longname,
-                               shortname=shortname)
+        unit, dims = unitcalc.getUnitAndDim(replacedExpr)
+        if dims is None:
+            assert not isinstance(data, numpy.ndarray)
+            for col in self.columns:
+                checkDimensions(col.dimensions[0],
+                                self.columns[0].dimensions[0])
+            shape = self.columns[0].dimensions[0].data.shape
+            if data:
+                data = numpy.ones(shape, dtype=bool)
+            else:
+                data = numpy.zeros(shape, dtype=bool)
+            dims = [self.columns[0].dimensions[0]]
+        field = FieldContainer(data, unit, dimensions=dims,
+                               longname=longname, shortname=shortname)
         return field
 
     def filter(self, exprStr, shortname='', longname=''):
@@ -403,12 +413,9 @@ class SampleContainer(DataContainer):
         """
         shortname = shortname or self.shortname
         longname = longname or self.longname
-        if exprStr == '':
-            mask = numpy.ones(self.columns[0].data.shape[0], dtype=bool)
-        else:
-            mask = self.calcColumn(exprStr, 'm', 'mask')
-            assert isinstance(mask.unit, float)
-            mask = mask.data
+        mask = self.calcColumn(exprStr, 'm', 'mask')
+        assert isinstance(mask.unit, float)
+        mask = mask.data
         return self.extractRows(mask, shortname, longname)
 
     def extractRows(self, mask, shortname, longname):
@@ -488,6 +495,7 @@ class ReplaceName(LocationFixingNodeTransformer):
         dummy = QuantityDummy()
         dummy.unit = Quantity(1.0, quantity.unit)
         dummy.data = quantity.value
+        dummy.dimensions = None
         newName = self.getName(dummy)
         return Name(newName, Load())
 
@@ -505,11 +513,12 @@ class ReplaceOperator(LocationFixingNodeTransformer):
     def visit_BinOp(self, node):
         from ast import (Add, Sub, BinOp)
         self.generic_visit(node)
+        unitcalc = UnitCalculator(self.localDict)
+        leftUD = unitcalc.getUnitAndDim(node.left)
+        rightUD = unitcalc.getUnitAndDim(node.right)
+        checkDimensions(leftUD[1], rightUD[1])
         if isinstance(node.op,(Add, Sub)):
-            unitcalc = UnitCalculator(self.localDict)
-            unitleft = unitcalc.getUnit(node.left)
-            unitright = unitcalc.getUnit(node.right)
-            factor = unitright / unitleft
+            factor = rightUD[0] / leftUD[0]
             right = self.withFactor(factor, node.right)
             binOp = BinOp(node.left, node.op, right)
             return binOp
@@ -520,9 +529,12 @@ class ReplaceOperator(LocationFixingNodeTransformer):
         from ast import Compare
         self.generic_visit(node)
         unitcalc = UnitCalculator(self.localDict)
-        unitleft = unitcalc.getUnit(node.left)
-        factorlist = [unitcalc.getUnit(comp) / unitleft \
-                      for comp in node.comparators]
+        leftUD = unitcalc.getUnitAndDim(node.left)
+        listUD = [unitcalc.getUnitAndDim(comp) for comp in node.comparators]
+        nonNoneDims = [ud[1] for ud in listUD + [leftUD] if ud[1] is not None]
+        for dims in nonNoneDims:
+            checkDimensions(nonNoneDims[0], dims)
+        factorlist = [ud[0] / leftUD[0] for ud in listUD]
         newComplist = [self.withFactor(*t) \
                        for t in zip(factorlist, node.comparators)]
         compOp = Compare(node.left, node.ops, newComplist)
@@ -555,53 +567,77 @@ class UnitCalculator(object):
     def __init__(self, localDict):
         self.localDict = localDict
 
-    def getUnit(self, node):
+    def getUnitAndDim(self, node):
         from ast import (Expression, Name, Num,
                          BinOp, Add, Mult, Div, Sub,
                          Compare, BoolOp, UnaryOp,
                          BitOr, BitXor, BitAnd)
         if isinstance(node, Expression):
-            return self.getUnit(node.body)
+            return self.getUnitAndDim(node.body)
         elif isinstance(node, Name):
-            return self.localDict[node.id].unit
+            if node.id in ['True', 'False']:
+                return (1.0, None)
+            else:
+                column = self.localDict[node.id]
+                return (column.unit, column.dimensions)
         elif isinstance(node, Num):
-            return 1.0
+            return (1.0, None)
         elif isinstance(node, BinOp):
+            left = self.getUnitAndDim(node.left)
+            right = self.getUnitAndDim(node.right)
+            dimensions = checkDimensions(left[1], right[1])
             if isinstance(node.op, (Add, Sub)):
-                left = self.getUnit(node.left)
-                right = self.getUnit(node.right)
-                if not isinstance(left / right, float):
+                if not isinstance(left[0] / right[0], float):
                     raise ValueError("units %s, %s not compatible" \
                                      % (left, right))
-                return left
+                unit = left[0]
             elif isinstance(node.op, Mult):
-                return self.getUnit(node.left) * self.getUnit(node.right)
+                unit = left[0] * right[0]
             elif isinstance(node.op, Div):
-                return self.getUnit(node.left) / self.getUnit(node.right)
+                unit = left[0] / right[0]
             elif isinstance(node.op, (BitOr, BitXor, BitAnd)):
-                left = self.getUnit(node.left)
-                right = self.getUnit(node.right)
-                if not isinstance(left, float):
+                if not isinstance(left[0], float):
                     raise ValueError(
                         "Type %s cannot be interpreted as a Boolean" % left)
-                if not isinstance(right, float):
+                if not isinstance(right[0], float):
                     raise ValueError(
                         "Type %s cannot be interpreted as a Boolean" % right)
-                return 1.0
+                unit = 1.0
             else:
                 raise NotImplementedError()
+            return (unit, dimensions)
         elif isinstance(node, Compare):
-            left = self.getUnit(node.left)
+            left = self.getUnitAndDim(node.left)
+            nonNoneDims = []
+            if left[1] is not None:
+                nonNoneDims.append(left[1])
             for comparator in node.comparators:
-                right = self.getUnit(comparator)
-                if not isinstance(left / right, float):
+                right = self.getUnitAndDim(comparator)
+                if right[1] is not None:
+                    nonNoneDims.append(right[1])
+                if not isinstance(left[0] / right[0], float):
                     raise ValueError("units %s, %s not compatible" \
-                                     % (left, right))
-            return 1.0
+                                     % (left[0], right[0]))
+            if len(nonNoneDims) >= 1:
+                for dims in nonNoneDims:
+                    checkDimensions(nonNoneDims[0], dims)
+                dimensions = nonNoneDims[0]
+            else:
+                dimensions = None
+            return (1.0, dimensions)
         elif isinstance(node, BoolOp):
             raise NotImplementedError(
                 'BoolOps not supported. Use bitwise ops instead (&, |)!')
         elif isinstance(node, UnaryOp):
-            return self.getUnit(node.operand)
+            return self.getUnitAndDim(node.operand)
         else:
             raise NotImplementedError()
+
+
+def checkDimensions(dimensions1, dimensions2):
+    if dimensions1 is not None and dimensions2 is not None and \
+           dimensions1 != dimensions2:
+        msg = 'Dimensions "%s" and "%s" do not match!' \
+              % (dimensions1, dimensions2)
+        raise ValueError(msg)
+    return dimensions1 or dimensions2
