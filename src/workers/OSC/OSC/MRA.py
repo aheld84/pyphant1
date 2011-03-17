@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008-2010, Rectorate of the University of Freiburg
-# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009-2011  Andreas W. Liehr (liehr@users.sourceforge.net)
 # Copyright (c) 2010, Klaus Zimmermann (zklaus@users.sourceforge.net)
 # all rights reserved.
 #
@@ -51,36 +51,31 @@ from scipy.special import ive
 from scipy.signal import convolve
 
 def findMaxima(fieldData, numb_edge, lastExtrema=None):
-    leftLess = fieldData[:-2] < fieldData[1:-1]
-    leftEqual = fieldData[:-2] == fieldData[1:-1]
-    rightLess = fieldData[2:] < fieldData[1:-1]
-    rightEqual = fieldData[2:] == fieldData[1:-1]
-    maxima_c = numpy.logical_and(leftLess, rightLess)
-    maxima_le = numpy.logical_and(leftLess, rightEqual)
-    maxima_re = numpy.logical_and(rightLess, leftEqual)
-    maxima_e = numpy.logical_and(maxima_le[:-1], maxima_re[1:])
-    maxima = numpy.logical_or(maxima_c[1:], maxima_e).nonzero()[0]
-    edge = len(fieldData)/numb_edge
-    maxima = maxima[edge<maxima]
-    maxima = maxima[maxima<(len(fieldData)-edge)]
-    if lastExtrema==None or len(maxima)==0 or len(lastExtrema)==len(maxima):
-        return maxima
-    trackedMaxima = []
-    for lastMaximum in lastExtrema:
-        distance = (maxima-lastMaximum)**2
-        trackedMaxima.append(distance.argmin())
-    return maxima[trackedMaxima]
+    return findMinima(-fieldData,numb_edge, lastExtrema)
 
 def findMinima(fieldData, numb_edge, lastExtrema=None):
-    leftGreater = fieldData[:-2] > fieldData[1:-1]
-    leftEqual = fieldData[:-2] == fieldData[1:-1]
-    rightGreater = fieldData[2:] > fieldData[1:-1]
-    rightEqual = fieldData[2:] == fieldData[1:-1]
-    minima_c = numpy.logical_and(leftGreater, rightGreater)
-    minima_le = numpy.logical_and(leftGreater, rightEqual)
+    leftGreater = fieldData[:-2] >  fieldData[1:-1]
+    leftEqual =   fieldData[:-2] == fieldData[1:-1]
+    rightGreater =fieldData[1:-1] <  fieldData[2:] 
+    rightEqual =  fieldData[2:] ==  fieldData[1:-1]
+    def tprint(a,b):
+        print "%20s: %s" % (a,b)
+    if len(fieldData) < 20:
+        print
+        tprint('Field',fieldData)
+        tprint('left greater',leftGreater)
+        tprint('right greater',rightGreater)
+    minima_c = numpy.logical_and(leftGreater, rightGreater)                        # Minima
+    minima_le = numpy.logical_and(leftGreater, rightEqual)                        
     minima_re = numpy.logical_and(rightGreater, leftEqual)
     minima_e = numpy.logical_and(minima_le[:-1], minima_re[1:])
-    minima = numpy.logical_or(minima_c[1:], minima_e).nonzero()[0]
+    minima = 1 + numpy.logical_or(minima_c[:-1], minima_e).nonzero()[0]
+    if len(fieldData) < 20:
+        tprint("Minimum:", minima_c)
+        tprint("left min plateau",minima_le)
+        tprint("right min plateau",minima_re)
+        tprint("min plateau",minima_e)
+        tprint("Minima",  minima)
     edge = len(fieldData)/numb_edge
     minima = minima[edge<minima]
     minima = minima[minima<(len(fieldData)-edge)]
@@ -115,16 +110,18 @@ def mra1d(dim, field, n, numb_edge):
     for sigma in sigmaSpace[1:]:
         convolvedField = convolveMRA(field, sigma)
         lastMinima = findMinima(convolvedField, numb_edge, lastMinima)
+        if len(field.data)<20:
+            print lastMinima,convolvedField[lastMinima-1],convolvedField[lastMinima],convolvedField[lastMinima+1]
         lastMaxima = findMaxima(convolvedField, numb_edge, lastMaxima)
     if len(lastMinima)>0 and len(firstMinima)>0:
-        pos_minima = dim.data[numpy.array(lastMinima)+1]
-        error_minima = numpy.abs(pos_minima - dim.data[numpy.array(firstMinima)+1])
+        pos_minima = dim.data[numpy.array(lastMinima)]
+        error_minima = numpy.abs(pos_minima - dim.data[numpy.array(firstMinima)])
     else:
         pos_minima = numpy.array([],dtype=dim.data.dtype)
         error_minima = numpy.array([],dtype=dim.data.dtype)
     if len(lastMaxima)>0 and len(firstMaxima)>0:
-        pos_maxima = dim.data[numpy.array(lastMaxima)+1]
-        error_maxima = numpy.abs(pos_maxima - dim.data[numpy.array(firstMaxima)+1])
+        pos_maxima = dim.data[numpy.array(lastMaxima)]
+        error_maxima = numpy.abs(pos_maxima - dim.data[numpy.array(firstMaxima)])
     else:
         pos_maxima = numpy.array([],dtype=dim.data.dtype)
         error_maxima = numpy.array([],dtype=dim.data.dtype)

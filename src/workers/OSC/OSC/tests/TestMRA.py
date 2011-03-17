@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008, Rectorate of the University of Freiburg
-# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009-2011, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,9 @@ __version__ = "$Revision$"
 
 import sys,copy
 import unittest
+
+import numpy
+
 sys.path.append("..")
 
 import pkg_resources
@@ -87,6 +90,9 @@ class TestMRA(unittest.TestCase):
         w.paramScale.value = "1.0m"
         result = w.mra(self.V)
         #Testing
+        index = numpy.logical_and(self.xField>0.6,self.xField<0.8)
+        print expectedResult
+        print result[r'x_{min}']
         numpy.testing.assert_array_almost_equal(result[r'x_{min}'].data,expectedResult.data,4)
 
     def testMaxima(self):
@@ -163,6 +169,25 @@ class TestExtremumFinderTable(unittest.TestCase):
         result = copy.deepcopy(w.mra(self.V))['x_{min}']
         result.error=None
         self.test(result,expectedResult,1e-2,1e-2)
+
+class TestFindExtrema(unittest.TestCase):
+    """Sets up a mirror symmetric function with one local extremum and compares the result with argmin/argmax."""
+    def setUp(self):
+        self.a = numpy.abs(numpy.linspace(-1,1,11))
+        self.p = numpy.zeros(10)
+        self.p[3:5] = -1
+
+    def testFindMinimum(self):
+        """Test the correct computation of a local minimum."""
+        self.assertEqual(numpy.argmin(self.a),MRA.findMinima(self.a,5)[0])
+
+    def testPlateau(self):
+        """Test the correct computation of a local minimum."""
+        self.assertEqual(numpy.array([3]),MRA.findMinima(self.p,5)[0])
+
+    def testFindMaximum(self):
+        """Test the correct computation of a local minimum."""
+        self.assertEqual(numpy.argmax(-self.a),MRA.findMaxima(-self.a,5)[0])
 
 if __name__ == '__main__':
     unittest.main()
