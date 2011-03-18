@@ -58,34 +58,21 @@ def findMinima(fieldData, numb_edge, lastExtrema=None):
     leftEqual =   fieldData[:-2] == fieldData[1:-1]
     rightGreater =fieldData[1:-1] <  fieldData[2:] 
     rightEqual =  fieldData[2:] ==  fieldData[1:-1]
-    def tprint(a,b):
-        print "%20s: %s" % (a,b)
-    if len(fieldData) < 20:
-        print
-        tprint('Field',fieldData)
-        tprint('left greater',leftGreater)
-        tprint('right greater',rightGreater)
     minima_c = numpy.logical_and(leftGreater, rightGreater)                        # Minima
     minima_le = numpy.logical_and(leftGreater, rightEqual)                        
     minima_re = numpy.logical_and(rightGreater, leftEqual)
     minima_e = numpy.logical_and(minima_le[:-1], minima_re[1:])
     minima = 1 + numpy.logical_or(minima_c[:-1], minima_e).nonzero()[0]
-    if len(fieldData) < 20:
-        tprint("Minimum:", minima_c)
-        tprint("left min plateau",minima_le)
-        tprint("right min plateau",minima_re)
-        tprint("min plateau",minima_e)
-        tprint("Minima",  minima)
     edge = len(fieldData)/numb_edge
-    minima = minima[edge<minima]
-    minima = minima[minima<(len(fieldData)-edge)]
+    minima = minima[numpy.logical_or(edge<minima,minima<(len(fieldData)-edge))]
     if lastExtrema==None or len(minima)==0 or len(lastExtrema)==len(minima):
         return minima
     trackedMinima = []
     for lastMinimum in lastExtrema:
         distance = (minima-lastMinimum)**2
         trackedMinima.append(distance.argmin())
-    return minima[trackedMinima]
+    result = minima[trackedMinima]
+    return result
 
 def convolveMRA(field, sigma):
     if sigma==0:
@@ -100,7 +87,7 @@ class MraError(RuntimeError):
         self.convolvedField = convolvedField
 
 def mra1d(dim, field, n, numb_edge):
-    sigmaSpace = numpy.linspace(n, 1, 10)
+    sigmaSpace = numpy.linspace(n, 0, 10)
     convolvedField = convolveMRA(field, sigmaSpace[0])
     firstMinima = lastMinima = findMinima(convolvedField, numb_edge, None)
     firstMaxima = lastMaxima = findMaxima(convolvedField, numb_edge, None)
@@ -110,8 +97,6 @@ def mra1d(dim, field, n, numb_edge):
     for sigma in sigmaSpace[1:]:
         convolvedField = convolveMRA(field, sigma)
         lastMinima = findMinima(convolvedField, numb_edge, lastMinima)
-        if len(field.data)<20:
-            print lastMinima,convolvedField[lastMinima-1],convolvedField[lastMinima],convolvedField[lastMinima+1]
         lastMaxima = findMaxima(convolvedField, numb_edge, lastMaxima)
     if len(lastMinima)>0 and len(firstMinima)>0:
         pos_minima = dim.data[numpy.array(lastMinima)]
@@ -125,7 +110,8 @@ def mra1d(dim, field, n, numb_edge):
     else:
         pos_maxima = numpy.array([],dtype=dim.data.dtype)
         error_maxima = numpy.array([],dtype=dim.data.dtype)
-    return ((pos_minima, error_minima), (pos_maxima, error_maxima))
+    result = ((pos_minima, error_minima), (pos_maxima, error_maxima))
+    return result
 
 def pos_error_to_data_container(p_e):
     n = max(map(lambda (p,e): len(p), p_e))

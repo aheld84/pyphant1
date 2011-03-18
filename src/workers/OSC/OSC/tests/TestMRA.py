@@ -90,9 +90,9 @@ class TestMRA(unittest.TestCase):
         w.paramScale.value = "1.0m"
         result = w.mra(self.V)
         #Testing
-        index = numpy.logical_and(self.xField>0.6,self.xField<0.8)
-        print expectedResult
-        print result[r'x_{min}']
+        i = numpy.array(range(self.n))
+        index = numpy.logical_and(self.u>0.7,self.u<0.72)
+        index =  MRA.findMinima(self.V.data,5)
         numpy.testing.assert_array_almost_equal(result[r'x_{min}'].data,expectedResult.data,4)
 
     def testMaxima(self):
