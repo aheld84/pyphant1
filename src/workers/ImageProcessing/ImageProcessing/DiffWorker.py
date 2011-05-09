@@ -47,7 +47,7 @@ class DiffWorker(Worker.Worker):
     API = 2
     VERSION = 2
     REVISION = "$Revision$"[11:-1]
-    name = u"Difference"
+    name = "Difference"
     _params = [("absolute", u"Return absolute of difference: ",
                 [u"Yes", u"No"], None),
                ("longname", u"Name of result", 'default', None),
