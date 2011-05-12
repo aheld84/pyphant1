@@ -66,7 +66,7 @@ from pyphant.core.PyTablesPersister import (loadRecipeFromHDF5File,
 import WorkerRepository
 import ConfigureFrame
 import platform
-from pyphant.core.KnowledgeNode import (KnowledgeNode, KnowledgeManager)
+from pyphant.core.KnowledgeManager import KnowledgeManager
 import webbrowser
 pltform = platform.system()
 
@@ -122,14 +122,14 @@ class wxPyphantFrame(wx.Frame):
     ID_VIEW_LOGFILE = wx.NewId()
     ID_KM_URL = wx.NewId()
     ID_KM_LOCAL = wx.NewId()
-    ID_KM_ZSTACK_XML = wx.NewId()
+    #ID_KM_ZSTACK_XML = wx.NewId()
     ID_KM_SHARE = wx.NewId()
 
     def __init__(self, _wxPyphantApp):
         self.titleStr = "wxPyphant %s | Recipe: %s" % (__version__, "%s")
         wx.Frame.__init__(self, None, -1, self.titleStr % "None",
                           size=(640,480))
-        import PyphantCanvas
+        #import PyphantCanvas # unused (?)
         self._statusBar = self.CreateStatusBar()
         self._wxPyphantApp = _wxPyphantApp
         self._initMenuBar()
@@ -192,7 +192,8 @@ class wxPyphantFrame(wx.Frame):
         self._auiManager.AddPane(self._workerRepository, wx.RIGHT,
                                  'Worker Repository')
         self._auiManager.AddPane(self._remainingSpace, wx.CENTER, 'Main')
-        wrpane = self._auiManager.GetPane(self._workerRepository)
+        #wrpane = self._auiManager.GetPane(self._workerRepository)
+        self._auiManager.GetPane(self._workerRepository)
         self._auiManager.Update()
 
     def onOpenCompositeWorker(self, event):
@@ -341,11 +342,12 @@ class wxPyphantFrame(wx.Frame):
         kmanagerMenu = wx.Menu()
         kmanagerMenu.Append(self.ID_KM_URL, "Import HDF5 or FMF from &URL")
         kmanagerMenu.Append(self.ID_KM_LOCAL, "Import &local HDF5 or FMF file")
-        kmanagerMenu.Append(self.ID_KM_ZSTACK_XML, "Import ZStack from &XML")
+        #kmanagerMenu.Append(self.ID_KM_ZSTACK_XML, "Import ZStack from &XML")
         kmanagerMenu.Append(self.ID_KM_SHARE, "Start/pause sharing &knowledge")
         self.Bind(wx.EVT_MENU, self.onImportURL, id=self.ID_KM_URL)
         self.Bind(wx.EVT_MENU, self.onImportLocal, id=self.ID_KM_LOCAL)
-        self.Bind(wx.EVT_MENU, self.onImportZStackXML, id=self.ID_KM_ZSTACK_XML)
+        #self.Bind(wx.EVT_MENU, self.onImportZStackXML,
+        #          id=self.ID_KM_ZSTACK_XML)
         self.Bind(wx.EVT_MENU, self.onShare, id=self.ID_KM_SHARE)
         return kmanagerMenu
 
@@ -448,7 +450,7 @@ class wxPyphantFrame(wx.Frame):
                        % (url, )
             finally:
                 dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
-                dlgid2 = dlg2.ShowModal()
+                dlg2.ShowModal()
                 dlg2.Destroy()
         dlg.Destroy()
 
@@ -472,43 +474,43 @@ class wxPyphantFrame(wx.Frame):
                        "(Tried to import from '%s')" % (filename, url)
             finally:
                 dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
-                dlgid2 = dlg2.ShowModal()
+                dlg2.ShowModal()
                 dlg2.Destroy()
         else:
             dlg.Destroy()
 
-    def onImportZStackXML(self, event):
-        msg = "Select XML file to import ZStack from."
-        wc = "*.xml|*.xml"
-        dlg = wx.FileDialog(self, message=msg, defaultDir=os.getcwd(),
-                            defaultFile="", wildcard=wc, style=wx.OPEN)
-        if dlg.ShowModal() == wx.ID_OK:
-            filename = os.path.realpath(dlg.GetPath())
-            from pyphant.core.ZStackManager import ZStackManager
-            tedlg = wx.TextEntryDialog(self, "Enter name for ZStack:",
-                                       "", "ZStack")
-            if tedlg.ShowModal() == wx.ID_OK:
-                name = tedlg.GetValue()
-                zsm = ZStackManager()
-                try:
-                    dummy = zsm.getZStackByName(name)
-                    cpt2 = "Error"
-                    msg2 = "ZStack %s already exists!" % name
-                except ValueError:
-                    tedlg2 = wx.TextEntryDialog(self, "Enter crystal name:",
-                                                "", "Crystal01")
-                    if tedlg2.ShowModal() == wx.ID_OK:
-                        crystal = tedlg2.GetValue()
-                        zsm.importZStack(name=name, xmlFName=filename,
-                                         crystal=crystal)
-                        cpt2 = "Info"
-                        msg2 = "Successfully imported ZStack."
-                    tedlg2.Destroy()
-                dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
-                dlg2.ShowModal()
-                dlg2.Destroy()
-            tedlg.Destroy()
-        dlg.Destroy()
+    ## def onImportZStackXML(self, event):
+    ##     msg = "Select XML file to import ZStack from."
+    ##     wc = "*.xml|*.xml"
+    ##     dlg = wx.FileDialog(self, message=msg, defaultDir=os.getcwd(),
+    ##                         defaultFile="", wildcard=wc, style=wx.OPEN)
+    ##     if dlg.ShowModal() == wx.ID_OK:
+    ##         filename = os.path.realpath(dlg.GetPath())
+    ##         from pyphant.core.ZStackManager import ZStackManager
+    ##         tedlg = wx.TextEntryDialog(self, "Enter name for ZStack:",
+    ##                                    "", "ZStack")
+    ##         if tedlg.ShowModal() == wx.ID_OK:
+    ##             name = tedlg.GetValue()
+    ##             zsm = ZStackManager()
+    ##             try:
+    ##                 dummy = zsm.getZStackByName(name)
+    ##                 cpt2 = "Error"
+    ##                 msg2 = "ZStack %s already exists!" % name
+    ##             except ValueError:
+    ##                 tedlg2 = wx.TextEntryDialog(self, "Enter crystal name:",
+    ##                                             "", "Crystal01")
+    ##                 if tedlg2.ShowModal() == wx.ID_OK:
+    ##                     crystal = tedlg2.GetValue()
+    ##                     zsm.importZStack(name=name, xmlFName=filename,
+    ##                                      crystal=crystal)
+    ##                     cpt2 = "Info"
+    ##                     msg2 = "Successfully imported ZStack."
+    ##                 tedlg2.Destroy()
+    ##             dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
+    ##             dlg2.ShowModal()
+    ##             dlg2.Destroy()
+    ##         tedlg.Destroy()
+    ##     dlg.Destroy()
 
     def onShare(self, event):
         cpt = "Share Knowledge"
@@ -549,6 +551,7 @@ class wxPyphantFrame(wx.Frame):
         dlg = wx.MessageDialog(self, msg, cpt, wx.OK)
         dlg.ShowModal()
         dlg.Destroy()
+
 
 class mySplashScreen(wx.Frame):
     def __init__(self, parent):
@@ -614,7 +617,7 @@ class mySplashScreen(wx.Frame):
         # wxPyphantFrame is the main frame.
         self.parent._frame = wxPyphantFrame(self.parent)
         self.parent._frame.Show()
-                
+
         # The program will freeze without this line.
         evt.Skip()  # Make sure the default handler runs too...
 

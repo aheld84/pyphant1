@@ -37,7 +37,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core.Connectors import TYPE_ARRAY
+from pyphant.core.Connectors import TYPE_IMAGE
 from pyphant.wxgui2.DataVisReg import DataVisReg
 import wx
 from pyphant.visualizers.ConfigurablePlot import PlotPanel
@@ -129,9 +129,9 @@ class ZStackPlotPanel(PlotPanel):
         figsize = (float(pixel_resolution[0] / dpi),
                    float(pixel_resolution[1] / dpi))
         saveFigure = matplotlib.figure.Figure(figsize=figsize, dpi=dpi)
-        canvas = matplotlib.backends.backend_agg.FigureCanvasBase(
+        matplotlib.backends.backend_agg.FigureCanvasBase(
             saveFigure)
-        ax = self.getax(saveFigure, img_fc)
+        self.getax(saveFigure, img_fc)
         saveFigure.savefig(path, dpi=dpi)
 
 
@@ -215,12 +215,11 @@ class ZStackConfigPanel(wx.PyPanel):
         user_text = dial.GetValue()
         dial.Destroy()
         pixel_resolution = map(int, user_text.split('x'))
+        longname = self.parent.dataContainer.longname
         if retval == wx.ID_OK:
-            for count, zvalue in enumerate(self.zvalues):
-                img_fc = self.parent.kmanager.getDataContainer(
-                    self.parent.emd5_dict[zvalue])
-                path = os.path.join(directory, "%s%02d.png" \
-                                    % (self.parent.dclongname, count))
+            for count, img_fc in enumerate(self.parent.dataContainer):
+                path = os.path.join(directory, "%s_%03d.png" \
+                                    % (longname, count))
                 self.plotPanel.saveImage(img_fc, path, pixel_resolution)
             wx.MessageBox(message="Saved all images to '%s'." % directory,
                           caption='Done!')
@@ -232,8 +231,7 @@ class ZStackConfigPanel(wx.PyPanel):
     def onZChanged(self, Event=None):
         self.zid = self.zChoice.GetSelection()
         self.invalidateButtons()
-        imgFC = self.parent.kmanager.getDataContainer(
-            self.parent.emd5_dict[self.zvalue])
+        imgFC = self.parent.dataContainer[self.zid]
         self.plotPanel.fieldContainer = imgFC
         self.plotPanel.draw()
         self.GetSizer().Fit(self)
@@ -253,10 +251,8 @@ class ZStackVisualizer(wx.Frame):
         self.dclongname = dataContainer.longname
         wx.Frame.__init__(self, None, -1, "Z-Stack " + dataContainer.longname)
         self.sizer = wx.BoxSizer(wx.VERTICAL)
-        from pyphant.core.KnowledgeManager import KnowledgeManager
-        self.kmanager = KnowledgeManager.getInstance()
-        imgFC = self.kmanager.getDataContainer(
-            str(dataContainer['emd5'].data[0]))
+        imgFC = dataContainer[0]
+        self.dataContainer = dataContainer
         self.plotPanel = ZStackPlotPanel(self, imgFC)
         self.configPanel = ZStackConfigPanel(self, self.plotPanel)
         self.sizer.Add(self.configPanel, 0, wx.EXPAND)
@@ -266,13 +262,9 @@ class ZStackVisualizer(wx.Frame):
         self.Show(True)
 
     def init_zvalues(self, dataContainer):
-        zunit = dataContainer['z-value'].unit
-        self.emd5_dict = dict([(str(zvalue * zunit), str(emd5)) \
-                               for zvalue, emd5 \
-                               in zip(dataContainer['z-value'].data,
-                                      dataContainer['emd5'].data)])
+        zunit = dataContainer.dimensions[0].unit
         self.zvalues = [str(zvalue * zunit) for zvalue \
-                        in dataContainer['z-value'].data]
+                        in dataContainer.dimensions[0].data]
 
     def init_cvalues(self, dataContainer):
         self.cmaps = pylab.cm._cmapnames
@@ -285,4 +277,4 @@ class ZStackVisualizer(wx.Frame):
         self.Close()
 
 
-DataVisReg.getInstance().registerVisualizer(TYPE_ARRAY, ZStackVisualizer)
+DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, ZStackVisualizer)

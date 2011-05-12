@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,20 +37,39 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-
-from pyphant.core.Connectors import (TYPE_IMAGE, TYPE_ARRAY)
-from pyphant.wxgui2.DataVisReg import DataVisReg
-import wx
-
-class SingleValueVisualizer(object):
-    name='Single Value'
-    def __init__(self, DataContainer, show=True):
-        if show:
-            value = DataContainer.data[0] * DataContainer.unit
-            print value
-            wx.MessageBox(caption=DataContainer.longname,
-                          message="%s = %s" % (DataContainer.shortname,
-                                               value))
+from pyphant.core import (Worker, Connectors)
 
 
-DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, SingleValueVisualizer)
+class MarkInclusions(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "Mark Inclusions"
+    _sockets = [("zstack", Connectors.TYPE_IMAGE),
+                ("statistics", Connectors.TYPE_ARRAY)]
+
+    @Worker.plug(Connectors.TYPE_IMAGE)
+    def markInclusions(self, zstack, statistics, subscriber=0):
+        from copy import deepcopy
+        ret = deepcopy(zstack)
+        ret.longname = "Marked_%s" % zstack.longname
+        zst = zstack.attributes.get('ZStackType') or "unknown"
+        ret.attributes['ZStackType'] = "Marked_%s" % zst
+        s = statistics
+        import numpy
+        for zi, yt, yp, xt, xp in zip(s['zi'].data, s['yt'].data,
+                                      s['yp'].data,
+                                      s['xt'].data, s['xp'].data):
+            slices = (slice(yt, yp), slice(xt, xp))
+            border = numpy.ones((yp - yt, xp - xt), dtype=bool)
+            try:
+                border[(slice(2, yp - yt - 2),
+                        slice(2, xp - xt - 2))] \
+                        = numpy.zeros(((yp - yt) - 4, (xp - xt) - 4),
+                                      dtype=bool)
+            except (KeyError, ValueError):
+                pass
+            ret.data[zi][slices] = numpy.where(border, 255,
+                                               ret.data[zi][slices])
+        ret.seal()
+        return ret
