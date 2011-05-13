@@ -39,9 +39,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
-import ImageProcessing
+from pyphant.core import (Worker, Connectors)
 
 
 class BinaryMethod(object):
@@ -55,7 +53,6 @@ class BinaryMethod(object):
 
     def calcStep(self, last, next):
         from copy import deepcopy
-        import numpy
         result = deepcopy(last)
         result.data = self.func(last.data.astype(bool), next.data.astype(bool))
         result.seal()
@@ -64,7 +61,7 @@ class BinaryMethod(object):
 
 class iterateImages(object):
     def __init__(self, zstack, subscriber=0):
-        self.zstack=zstack
+        self.zstack = zstack
         from pyphant.core.KnowledgeManager import KnowledgeManager
         self.kmanager = KnowledgeManager.getInstance()
         self.subscriber = subscriber

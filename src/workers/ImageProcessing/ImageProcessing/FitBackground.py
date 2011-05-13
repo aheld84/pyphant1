@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-TODO
+Deprecated
 """
 
 __id__ = "$Id$"
@@ -38,10 +38,9 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
-import ImageProcessing
-import numpy, copy
+from pyphant.core import (Worker, Connectors, DataContainer)
+import numpy
+import copy
 from scipy import (ndimage, interpolate)
 
 class FitBackground(Worker.Worker):

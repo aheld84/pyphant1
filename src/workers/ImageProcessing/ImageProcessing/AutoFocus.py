@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-This module provides the refactored AutoFocus Worker and its little helpers
+This module provides the refactored AutoFocus Worker and its little helpers.
 """
 
 __id__ = "$Id$"
@@ -38,10 +38,8 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
-import ImageProcessing
-import numpy, copy
+from pyphant.core import (Worker, Connectors, DataContainer)
+import numpy
 from scipy import ndimage
 from pyphant.quantities import Quantity
 from pyphant.core.DataContainer import (FieldContainer, SampleContainer)
@@ -124,7 +122,7 @@ class AutoFocus(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "AutoFocus"
+    name = "Autofocus"
     _sockets = [("zstack", Connectors.TYPE_ARRAY)]
     _params = [("gradientThreshold", "Gradient threshold",
                 "8.0 mum**-1", None),

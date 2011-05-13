@@ -38,12 +38,10 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import (Worker, Connectors,
-                          Param)
+from pyphant.core import (Worker, Connectors)
 from pyphant.core.KnowledgeManager import KnowledgeManager
 from pyphant.quantities import Quantity
 import numpy
-
 
 def estimate_vmin_vmax(zstack, statistics):
     zstype = zstack.attributes.get('ZStackType')
@@ -66,14 +64,13 @@ class MarkAF(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "MarkAF"
+    name = "Mark Inclusion"
     _SETMASK = 'Set mask according to focused slices'
     _CUTBUTLABELS = 'Cut everything but focused labels'
     _params = [('method', 'Method',
                 [_SETMASK, _CUTBUTLABELS], None)]
     _sockets = [("zstack", Connectors.TYPE_ARRAY),
                 ("statistics", Connectors.TYPE_ARRAY)]
-    from pyphant.core.KnowledgeManager import KnowledgeManager
     kmanager = KnowledgeManager.getInstance()
 
     @Worker.plug(Connectors.TYPE_ARRAY)

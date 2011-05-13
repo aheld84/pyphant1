@@ -30,8 +30,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The Error Estimaotr Worker is a class of Pyphant's OSC-Toolbox. It
-valuates the error caused by noise for every pixel in a field.
+The Estimate Error worker is a class of Pyphant's OSC-Toolbox. It
+evaluates the error caused by noise for every pixel in a field.
 """
 
 __id__ = "$Id$"
@@ -40,40 +40,41 @@ __version__ = "$Revision: 4276 $"
 # $Source$
 
 import numpy
-from pyphant.core import (Worker, Connectors,
-                          Param, DataContainer)
+from pyphant.core import (Worker, Connectors)
+import logging
+import copy
 
-from pyphant import quantities
-import logging, copy, math
 _logger = logging.getLogger("pyphant")
 
 def localNoise( y, samples=50):
     length = len(y)
-    samples2 = samples/2
-    sampleM1 = samples-1
-    sampleMod= samples%2
+    samples2 = samples / 2
+    sampleM1 = samples - 1
+    sampleMod = samples % 2
     #Initialize extended y-vector
-    yExtended = numpy.zeros(length+samples-samples%2,'float')
-    # Mirroring to the left
-    yExtended[:samples2] = y[samples2:0:-1]
-    # Copy of array
+    yExtended = numpy.zeros(length + samples - samples % 2, 'float')
+    #Mirroring to the left
+    yExtended[: samples2] = y[samples2 : 0 : -1]
+    #Copy of array
     yExtended[samples2:length+samples2] = y
     #Mirroring to the right
-    yExtended[length+samples2:] = y[-2:-2-samples2:-1]
+    yExtended[length + samples2:] = y[-2 : -2 - samples2 : -1]
     #Inititalize error vector
-    error = numpy.zeros(y.shape,'float')
+    error = numpy.zeros(y.shape, 'float')
     #Compute experimental standard deviation
-    for i in xrange(samples2,length+samples2):
-        sample = yExtended[i-samples2:i+samples2+sampleMod]
+    for i in xrange(samples2, length + samples2):
+        sample = yExtended[i - samples2 : i + samples2 + sampleMod]
         yMean = numpy.mean(sample)
-        error[i-samples2]=numpy.sqrt(numpy.sum((yMean-sample)**2)/sampleM1)
+        error[i - samples2] = numpy.sqrt(numpy.sum((yMean - sample) ** 2) /
+                                         sampleM1)
     return error
+
 
 class ErrorEstimator(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision: 4276 $"[11:-1]
-    name = "Error Estimator"
+    name = "Estimate Error"
 
     _sockets = [("osc", Connectors.TYPE_IMAGE)]
     _params = [ ("dA", u"Window Size in number of data points", 10, None)
@@ -82,16 +83,14 @@ class ErrorEstimator(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def estimate(self, osc, subscriber=0):
         xCon = osc.data
-        noise = numpy.zeros(xCon.shape,'float')
+        noise = numpy.zeros(xCon.shape, 'float')
         intervallLength = self.paramDA.value
         count = xCon.shape[0]
-
         #Loop over all rows
         for i in xrange(count):
             x = xCon[i]
             noise[i] = localNoise(x, self.paramDA.value)
-            subscriber %= float(i+1)/count*100.0
-
+            subscriber %= float(i + 1) / count * 100.0
         result = copy.deepcopy(osc)
         result.error = noise
         result.seal()

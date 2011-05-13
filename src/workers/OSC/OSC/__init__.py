@@ -40,19 +40,17 @@ __version__ = "$Revision$"
 # $Source$
 
 workers=[
-    "AddColumn",
     "CompareFields",
     "ComputeFunctional",
     "ErrorEstimator",
     "EstimateParameter",
     "EstimateParameterFromValues",
     "ExtremumFinder",
-    "MRA",
     "OscAbsorption",
+    "OscMapper",
     "OscCurrent",
     "OscThicknessCorrection",
     "OscVisualisers",
-    "Slicing",
     "Smoother",
     "ThicknessModeller",
     ]

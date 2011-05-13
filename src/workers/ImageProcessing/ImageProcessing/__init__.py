@@ -30,7 +30,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The ImageProcessing toolbox holds workers to process data resulting from scalar fields.
+The ImageProcessing toolbox holds workers to process data
+resulting from scalar fields.
 """
 
 __id__ = "$Id$"
@@ -43,7 +44,6 @@ FEATURE_COLOR=0
 
 workers=[
     "ApplyMask",
-    "AlgebraWorker",
     "AutoFocus",
     "CoverageWorker",
     "DiffWorker",
@@ -51,7 +51,6 @@ workers=[
     "EdgeFillWorker",
     "EdgeTouchingFeatureRemover",
     "EnhanceContrast",
-    "ExtractRows",
     "FindLocalExtrema",
     "FitBackground",
     "Gradient",

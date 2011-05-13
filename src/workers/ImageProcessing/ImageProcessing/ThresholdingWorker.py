@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The Thresholding Worker is a class of Pyphant's image Processing
+The Thresholding Worker is a class of Pyphant's Image Processing
 Toolbox. The threshold can be edited in the worker's configuration. It
 returns a binary image where pixels that comprise features are set to
 0x00 whereas background pixels are set to 0xFF.
@@ -41,32 +41,31 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
-
+from pyphant.core import (Worker, Connectors, DataContainer)
 import ImageProcessing
+import scipy
+import copy
 
-import scipy, copy
 
 class ThresholdingWorker(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "Thresholdfilter"
+    name = "Threshold"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("threshold", "Threshold", 160, None),
-#               ("mode", "Mode(absolute/coverage)", ["absolute", "coverage"], None)
+#               ("mode", "Mode(absolute/coverage)",
+#                ["absolute", "coverage"], None)
                ]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def threshold(self, image, subscriber=0):
-        th=self.paramThreshold.value
-        resultArray = scipy.where( image.data < th,
-                                   ImageProcessing.FEATURE_COLOR,
-                                   ImageProcessing.BACKGROUND_COLOR )
+        th = self.paramThreshold.value
+        resultArray = scipy.where(image.data < th,
+                                  ImageProcessing.FEATURE_COLOR,
+                                  ImageProcessing.BACKGROUND_COLOR)
         result = DataContainer.FieldContainer(resultArray,
-                                              dimensions=copy.deepcopy(image.dimensions),
-                                              longname=u"Binary Image", shortname=u"B")
+                                    dimensions=copy.deepcopy(image.dimensions),
+                                    longname=u"Binary Image", shortname=u"B")
         result.seal()
         return result
-

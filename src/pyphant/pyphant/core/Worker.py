@@ -144,7 +144,7 @@ class Worker(object):
         self._params={}
         self._order=[]
         self.addParam('name',Param.createParam(self,'name','Name',
-                                               self.__class__.__name__))
+                                               self.name))
         for (name, displayName, value, subtype) in params:
             p=Param.createParam(self, name, displayName, value, subtype)
             setattr(self, 'param'+self.upperFirstLetter(name), p)

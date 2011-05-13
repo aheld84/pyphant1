@@ -30,10 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The Thresholding Worker is a class of Pyphant's image Processing
-Toolbox. The threshold can be edited in the worker's configuration. It
-returns a binary image where pixels that comprise features are set to
-0x00 whereas background pixels are set to 0xFF.
+Deprecated
 """
 
 __id__ = "$Id$"
@@ -41,10 +38,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
-
-import ImageProcessing
+from pyphant.core import (Worker, Connectors)
 from ImageProcessing.NDImageWorker import pile
 import scipy, copy
 

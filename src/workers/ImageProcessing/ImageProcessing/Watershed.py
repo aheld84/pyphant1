@@ -38,13 +38,15 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
-
-import ImageProcessing
+from pyphant.core import (Worker, Connectors, DataContainer)
 from ImageProcessing.NDImageWorker import pile
 import copy
-import heapq, scipy, scipy.ndimage#, pylab, threading
+import heapq
+import scipy
+import scipy.ndimage
+#import pylab
+#import threading
+
 
 class Watershed(Worker.Worker):
     API = 2
@@ -62,30 +64,30 @@ class Watershed(Worker.Worker):
         d = a.copy()
         q = []
         w = m.copy()
-        for y, x in scipy.argwhere(m!=0):
-            heapq.heappush(q, (-d[y-1, x-1], (y-1, x-1)))
-            heapq.heappush(q, (-d[y-1, x], (y-1, x)))
-            heapq.heappush(q, (-d[y-1, x+1], (y-1, x+1)))
-            heapq.heappush(q, (-d[y, x-1], (y, x-1)))
-            heapq.heappush(q, (-d[y, x+1], (y, x+1)))
-            heapq.heappush(q, (-d[y+1, x-1], (y+1, x-1)))
-            heapq.heappush(q, (-d[y+1, x], (y+1, x)))
-            heapq.heappush(q, (-d[y+1, x+1], (y+1, x+1)))
+        for y, x in scipy.argwhere(m != 0):
+            heapq.heappush(q, (-d[y - 1, x - 1], (y - 1, x - 1)))
+            heapq.heappush(q, (-d[y - 1, x], (y - 1, x)))
+            heapq.heappush(q, (-d[y - 1, x + 1], (y - 1, x + 1)))
+            heapq.heappush(q, (-d[y, x - 1], (y, x - 1)))
+            heapq.heappush(q, (-d[y, x + 1], (y, x + 1)))
+            heapq.heappush(q, (-d[y + 1, x - 1], (y + 1, x - 1)))
+            heapq.heappush(q, (-d[y + 1, x], (y + 1 , x)))
+            heapq.heappush(q, (-d[y + 1, x + 1], (y + 1, x + 1)))
         while q:
             y, x = heapq.heappop(q)[1]
-            l = scipy.unique(w[y-1:y+2,x-1:x+2])
-            l = l[l!=0]
-            if len(l)==1:
+            l = scipy.unique(w[y - 1: y + 2, x - 1: x + 2])
+            l = l[l != 0]
+            if len(l) == 1:
                 w[y, x] = l[0]
-            for ny, nx in scipy.argwhere(w[y-1:y+2,x-1:x+2]==0):
-                if (ny==1) and (nx==1):
+            for ny, nx in scipy.argwhere(w[y - 1: y + 2, x - 1: x + 2] == 0):
+                if (ny == 1) and (nx == 1):
                     continue
                 ny += y - 1
                 nx += x - 1
                 try:
-                    p = (-d[ny,nx], (ny, nx))
-                    d[ny,nx] = 0
-                    if p[0]!=0 and not p in q:
+                    p = (-d[ny, nx], (ny, nx))
+                    d[ny, nx] = 0
+                    if p[0] != 0 and not p in q:
                         heapq.heappush(q, p)
                 except IndexError, e:
                     print e
@@ -96,16 +98,15 @@ class Watershed(Worker.Worker):
         self._markers = markers.data
         newdata = pile(self.watershed, image.data)
         longname = "Watershed"
-        result = DataContainer.FieldContainer(
-            newdata,
-            copy.deepcopy(image.unit),
-            copy.deepcopy(image.error),
-            copy.deepcopy(image.mask),
-            copy.deepcopy(image.dimensions),
-            longname,
-            image.shortname,
-            copy.deepcopy(image.attributes),
-            False)
+        result = DataContainer.FieldContainer(newdata,
+                                              copy.deepcopy(image.unit),
+                                              copy.deepcopy(image.error),
+                                              copy.deepcopy(image.mask),
+                                              copy.deepcopy(image.dimensions),
+                                              longname,
+                                              image.shortname,
+                                              copy.deepcopy(image.attributes),
+                                              False)
         result.seal()
         #print newdata.shape
         return result
