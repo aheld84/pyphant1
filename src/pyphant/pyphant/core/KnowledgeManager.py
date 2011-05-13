@@ -198,11 +198,14 @@ class KnowledgeManager(Singleton):
             for fname in [afname for afname in files if afname.endswith('.h5')]:
                 flist.append(os.path.realpath(os.path.join(directory, fname)))
         os.path.walk(getPyphantPath(KM_PATH), accumulate_files, file_list)
-        from wx import (ProgressDialog, PyNoAppError)
         try:
-            pdial = ProgressDialog('Rebuilding index...', ' ' * 100,
-                                   maximum=len(file_list))
-        except PyNoAppError:
+            from wx import (ProgressDialog, PyNoAppError)
+            try:
+                pdial = ProgressDialog('Rebuilding index...', ' ' * 100,
+                                       maximum=len(file_list))
+            except PyNoAppError:
+                pdial = None
+        except ImportError:
             pdial = None
         count = 1
         for realname in file_list:
