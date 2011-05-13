@@ -56,16 +56,13 @@ workers=[
     "Gradient",
     "ImageLoaderWorker",
     "InvertWorker",
-    "MarkAF",
+    "MarkInclusions",
     "Medianiser",
     "NDImageWorker",
     "SkeletonizeFeature",
-    "SliceSelector",
     "ThresholdingWorker",
     "UltimatePointsCalculator",
     "Watershed",
-    "Reduce",
-    "FeatureRatio"
     ]
 
 def isFeature(point):

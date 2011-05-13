@@ -40,8 +40,12 @@ def getPyphantPath(subdir = ''):
     if homedir == '~':
         homedir = os.getcwdu()
     path = os.path.join(homedir, '.pyphant', subdir)
-    if not os.path.isdir(path):
-        os.makedirs(path)
+    # Create the dir in a multi process save way:
+    try:
+        os.makedirs(path) #<-- ignores EEXIST in all but top recursion levels
+    except OSError, ose:
+        if ose.errno != os.errno.EEXIST:
+            raise
     return path
 
 def getUsername():
@@ -154,3 +158,28 @@ def batch(recipe, input, plug, longname, dobatch=True, temporary=False):
         output = plug.getResult()
     socket.pullPlug()
     return output
+
+def makeSC(column_data, longnames, shortnames, longname, shortname,
+           attributes={}):
+    unzipped = zip(*column_data)
+    assert len(unzipped) == len(longnames) == len(shortnames)
+    def get_column_fc(col, ln, sn):
+        try:
+            from pyphant.quantities import Quantity
+            unit = Quantity(1.0, col[0].unit)
+            data = [quant.value for quant in col]
+        except (KeyError, AttributeError):
+            unit = 1
+            data = col
+        from numpy import array
+        from pyphant.core.DataContainer import FieldContainer
+        fc = FieldContainer(data=array(data), unit=unit,
+                            longname=ln, shortname=sn)
+        return fc
+    columns = [get_column_fc(col, ln, sn) for col, ln, sn \
+               in zip(unzipped, longnames, shortnames)]
+    from pyphant.core.DataContainer import SampleContainer
+    sc = SampleContainer(longname=longname, shortname=shortname,
+                         attributes=attributes, columns=columns)
+    sc.seal()
+    return sc
