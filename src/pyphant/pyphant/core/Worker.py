@@ -81,9 +81,12 @@ class Worker(object):
     _plugs=[]
     _params=[]
     DEFAULT_ANNOTATIONS={"pos":(0,0)}
-    def __init__(self, parent=None, annotations={}):
-        self._annotations=annotations
-        map(lambda k: self._annotations.setdefault(k, Worker.DEFAULT_ANNOTATIONS[k]),
+    def __init__(self, parent=None, annotations=None):
+        if annotations is None:
+            annotations = {}
+        self._annotations = annotations
+        map(lambda k: self._annotations.setdefault(
+            k, Worker.DEFAULT_ANNOTATIONS[k]),
             Worker.DEFAULT_ANNOTATIONS.keys())
         self.parent=parent
         self.initSockets(self._sockets)
