@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Pyphant Organic Solar Cells toolbox
+Pyphant Tools toolbox
 Visit http://pyphant.sourceforge.net for more information.
 """
 
