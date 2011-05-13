@@ -43,13 +43,12 @@ __version__ = "$Revision$"
 import zipfile
 import numpy
 import re
-import collections
 import copy
 import StringIO
 import os.path
 import codecs
 from pyphant.core import (Worker, Connectors, DataContainer)
-from pyphant.quantities import (Quantity, isUnit, isQuantity)
+from pyphant.quantities import (Quantity, isQuantity)
 from pyphant.quantities.ParseQuantities import (parseQuantity, parseVariable,
                                                 parseDateTime, str2unit)
 import logging
@@ -163,7 +162,8 @@ class column2Field:
                 import sys
                 sys.exit(0)
             error = [element[indexError] for element in column]
-            unitCandidates = [element.unit for element in data if isQuantity(element)]
+            unitCandidates = [element.unit for element in data \
+                              if isQuantity(element)]
             if len(unitCandidates) == 0:
                 unit = 1.0
             else:
@@ -234,7 +234,8 @@ def readZipFile(filename, subscriber=1):
                   in variableAttr.iteritems()]
     #Process SampleContainers of parsed FMF files and skip independent
     #variables, which are used as dimensions.
-    fieldData, dependencies, units, shortnames = unpackAndCollateFields(variableAttr, data)
+    fieldData, dependencies, units, shortnames = unpackAndCollateFields(
+        variableAttr, data)
     independentFieldsNames = []
     for fieldName, dependency in dependencies.iteritems():
         if dependencies[fieldName] == []:
@@ -532,7 +533,12 @@ class FMFLoader(Worker.Worker):
     REVISION = "$Revision$"[11:-1]
     name = "Load FMF files"
 
-    _params = [("filename", u"Filename", "Browse...", Connectors.SUBTYPE_FILE)]
+    _params = [("filename", u"Filename", "", Connectors.SUBTYPE_FILE)]
+
+    def inithook(self):
+        fileMask = "FMF and FMF-ZIP (*.fmf, *.zip)|*.fmf;*.zip|FMF (*.fmf)|" \
+                   "*.fmf|FMF-ZIP (*.zip)|*.zip|All files (*)|*"
+        self.paramFilename.fileMask = fileMask
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def loadFMF(self, subscriber=0):
