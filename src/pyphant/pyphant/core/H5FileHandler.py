@@ -121,7 +121,7 @@ class H5FileHandler(object):
             try:
                 resNode._g_checkHasChild('dimensions')
             except tables.NoSuchNodeError:
-                return True         
+                return True
         return False
 
     def loadDataContainer(self, dcId):
@@ -219,6 +219,9 @@ class H5FileHandler(object):
                 summary['columns'] = columns
             summary['attributes'] = attributes
         return summary
+
+    def loadRecipe(self):
+        return PyTablesPersister.loadRecipe(self.handle)
 
     def saveDataContainer(self, result):
         """
