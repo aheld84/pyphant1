@@ -53,5 +53,5 @@ workers=[
     "OscVisualisers",
     "Smoother",
     "ThicknessModeller",
+    "MRA"
     ]
-
