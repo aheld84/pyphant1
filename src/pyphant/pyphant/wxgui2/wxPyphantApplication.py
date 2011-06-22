@@ -620,6 +620,7 @@ class mySplashScreen(wx.Frame):
 
         # The program will freeze without this line.
         evt.Skip()  # Make sure the default handler runs too...
+        self.Destroy()
 
 
 import optparse
