@@ -533,10 +533,10 @@ class wxPyphantFrame(wx.Frame):
                 if isinstance(exep, socket_error):
                     try:
                         #Python 2.6
-                        eno = err.errno
+                        eno = exep.errno
                     except AttributeError:
                         #Python 2.5
-                        eno = err.args[0]
+                        eno = exep.args[0]
                     from errno import EADDRINUSE
                     if eno == EADDRINUSE:
                         msg += "\nReason: Could not find a free port."\
