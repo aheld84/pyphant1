@@ -38,7 +38,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import (Worker, Connectors)
+from pyphant.core import (Worker, Connectors, DataContainer)
 from ImageProcessing.NDImageWorker import pile
 import scipy, copy
 
