@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2009, Rectorate of the University of Freiburg
-# Copyright (c) 2009-2010, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009-2011, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -78,6 +78,12 @@ class TestStr2unit(unittest.TestCase):
         self.assertEqual(result,Quantity('6.62606896e-34 J*s'))
         result = str2unit('1h',FMFversion='1.0')
         self.assertEqual(result,Quantity('3600s'))
+
+    def testFloatAccuracy(self):
+        result = str2unit('16.8 mm',FMFversion='1.0')
+        diff = result - Quantity('16.8 mm')
+        self.assertEqual(abs(diff.value) < 2e-14,True)
+        
 
 if __name__ == "__main__":
     import sys
