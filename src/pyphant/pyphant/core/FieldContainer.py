@@ -288,12 +288,15 @@ Concerning the ordering of data matrices and the dimension list consult http://w
         if m == None:
             m = hashlib.md5()
         super(FieldContainer, self).generateHash(m)
-        m.update(str(self.data.tolist()))
+        #m.update(str(self.data.tolist()))
+        m.update(self.data.dumps())
         m.update(str(self.unit))
         if self.error!=None:
-            m.update(str(self.error.tolist()))
+            #m.update(str(self.error.tolist()))
+            m.update(self.error.dumps())
         if self.mask!=None:
-            m.update(str(self.mask.tolist()))
+            #m.update(str(self.mask.tolist()))
+            m.update(self.mask.dumps())
         [m.update(dim.hash) for dim in self._dimensions]
         return enc(m.hexdigest())
 
@@ -648,8 +651,8 @@ Concerning the ordering of data matrices and the dimension list consult http://w
 
     def getMaskedFC(self, numpymask):
         """
-        Returns a new FieldContainer instance that emerges from this instance
-        by clipping along the primary axis according to the
+        Return an unsealed FieldContainer instance that emerges from
+        this instance by clipping along the primary axis according to the
         entries in the parameter numpymask, i.e. all entries where numpymask
         is set to False are discarded.
         numpymask -- Numpy array with Boolean values

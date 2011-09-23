@@ -31,7 +31,7 @@
 
 u"""
 The ApplyMask Worker is a class of Pyphant's Image Processing
-Toolbox. By using this worker one gry-scale image can be applied as a
+Toolbox. By using this worker one gray-scale image can be applied as a
 mask on another image.
 """
 
@@ -40,68 +40,75 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import (Worker, Connectors,
-                          Param, DataContainer)
+from pyphant.core import (Worker, Connectors)
+from pyphant.core.DataContainer import (FieldContainer, SampleContainer)
+from ImageProcessing import FEATURE_COLOR
+import scipy
+import copy
 
-#needed for constants defined in __init__.py
-import ImageProcessing as IP
-import scipy,copy
 
 class ApplyMask(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name="Apply Mask"
-    _sockets = [("image", Connectors.TYPE_IMAGE),("mask", Connectors.TYPE_IMAGE)]
+    name = "Apply Mask"
+    _sockets = [("image", Connectors.TYPE_IMAGE),
+                ("mask", Connectors.TYPE_IMAGE)]
 
-    def check(self,image,mask):
-        """Returns tupple of numpy arrays and checks their consistency."""
-        for imD,mD in zip(image.dimensions,mask.dimensions):
+    def check(self, image, mask):
+        """
+        Returns tuple of numpy arrays and checks their consistency.
+        """
+        for imD, mD in zip(image.dimensions, mask.dimensions):
             if not imD == mD:
-                raise ValueError,'Dimension of input images has to be identical.'
-        return image.data,mask.data
+                raise ValueError(
+                    'Dimension of input images has to be identical.')
+        return image.data, mask.data
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def createMaskedImage(self, image, mask, subscriber=0):
-        """Returns the masked input field."""
-        img,m = self.check(image,mask)
+        """
+        Returns the masked input field.
+        """
+        img, m = self.check(image, mask)
         subscriber %= 10.
-
-        result = scipy.where(m == IP.FEATURE_COLOR,img,IP.FEATURE_COLOR).astype('d')
+        result = scipy.where(m == FEATURE_COLOR, img, FEATURE_COLOR).astype('d')
         subscriber %= 55.0
         container = copy.deepcopy(image)
-        container.data=result
+        container.data = result
         container.seal()
         subscriber %= 100.0
-
         return container
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def findMaskPoints(self, image, mask, subscriber=0):
-        """Returns a table of masked points with each row giving a tupple (coordinate_1,...,coordindate_n,value)."""
-        img,m = self.check(image,mask)
+        """
+        Returns a table of masked points with each row
+        giving a tuple (coordinate_1, ..., coordindate_n, value).
+        """
+        self.check(image, mask)
         subscriber %= 10.0
-
-        index = (mask.data == IP.FEATURE_COLOR).nonzero()
-        zVal      = image.data[index]
+        index = (mask.data == FEATURE_COLOR).nonzero()
+        zVal = image.data[index]
         subscriber %= 60.0
-
         fields = []
         for dim, coord in enumerate(index):
-            newField = DataContainer.FieldContainer(image.dimensions[dim].data[coord],
-                                image.dimensions[dim].unit,
-                                longname=image.dimensions[dim].longname+" %i"%dim,
-                                shortname=image.dimensions[dim].shortname)
+            newField = FieldContainer(
+                image.dimensions[dim].data[coord],
+                image.dimensions[dim].unit,
+                longname=image.dimensions[dim].longname + " %i" % dim,
+                shortname=image.dimensions[dim].shortname
+                )
             fields.append(newField)
-        fields.append(DataContainer.FieldContainer(zVal, image.unit,
-                                       longname=image.longname,
-                                       shortname=image.shortname)
-                     )
-        res = DataContainer.SampleContainer(fields,
-                                            u"Points from %s at %s"%(image.longname, mask.longname),
-                                            u"X1")
+        fields.append(FieldContainer(zVal, image.unit,
+                                     longname=image.longname,
+                                     shortname=image.shortname)
+                      )
+        res = SampleContainer(
+            fields,
+            u"Points from %s at %s"%(image.longname, mask.longname),
+            u"X1"
+            )
         res.seal()
         subscriber %= 100.0
         return res
-
-

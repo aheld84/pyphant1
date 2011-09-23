@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,60 +29,31 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+u"""
+
 """
-TODO
-"""
+
 __id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
-# $Source$:
+# $Source$
 
-import xml.sax
+from pyphant.core import Worker, Connectors
 
+class ExtractRows(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "Extract Row"
+    _sockets = [("table", Connectors.TYPE_ARRAY),
+                ("mask", Connectors.TYPE_IMAGE)]
+    _params = [("shortname", "Shortname", '', None),
+               ("longname", "Longname", '', None)]
 
-class XMLElement(object):
-
-    def __init__(self, name, attrs, parent, content=''):
-        self.name = name
-        self.attributes = attrs
-        self.parent = parent
-        self.children = {}
-        self.content = content
-        if parent != None:
-            parent[name] = self
-
-    def __getitem__(self, key):
-        return self.children[key]
-
-    def __setitem__(self, key, item):
-        self.children[key] = item
-
-
-class XMLHandler(xml.sax.handler.ContentHandler):
-
-    def __init__(self):
-        self.current_element = None
-        self.root_element = None
-
-    def startElement(self, name, attrs):
-        if self.root_element == None:
-            element = XMLElement(name, attrs, None)
-            self.root_element = element
-            self.current_element = element
-        else:
-            element = XMLElement(name, attrs, self.current_element)
-            self.current_element = element
-
-    def endElement(self, name):
-        assert name == self.current_element.name
-        self.current_element = self.current_element.parent
-
-    def characters(self, content):
-        if self.current_element != None:
-            self.current_element.content += content
-
-
-def getXMLRoot(filename_or_stream):
-    handler = XMLHandler()
-    xml.sax.parse(filename_or_stream, handler)
-    return handler.root_element
+    @Worker.plug(Connectors.TYPE_ARRAY)
+    def extractRows(self, table, mask, subscriber=0):
+        shortname = self.paramShortname.value
+        longname = self.paramLongname.value
+        result = table.extractRows(mask.data, shortname, longname)
+        result.seal()
+        return result

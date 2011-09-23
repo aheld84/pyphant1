@@ -30,4 +30,3 @@ setuptools.setup(
     myeentry = ImageProcessing
     """,
     test_suite = 'ImageProcessing.tests')
-

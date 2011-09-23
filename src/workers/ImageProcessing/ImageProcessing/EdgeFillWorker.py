@@ -31,7 +31,7 @@
 
 u"""
 The Edge Fill Worker is a class of Pyphant's Image Processing
-Toolbox. It is used to backfil outlined features again.
+Toolbox. It is used to backfill outlined features again.
 """
 
 __id__ = "$Id$"
@@ -39,13 +39,10 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
+from pyphant.core import (Worker, Connectors)
+import copy
+from ImageProcessing import (BACKGROUND_COLOR, FEATURE_COLOR)
 
-import scipy, copy
-
-#needed for constants defined in __init__.py
-import ImageProcessing
 
 class EdgeFillWorker(Worker.Worker):
     API = 2
@@ -54,53 +51,51 @@ class EdgeFillWorker(Worker.Worker):
     """
     http://www.nabble.com/Here's-a-better-flood-fill-technique-t318692.html
     """
-    name="Edge Fill"
+    name = "Edge Fill"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def fillImage(self, image, subscriber=0):
         result = copy.deepcopy(image)
-        im=result.data
-        self.fillFromEdge(im, ImageProcessing.BACKGROUND_COLOR, ImageProcessing.FEATURE_COLOR)
+        im = result.data
+        self.fillFromEdge(im, BACKGROUND_COLOR, FEATURE_COLOR)
         result.seal()
         return result
 
     def fillFromEdge(self, image, seedColor, newColor):
         def filterSeeds(im, potSeeds):
-            pos=potSeeds.pop(0)
-            seeds=[pos]
-            color=im[pos]
+            pos = potSeeds.pop(0)
+            seeds = [pos]
+            color = im[pos]
             while potSeeds:
-                pos=potSeeds.pop(0)
-                if im[pos]!=color:
+                pos = potSeeds.pop(0)
+                if im[pos] != color:
                     seeds.append(pos)
-                    color=im[pos]
+                    color = im[pos]
             return seeds
-
-        maxX=image.shape[0]
-        maxY=image.shape[1]
-
-        seeds=filterSeeds(image, [(x,0) for x in range(0,maxX)]\
-                                 +[(maxX-1,y) for y in range(1,maxY-1)]\
-                                 +[(x,maxY-1) for x in range(maxX-1,-1,-1)]\
-                                 +[(0,y) for y in range(maxY-2,0,-1)])
-
-        seeds=filter(lambda pos: image[pos]==seedColor, seeds)
+        maxX = image.shape[0]
+        maxY = image.shape[1]
+        seeds = filterSeeds(image,
+                            [(x, 0) for x in range(0, maxX)] \
+                            + [(maxX - 1, y) for y in range(1, maxY - 1)] \
+                            + [(x, maxY - 1) for x in range(maxX - 1, -1, -1)] \
+                            + [(0, y) for y in range(maxY - 2, 0, -1)])
+        seeds = filter(lambda pos: image[pos] == seedColor, seeds)
         map(lambda pos: self.fillRegion(image, pos, newColor), seeds)
 
     def fillRegion(self, image, seed, newcolor):
-        oldcolor=image[seed]
-        if oldcolor==newcolor:
+        oldcolor = image[seed]
+        if oldcolor == newcolor:
             return
-        edge=[seed]
-        maxX=image.shape[0]
-        maxY=image.shape[1]
+        edge = [seed]
+        maxX = image.shape[0]
+        maxY = image.shape[1]
         while edge:
-            newedge=[]
-            for (x,y) in edge:
-                for (s,t) in ((x+1, y), (x-1, y), (x, y+1), (x, y-1)):
-                    if s>=0 and s<maxX and t>=0 and t<maxY\
-                       and image[s, t]==oldcolor:
-                        image[s,t]=newcolor
-                        newedge.append((s,t))
-                edge=newedge
+            newedge = []
+            for (x, y) in edge:
+                for (s, t) in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                    if s >= 0 and s < maxX and t >= 0 and t < maxY \
+                           and image[s, t] == oldcolor:
+                        image[s, t] = newcolor
+                        newedge.append((s, t))
+                edge = newedge

@@ -39,28 +39,29 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
-import scipy,copy
+from pyphant.core import (Worker, Connectors)
+import scipy
+import copy
 
-"""
-Inverts a picture.
-"""
+
 class InvertWorker(Worker.Worker):
     API=2
     VERSION=1
     REVISION="$Revision$"
-    name = "Inverter"
+    name = "Invert"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def invert(self, image, subscriber=0):
-        max=scipy.amax(image.data)
-        min=scipy.amin(image.data)
-        data = max +min - image.data
-        result=DataContainer.FieldContainer(data,unit=image.unit,
-                                            dimensions=copy.deepcopy(image.dimensions),
-                                            longname = image.longname,
-                                            shortname =image.shortname)
+        max = scipy.amax(image.data)
+        min = scipy.amin(image.data)
+        data = max + min - image.data
+        from DataContainer import FieldContainer
+        result = FieldContainer(data, unit=image.unit,
+                                dimensions=copy.deepcopy(image.dimensions),
+                                mask=copy.deepcopy(image.mask),
+                                error=copy.deepcopy(image.error),
+                                longname=image.longname,
+                                shortname=image.shortname)
         result.seal()
         return result

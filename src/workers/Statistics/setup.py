@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-Pyphant ImageProcessing toolbox
-This is the ImageProcessing toolbox, that serves as an example off a
-toolbox for the Pyphant framework. In order to use it you must have
+Pyphant Statistics toolbox
+This is the Statistics toolbox, that provides workers
+for the Pyphant framework. In order to use it you must have
 the Pyphant framework installed first. Visit
 http://pyphant.sourceforge.net for more information.
 """
@@ -30,4 +30,3 @@ setuptools.setup(
     myeentry = Statistics
     """,
     test_suite = 'Statistics.tests')
-

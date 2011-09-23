@@ -42,15 +42,14 @@ __version__ = "$Revision$"
 # $Source$
 
 from pyphant.core import (Connectors, DataContainer,
-                          Param, Worker)
-import scipy, scipy.stats
+                          Worker)
 import numpy
 
 class Histogram(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = u"Histogram"
+    name = "Histogram"
     _sockets=[("vector", Connectors.TYPE_IMAGE)]
     _params = [("bins", "Bins", 10, None)]
 
@@ -67,6 +66,9 @@ class Histogram(Worker.Worker):
                                     range=(numpy.floor(vector.data.min()),
                                            numpy.ceil(vector.data.max())))
             binCenters = histo[1]+((histo[1][1]-histo[1][0])/2.0)
+        # Fix me (Windows, numpy version?):
+        if len(binCenters) > len(histo[0]):
+            binCenters = binCenters[:-1]
         xdim = DataContainer.FieldContainer(binCenters, vector.unit,
                                             longname=vector.longname,
                                             shortname=vector.shortname)

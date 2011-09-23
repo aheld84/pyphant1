@@ -30,7 +30,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The ImageProcessing toolbox holds workers to process data resulting from scalar fields.
+The ImageProcessing toolbox holds workers to process data
+resulting from scalar fields.
 """
 
 __id__ = "$Id$"
@@ -50,22 +51,18 @@ workers=[
     "EdgeFillWorker",
     "EdgeTouchingFeatureRemover",
     "EnhanceContrast",
-    "FilterWorker",
     "FindLocalExtrema",
     "FitBackground",
     "Gradient",
     "ImageLoaderWorker",
     "InvertWorker",
-    "MarkAF",
+    "MarkInclusions",
     "Medianiser",
     "NDImageWorker",
     "SkeletonizeFeature",
-    "SliceSelector",
     "ThresholdingWorker",
     "UltimatePointsCalculator",
     "Watershed",
-    "Reduce",
-    "FeatureRatio"
     ]
 
 def isFeature(point):

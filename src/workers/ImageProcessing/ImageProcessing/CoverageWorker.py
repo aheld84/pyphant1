@@ -31,7 +31,7 @@
 
 u"""
 The Coverage Worker is a class of Pyphant's Image Processing
-toolbox. It compares everx pixel with a calculated
+toolbox. It compares every pixel with a calculated
 threshold. Therefore required percentages of black and white material
 in the image can be edited.
 """
@@ -41,27 +41,27 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
+from pyphant.core import (Worker, Connectors)
 
 def weight2Coverage(w1, rho1, rho2):
-    return (w1*rho2)/(w1*rho2+(1.0-w1)*rho1)
+    return (w1 * rho2) / (w1 * rho2 + (1.0 - w1) * rho1)
 
 def calculateThreshold(image, coveragePercent):
     import scipy
     data = image.data
     histogram = scipy.histogram(data, len(scipy.unique(data)))
     cumsum = scipy.cumsum(histogram[0])
-    targetValue = cumsum[-1]*coveragePercent
-    index = scipy.argmin(scipy.absolute(cumsum-targetValue))
+    targetValue = cumsum[-1] * coveragePercent
+    index = scipy.argmin(scipy.absolute(cumsum - targetValue))
     threshold = histogram[1][index]
-    return threshold*image.unit
+    return threshold * image.unit
+
 
 class CoverageWorker(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "Coverage worker"
+    name = "Coverage"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("w1", "Weight per cent of the dark material", "25%", None),
                ("rho1", "Density of the dark material", "0.97g/cm**3", None),
@@ -76,14 +76,15 @@ class CoverageWorker(Worker.Worker):
         rho2 = parseQuantity(self.paramRho2.value)[0]
         coveragePercent = weight2Coverage(w1, rho1, rho2)
         th = calculateThreshold(image, coveragePercent)
-        import scipy, ImageProcessing, copy
-        resultArray = scipy.where( image.data < th,
-                                   ImageProcessing.FEATURE_COLOR,
-                                   ImageProcessing.BACKGROUND_COLOR )
-        result = DataContainer.FieldContainer(resultArray,
-                                              dimensions=copy.deepcopy(image.dimensions),
-                                              longname=u"Binary Image", shortname=u"B")
+        import scipy
+        from ImageProcessing import (FEATURE_COLOR, BACKGROUND_COLOR)
+        import copy
+        from pyphant.core.DataContainer import FieldContainer
+        resultArray = scipy.where(image.data < th,
+                                  FEATURE_COLOR,
+                                  BACKGROUND_COLOR)
+        result = FieldContainer(resultArray,
+                                dimensions=copy.deepcopy(image.dimensions),
+                                longname=u"Binary Image", shortname=u"B")
         result.seal()
         return result
-
-

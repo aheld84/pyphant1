@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-The Madianiser Worker is a class of Pyphant's Image Processing
+The Medianiser Worker is a class of Pyphant's Image Processing
 Toolbox. It is used to remove noise from an image, by implementing a
 standard median filter. In its configurations the size of the applied
 kernel and the number of smoothing runs can be edited.
@@ -41,10 +41,10 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
+from pyphant.core import (Worker, Connectors)
+import scipy.ndimage.filters
+import copy
 
-import scipy.ndimage.filters,copy
 
 class Medianiser(Worker.Worker):
     API = 2
@@ -57,12 +57,10 @@ class Medianiser(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def medianize(self, field, subscriber=0):
-        im=copy.deepcopy(field)
-        size=self.paramSize.value
-        ru=self.paramRuns.value
-
+        im = copy.deepcopy(field)
+        size = self.paramSize.value
+        ru = self.paramRuns.value
         for i in range(ru):
-            im.data=scipy.ndimage.filters.median_filter(im.data,size=size)
-
+            im.data = scipy.ndimage.filters.median_filter(im.data, size=size)
         im.seal()
         return im

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2008, Rectorate of the University of Freiburg
+# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,8 +29,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""
-TODO
+u"""
 """
 
 __id__ = "$Id$"
@@ -38,31 +37,39 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import (Worker, Connectors,
-                          Param)
-import numpy
+from pyphant.core import (Worker, Connectors)
 
 
-class FeatureRatio(Worker.Worker):
-    """
-    TODO
-    """
+class MarkInclusions(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "FeatureRatio"
-    _params = [('bgc', 'Background color', 0, None)]
-    _sockets = [("image", Connectors.TYPE_IMAGE)]
+    name = "Mark Inclusions"
+    _sockets = [("zstack", Connectors.TYPE_IMAGE),
+                ("statistics", Connectors.TYPE_ARRAY)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
-    def getRatio(self, image, subscriber=0):
-        from pyphant.core.DataContainer import FieldContainer
-        bgc = self.paramBgc.value
-        ratio = float(numpy.where(image.data != bgc, 1, 0).sum()) /\
-                float(image.data.size)
-        data = numpy.array([ratio])
-        fc = FieldContainer(data,
-                            longname='Feature Ratio of %s' % image.longname,
-                            shortname='r')
-        fc.seal()
-        return fc
+    def markInclusions(self, zstack, statistics, subscriber=0):
+        from copy import deepcopy
+        ret = deepcopy(zstack)
+        ret.longname = "Marked_%s" % zstack.longname
+        zst = zstack.attributes.get('ZStackType') or "unknown"
+        ret.attributes['ZStackType'] = "Marked_%s" % zst
+        s = statistics
+        import numpy
+        for zi, yt, yp, xt, xp in zip(s['zi'].data, s['yt'].data,
+                                      s['yp'].data,
+                                      s['xt'].data, s['xp'].data):
+            slices = (slice(yt, yp), slice(xt, xp))
+            border = numpy.ones((yp - yt, xp - xt), dtype=bool)
+            try:
+                border[(slice(2, yp - yt - 2),
+                        slice(2, xp - xt - 2))] \
+                        = numpy.zeros(((yp - yt) - 4, (xp - xt) - 4),
+                                      dtype=bool)
+            except (KeyError, ValueError):
+                pass
+            ret.data[zi][slices] = numpy.where(border, 255,
+                                               ret.data[zi][slices])
+        ret.seal()
+        return ret

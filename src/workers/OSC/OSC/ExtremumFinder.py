@@ -55,7 +55,7 @@ class ExtremumFinder(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "Extremum Finder"
+    name = "Find Extremum"
 
     _sockets = [("field", Connectors.TYPE_IMAGE)]
     _params = [("extremum", u"extremum", [u"minima",u"maxima",u"both"], None)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2008, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
+
 """
 
 __id__ = "$Id$"
@@ -37,20 +38,23 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
+from pyphant.core import Worker, Connectors
 
-from pyphant.core.Connectors import (TYPE_IMAGE, TYPE_ARRAY)
-from pyphant.wxgui2.DataVisReg import DataVisReg
-import wx
+class AlgebraWorker(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "Algebra"
+    _sockets = [("table", Connectors.TYPE_ARRAY)]
+    _params = [("shortname", "Shortname", '', None),
+               ("longname", "Longname", '', None),
+               ("expression", "Filter Expression", '', None)]
 
-class SingleValueVisualizer(object):
-    name='Single Value'
-    def __init__(self, DataContainer, show=True):
-        if show:
-            value = DataContainer.data[0] * DataContainer.unit
-            print value
-            wx.MessageBox(caption=DataContainer.longname,
-                          message="%s = %s" % (DataContainer.shortname,
-                                               value))
-
-
-DataVisReg.getInstance().registerVisualizer(TYPE_IMAGE, SingleValueVisualizer)
+    @Worker.plug(Connectors.TYPE_IMAGE)
+    def calcColumn(self, table, subscriber=0):
+        expression = self.paramExpression.value
+        shortname = self.paramShortname.value
+        longname = self.paramLongname.value
+        result = table.calcColumn(expression, shortname, longname)
+        result.seal()
+        return result

@@ -128,7 +128,7 @@ class MRA(Worker.Worker):
     API = 2
     VERSION = 2
     REVISION = "$Revision$"[11:-1]
-    name = "Multi Resolution Analyser"
+    name = "Multi Resolution Analyzer"
 
     _sockets = [("field", Connectors.TYPE_IMAGE)]
     _params = [("scale", u"Scale", "200 nm", None),

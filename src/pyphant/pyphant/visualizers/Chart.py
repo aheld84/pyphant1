@@ -118,8 +118,12 @@ class Chart(object):
 
 class BarChart(Chart):
     name = u"Bar chart"
+
     def draw(self, abscissa, data, maskedData, error, **kwargs):
         width = numpy.min(numpy.diff(abscissa))
+        ymin = 0
+        if self.ymin < ymin:
+            ymin = self.ymin * 1.03
         if error == None:
             for ordinate in maskedData:
                 pylab.bar(abscissa, ordinate, capsize=0,
@@ -130,12 +134,13 @@ class BarChart(Chart):
                                  yerr=error[i],
                                  width=width)
         xextent = (self.xmax-self.xmin)*0.03
-        pylab.axis([self.xmin-xextent, self.xmax+width+xextent, 0, self.ymax*1.03])
+        pylab.axis([self.xmin-xextent, self.xmax+width+xextent, ymin, self.ymax*1.03])
 
 
 class LineChart(Chart):
     name = u"Line chart"
     linestyle = '-'
+
     def draw(self, abscissa, data, maskedData, error, **kwargs):
         if error == None:
             for ordinate in maskedData:

@@ -138,21 +138,21 @@ class FieldContainerTestCase(unittest.TestCase):
             pass
         else:
             self.fail("Modification of sealed FieldContainer was not \
-prohibited.")
+                        prohibited.")
         try:
             field.data[1] = 4
         except RuntimeError, e:
             pass
         else:
             self.fail("Modification of sealed FieldContainer was not \
-prohibited.")
+                        prohibited.")
         try:
             field.dimensions[0] = copy.deepcopy(field)
         except TypeError, e:
             pass
         else:
             self.fail("Modification of sealed FieldContainer's dimension \
-was not prohibited.")
+                        was not prohibited.")
 
 #This test is broken since it produces an invalid FieldContainer.
 #I am not sure how to fix it or what its intent is.
@@ -510,12 +510,24 @@ class SampleContainerTest(unittest.TestCase):
                                         #dimensions=INDEX,
                                         longname=u"Integer sample",
                                         shortname=u"i")
+        self.intSample2 = FieldContainer(2 * scipy.arange(0, self.rows),
+                                        Quantity('1m'),
+                                        longname=u"Integer sample No2",
+                                        shortname=u"i2")
         self.floatSample = FieldContainer(scipy.arange(self.rows / 2,
                                                        self.rows,
                                                        0.5),
                                           Quantity('1s'),
                                           longname=u"Float sample",
                                           shortname=u"t")
+        self.shortFloatSample1 = FieldContainer(scipy.array([1., 2., 10.]),
+                                          Quantity('1.0 s**2'),
+                                          longname=u"Short Float sample 1",
+                                          shortname=u"short1")
+        self.shortFloatSample2 = FieldContainer(scipy.array([5., 10., 1.]),
+                                          Quantity('1.0 kg * m'),
+                                          longname=u"Short Float sample 2",
+                                          shortname=u"short2")
         self.desc = scipy.dtype({'names':[u'i', u't'],
                                  'formats':[self.intSample.data.dtype,
                                             self.floatSample.data.dtype],
@@ -530,9 +542,177 @@ class SampleContainerTest(unittest.TestCase):
                                                 self.floatSample],
                                                self.longname,
                                                self.shortname)
+        self.sampleContainerNeu = SampleContainer([self.intSample,
+                                                   self.intSample2,
+                                                self.floatSample,
+                                                self.shortFloatSample1,
+                                                self.shortFloatSample2],
+                                               "New Sample",
+                                               "NewSC")
 
     def runTest(self):
         return
+
+
+class AlgebraSampleContainerTests(SampleContainerTest):
+
+    def testNodeTransformer(self):
+        from pyphant.core.DataContainer import (ReplaceName, ReplaceOperator)
+        rpn = ReplaceName(self.sampleContainer)
+        import ast
+        exprStr = 'col("i") / (col("t") + col("t"))'
+        expr = compile(exprStr, "<TestCase>", 'eval', ast.PyCF_ONLY_AST)
+        replacedExpr = rpn.visit(expr)
+        #print rpn.localDict
+        #print ast.dump(replacedExpr)
+        rpb = ReplaceOperator(rpn.localDict)
+        factorExpr = rpb.visit(replacedExpr)
+        #print ast.dump(factorExpr)
+
+    def testCalcColumn(self):
+        exprStr = 'col("i") / (col("t") + col("t")) + "1km/s"'
+        column = self.sampleContainer.calcColumn(exprStr, 'v', 'velocity')
+        #print self.sampleContainerNeu['i']
+        #print self.sampleContainerNeu['t']
+        #print self.sampleContainerNeu['i2']
+        #print column
+        exprStr = 'col("i") / (col("t") + col("t")) + "1km"'
+        self.assertRaises(ValueError, self.sampleContainer.calcColumn,
+                          exprStr, 'v', 'velocity')
+
+    def testCalcColumnExplicit(self):
+        exprStr = 'col("short1") * col("short2") - "10 kg * m * s**2"'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            exprStr, 'Test1', 'Mult und Minus')
+        #print(columnOut)
+        columnCheck = FieldContainer(scipy.array([-5., 10., 0.]),
+                                     unit='1 kg * m * s**2',
+                                     shortname='Test1Check',
+                                     longname='Test1Checken')
+        #print(columnCheck.unit)
+        #print(type(columnCheck.unit))
+        checkIfDataEqual = columnOut.data == columnCheck.data
+        if checkIfDataEqual.all() and columnOut.unit == columnCheck.unit:
+            print('Explicit check No1 ok.')
+        else:
+            raise ValueError
+        exprStr = '(col("short1") / col("short2") - "10.0 s**2/(kg*m)") ' + \
+                  '> ("-5.0 s**2/(kg*m)")'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            exprStr, 'Test1', 'Mult und Minus')
+        #print(columnOut)
+        #print(columnOut.unit)
+        columnCheck = FieldContainer(scipy.array([False, False, True]),
+                                     shortname='Test2Check',
+                                     longname='Test2Checken')
+        checkIfDataEqual = columnOut.data == columnCheck.data
+        if checkIfDataEqual.all() and columnOut.unit == columnCheck.unit:
+            print('Explicit check No2 ok.')
+        else:
+            raise ValueError
+        exprStr = 'col("short1") * col("short2") - "10 kg * s**2"'
+        self.assertRaises(
+            ValueError, self.sampleContainerNeu.calcColumn, exprStr,
+            'Test1assert', 'Test1AssertRaise')
+        exprStr = '"1.0m" / "0.0m"'
+        self.assertRaises(ZeroDivisionError,
+                          self.sampleContainerNeu.calcColumn, exprStr,\
+                                            'TestZero', 'Division by Zero')
+
+    def testAlgebraPlus(self):
+        from pyphant.core.DataContainer import FieldContainer
+        expr = 'col("i") + col("i2") + "-10 m"'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            expr, 'OutPlus', 'OutcomePlus')
+        columnCheck = FieldContainer(3 * scipy.arange(0, self.rows) - 10,
+                                unit='1 m',
+                                longname="Outcome Check",
+                                shortname="OC")
+        checkIfDataEqual = columnOut.data == columnCheck.data
+        if checkIfDataEqual.all() and columnOut.unit == columnCheck.unit:
+            print("Adding works.")
+        else:
+            raise ValueError
+
+    def testAlgebraMinus(self):
+        from pyphant.core.DataContainer import FieldContainer
+        expr = 'col("i") - col("i2") - "-10 km"'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            expr, 'OutMinus', 'OutcomeMinus')
+        columnCheck = FieldContainer(-1 * scipy.arange(0, self.rows) + 10000,
+                                unit='1 m',
+                                longname="Outcome Check",
+                                shortname="OC")
+        checkIfDataEqual = columnOut.data == columnCheck.data
+        if checkIfDataEqual.all() and columnOut.unit == columnCheck.unit:
+            print("Subtracting works.")
+        else:
+            raise ValueError
+
+    def testAlgebraMult(self):
+        from pyphant.core.DataContainer import FieldContainer
+        expr = 'col("i") * col("i") * 0.5'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            expr, 'OutMult', 'OutcomeMult')
+        columnCheckData = scipy.array(
+            map(lambda x: x ** 2 * 0.5, scipy.arange(0, self.rows)))
+        columnCheck = FieldContainer(columnCheckData,
+                                unit='1 m**2',
+                                longname="Outcome Check",
+                                shortname="OC")
+        checkIfDataEqual = columnOut.data == columnCheck.data
+        if checkIfDataEqual.all() and columnOut.unit == columnCheck.unit:
+            print("Multiplying works.")
+        else:
+            raise ValueError
+
+    def testAlgebraDiv(self):
+        from pyphant.core.DataContainer import FieldContainer
+        expr = 'col("i") / 2.'
+        expr2 = '(col("i") + "1 m") / (col("i") + "1 m")'
+        columnOut = self.sampleContainerNeu.calcColumn(
+            expr, 'OutDiv', 'OutcomeDiv')
+        #print(columnOut)
+        columnOut2 = self.sampleContainerNeu.calcColumn(
+            expr2, 'OutDiv2', 'OutcomeDiv2')
+        #print(columnOut.unit)
+        #columnCheckData = scipy.array([1 for i in range(0,self.rows)])
+        columnCheckData = 0.5 * scipy.arange(0., float(self.rows))
+        columnCheckData2 = scipy.array([1. for i in range(0, self.rows)])
+        columnCheck = FieldContainer(columnCheckData,
+                                unit='1 m',
+                                longname="Outcome Check",
+                                shortname="OC")
+        columnCheck2 = FieldContainer(columnCheckData2,
+                                unit='1.0',
+                                longname="Outcome Check",
+                                shortname="OC")
+        checkIfDataEqual = columnOut.data == columnCheck.data
+        checkIfDataEqual2 = columnOut2.data == columnCheck2.data
+        if checkIfDataEqual.all() and checkIfDataEqual2.all() \
+               and columnOut.unit == columnCheck.unit:
+            print("Dividing works.")
+        else:
+            raise ValueError
+
+    def testDimensions(self):
+        fc1 = FieldContainer(numpy.array([4, 5, 6]), unit=Quantity('1 m'),
+                             dimensions=[FieldContainer(
+                                 numpy.array([1, 2, 3]), unit=Quantity('1 s'))],
+                             shortname='s1')
+        fc2 = FieldContainer(numpy.array([1, 2, 3]), unit=Quantity('1 km'),
+                             dimensions=[FieldContainer(
+                                 numpy.array([10, 20, 30]),
+                                 unit=Quantity('0.1 s'))],
+                             shortname='s2')
+        sc = SampleContainer(columns=[fc1, fc2])
+        expr = "col('s1') + col('s2')"
+        dims = sc.calcColumn(expr, 'Add', 'a').dimensions
+        self.assertEqual(dims, fc1.dimensions)
+        self.assertEqual(dims, fc2.dimensions)
+        fc2.dimensions[0].unit = Quantity('0.11 s')
+        self.assertRaises(ValueError, sc.calcColumn, expr, 'Add', 'a')
+
 
 class CommonSampleContainerTests(SampleContainerTest):
     def testLabeling(self):
@@ -628,7 +808,7 @@ class CommonSampleContainerTests(SampleContainerTest):
 
 class SampleContainerSlicingTests(SampleContainerTest):
     def setUp(self):
-        super(SampleContainerSlicingTests, self).setUp()
+        SampleContainerTest.setUp(self)
         time_data = numpy.array([10.0, 20.0, 30.0, 5.0, 9000.0])
         time_error = numpy.array([1.0, 2.0, 3.0, .5, 900.0])
         time_unit = Quantity('2s')
@@ -662,24 +842,25 @@ class SampleContainerSlicingTests(SampleContainerTest):
                                         None, False)
         self.sc2d = SampleContainer([length_FC, temperature_FC, time_FC],
                                     "Test Container", "TestC")
-        self.sc2d["t"].dimensions[0].unit = Quantity('5m')
+        self.sc2d["t"].dimensions[0].unit = Quantity('1m')
         self.sc2d["t"].dimensions[0].data = numpy.array([-20, -10, 0, 10, 20])
-        self.sc2d["l"].dimensions[0].unit = Quantity('2mm')
-        self.sc2d["l"].dimensions[0].data = numpy.array([-1, -0.5, 0, 0.5, 1])
-        self.sc2d["T"].dimensions[0].unit = Quantity('0.5mm')
-        self.sc2d["T"].dimensions[0].data = numpy.array([-3, -1.5, 0, 1.5, 3])
+        self.sc2d["l"].dimensions[0].unit = Quantity('5m')
+        self.sc2d["l"].dimensions[0].data = numpy.array([-4, -2, 0, 2, 4])
+        self.sc2d["T"].dimensions[0].unit = Quantity('2m')
+        self.sc2d["T"].dimensions[0].data = numpy.array([-10, -5, 0, 5, 10])
         self.sc2d["T"].dimensions[1].unit = Quantity('10nm')
         self.sc2d["T"].dimensions[1].data = numpy.array([-1, 0, 1])
 
     #purely one dimensional Tests:
     def testConsistancy(self):
-        result1 = self.sampleContainer.filter('20m < "i" and 80m > "i"')
-        result2 = self.sampleContainer.filter('20m < "i" < 80m')
+        result1 = self.sampleContainer.filter(
+            '("20m" < col("i")) & ("80m" > col("i"))')
+        result2 = self.sampleContainer.filter('"20m" < col("i") < "80m"')
         self.assertEqual(result1[0], result2[0])
         self.assertEqual(result1[1], result2[1])
 
     def testSimpleUnicodeExpression(self):
-        result = self.sampleContainer.filter(u'50m <= "i" < 57m')
+        result = self.sampleContainer.filter(u'"50m" <= col("i") < "57m"')
         self.assertEqual(len(result.columns), 2)
         self.assertEqual(len(result[0].data), 7)
         self.assertEqual(len(result[1].data), 7)
@@ -693,7 +874,8 @@ class SampleContainerSlicingTests(SampleContainerTest):
         self.assertEqual(result[1], expected)
 
     def testANDExpression(self):
-        result = self.sampleContainer.filter('"i" >= 20m and "t" <= 98.5s')
+        result = self.sampleContainer.filter(
+            '(col("i") >= "20m") & (col("t") <= "98.5s")')
         expectedi = self.sampleContainer["i"][20:98]
         expectedt = self.sampleContainer["t"][20:98]
         expectedi.attributes = {}
@@ -713,62 +895,61 @@ class SampleContainerSlicingTests(SampleContainerTest):
             FC.error = FC.error[indices]
             FC.dimensions[0].data = FC.dimensions[0].data[indices]
         self.assertEqual(result, expectedSC)
+        return result
 
     def testEmpty2dExpression(self):
         result = self.sc2d.filter('')
         self.assertEqual(result, self.sc2d)
-        result = self.sc2d.filter(())
-        self.assertEqual(result, self.sc2d)
 
     def testAtomar2dExpressions(self):
-        self._compareExpected('"t" <= 40.0s',
+        self._compareExpected('col("t") <= "40.0s"',
                               [True, True, False, True, False])
-        self._compareExpected('"l" < 10000m',
+        self._compareExpected('col("l") < "10000m"',
                               [True, True, False, False, True])
-        self._compareExpected('"Zeit" >= 20.0s',
+        self._compareExpected('col("Zeit") >= "20.0s"',
                               [True, True, True, False, True])
-        self._compareExpected('"l" > 5500m',
+        self._compareExpected('col("l") > "5500m"',
                               [False, False, True, True, False])
-        self._compareExpected('"t" == 18000s',
+        self._compareExpected('col("t") == "18000s"',
                               [False, False, False, False, True])
-        self._compareExpected('"Strecke" != 20000m',
+        self._compareExpected('col("Strecke") != "20000m"',
                               [True, True, False, True, True])
 
     def testNot2dExpression(self):
-        self._compareExpected('not "t" == 10s', [True, True, True, False, True])
+        self._compareExpected('~ (col("t") == "10s")',
+                              [True, True, True, False, True])
 
     def testAnd2dExpression(self):
-        self._compareExpected('"Zeit" == 60s and 20000m == "Strecke"',
-                              [False, False, True, False, False])
+        self._compareExpected(
+            '(col("Zeit") == "60s") & ("20000m" == col("Strecke"))',
+            [False, False, True, False, False])
 
     def testOr2dExpression(self):
-        self._compareExpected('"Zeit" < 60s or "Strecke" == 5500m',
-                              [True, True, False, True, True])
-
-    def testPrecedence2dExpression(self):
-        self._compareExpected('0m > "l" or not ("t" == 20s or "t" == 40s) and '
-                              '(("l" == -20000m or "t" == 40s) or "l" == 5500m)',
-                              [True, False, False, False, True])
-
-    def testNestedTuple2dExpression(self):
-        self._compareExpected(('AND',
-                               ('Atomar',
-                                ('SCColumn', self.sc2d["t"]), '==',
-                                ('PhysQuant', Quantity('20s'))),
-                               ('Atomar',
-                                ('SCColumn', self.sc2d["l"]), '==',
-                                ('PhysQuant', Quantity('-20000m')))),
-                              [True, False, False, False, False])
+        self._compareExpected(
+            '(col("Zeit") < "60s") | (col("Strecke") == "5500m")',
+            [True, True, False, True, True])
 
     def testMultipleCompareOpPrecedence2dExpression(self):
-        self._compareExpected('not 0m <= "l" <= 10000m',
+        self._compareExpected('~ ("0m" <= col("l") <= "10000m")',
                               [True, False, True, False, False])
 
     def testColumnToColumn2dExpression(self):
-        self._compareExpected('"l" == "Strecke"',
+        self._compareExpected('col("l") == col("Strecke")',
                               [True, True, True, True, True])
-        self._compareExpected('"t" != "Zeit"',
+        self._compareExpected('col("t") != col("Zeit")',
                               [False, False, False, False, False])
+
+    def testIncompatibleDimensionsExpression(self):
+        fc1 = FieldContainer(numpy.array([1, 2, 3]),
+                             dimensions=[FieldContainer(numpy.array([4, 5, 6]),
+                                                        unit=Quantity('1m'))],
+                             shortname='t1')
+        fc2 = copy.deepcopy(fc1)
+        fc2.dimensions[0].data[0] = 4.01
+        fc2.shortname = 't2'
+        incompatibleSC = SampleContainer(columns=[fc1, fc2])
+        self.assertRaises(ValueError, incompatibleSC.filter,
+                          "col('t1') > col('t2')")
 
 
 class FieldContainerRescaling(unittest.TestCase):
@@ -1208,5 +1389,3 @@ if __name__ == "__main__":
         suite = unittest.TestLoader().loadTestsFromTestCase(
             eval(sys.argv[1:][0]))
         unittest.TextTestRunner().run(suite)
-
-

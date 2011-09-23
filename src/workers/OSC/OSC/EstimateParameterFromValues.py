@@ -49,7 +49,7 @@ class EstimateParameterFromValues(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "Estimate Parameter"
+    name = "Estimate Parameter from Values"
 
     _sockets = [("model", Connectors.TYPE_ARRAY),
                 ("experimental", Connectors.TYPE_ARRAY)]

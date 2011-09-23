@@ -36,7 +36,7 @@ u"""
 =============================================================================
 
 The *DataContainer* is Pypahnt's preferred data exchange class. It is
-designed to maximise the interoperability of the various workers
+designed to maximize the interoperability of the various workers
 provided by Pyphant.
 
 It can be seen as an interface for exchanging data between workers and
@@ -58,7 +58,7 @@ There are two kinds of DataContainers:
 =============================================================
 
 The *SampleContainer* combines different FieldContainers that have the
-same numer of sample points to a table-like representation. It stores
+same number of sample points to a table-like representation. It stores
 different observations on the same subject per row whereby each column
 comprises a quantity of the same kind. Each row can be regarded as the
 realization of a random variable.
@@ -71,10 +71,9 @@ __version__ = "$Revision$"
 
 import copy, hashlib, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse
-from pyphant.quantities import (isQuantity,
-                                                   Quantity)
+from pyphant.quantities import (isQuantity, Quantity)
 import Helpers
-
+from ast import (NodeTransformer, NodeVisitor)
 import logging
 _logger = logging.getLogger("pyphant")
 
@@ -83,7 +82,7 @@ _logger = logging.getLogger("pyphant")
 enc = lambda s: unicode(s, "utf-8")
 
 def parseId(id):
-    u"""Returns tupple (HASH, TYPESTRING) from given .id attribute."""
+    u"""Returns tuple (HASH, TYPESTRING) from given .id attribute."""
     resUri = urlparse.urlsplit(id)
     return resUri[2].split('/')[-1].split('.') #(hash, uriType)
 
@@ -293,446 +292,152 @@ class SampleContainer(DataContainer):
     def numberOfColumns(self):
         return len(self.columns)
 
-    def _getCommands(self, expression):
+    def calcColumn(self, exprStr, shortname, longname):
         """
-        This method generates nested tuples of filter commands to be applied
-        to a SampleContainer out of a string expression. For details of the
-        output see SampleContainer.filter()
-        expression -- String describing the filter commands. For details
-                      see SampleContainer.filter(expression)
+        Return an unsealed FieldContainer generated from `exprStr`.
+
+        Parameters
+        ----------
+        exprStr : str
+            Expression has to be a string. Specifies the mathematical
+            operations which will be evaluated to generate a new FieldContainer
+            containing the result. `exprStr` may contain FieldContainers,
+            PhysicalQuantities, Booleans and Numbers as well as the operators
+            listed below.
+
+        shortname : str
+            The `shortname` of the returned FieldContainer.
+
+        longname : str
+            The `longname`of the returned FieldContainer.
+
+        Syntax
+        ------
+        FieldContainer
+            FieldContainers can be adressed by their `shortname`or `longname`.
+            For a FieldContainer with shortname="exampleFC" the syntax within
+            `exprStr` is:
+                col("exampleFC")
+            where `col` stands for column and may be `Col` or `COL` as well.
+            Adressing by `longname` works analogously.
+
+        PhysicalQuantity
+            Within the expression PhysicalQuantities have to be enquoted:
+                "10kg", "100 m", "5 kg * m / s ** 2"
+            where the whitespaces are optional.
+
+        Booleans and Numbers
+            Can just be used without quotes or braces within `exprStr`:
+                True, False, 1.2, 10
+
+        Operators
+        ---------
+        A list of all implemented operations that can be used within `exprStr`
+        sorted by precedence from lowest precedence (least binding) to highest
+        precedence (most binding):
+
+        Comparisons: <, <=, >, >=, <>, !=, ==
+        Bitwise OR: |
+        Bitwise XOR: ^
+        Bitwise AND: &
+        Addition and Subtraction: +, -
+        Multiplication, Division: *, /
+        Positive, Negative, Bitwise NOT: +x, -x, ~x
+
+        Not implemented: and, or, not, **, //, %, if - else
+
+        Examples
+        --------
+        Some examples of valid expressions will be given.
+        Data:
+            distance = FieldContainer(scipy.array([5., 10., 1.]),
+                                    Quantity('1.0 m'),
+                                    longname=u"Distance",
+                                    shortname=u"s")
+            time = FieldContainer(scipy.array([3., 4., 5.]),
+                                    Quantity('1.0 s'),
+                                    longname=u"Time",
+                                    shortname=u"t")
+        Examplary expressions:
+            exprStr = "col('Distance') / col('Time')"
+            exprStr = "col('Distance') - '1 m'"
+            exprStr = "col('t') >= '4 s'"
+            exprStr = "(col('s') > '1 m') & (COL('Time') == '3s')"
+
         """
-        #TODO: compare SCColumns with each other,
-        #      allow multi dimensional columns (think up new syntax)
-        import re
-        #test for expressions containing whitespaces only:
-        if len(re.findall(r'\S', expression)) == 0:
-            return ()
-        #prepare regular expressions
-        reDoubleQuotes = re.compile(r'("[^"][^"]*")')
-        reSplit = re.compile(
-            r'(<(?!=)|<=|>(?!=)|>=|==|!=|not|NOT|and|AND|or|OR|\(|\))'
-            )
-        reCompareOp = re.compile(r'<|>|==|!=')
-        #split the expression
-        DQList = reDoubleQuotes.split(expression)
-        splitlist = []
-        for dq in DQList:
-            if reDoubleQuotes.match(dq) != None: splitlist.append(dq)
-            else: splitlist.extend(reSplit.split(dq))
-        #identify splitted Elements
-        al = [] #<-- abstractlist containing tuples of (type, expression)
-        for e in splitlist:
-            if len(re.findall(r'\S', e)) == 0: pass #<-- skip whitespaces
-            elif reCompareOp.match(e) != None:
-                al.append(('CompareOp', e))
-            elif reSplit.match(e) != None:
-                al.append(('Delimiter', e.lower()))
-            elif reDoubleQuotes.match(e) != None:
-                column = None
-                try:
-                    column = self[e[1:-1]]
-                except:
-                    raise IndexError(
-                        'Could not find column ' + e + ' in "'
-                        + self.longname + '".'
-                        )
-                al.append(('SCColumn', column))
+        exprStr = exprStr or 'True'
+        import ast
+        rpn = ReplaceName(self)
+        expr = compile(exprStr, "<calcColumn>", 'eval', ast.PyCF_ONLY_AST)
+        replacedExpr = rpn.visit(expr)
+        rpo = ReplaceOperator(rpn.localDict)
+        factorExpr = rpo.visit(replacedExpr)
+        localDict = dict([(key, value.data) \
+                          for key, value in rpn.localDict.iteritems()])
+        data = eval(compile(factorExpr, '<calcColumn>', 'eval'), {}, localDict)
+        unitcalc = UnitCalculator(rpn.localDict)
+        unit, dims = unitcalc.getUnitAndDim(replacedExpr)
+        if dims is None:
+            assert not isinstance(data, numpy.ndarray)
+            for col in self.columns:
+                checkDimensions(col.dimensions[0],
+                                self.columns[0].dimensions[0])
+            shape = self.columns[0].dimensions[0].data.shape
+            if data:
+                data = numpy.ones(shape, dtype=bool)
             else:
-                try:
-                    phq = Quantity(e)
-                    al.append(('PhysQuant', phq))
-                    continue
-                except:
-                    try:
-                        number = Quantity(e+' m')
-                        al.append(('Number', eval(e)))
-                        continue
-                    except: pass
-                    raise ValueError, "Error parsing expression: " + e
-        #resolve multiple CompareOps like a <= b <= c == d:
-        i = 0
-        values = ['PhysQuant', 'SCColumn', 'Number']
-        start_sequence = -1
-        while i < len(al) - 4:
-            if ((al[i][0] in values) and (al[i+1][0] == 'CompareOp')
-                and (al[i+2][0] in values) and (al[i+3][0] == 'CompareOp')
-                and (al[i+4][0] in values)):
-                if start_sequence == -1:
-                    start_sequence = i
-                al.insert(i+3, ('Delimiter', 'and'))
-                al.insert(i+4, al[i+2])
-                i += 4
-            else:
-                #'not' has higher precedence than 'and':
-                if start_sequence != -1:
-                    al.insert(start_sequence, ('Delimiter', '('))
-                    al.insert(i+4, ('Delimiter', ')'))
-                    start_sequence = -1
-                    i += 3
-                else:
-                    i += 1
-        if start_sequence != -1:
-            al.insert(start_sequence, ('Delimiter', '('))
-            al.insert(i+4, ('Delimiter', ')'))
-        #identify atomar components like "a" <= 10m, 10s > "b",
-        #... and compress them:
-        if al[0][0] == 'CompareOp':
-            raise ValueError(
-                al[0][1] + " may not stand at the beginning of an expression!"
-                )
-        i = 1
-        valid = False
-        while i < len(al):
-            if al[i][0] == 'CompareOp':
-                left = al.pop(i-1)
-                middle = al.pop(i-1)
-                right = al.pop(i-1)
-                if left[0] not in values:
-                    raise TypeError, str(left[1]) + " is not a proper value."
-                if right[0] not in values:
-                    raise TypeError, str(right[1]) + " is not a proper value."
-                al.insert(i-1, ('Atomar', left, middle[1], right))
-                valid = True
-            i += 1
-        if not valid:
-            raise ValueError(
-                "There has to be at least one valid comparison: " + expression
-                )
+                data = numpy.zeros(shape, dtype=bool)
+            dims = [self.columns[0].dimensions[0]]
+        field = FieldContainer(data, unit, dimensions=dims,
+                               longname=longname, shortname=shortname)
+        return field
 
-        def compressBraces(sublist):
-            """
-            Identifies braces and compresses them recursively.
-            sublist -- list of filter commands
-            """
-            openbraces = 0
-            start = 0
-            end = 0
-            finished = False
-            for i in range(len(sublist)):
-                if sublist[i] == ('Delimiter', '('):
-                    openbraces += 1
-                    if openbraces == 1 and not finished:
-                        start = i
-                elif sublist[i] == ('Delimiter', ')'):
-                    openbraces -= 1
-                    if openbraces == 0 and not finished:
-                        end = i
-                        finished = True
-            if openbraces != 0:
-                raise ValueError(
-                    "There are unmatched braces within the expression: "
-                    + expression
-                    )
-            if start == 0 and end == 0:
-                #no more braces found: end of recursion
-                return sublist[:]
-            else:
-                if end-start == 1:
-                    raise ValueError(
-                        "There are braces enclosing nothing in the expression: "
-                        + expression
-                        )
-                middle = None
-                if end-start == 2:
-                    #discard unnecessary braces in order to reduce
-                    #recursion depth later on:
-                    middle = sublist[start+1:start+2]
-                else:
-                    middle = [('Brace', compressBraces(sublist[start+1:end]))]
-                return sublist[0:start]+middle+compressBraces(sublist[end+1:])
-        #TODO: The following three methods could be merged into one generalized
-        #method for compressing unitary and binary operators. This would be
-        #useful in a future version when there are lots of operators to be
-        #supported.
-
-        def compressNot(sublist):
-            """
-            Identifies "not"s and compresses them recursively.
-            sublist -- list of filter commands
-            """
-            i = 0
-            while i < len(sublist):
-                if sublist[i] == ('Delimiter', 'not'):
-                    if i+1 >= len(sublist):
-                        raise ValueError(
-                            "'not' must not stand at the end of an expression: "
-                            + expression
-                            )
-                    x = sublist[i+1]
-                    if x[0] == 'Atomar':
-                        retlist = sublist[0:i] + [('NOT', x)]
-                        retlist += compressNot(sublist[i+2:])
-                        return retlist
-                    elif x[0] == 'Brace':
-                        retlist = sublist[0:i]
-                        retlist += [('NOT', ('Brace', compressNot(x[1])))]
-                        retlist += compressNot(sublist[i+2:])
-                        return retlist
-                    else:
-                        raise ValueError(
-                            "'not' cannot be applied to " + str(x) + "."
-                            )
-                elif sublist[i][0] == 'Brace':
-                    retlist = sublist[0:i]
-                    retlist += [('Brace', compressNot(sublist[i][1]))]
-                    retlist += compressNot(sublist[i+1:])
-                    return retlist
-                i += 1
-            return sublist[:]
-
-        def compressAnd(sublist, start=0):
-            """
-            Identifies "and"s and compresses them recursively:
-            start -- start == 1 indicates that the 1st element of sublist
-                     has already been compressed. This is necessary for
-                     binary operators.
-            sublist -- list of filter commands
-            """
-            i = start
-            while i < len(sublist):
-                if sublist[i] == ('Delimiter', 'and'):
-                    left = None
-                    if start == 1 and i == 1: left = sublist[i-1]
-                    else: left = compressAnd(sublist[i-1:i])[0]
-                    if left[0] not in ['NOT', 'AND', 'Brace', 'Atomar']:
-                        raise ValueError(
-                            "'and' cannot be applied to " + str(left) + "."
-                            )
-                    right = compressAnd(sublist[i+1:i+2])[0]
-                    if right[0] not in ['NOT', 'AND', 'Brace', 'Atomar']:
-                        raise ValueError(
-                            "'and' cannot be applied to " + str(right) + "."
-                            )
-                    retlist = sublist[0:i-1]
-                    retlist += compressAnd([('AND', left, right)]+sublist[i+2:],
-                                           1)
-                    return retlist
-                elif sublist[i][0] == 'Brace':
-                    retlist = sublist[0:i]
-                    retlist += compressAnd([('Brace',
-                                             compressAnd(sublist[i][1]))]
-                                           + sublist[i+1:], 1)
-                    return retlist
-                elif sublist[i][0] == 'NOT':
-                    retlist = sublist[0:i]
-                    retlist += compressAnd([('NOT',
-                                             compressAnd([sublist[i][1]])[0])]
-                                           + sublist[i+1:], 1)
-                    return retlist
-                i += 1
-            return sublist[:]
-
-        def compressOrDCB(sublist, start=0):
-            """
-            Identifies "or"s and compresses them recursively.
-            Decompresses braces in order to reduce recursion depth later on.
-            start -- start == 1 indicates that the 1st element of sublist
-                     has already been compressed. This is necessary for
-                     binary operators.
-            sublist -- list of filter commands
-            """
-            i = start
-            while i < len(sublist):
-                if sublist[i] == ('Delimiter', 'or'):
-                    left = None
-                    if start == 1 and i == 1: left = sublist[i-1]
-                    else: left = compressOrDCB(sublist[i-1:i])[0]
-                    if left[0] not in ['NOT', 'AND', 'Atomar', 'OR']:
-                        raise ValueError(
-                            "'or' cannot be applied to " + str(left) + "."
-                            )
-                    right = compressOrDCB(sublist[i+1:i+2])[0]
-                    if right[0] not in ['NOT', 'AND', 'Atomar', 'OR']:
-                        raise ValueError(
-                            "'or' cannot be applied to " + str(right) + "."
-                            )
-                    retlist = sublist[0:i-1]
-                    retlist += compressOrDCB([('OR', left, right)]
-                                             + sublist[i+2:], 1)
-                    return retlist
-                elif sublist[i][0] == 'Brace':
-                    inner = compressOrDCB(sublist[i][1])
-                    if len(inner) != 1:
-                        raise ValueError(
-                            "Expression could not be parsed completely."
-                            "(probably missing keyword): " + expression
-                            )
-                    retlist = sublist[0:i]
-                    retlist += compressOrDCB(inner + sublist[i+1:], 1)
-                    return retlist
-                elif sublist[i][0] == 'NOT':
-                    retlist = sublist[0:i]
-                    retlist += compressOrDCB(
-                        [('NOT', compressOrDCB([sublist[i][1]])[0])]
-                        + sublist[i+1:], 1
-                        )
-                    return retlist
-                elif sublist[i][0] == 'AND':
-                    retlist = sublist[0:i]
-                    retlist += compressOrDCB(
-                        [('AND',
-                          compressOrDCB([sublist[i][1]])[0],
-                          compressOrDCB([sublist[i][2]])[0])]
-                        + sublist[i+1:], 1)
-                    return retlist
-                i += 1
-            return sublist[:]
-        compressed = compressOrDCB(compressAnd(compressNot(compressBraces(al))))
-        if len(compressed) != 1:
-            raise ValueError(
-                "Expression could not be parsed completely"
-                "(probably missing keyword): " + expression
-                )
-        return compressed[0]
-
-    def filter(self, expression):
+    def filter(self, exprStr, shortname='', longname=''):
         """
-        Returns a new SampleContainer with filter commands applied to it.
-        expression -- can be either a string expression or nested tuples
-                      of commands. In case expression is a string (or unicode),
-                      the following syntax holds:
-                      Let's define
-                      <atomar> := <value> <CompareOp> <value>
-                      where <value> is either a SC Column accessed as
-                      "longname" or "shortname" (including the double quotes)
-                      or a number or a string representing a Quantity
-                      (e.g. 300nm). And <CompareOp> can be ==, !=, <, <=, >, >=.
-                      Then a valid expression <expression> is:
-                      - <atomar>
-                      - (<expression>)
-                      - not <expression>
-                      - <expression> and <expression>
-                      - <expression> or <expression>
-                      - NOT, AND, OR is equivalent to not, and, or
-                      Precedence is as follows:
-                      - multiple CompareOps are evaluated:
-                        e.g. a <= b < c --> (a <= b and b < c)
-                      - <atomar>
-                      - braces
-                      - not
-                      - and
-                      - or
-                      If expression is a nested tuple, syntax is as follows:
-                      <value> is either ('SCColumn', FieldContainer instance)
-                      or ('PhysQuant', Quantity instance)
-                      or ('Number', int float etc.)
-                      <CompareOp> is in ['==', '!=', ...]
-                      A valid nested tuple <nt> can be:
-                      - ('Atomar', <value>, <CompareOp>, <value>)
-                      - ('NOT', <nt>)
-                      - ('AND', <nt>, <nt>)
-                      - ('OR', <nt>, <nt>)
-                      Precedence is obtained from the way the tuples are nested.
-        """
-        #determine type of expression:
-        from types import StringType, UnicodeType, TupleType
-        commands = None
-        if isinstance(expression, UnicodeType):
-            commands = self._getCommands(expression.encode('utf-8'))
-        elif isinstance(expression, StringType):
-            commands = self._getCommands(expression)
-        elif isinstance(expression, TupleType) or expression == None:
-            commands = expression
-        else:
-            raise TypeError(
-                "Expression has to be of StringType, UnicodeType,"
-                "TupleType or None. Found " + str(type(expression))
-                + " instead!"
-                )
-        #check for empty commands:
-        if commands == None or commands == ():
-            return copy.deepcopy(self)
-        #generate boolean numpymask from commands using fast numpy methods:
-        def evaluateAtomar(atomar):
-            left = atomar[1]
-            if left[0] == 'SCColumn':
-                if left[1].data.ndim != 1:
-                    raise NotImplementedError(
-                        'Comparing columns of dimensions other than one '
-                        'is not yet implemented: "' + left[1].longname + '"'
-                        )
-            right = atomar[3]
-            if right[0] == 'SCColumn':
-                if right[1].data.ndim != 1:
-                    raise NotImplementedError(
-                        'Comparing columns of dimensions other than one '
-                        'is not yet implemented: "' + right[1].longname + '"'
-                        )
-            leftvalue = None
-            rightvalue = None
-            if left[0] == 'SCColumn' and right[0] == 'SCColumn':
-                number = right[1].unit/left[1].unit
-                if isQuantity(number):
-                    raise TypeError(
-                        'Cannot compare "' + left[1].longname + '" to "'
-                        + right[1].longname + '".'
-                        )
-                leftvalue = left[1].data
-                rightvalue = right[1].data*number
-            elif left[0] == 'SCColumn':
-                number = right[1]/left[1].unit
-                if isQuantity(number):
-                    raise TypeError(
-                        'Cannot compare "' + left[1].longname
-                        + '" to ' + str(right[1]) + '".'
-                        )
-                leftvalue = left[1].data
-                rightvalue = number
-            elif right[0] == 'SCColumn':
-                number = left[1]/right[1].unit
-                if isQuantity(number):
-                    raise TypeError(
-                        "Cannot compare " + str(left[1]) + ' to "'
-                        + right[1].longname + '".'
-                        )
-                leftvalue = number
-                rightvalue = right[1].data
-            else:
-                raise ValueError(
-                    "At least one argument of '" + atomar[2][1]
-                    + "' has to be a column."
-                    )
-            if   atomar[2] == '==': return leftvalue == rightvalue
-            elif atomar[2] == '!=': return leftvalue != rightvalue
-            elif atomar[2] == '<=': return leftvalue <= rightvalue
-            elif atomar[2] == '<' : return leftvalue <  rightvalue
-            elif atomar[2] == '>=': return leftvalue >= rightvalue
-            elif atomar[2] == '>' : return leftvalue >  rightvalue
-            raise ValueError, "Invalid atomar expression: " + str(atomar)
+        Return an unsealed SampleContainer containing only those rows where
+        `exprStr` was evaluated to be True. This method replaces the old
+        filter method and is mostly capable of the same operations, yet the
+        syntax has changed slightly.
 
-        def getMaskFromCommands(cmds):
-            """
-            Returns a boolean numpy mask from given commands.
-            cmds -- nested tuples of commands (see SampleContainer.filter())
-            """
-            if cmds[0] == 'Atomar':
-                return evaluateAtomar(cmds)
-            elif cmds[0] == 'AND':
-                left = getMaskFromCommands(cmds[1])
-                right = getMaskFromCommands(cmds[2])
-                if left.shape != right.shape:
-                    raise TypeError(
-                        "Cannot apply 'and' to columns of different shape: "
-                        + str(left.shape) + ", " + str(right.shape)
-                        )
-                return numpy.logical_and(left, right)
-            elif cmds[0] == 'OR':
-                left = getMaskFromCommands(cmds[1])
-                right = getMaskFromCommands(cmds[2])
-                if left.shape != right.shape:
-                    raise TypeError(
-                        "Cannot apply 'or' to columns of different shape: "
-                        + str(left.shape) + ", " + str(right.shape)
-                        )
-                return numpy.logical_or(left, right)
-            elif cmds[0] == 'NOT':
-                return numpy.logical_not(getMaskFromCommands(cmds[1]))
-        numpymask = getMaskFromCommands(commands)
+        Parameters
+        ----------
+        exprStr : str
+            A string with a logical expression that has to evaluate to be
+            either True or False. This can be for example an inequality or
+            a comparison. For all possible operations and a description of
+            the syntax as well as examples see `calcColumn`.
+
+        shortname, longname : str, default=''
+            Specify the short and long name of the resulting FC.
+
+        """
+        shortname = shortname or self.shortname
+        longname = longname or self.longname
+        mask = self.calcColumn(exprStr, 'm', 'mask')
+        assert isinstance(mask.unit, float)
+        mask = mask.data
+        return self.extractRows(mask, shortname, longname)
+
+    def extractRows(self, mask, shortname, longname):
+        """
+        Return an unsealed SampleContainer that contains only selected rows. The
+        selection is specified via the `mask`.
+
+        Parameters
+        ----------
+        mask : numpy array of Boolean values
+            The length of the array has to be equal to the length of the columns
+            of the SampleContainer. If the value of mask[n] is
+            True, the nth row is part of the result, else it is discarded.
+
+        shortname, longname : str
+            Specify the short and long name of the resulting FC.
+
+        """
         maskedcolumns = []
         for col in self.columns:
-            maskedcol = None
             try:
-                maskedcol = col.getMaskedFC(numpymask)
+                maskedcol = col.getMaskedFC(mask)
             except ValueError:
                 raise ValueError(
                     'Column "' + col.longname + '" has not enough rows!'
@@ -744,10 +449,11 @@ class SampleContainer(DataContainer):
             maskedcolumns.append(maskedcol)
         #build new SampleContainer from masked columns and return it
         result = SampleContainer(maskedcolumns,
-                                 longname=self.longname,
-                                 shortname=self.shortname,
+                                 longname=longname,
+                                 shortname=shortname,
                                  attributes=copy.deepcopy(self.attributes))
         return result
+
 
 def assertEqual(con1, con2, rtol=1e-5, atol=1e-8):
     diagnosis = StringIO.StringIO()
@@ -759,3 +465,179 @@ def assertEqual(con1, con2, rtol=1e-5, atol=1e-8):
         return True
     else:
         raise AssertionError, diagnosis.getvalue()
+
+
+class LocationFixingNodeTransformer(NodeTransformer):
+    def visit(self, *args, **kargs):
+        result = NodeTransformer.visit(self, *args, **kargs)
+        from ast import fix_missing_locations
+        fix_missing_locations(result)
+        return result
+
+
+class ReplaceName(LocationFixingNodeTransformer):
+    def __init__(self, sampleContainer):
+        self.localDict = {}
+        self.count = 0
+        self.sc = sampleContainer
+
+    def visit_Call(self, node):
+        from ast import (Name, Load)
+        if isinstance(node.func, Name) and node.func.id.lower() == 'col':
+            newName = self.getName(self.sc[node.args[0].s])
+            return Name(newName, Load())
+
+    def visit_Str(self, node):
+        from ast import (Name, Load)
+        quantity = Quantity(node.s)
+        class QuantityDummy(object):
+            pass
+        dummy = QuantityDummy()
+        dummy.unit = Quantity(1.0, quantity.unit)
+        dummy.data = quantity.value
+        dummy.dimensions = None
+        newName = self.getName(dummy)
+        return Name(newName, Load())
+
+    def getName(self, ref):
+        newName = "N%s" % self.count
+        self.count += 1
+        self.localDict[newName] = ref
+        return newName
+
+
+class ReplaceOperator(LocationFixingNodeTransformer):
+    def __init__(self, localDict):
+        self.localDict = localDict
+
+    def visit_BinOp(self, node):
+        from ast import (Add, Sub, BinOp)
+        self.generic_visit(node)
+        unitcalc = UnitCalculator(self.localDict)
+        leftUD = unitcalc.getUnitAndDim(node.left)
+        rightUD = unitcalc.getUnitAndDim(node.right)
+        checkDimensions(leftUD[1], rightUD[1])
+        if isinstance(node.op,(Add, Sub)):
+            factor = rightUD[0] / leftUD[0]
+            right = self.withFactor(factor, node.right)
+            binOp = BinOp(node.left, node.op, right)
+            return binOp
+        else:
+            return node
+
+    def visit_Compare(self, node):
+        from ast import Compare
+        self.generic_visit(node)
+        unitcalc = UnitCalculator(self.localDict)
+        leftUD = unitcalc.getUnitAndDim(node.left)
+        listUD = [unitcalc.getUnitAndDim(comp) for comp in node.comparators]
+        nonNoneDims = [ud[1] for ud in listUD + [leftUD] if ud[1] is not None]
+        for dims in nonNoneDims:
+            checkDimensions(nonNoneDims[0], dims)
+        factorlist = [ud[0] / leftUD[0] for ud in listUD]
+        newComplist = [self.withFactor(*t) \
+                       for t in zip(factorlist, node.comparators)]
+        compOp = Compare(node.left, node.ops, newComplist)
+        compOpTrans = self.compBreaker(compOp)
+        return compOpTrans
+
+    def withFactor(self, factor, node):
+        from ast import (BinOp, Num, Mult)
+        if not isinstance(factor, float):
+            raise ValueError('Incompatible units!')
+        if factor == 1.0:
+            return node
+        return BinOp(Num(factor), Mult(), node)
+
+    def compBreaker(self, node):
+        from ast import (Compare, BinOp, BitAnd)
+        assert isinstance(node, Compare)
+        if len(node.comparators) == 1:
+            return node
+        else:
+            comp1 = Compare(node.left, node.ops[0:1],
+                            node.comparators[0:1])
+            comp2 = Compare(node.comparators[0],
+                            node.ops[1:], node.comparators[1:])
+            newNode = BinOp(comp1, BitAnd(), self.compBreaker(comp2))
+            return newNode
+
+
+class UnitCalculator(object):
+    def __init__(self, localDict):
+        self.localDict = localDict
+
+    def getUnitAndDim(self, node):
+        from ast import (Expression, Name, Num,
+                         BinOp, Add, Mult, Div, Sub,
+                         Compare, BoolOp, UnaryOp,
+                         BitOr, BitXor, BitAnd)
+        if isinstance(node, Expression):
+            return self.getUnitAndDim(node.body)
+        elif isinstance(node, Name):
+            if node.id in ['True', 'False']:
+                return (1.0, None)
+            else:
+                column = self.localDict[node.id]
+                return (column.unit, column.dimensions)
+        elif isinstance(node, Num):
+            return (1.0, None)
+        elif isinstance(node, BinOp):
+            left = self.getUnitAndDim(node.left)
+            right = self.getUnitAndDim(node.right)
+            dimensions = checkDimensions(left[1], right[1])
+            if isinstance(node.op, (Add, Sub)):
+                if not isinstance(left[0] / right[0], float):
+                    raise ValueError("units %s, %s not compatible" \
+                                     % (left, right))
+                unit = left[0]
+            elif isinstance(node.op, Mult):
+                unit = left[0] * right[0]
+            elif isinstance(node.op, Div):
+                unit = left[0] / right[0]
+            elif isinstance(node.op, (BitOr, BitXor, BitAnd)):
+                if not isinstance(left[0], float):
+                    raise ValueError(
+                        "Type %s cannot be interpreted as a Boolean" % left)
+                if not isinstance(right[0], float):
+                    raise ValueError(
+                        "Type %s cannot be interpreted as a Boolean" % right)
+                unit = 1.0
+            else:
+                raise NotImplementedError()
+            return (unit, dimensions)
+        elif isinstance(node, Compare):
+            left = self.getUnitAndDim(node.left)
+            nonNoneDims = []
+            if left[1] is not None:
+                nonNoneDims.append(left[1])
+            for comparator in node.comparators:
+                right = self.getUnitAndDim(comparator)
+                if right[1] is not None:
+                    nonNoneDims.append(right[1])
+                if not isinstance(left[0] / right[0], float):
+                    raise ValueError("units %s, %s not compatible" \
+                                     % (left[0], right[0]))
+            if len(nonNoneDims) >= 1:
+                for dims in nonNoneDims:
+                    checkDimensions(nonNoneDims[0], dims)
+                dimensions = nonNoneDims[0]
+            else:
+                dimensions = None
+            return (1.0, dimensions)
+        elif isinstance(node, BoolOp):
+            raise NotImplementedError(
+                'BoolOps not supported. Use bitwise ops instead (&, |)!')
+        elif isinstance(node, UnaryOp):
+            return self.getUnitAndDim(node.operand)
+        else:
+            raise NotImplementedError()
+
+
+def checkDimensions(dimensions1, dimensions2):
+    if dimensions1 is not None and dimensions2 is not None and \
+           dimensions1 != dimensions2:
+        msg = 'Dimensions "%s" and "%s" do not match!' \
+              % (dimensions1, dimensions2)
+        raise ValueError(msg)
+    return dimensions1 or dimensions2

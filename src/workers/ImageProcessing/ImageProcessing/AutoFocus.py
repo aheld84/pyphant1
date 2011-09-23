@@ -38,16 +38,15 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
-import ImageProcessing
-import numpy, copy
+from pyphant.core import (Worker, Connectors)
+import numpy
 from scipy import ndimage
 from pyphant.quantities import Quantity
-from pyphant.core.DataContainer import (FieldContainer, SampleContainer)
+from pyphant.core.DataContainer import SampleContainer
 
-def almost(val1, val2, error=0.01):
-    return abs(val2 - val1) <= error
+def sobel(data):
+    return numpy.sqrt(ndimage.sobel(data, 0) ** 2 + \
+                      ndimage.sobel(data, 1) ** 2)
 
 
 class ZSUnits(object):
@@ -63,61 +62,147 @@ class ZSUnits(object):
 
     def __init__(self, image):
         assert image.unit == 1
-        dims = image.dimensions
-        assert dims[0].unit == dims[1].unit, self.NODNS
-        dy, dx = [dim.data[1] - dim.data[0] for dim in dims]
-        assert almost(dy, dx), self.DXDY % (dy.__repr__(), dx.__repr__())
-        gunit = dims[0].unit ** -1
-        aunit = (dy * dims[0].unit) ** 2
+        self.dims = image.dimensions
+        assert self.dims[1].unit == self.dims[2].unit, self.NODNS
+        try:
+            dy = image.attributes['yFactor']
+        except KeyError:
+            dy = numpy.average(numpy.diff(self.dims[1].data)) \
+                 * self.dims[1].unit
+        try:
+            dx = image.attributes['xFactor']
+        except KeyError:
+            dx = numpy.average(numpy.diff(self.dims[2].data)) \
+                 * self.dims[2].unit
+        tolPercent = 2 # reasonable?
+        assert abs(dy - dx) / dy <= tolPercent / 100., \
+               self.DXDY % (dy.__repr__(), dx.__repr__())
+        self.delta = dy
+        gunit = self.dims[1].unit ** -1
+        aunit = dy * dx
         funit = gunit / aunit
         self.gmul = gunit / self.GQUANT
         self.amul = aunit / self.AQUANT
         self.fmul = funit / self.FQUANT
-        assert isinstance(self.gmul, float), DUW
-        assert isinstance(self.amul, float), DUW
-        assert isinstance(self.fmul, float), DUW
+        assert isinstance(self.gmul, float), self.DUW
+        assert isinstance(self.amul, float), self.DUW
+        assert isinstance(self.fmul, float), self.DUW
 
 
 class Inclusion(object):
     TWO_TIMES_SQRT_ONE_OVER_PI = 1.1283791670
 
-    def __init__(self, slices, focus, area):
-        self.slices = slices
-        self.focus = focus
-        self.area = area
+    def __init__(self, zind, label, slices, dataDetail, footprint, zsp, zsu):
+        if footprint.sum() <= zsp.ath:
+            self.valid = False
+            return
+        self.label = label
+        self.zind = zind
+        self.preds = []
+        self.succs = []
+        sobel = numpy.sqrt(ndimage.sobel(dataDetail, 0) ** 2 + \
+                           ndimage.sobel(dataDetail, 1) ** 2)
+        def focusFootprint(fpd):
+            return (numpy.where(fpd[1], sobel, 0.0).sum() / fpd[1].sum(),
+                    fpd[0])
+        fpDict = {}
+        fpDict[0] = footprint
+        fpDict[1] = ndimage.binary_dilation(footprint)
+        fpDict[2] = ndimage.binary_dilation(fpDict[1])
+        fpDict[-1] = ndimage.binary_erosion(footprint)
+        fpDict[-2] = ndimage.binary_erosion(fpDict[-1])
+        fpDilList = [(fpDict[i], fpDict[i + 1]) for i in xrange(-2, 2)]
+        ffpList = [focusFootprint(fpDil) for fpDil in fpDilList]
+        maxffp = max(ffpList, key=lambda x: x[0])
+        area = maxffp[1].sum()
+        if area <= zsp.ath:
+            self.valid = False
+            return
         self.valid = True
+        self.focus = maxffp[0] * zsu.fmul
+        self.footprint = maxffp[1]
+        self.area = area * zsu.amul
+        islices = ndimage.find_objects(self.footprint)[0]
+        self.slices = [slice(sli.start + isli.start, sli.start + isli.stop) \
+                       for sli, isli in zip(slices, islices)]
+        self.fpSlices = slices
+        self.centerOfMass = ndimage.center_of_mass(self.footprint)
+        self.centerOfMass = (self.centerOfMass[0] + slices[0].start,
+                             self.centerOfMass[1] + slices[1].start)
 
-    def get_diameter(self):
+    @property
+    def diameter(self):
         return self.TWO_TIMES_SQRT_ONE_OVER_PI \
                * (self.area * ZSUnits.AQUANT).sqrt()
 
-    def get_info(self, zvalue, zind, label, dims):
-        coordZ = zvalue
-        yind = (self.slices[0].start + self.slices[0].stop - 1) / 2
-        coordY = dims[0].data[yind] * dims[0].unit
-        xind = (self.slices[1].start + self.slices[1].stop - 1) / 2
-        coordX = dims[1].data[xind] * dims[1].unit
-        return (coordZ, coordY, coordX, self.get_diameter(),
-                self.focus * ZSUnits.FQUANT, label, zind,
+    def getInfo(self, zsu):
+        coordZ = zsu.dims[0].data[self.zind] * zsu.dims[0].unit
+        coordY = self.centerOfMass[0] * zsu.delta \
+                 + zsu.dims[1].data[0] * zsu.dims[1].unit
+        coordX = self.centerOfMass[1] * zsu.delta \
+                 + zsu.dims[2].data[0] * zsu.dims[2].unit
+        return (coordZ, coordY, coordX, self.diameter,
+                self.focus * ZSUnits.FQUANT, self.label, self.zind,
                 self.slices[0].start, self.slices[0].stop,
                 self.slices[1].start, self.slices[1].stop)
 
+    def append(self, inclusion):
+        self.succs.append(inclusion)
+        inclusion.preds.append(self)
 
-class InvalidInclusion(object):
-    valid = False
-    focus = 0.0
+    def invalidateConnected(self):
+        self.invalidatePreds()
+        self.invalidateSuccs()
+
+    def invalidatePreds(self):
+        self.valid = False
+        for i in self.preds:
+            i.invalidatePreds()
+
+    def invalidateSuccs(self):
+        self.valid = False
+        for i in self.succs:
+            i.invalidateSuccs()
+
+    @property
+    def index(self):
+        return (self.zind, self.label)
 
 
 class ZSParams(object):
     def __init__(self, worker):
-        self.gth = Quantity(
-            worker.paramGradientThreshold.value).inUnitsOf(ZSUnits.GUNIT).value
-        self.ath = Quantity(
-            worker.paramAreaThreshold.value).inUnitsOf(ZSUnits.AUNIT).value
-        self.fth = Quantity(
-            worker.paramFocusThreshold.value).inUnitsOf(ZSUnits.FUNIT).value
-        self.grow = int(worker.paramGrow.value)
-        self.connectivity = int(worker.paramConnectivity.value)
+        self.ath = int(worker.paramAreaThreshold.value)
+        split = worker.paramMedianSize.value.split(',')
+        self.significance = float(worker.paramSignificance.value)
+        self.medianZoom = int(worker.paramMedianZoom.value)
+        self.medianSize = (int(split[0].replace('(', '')) / self.medianZoom,
+                           int(split[1].replace(')', '')) / self.medianZoom)
+        self.threshold = None
+
+    def estimateThreshold(self, data, subscriber):
+        interest = numpy.zeros(data.shape, dtype=float)
+        maxi = float(data.shape[0])
+        for i, d in enumerate(data):
+            small = ndimage.affine_transform(
+                d, [self.medianZoom, self.medianZoom],
+                output_shape=[d.shape[0] / self.medianZoom,
+                              d.shape[1] / self.medianZoom])
+            smallMedian = ndimage.median_filter(small, size=self.medianSize)
+            median = ndimage.affine_transform(
+                smallMedian, [1.0 / self.medianZoom, 1.0 / self.medianZoom],
+                output_shape=d.shape, mode='nearest')
+            interest[i] = median - d
+            subscriber %= int(float(i + 1) / maxi * 70.0)
+        hist = numpy.histogram(interest, range=(-255.0, 255.0), bins=511)
+        width = numpy.sqrt(numpy.abs((hist[1][:-1] ** 2 * hist[0]).sum() \
+                           / hist[0].sum()))
+        self.threshold = self.significance * width
+        self.binary = interest > self.threshold
+        for i, b in enumerate(self.binary):
+            self.binary[i] = ndimage.binary_fill_holes(b)
+            self.binary[i] = ndimage.binary_opening(
+                self.binary[i], iterations=1)
+        subscriber %= 80
 
 
 class AutoFocus(Worker.Worker):
@@ -125,204 +210,89 @@ class AutoFocus(Worker.Worker):
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "AutoFocus"
-    _sockets = [("zstack", Connectors.TYPE_ARRAY)]
-    _params = [("gradientThreshold", "Gradient threshold",
-                "8.0 mum**-1", None),
-               ("connectivity", "Connectivity for labels", 2, None),
-               ("areaThreshold", "Area threshold", "16.0 mum**2", None),
-               ("grow", "Measure focus at larger slices", 2, None),
-               ("focusThreshold", "Focus threshold", "1.8 mum**-3", None),
-               ("permanent", "Store results permanently", False, None)]
-    from pyphant.core.KnowledgeManager import KnowledgeManager
-    kmanager = KnowledgeManager.getInstance()
+    _sockets = [("zstack", Connectors.TYPE_IMAGE)]
+    _params = [("medianSize", "median size", "(80, 80)", None),
+               ("medianZoom", "median zoom", 8, None),
+               ("significance", "feature significance", "3.0", None),
+               ("areaThreshold", "area threshold in pixel", 4, None)]
 
-    def invalidate_unfocused(self, inclusions):
-        if len(inclusions) <= 1:
-            return
-        inclusions.sort(key=lambda x: x.focus)
-        max_focus = inclusions[-1].focus
-        for inc in inclusions[:-1]:
-            inc.valid = False
-            inc.focus = max_focus
-
-    def get_label_data(self, grad_data, zsp, zsu):
-        thresh_data = numpy.where(grad_data < zsp.gth / zsu.gmul, False, True)
-        fill_data = ndimage.binary_fill_holes(thresh_data)
-        structure = ndimage.morphology.generate_binary_structure(
-            fill_data.ndim, zsp.connectivity)
-        return ndimage.label(fill_data, structure=structure)[0]
-
-    def autofocus(self, image, zsp, zind, inclusions, last_label):
-        zsu = ZSUnits(image)
-        grad_data = numpy.sqrt(sum(numpy.square(
-            numpy.array(numpy.gradient(image.data)))))
-        label_data = self.get_label_data(grad_data, zsp, zsu)
-        slicess = ndimage.find_objects(label_data)
-        inclusions[zind] = {}
+    def autofocus(self, data, zsp, zsu, zind, inclusionList,
+                  inclusionDict, lastLabelData):
+        labelData = ndimage.label(zsp.binary[zind])[0]
+        slicess = ndimage.find_objects(labelData)
+        #previousMatchedStacks = {} # WTF?
         for label, slices in enumerate(slicess, start=1):
-            bigslices = [slice(max(sli.start - zsp.grow, 0),
-                               sli.stop + zsp.grow) for sli in slices]
-            bigdetail = grad_data[bigslices]
-            focus = bigdetail.sum() / bigdetail.size * zsu.fmul
-            if focus < zsp.fth:
-                inclusions[zind][label] = InvalidInclusion()
+            slices = [slice(max(sli.start - 4, 0), sli.stop + 4) \
+                      for sli in slices]
+            dataDetail = data[slices].astype(float)
+            footprint = labelData[slices] == label
+            newInclusion = Inclusion(zind, label, slices, dataDetail,
+                                     footprint, zsp, zsu)
+            if not newInclusion.valid:
+                labelData[slices] = numpy.where(footprint, 0, labelData[slices])
                 continue
-            islabel = (label_data[slices] == label)
-            detail = numpy.where(islabel, True, False)
-            eroded = ndimage.binary_erosion(detail)
-            area = eroded.sum() * zsu.amul
-            if area < zsp.ath:
-                inclusions[zind][label] = InvalidInclusion()
+            inclusionList.append(newInclusion)
+            inclusionDict[newInclusion.index] = newInclusion
+            if lastLabelData is None:
                 continue
-            new_inclusion = Inclusion(slices, focus, area)
-            if last_label is None:
-                inclusions[zind][label] = new_inclusion
-                continue
-            last_detail = numpy.where(islabel, last_label[slices], 0)
-            ld_labels = numpy.unique(last_detail)[1:]
-            ld_inclusions = [inclusions[zind - 1][ld_label] \
-                             for ld_label in ld_labels]
-            ld_inclusions.append(new_inclusion)
-            self.invalidate_unfocused(ld_inclusions)
-            inclusions[zind][label] = new_inclusion
-        return label_data
+            lastLabelDetail = numpy.where(footprint,
+                                          lastLabelData[slices], 0)
+            for l in numpy.unique(lastLabelDetail)[1:]:
+                inclusionDict[(zind - 1, l)].append(newInclusion)
+        return labelData
 
-    def make_fc(self, prototype, data, unit, prefix="",
-                shortname=None, attributes={}, emd5_list=[]):
-        longname = prefix + prototype.longname
-        if shortname is None:
-            shortname = prototype.shortname
-        from copy import deepcopy
-        dimensions = prototype.dimensions
-        all_attributes = deepcopy(prototype.attributes)
-        all_attributes.update(attributes)
-        if all_attributes.has_key('vmin'):
-            all_attributes.pop('vmin')
-        if all_attributes.has_key('vmax'):
-            all_attributes.pop('vmax')
-        fc = FieldContainer(data=data, unit=unit, dimensions=dimensions,
-                            longname=longname,
-                            shortname=shortname, attributes=all_attributes)
-        fc.seal()
-        self.kmanager.registerDataContainer(
-            fc, temporary=not self.paramPermanent.value)
-        emd5_list.append(fc.id)
-
-    def make_sc(self, column_data, longnames, shortnames, longname, shortname,
-                attributes={}):
-        unzipped = zip(*column_data)
-        assert len(unzipped) == len(longnames) == len(shortnames)
-        def get_column_fc(col, ln, sn):
-            try:
-                unit = Quantity(1.0, col[0].unit)
-                data = [quant.value for quant in col]
-            except (KeyError, AttributeError):
-                unit = 1
-                data = col
-            from numpy import array
-            fc = FieldContainer(data=array(data), unit=unit,
-                                longname=ln, shortname=sn)
-            fc.seal()
-            self.kmanager.registerDataContainer(
-                fc, temporary=not self.paramPermanent.value)
-            return fc
-        columns = [get_column_fc(col, ln, sn) for col, ln, sn \
-                   in zip(unzipped, longnames, shortnames)]
-        sc = SampleContainer(longname=longname, shortname=shortname,
-                             attributes=attributes, columns=columns)
-        sc.seal()
-        self.kmanager.registerDataContainer(
-            sc, temporary=not self.paramPermanent.value)
-        return sc
-
-    def get_attributes(self, zstype, applied_to):
-        attributes = dict([(name, param.value) for name, param \
-                           in self._params.iteritems() if name != 'name'])
-        attributes.update({'ZStackType':zstype, 'applied_to':applied_to})
-        return attributes
-
-    def get_scs(self, zstack, subscriber=0):
+    @Worker.plug(Connectors.TYPE_ARRAY)
+    def getStatistics(self, zstack, subscriber=0):
         # Initialization:
-        label_data = None
-        inclusions = {}
-        focused_inclusions = []
-        sharp_iters = len(zstack['emd5'].data)
-        label_fcs = []
+        longname = zstack.longname
+        attributes = zstack.attributes
+        data = zstack.data.astype(float)
+        zsu = ZSUnits(zstack)
+        del zstack
+        labelData = None
         zsp = ZSParams(self)
-        dimss = {}
-        zvals = []
+        zsp.estimateThreshold(data, subscriber) # 80%
+        inclusionList = []
+        inclusionDict = {}
         # Calculate autofocus results:
-        for zid, emd5 in enumerate(zstack['emd5'].data):
-            raw_image = self.kmanager.getDataContainer(emd5)
-            dimss[zid] = raw_image.dimensions
-            label_data = self.autofocus(raw_image, zsp, zid, inclusions,
-                                        label_data)
-            self.make_fc(
-                raw_image, label_data, 1, 'Label_', 'l',
-                self.get_attributes('LabelImage', zstack.id), label_fcs)
-            subscriber %= ((zid + 1) * 90) / sharp_iters
+        maxi = data.shape[0]
+        for zid, sliceData in enumerate(data):
+            labelData = self.autofocus(sliceData, zsp, zsu, zid, inclusionList,
+                                       inclusionDict, labelData)
+            subscriber %= 80 + int(float(zid) / float(maxi) * 10.0)
         # Extract statistics:
-        for zind, inc_dict in inclusions.iteritems():
-            zvalue = zstack['z-value'].data[zind] * zstack['z-value'].unit
-            zvals.append(zvalue)
-            for label, inclusion in inc_dict.iteritems():
-                if inclusion.valid:
-                    info = inclusion.get_info(zvalue, zind, label, dimss[zind])
-                    focused_inclusions.append(info)
-            subscriber %= 90 + ((zind + 1) * 10) / sharp_iters
-        # Put all results into SampleContainers:
-        columnss = [zip(zvals, label_fcs),
-                    focused_inclusions]
-        columnlnss = [['z-value', 'emd5'],
-                      ['z-pos', 'y-pos', 'x-pos', 'diameter',
-                       'focus', 'label', 'z-index',
-                       'y-slice-start', 'y-slice-stop',
-                       'x-slice-start', 'x-slice-stop']]
-        columnsnss = [['z', 'e'],
-                      ['z', 'y', 'x', 'd', 'f', 'l',
-                       'zi', 'yt', 'yp', 'xt', 'xp']]
-        longnames = ['Label_' + zstack.longname,
-                     'Statistics_' + zstack.longname]
-        shortnames = ['l', 's']
-        attributess = [self.get_attributes(zstype, zstack.id) \
-                       for zstype in ['LabelSC', 'StatisticsSC']]
-        return [self.make_sc(*data) for data in \
-                zip(columnss, columnlnss, columnsnss,
-                    longnames, shortnames, attributess)]
-
-    def validateSC(self, emd5SC):
-        if emd5SC.attributes['ZStackType'] == 'StatisticsSC':
-            return True
-        for emd5 in emd5SC['emd5'].data:
-            if not self.kmanager.hasDataContainer(str(emd5)):
-                self.kmanager.setTemporary(emd5SC.id, True)
-                return False
-        return True
-
-    def lookup(self, zstype, emd5):
-        search_dict = {'type':'sample',
-                       'attributes':self.get_attributes(zstype, emd5)}
-        result = self.kmanager.search(['id'], search_dict=search_dict)
-        if len(result) == 0:
-            return None
-        else:
-            for emd5inlist in result:
-                emd5SC = self.kmanager.getDataContainer(emd5inlist[0])
-                if self.validateSC(emd5SC):
-                    return emd5SC
-            return None #<- ugly case: FCs saved temp., but SC saved in Recipe
-
-    def get_result_sc(self, zstack, zstype, index, subscriber=0):
-        lookup = self.lookup(zstype, zstack.id)
-        if lookup is None:
-            return self.get_scs(zstack, subscriber)[index]
-        else:
-            return lookup
-
-    @Worker.plug(Connectors.TYPE_ARRAY)
-    def get_label_sc(self, zstack, subscriber=0):
-        return self.get_result_sc(zstack, 'LabelSC', 0, subscriber)
-
-    @Worker.plug(Connectors.TYPE_ARRAY)
-    def get_statistics_sc(self, zstack, subscriber=0):
-        return self.get_result_sc(zstack, 'StatisticsSC', 1, subscriber)
+        inclusionList.sort(key=lambda x: x.focus, reverse=True)
+        infoList = []
+        base = numpy.zeros(data.shape[1:], dtype=bool)
+        for inclusion in inclusionList:
+            if not inclusion.valid:
+                continue
+            infoList.append(inclusion.getInfo(zsu))
+            base[inclusion.fpSlices] |= inclusion.footprint
+            inclusion.invalidateConnected()
+        baseSum = float(base.sum())
+        baseSize = float(base.size)
+        baseArea = baseSize * zsu.amul * zsu.AQUANT
+        projectedArea = baseSum * zsu.amul * zsu.AQUANT
+        # Put info into SampleContainer:
+        attributes = {'ZStackType':'StatisticsSC',
+                      #'threshold':zsp.threshold,
+                      #'ZStackAttributes':attributes,
+                      'detectedInclusions':len(infoList),
+                      'baseArea':baseArea,
+                      'projectedArea':projectedArea}
+        longname = 'Statistics_' + longname
+        if len(infoList) == 0:
+            return SampleContainer(longname=longname, columns=[],
+                                   attributes=attributes)
+        columnlns = ['zPos', 'yPos', 'xPos', 'diameter',
+                     'focus', 'label', 'zIndex',
+                     'ySliceStart', 'ySliceStop',
+                     'xSliceStart', 'xSliceStop']
+        columnsns = ['z', 'y', 'x', 'd', 'f', 'l',
+                     'zi', 'yt', 'yp', 'xt', 'xp']
+        from pyphant.core.Helpers import makeSC
+        resultSC = makeSC(infoList, columnlns, columnsns,
+                          longname, 's', attributes)
+        subscriber %= 100
+        return resultSC

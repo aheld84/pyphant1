@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
+# Copyright (c) 2007-2009, Rectorate of the University of Freiburg
+# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,7 +31,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-TODO
 """
 
 __id__ = "$Id$"
@@ -38,44 +38,47 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import Worker, Connectors,\
-                         Param
-import ImageProcessing
+from pyphant.core import (Worker, Connectors, DataContainer)
+import copy
 
 
-class SliceSelector(Worker.Worker):
+class ColumnExtractor(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "SliceSelector"
-    _sockets = [("zstack", Connectors.TYPE_ARRAY)]
-    _params = [("slice", u"ZSlice", [u'None'], None)]
+    name = "Extract Column"
+
+    _sockets = [("osc", Connectors.TYPE_ARRAY)]
+    _params = [("column", u"Column", [u"Absorption"], None),
+               ("index", u"Row", 'All', None)]
 
     def refreshParams(self, subscriber=None):
-        if self.socketZstack.isFull():
-            repr_sc = self.socketZstack.getResult(subscriber)
-            unit = repr_sc['z-value'].unit
-            pvalues = []
-            for zvalue, emd5 in zip(repr_sc['z-value'].data,
-                                    repr_sc['emd5'].data):
-                from pyphant.core.Helpers import utf82uc
-                value = utf82uc((zvalue * unit).__str__())
-                pvalues.append(value)
-            self.paramSlice.possibleValues = pvalues
+        if self.socketOsc.isFull():
+            templ = self.socketOsc.getResult( subscriber )
+            self.paramColumn.possibleValues = templ.longnames.keys()
 
     @Worker.plug(Connectors.TYPE_IMAGE)
-    def image(self, subscriber=0):
-        if not self.socketZstack.isFull():
-            return None
-        repr_sc = self.socketZstack.getResult(subscriber)
-        from pyphant.core.DataContainer import SampleContainer
-        if not isinstance(repr_sc, SampleContainer):
-            return None
-        from pyphant.quantities import Quantity
-        zval = Quantity(self.paramSlice.value)
-        znum = zval.inUnitsOf(repr_sc['z-value'].unit.unit).value
-        img_index = list(repr_sc['z-value'].data).index(znum)
-        img_emd5 = repr_sc['emd5'].data[img_index]
-        from pyphant.core.KnowledgeManager import KnowledgeManager
-        kmanager = KnowledgeManager.getInstance()
-        return kmanager.getDataContainer(img_emd5)
+    def extract(self, osc, subscriber=0):
+        col = osc[self.paramColumn.value]
+        if self.paramIndex.value=='All':
+            result = copy.deepcopy(col)
+        else:
+            index = int(self.paramIndex.value)
+            if len(col.dimensions)>1:
+                dim = col.dimensions[1]
+            else:
+                oldDim = col.dimensions[0]
+                dim = DataContainer.FieldContainer(oldDim.data[index],
+                                                   unit = oldDim.unit,
+                                                   longname=oldDim.longname,
+                                                   shortname=oldDim.shortname)
+            data = col.maskedData[index]
+            result = DataContainer.FieldContainer(data.data, mask=data.mask,
+                                                  unit = col.unit,
+                                                  dimensions = [dim],
+                                                  longname=col.longname,
+                                                  shortname=col.shortname)
+        #result.attributes = osc.attributes
+        result.attributes = col.attributes
+        result.seal()
+        return result
