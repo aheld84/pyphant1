@@ -45,6 +45,9 @@ from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 import logging
 _logger = logging.getLogger("pyphant")
 
+#Estimate floating point accuracy
+ACCURACY = 1.0 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1
+
 def str2unit(unitStr,FMFversion='1.1'):
     """The function str2unit returns either a quantity or a float from a given string."""
     # Prepare conversion to quantity
@@ -81,9 +84,14 @@ def str2unit(unitStr,FMFversion='1.1'):
             if (isinstance(unit,Quantity) and
                 isinstance(unit1_1,Quantity) and
                 not unit.inBaseUnits() == unit1_1):
-                unit = unit1_1
-                _logger.warn('Usage of old unit "%s" required '
-                             'conversion to base units.' % unit1_0)
+                try: 
+                    diff = unit - unit1_1
+                    if diff > ACCURACY:
+                        unit = Quantity(str(unit1_0))
+                except: 
+                    unit = unit1_1
+                    _logger.warn('Usage of old unit "%s" required '
+                                 'conversion to base units.' % unit1_0)
 
         if unit == None:
             try:

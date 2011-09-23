@@ -83,6 +83,9 @@ class TestStr2unit(unittest.TestCase):
         result = str2unit('16.8 mm',FMFversion='1.0')
         diff = result - Quantity('16.8 mm')
         self.assertEqual(abs(diff.value) < 2e-14,True)
+        result = str2unit('16.8 mm',FMFversion='1.0')
+        diff = Quantity('16.8 mm')
+        self.assertEqual(result,diff)
         
 
 if __name__ == "__main__":
