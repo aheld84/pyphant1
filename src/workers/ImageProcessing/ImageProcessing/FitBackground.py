@@ -47,7 +47,7 @@ class FitBackground(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "FitBackground"
+    name = "Fit Background"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("poldegree", "Polynomial degree (1 to 5)", 3, None),
                ("swidth", "sample width", 150, None),

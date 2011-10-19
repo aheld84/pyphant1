@@ -84,7 +84,7 @@ class CompositeWorker(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision: $"[11:-1]
-    name = "CompositeWorker"
+    name = "Composite"
     _params = [("noSockets", "Number of sockets", 0, None),
                ("noPlugs", "Number of plugs", 0, None)]
 

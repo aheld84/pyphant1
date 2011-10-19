@@ -60,7 +60,7 @@ class EnhanceContrast(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = "EnhanceContrast"
+    name = "Enhance Contrast"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
