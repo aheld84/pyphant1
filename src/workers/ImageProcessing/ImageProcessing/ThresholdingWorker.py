@@ -54,6 +54,7 @@ class ThresholdingWorker(Worker.Worker):
     name = "Threshold"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("threshold", "Threshold", 160, None),
+               ("unit", "Unit", "ignore", None)
 #               ("mode", "Mode(absolute/coverage)",
 #                ["absolute", "coverage"], None)
                ]
@@ -61,6 +62,19 @@ class ThresholdingWorker(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def threshold(self, image, subscriber=0):
         th = self.paramThreshold.value
+        if self.paramUnit.value.lower() != 'ignore':
+            from pyphant.quantities import Quantity, isQuantity
+            try:
+                unit = float(self.paramUnit.value)
+                assert not isQuantity(image.unit)
+            except ValueError:
+                try:
+                    unit = Quantity(self.paramUnit.value)
+                except TypeError:
+                    unit = Quantity(1.0, self.paramUnit.value)
+                assert isQuantity(image.unit)
+                assert unit.isCompatible(image.unit.unit)
+            th *= unit / image.unit
         resultArray = scipy.where(image.data < th,
                                   ImageProcessing.FEATURE_COLOR,
                                   ImageProcessing.BACKGROUND_COLOR)
