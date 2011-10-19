@@ -39,7 +39,6 @@ __version__ = "$Revision$"
 # $Source$
 
 from pyphant.core import (Worker, Connectors, DataContainer)
-from ImageProcessing.NDImageWorker import pile
 import scipy, copy
 
 def normalizeHistogram(data):
@@ -65,7 +64,7 @@ class EnhanceContrast(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def enhance(self, image, subscriber=0):
-        newdata = pile(normalizeLinear, image.data)
+        newdata = normalizeLinear(image.data)
         longname = "Normalize"
         result = DataContainer.FieldContainer(
             newdata,
@@ -78,5 +77,4 @@ class EnhanceContrast(Worker.Worker):
             copy.deepcopy(image.attributes),
             False)
         result.seal()
-        #print newdata.shape
         return result

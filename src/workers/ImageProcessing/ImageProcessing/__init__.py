@@ -58,7 +58,6 @@ workers=[
     "InvertWorker",
     "MarkInclusions",
     "Medianiser",
-    "NDImageWorker",
     "SkeletonizeFeature",
     "ThresholdingWorker",
     "UltimatePointsCalculator",

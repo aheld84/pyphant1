@@ -102,34 +102,22 @@ class FitBackground(Worker.Worker):
         brightsize = int(self.paramBrightsize.value)
         brightruns = int(self.paramBrightruns.value)
         dopreview = self.paramDopreview.value
-        assert image.data.ndim in [2, 3]
-        if image.data.ndim == 2:
-            pile = [image.data]
-        else:
-            pile = image.data
+        data = image.data
         #Median:
         for run in xrange(medianruns):
-            pile = [ndimage.median_filter(data,
-                                          size=mediansize) for data in pile]
+            data = ndimage.median_filter(data, size=mediansize)
         #Suspend dark spots:
         for run in xrange(darkruns):
-            pile = [255 - ndimage.grey_erosion(255 - data,
-                                         size=darksize) for data in pile]
+            data = 255 - ndimage.grey_erosion(255 - data, size=darksize)
         #Suspend features:
         for run in xrange(brightruns):
-            pile = [ndimage.grey_erosion(data,
-                                         size=brightsize) for data in pile]
+            data = ndimage.grey_erosion(data, size=brightsize)
         #Fit background:
         if not dopreview:
-            pile = [self.fit(data, poldegree, swidth, sheight,
-                             threshold) for data in pile]
-        if image.data.ndim == 2:
-            newdata = pile[0]
-        else:
-            newdata = numpy.array(pile)
+            data = self.fit(data, poldegree, swidth, sheight, threshold)
         longname = "FitBackground"
         result = DataContainer.FieldContainer(
-            newdata,
+            data,
             copy.deepcopy(image.unit),
             copy.deepcopy(image.error),
             copy.deepcopy(image.mask),
