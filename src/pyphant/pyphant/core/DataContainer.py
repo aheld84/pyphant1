@@ -70,10 +70,10 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 
 import copy, hashlib, threading, numpy, StringIO
-import os, platform, datetime, socket, urlparse
-from pyphant.quantities import (isQuantity, Quantity)
+import datetime, urlparse
+from pyphant.quantities import Quantity
 import Helpers
-from ast import (NodeTransformer, NodeVisitor)
+from ast import NodeTransformer
 import logging
 _logger = logging.getLogger("pyphant")
 
