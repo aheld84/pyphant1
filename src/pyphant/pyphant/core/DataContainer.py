@@ -71,9 +71,10 @@ __version__ = "$Revision$"
 
 import copy, hashlib, threading, numpy, StringIO
 import datetime, urlparse
-from pyphant.quantities import Quantity
+from pyphant.core.AstTransformers import (
+    ReplaceName, ReplaceCompare, ReplaceOperator, UnitCalculator,
+    checkDimensions)
 import Helpers
-from ast import NodeTransformer
 import logging
 _logger = logging.getLogger("pyphant")
 
@@ -336,15 +337,15 @@ class SampleContainer(DataContainer):
         sorted by precedence from lowest precedence (least binding) to highest
         precedence (most binding):
 
+        or
+        and
+        not
         Comparisons: <, <=, >, >=, <>, !=, ==
-        Bitwise OR: |
-        Bitwise XOR: ^
-        Bitwise AND: &
         Addition and Subtraction: +, -
         Multiplication, Division: *, /
-        Positive, Negative, Bitwise NOT: +x, -x, ~x
+        Positive, Negative: +x, -x
 
-        Not implemented: and, or, not, **, //, %, if - else
+        Not implemented: ~, &, |, **, //, %, <<, >>
 
         Examples
         --------
@@ -362,7 +363,7 @@ class SampleContainer(DataContainer):
             exprStr = "col('Distance') / col('Time')"
             exprStr = "col('Distance') - '1 m'"
             exprStr = "col('t') >= '4 s'"
-            exprStr = "(col('s') > '1 m') & (COL('Time') == '3s')"
+            exprStr = "col('s') > '1 m' and COL('Time') == '3s'"
 
         """
         exprStr = exprStr or 'True'
@@ -370,10 +371,16 @@ class SampleContainer(DataContainer):
         rpn = ReplaceName(self)
         expr = compile(exprStr, "<calcColumn>", 'eval', ast.PyCF_ONLY_AST)
         replacedExpr = rpn.visit(expr)
+        rpc = ReplaceCompare(rpn.localDict)
+        factorExpr = rpc.visit(replacedExpr)
         rpo = ReplaceOperator(rpn.localDict)
-        factorExpr = rpo.visit(replacedExpr)
+        factorExpr = rpo.visit(factorExpr)
         localDict = dict([(key, value.data) \
                           for key, value in rpn.localDict.iteritems()])
+        numpyDict = {'logical_and':numpy.logical_and,
+                     'logical_or':numpy.logical_or,
+                     'logical_not':numpy.logical_not}
+        localDict.update(numpyDict)
         data = eval(compile(factorExpr, '<calcColumn>', 'eval'), {}, localDict)
         unitcalc = UnitCalculator(rpn.localDict)
         unit, dims = unitcalc.getUnitAndDim(replacedExpr)
@@ -465,179 +472,3 @@ def assertEqual(con1, con2, rtol=1e-5, atol=1e-8):
         return True
     else:
         raise AssertionError, diagnosis.getvalue()
-
-
-class LocationFixingNodeTransformer(NodeTransformer):
-    def visit(self, *args, **kargs):
-        result = NodeTransformer.visit(self, *args, **kargs)
-        from ast import fix_missing_locations
-        fix_missing_locations(result)
-        return result
-
-
-class ReplaceName(LocationFixingNodeTransformer):
-    def __init__(self, sampleContainer):
-        self.localDict = {}
-        self.count = 0
-        self.sc = sampleContainer
-
-    def visit_Call(self, node):
-        from ast import (Name, Load)
-        if isinstance(node.func, Name) and node.func.id.lower() == 'col':
-            newName = self.getName(self.sc[node.args[0].s])
-            return Name(newName, Load())
-
-    def visit_Str(self, node):
-        from ast import (Name, Load)
-        quantity = Quantity(node.s)
-        class QuantityDummy(object):
-            pass
-        dummy = QuantityDummy()
-        dummy.unit = Quantity(1.0, quantity.unit)
-        dummy.data = quantity.value
-        dummy.dimensions = None
-        newName = self.getName(dummy)
-        return Name(newName, Load())
-
-    def getName(self, ref):
-        newName = "N%s" % self.count
-        self.count += 1
-        self.localDict[newName] = ref
-        return newName
-
-
-class ReplaceOperator(LocationFixingNodeTransformer):
-    def __init__(self, localDict):
-        self.localDict = localDict
-
-    def visit_BinOp(self, node):
-        from ast import (Add, Sub, BinOp)
-        self.generic_visit(node)
-        unitcalc = UnitCalculator(self.localDict)
-        leftUD = unitcalc.getUnitAndDim(node.left)
-        rightUD = unitcalc.getUnitAndDim(node.right)
-        checkDimensions(leftUD[1], rightUD[1])
-        if isinstance(node.op,(Add, Sub)):
-            factor = rightUD[0] / leftUD[0]
-            right = self.withFactor(factor, node.right)
-            binOp = BinOp(node.left, node.op, right)
-            return binOp
-        else:
-            return node
-
-    def visit_Compare(self, node):
-        from ast import Compare
-        self.generic_visit(node)
-        unitcalc = UnitCalculator(self.localDict)
-        leftUD = unitcalc.getUnitAndDim(node.left)
-        listUD = [unitcalc.getUnitAndDim(comp) for comp in node.comparators]
-        nonNoneDims = [ud[1] for ud in listUD + [leftUD] if ud[1] is not None]
-        for dims in nonNoneDims:
-            checkDimensions(nonNoneDims[0], dims)
-        factorlist = [ud[0] / leftUD[0] for ud in listUD]
-        newComplist = [self.withFactor(*t) \
-                       for t in zip(factorlist, node.comparators)]
-        compOp = Compare(node.left, node.ops, newComplist)
-        compOpTrans = self.compBreaker(compOp)
-        return compOpTrans
-
-    def withFactor(self, factor, node):
-        from ast import (BinOp, Num, Mult)
-        if not isinstance(factor, float):
-            raise ValueError('Incompatible units!')
-        if factor == 1.0:
-            return node
-        return BinOp(Num(factor), Mult(), node)
-
-    def compBreaker(self, node):
-        from ast import (Compare, BinOp, BitAnd)
-        assert isinstance(node, Compare)
-        if len(node.comparators) == 1:
-            return node
-        else:
-            comp1 = Compare(node.left, node.ops[0:1],
-                            node.comparators[0:1])
-            comp2 = Compare(node.comparators[0],
-                            node.ops[1:], node.comparators[1:])
-            newNode = BinOp(comp1, BitAnd(), self.compBreaker(comp2))
-            return newNode
-
-
-class UnitCalculator(object):
-    def __init__(self, localDict):
-        self.localDict = localDict
-
-    def getUnitAndDim(self, node):
-        from ast import (Expression, Name, Num,
-                         BinOp, Add, Mult, Div, Sub,
-                         Compare, BoolOp, UnaryOp,
-                         BitOr, BitXor, BitAnd)
-        if isinstance(node, Expression):
-            return self.getUnitAndDim(node.body)
-        elif isinstance(node, Name):
-            if node.id in ['True', 'False']:
-                return (1.0, None)
-            else:
-                column = self.localDict[node.id]
-                return (column.unit, column.dimensions)
-        elif isinstance(node, Num):
-            return (1.0, None)
-        elif isinstance(node, BinOp):
-            left = self.getUnitAndDim(node.left)
-            right = self.getUnitAndDim(node.right)
-            dimensions = checkDimensions(left[1], right[1])
-            if isinstance(node.op, (Add, Sub)):
-                if not isinstance(left[0] / right[0], float):
-                    raise ValueError("units %s, %s not compatible" \
-                                     % (left, right))
-                unit = left[0]
-            elif isinstance(node.op, Mult):
-                unit = left[0] * right[0]
-            elif isinstance(node.op, Div):
-                unit = left[0] / right[0]
-            elif isinstance(node.op, (BitOr, BitXor, BitAnd)):
-                if not isinstance(left[0], float):
-                    raise ValueError(
-                        "Type %s cannot be interpreted as a Boolean" % left)
-                if not isinstance(right[0], float):
-                    raise ValueError(
-                        "Type %s cannot be interpreted as a Boolean" % right)
-                unit = 1.0
-            else:
-                raise NotImplementedError()
-            return (unit, dimensions)
-        elif isinstance(node, Compare):
-            left = self.getUnitAndDim(node.left)
-            nonNoneDims = []
-            if left[1] is not None:
-                nonNoneDims.append(left[1])
-            for comparator in node.comparators:
-                right = self.getUnitAndDim(comparator)
-                if right[1] is not None:
-                    nonNoneDims.append(right[1])
-                if not isinstance(left[0] / right[0], float):
-                    raise ValueError("units %s, %s not compatible" \
-                                     % (left[0], right[0]))
-            if len(nonNoneDims) >= 1:
-                for dims in nonNoneDims:
-                    checkDimensions(nonNoneDims[0], dims)
-                dimensions = nonNoneDims[0]
-            else:
-                dimensions = None
-            return (1.0, dimensions)
-        elif isinstance(node, BoolOp):
-            raise NotImplementedError(
-                'BoolOps not supported. Use bitwise ops instead (&, |)!')
-        elif isinstance(node, UnaryOp):
-            return self.getUnitAndDim(node.operand)
-        else:
-            raise NotImplementedError()
-
-
-def checkDimensions(dimensions1, dimensions2):
-    if dimensions1 is not None and dimensions2 is not None and \
-           dimensions1 != dimensions2:
-        msg = 'Dimensions "%s" and "%s" do not match!' \
-              % (dimensions1, dimensions2)
-        raise ValueError(msg)
-    return dimensions1 or dimensions2

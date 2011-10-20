@@ -557,17 +557,20 @@ class SampleContainerTest(unittest.TestCase):
 class AlgebraSampleContainerTests(SampleContainerTest):
 
     def testNodeTransformer(self):
-        from pyphant.core.DataContainer import (ReplaceName, ReplaceOperator)
+        from pyphant.core.AstTransformers import (ReplaceName, ReplaceOperator,
+                                                  ReplaceCompare)
         rpn = ReplaceName(self.sampleContainer)
         import ast
         exprStr = 'col("i") / (col("t") + col("t"))'
         expr = compile(exprStr, "<TestCase>", 'eval', ast.PyCF_ONLY_AST)
         replacedExpr = rpn.visit(expr)
-        #print rpn.localDict
-        #print ast.dump(replacedExpr)
-        rpb = ReplaceOperator(rpn.localDict)
-        factorExpr = rpb.visit(replacedExpr)
-        #print ast.dump(factorExpr)
+        print rpn.localDict
+        print ast.dump(replacedExpr)
+        rpc = ReplaceCompare(rpn.localDict)
+        factorExpr = rpc.visit(replacedExpr)
+        rpo = ReplaceOperator(rpn.localDict)
+        factorExpr = rpo.visit(factorExpr)
+        print ast.dump(factorExpr)
 
     def testCalcColumn(self):
         exprStr = 'col("i") / (col("t") + col("t")) + "1km/s"'
@@ -924,10 +927,21 @@ class SampleContainerSlicingTests(SampleContainerTest):
             'col("Zeit") == "60s" and "20000m" == col("Strecke")',
             [False, False, True, False, False])
 
+    def testMultiAnd2dExpression(self):
+        self._compareExpected(
+            "col('l') >= '0 km' and col('l') < '20 km' and col('t') <= '60s'",
+            [False, True, False, True, False])
+
     def testOr2dExpression(self):
         self._compareExpected(
             'col("Zeit") < "60s" or col("Strecke") == "5500m"',
             [True, True, False, True, True])
+
+    def testMultiOr2dExpression(self):
+        self._compareExpected(
+            "col('t') == '20s' or col('l') == '0 km' or col('t') > '1000.2 s'",
+            [True, True, False, False, True]
+            )
 
     def testMultipleCompareOpPrecedence2dExpression(self):
         self._compareExpected('not "0m" <= col("l") <= "10000m"',
