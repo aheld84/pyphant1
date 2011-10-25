@@ -56,6 +56,7 @@ workers=[
     "Gradient",
     "ImageLoaderWorker",
     "InvertWorker",
+    "LoadZStack",
     "MarkInclusions",
     "Medianiser",
     "SkeletonizeFeature",
