@@ -76,21 +76,24 @@ class LoadZStack(Worker.Worker):
         from pyphant.core.DataContainer import FieldContainer
         from pyphant.quantities import Quantity
         path = os.path.realpath(self.paramPath.value)
-        path = os.path.dirname(path)
+        if os.path.isfile(path):
+            path = os.path.dirname(path)
         pattern = re.compile(self.paramRegex.value)
         filenames = filter(
             lambda x: pattern.match(x) is not None, os.listdir(path)
             )
         filenames.sort()
         filenames = [os.path.join(path, fname) for fname in filenames]
+        print path
         zClip = self.getClip(self.paramZClip.value)
         filenames = filenames[zClip[0]:zClip[1]]
+        assert len(filenames) >= 1
         yClip = self.getClip(self.paramYClip.value)
         xClip = self.getClip(self.paramXClip.value)
         dtype = self.paramDtype.value
         data = []
         for i, fn in enumerate(filenames):
-            subscriber %= 100 * i / len(filenames)
+            subscriber %= 1 + 99 * i / len(filenames)
             data.append(imread(fn, True)[yClip[0]:yClip[1], xClip[0]:xClip[1]])
         data = numpy.array(data, dtype=dtype)
         axes = ['z', 'y', 'x']
@@ -105,7 +108,9 @@ class LoadZStack(Worker.Worker):
         shortname = self.paramShortname.value
         image = FieldContainer(
             data=data, dimensions=dimensions, unit=unit,
-            longname=longname, shortname=shortname
+            longname=longname, shortname=shortname,
+            attributes={'yFactor':Quantity(self.paramDy.value),
+                        'xFactor':Quantity(self.paramDx.value)}
             )
         image.seal()
         subscriber %= 100

@@ -31,7 +31,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""Provides unittest classes for AutoFocus worker.
+u"""Provides unittest classes for AutoFocus, LoadZStack
+and MarkInclusions worker.
 """
 
 __id__ = "$Id$".replace('$','')
@@ -46,30 +47,6 @@ import os
 from ImageProcessing import __path__ as ppath
 importDir = os.path.join(ppath[0], "tests", "resources",
                          "zstack")
-from pyphant.quantities import Quantity
-import numpy
-import scipy
-
-
-def importZStack(filenames, zUnit, zValues):
-    from pyphant.core.DataContainer import FieldContainer
-    zDim = FieldContainer(data=zValues, unit=zUnit,
-                          shortname='z', longname='Z Axis')
-    yDim = FieldContainer(data=numpy.arange(.0, 400.0, 1.0) * 1.29,
-                          unit=Quantity('1.0 mum'),
-                          shortname='y', longname='Y Axis')
-    xDim = FieldContainer(data=numpy.arange(.0, 400.0, 1.0) * 1.29,
-                          unit=Quantity('1.0 mum'),
-                          shortname='x', longname='X Axis')
-    imgData = numpy.zeros((zDim.data.shape[0], yDim.data.shape[0],
-                           xDim.data.shape[0]), dtype='uint8')
-    for i, filename in enumerate(filenames):
-        imgData[i] = scipy.misc.imread(os.path.join(importDir, filename),
-                                       flatten=True)
-    zStack = FieldContainer(data=imgData, dimensions=[zDim, yDim, xDim],
-                            shortname='I', longname='ZStack')
-    zStack.seal()
-    return zStack
 
 
 class ZStackTestCase(unittest.TestCase):
@@ -87,12 +64,13 @@ class ZStackTestCase(unittest.TestCase):
 
     def testZStack(self):
         print "Importing ZStack..."
-        zstack = importZStack(
-            filenames=filter(lambda x: x.endswith('.tif'),
-                             sorted(os.listdir(importDir))),
-            zUnit=Quantity('1.0 mum'),
-            zValues = numpy.arange(0.0, 601.0, 100.0)
-            )
+        from ImageProcessing.LoadZStack import LoadZStack
+        loader = LoadZStack()
+        loader.paramPath.value = importDir
+        loader.paramDz.value = '100.0 mum'
+        loader.paramDy.value = '1.29 mum'
+        loader.paramDx.value = '1.29 mum'
+        zstack = loader.loadImageAsGreyScale()
         print "Done."
         print "Calculating ZStack-statistics..."
         from ImageProcessing.AutoFocus import AutoFocus
@@ -114,11 +92,15 @@ class ZStackTestCase(unittest.TestCase):
 
     def testSingle(self):
         print "Importing single image..."
-        zstack = importZStack(
-            filenames=['TestZStack_z03.tif'],
-            zUnit=Quantity('1.0 mum'),
-            zValues = numpy.array([300.0, ])
-            )
+        from ImageProcessing.LoadZStack import LoadZStack
+        loader = LoadZStack()
+        loader.paramPath.value = os.path.join(importDir, 'TestZStack_z00.tif')
+        loader.paramDz.value = '100.0 mum'
+        loader.paramDy.value = '1.29 mum'
+        loader.paramDx.value = '1.29 mum'
+        loader.paramStartz.value = '300.0 mum'
+        loader.paramZClip.value = '3:4'
+        zstack = loader.loadImageAsGreyScale()
         print "Done."
         print "Calculating single image statistics..."
         from ImageProcessing.AutoFocus import AutoFocus
@@ -137,6 +119,23 @@ class ZStackTestCase(unittest.TestCase):
         self.check((53.0 * mul, mul), statistics['yPos'].data[imin])
         self.check((300.0, 0.0), statistics['zPos'].data[imin])
         self.check((7.0 * mul, mul), statistics['diameter'].data[imin])
+
+    def testMarkInclusions(self):
+        from ImageProcessing.LoadZStack import LoadZStack
+        from ImageProcessing.MarkInclusions import MarkInclusions
+        loader = LoadZStack()
+        loader.paramPath.value = importDir
+        loader.paramDz.value = '100.0 mum'
+        loader.paramDy.value = '1.29 mum'
+        loader.paramDx.value = '1.29 mum'
+        zstack = loader.loadImageAsGreyScale()
+        from ImageProcessing.AutoFocus import AutoFocus
+        afw = AutoFocus()
+        statistics = afw.getStatistics(zstack)
+        minc = MarkInclusions()
+        marked = minc.markInclusions(zstack, statistics)
+        self.assertEqual(zstack.dimensions, marked.dimensions)
+        self.assertEqual(zstack.unit, marked.unit)
 
 
 if __name__ == "__main__":
