@@ -53,7 +53,7 @@ class ThresholdingWorker(Worker.Worker):
     REVISION = "$Revision$"[11:-1]
     name = "Threshold"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
-    _params = [("threshold", "Threshold", 160, None),
+    _params = [("threshold", "Threshold", "160.0", None),
                ("unit", "Unit", "ignore", None)
 #               ("mode", "Mode(absolute/coverage)",
 #                ["absolute", "coverage"], None)
@@ -61,7 +61,7 @@ class ThresholdingWorker(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def threshold(self, image, subscriber=0):
-        th = self.paramThreshold.value
+        th = float(self.paramThreshold.value)
         if self.paramUnit.value.lower() != 'ignore':
             from pyphant.quantities import Quantity, isQuantity
             try:
