@@ -183,3 +183,27 @@ def makeSC(column_data, longnames, shortnames, longname, shortname,
                          attributes=attributes, columns=columns)
     sc.seal()
     return sc
+
+from threading import Lock
+TIMESTAMP_LOCK = Lock()
+LAST_TIMESTAMP = ''
+del Lock
+
+def getModuleUniqueTimestamp():
+    global TIMESTAMP_LOCK
+    global LAST_TIMESTAMP
+    TIMESTAMP_LOCK.acquire()
+    timestamp = None
+    try:
+        from datetime import datetime
+        while True:
+            timestamp = datetime.utcnow()
+            if timestamp != LAST_TIMESTAMP:
+                LAST_TIMESTAMP = timestamp
+                break
+            else:
+                from time import sleep
+                sleep(.001)
+    finally:
+        TIMESTAMP_LOCK.release()
+    return timestamp

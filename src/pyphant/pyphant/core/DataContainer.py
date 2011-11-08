@@ -70,7 +70,7 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 
 import copy, hashlib, threading, numpy, StringIO
-import datetime, urlparse
+import urlparse
 from pyphant.core.AstTransformers import (
     ReplaceName, ReplaceCompare, ReplaceOperator, UnitCalculator,
     checkDimensions)
@@ -176,7 +176,7 @@ class DataContainer(object):
                 self.id = id
             else:
                 self.hash = self.generateHash()
-                self.timestamp = datetime.datetime.utcnow()
+                self.timestamp = Helpers.getModuleUniqueTimestamp()
                 self.id = u"emd5://%s/%s/%s/%s.%s" % (self.machine,
                                                       self.creator,
                                                       enc(self.timestamp.isoformat('_')),
