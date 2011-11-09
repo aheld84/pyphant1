@@ -73,53 +73,37 @@ def str2unit(unitStr,FMFversion='1.1'):
         unitStr = '0'+unitStr
     elif not (unitStr[0].isdigit() or unitStr[0]=='-'):
         unitStr = '1'+unitStr
-    
-    # Convert LaTeX syntax of exponentials to Python syntax
-    unitStr = unitStr.replace('^', '**')
-
-    try: #FMFversion=='1.1'
-        unit = Quantity(unitStr.encode('utf-8'))
-    except:
-        unit = None
-
-    # Conversion of FMF 1.0 quantities to FMF 1.1 quantities
-    if FMFversion=='1.0':
-        print unit
-        try:
-            unit1_0 = PhysicalQuantity(unitStr.encode('utf-8'))
-            unit1_1 = Quantity(str(unit1_0.inBaseUnits()))
-        except:
-            unit1_1 = None
-
-        if isinstance(unit1_1,Quantity):
-            # unitStr exists in FMF 1.0 
-            if  isinstance(unit,Quantity) and unit.isCompatible(unit1_1.unit):
-                # unitStr exists in FMF 1.0 and FMF 1.1 and have compatible units
-                diff = unit - unit1_1
-                print diff, ACCURACY, abs(diff.value)< ACCURACY
-                if abs(diff.value) < ACCURACY:
-                    # Different values most propably arise from floating point inaccurarcy
-                    return unit
-                else: # Different values arise from different value of physical constants
-                    return Quantity(str(unit1_0))
-            else: # unitStr exists in FMF 1.0 and FMF 1.1 but are interpreted differently
-                _logger.warn('Usage of old unit "%s" required '
-                             'conversion to base units.' % unit1_0)
-                return unit1_1
+       
+    #Try to convert unitStr to real or complex number
+    try:
+        if 'j' in unitStr:
+            return complex(unitStr)
         else:
-            unit = None
+            return float(unitStr)
+    except ValueError:
+        pass
 
-    # Now unitStr can only contain a real or complex number
-    if unit == None:
-        try:
-            if 'j' in unitStr:
-                unit = complex(unitStr)
+    if FMFversion=='1.0':
+        changedNames = {'h': 'hr',
+                        'Grav': 'G',
+                        'hplanck': 'h',
+                        'Nav': 'NA',
+                        'amu': 'u'}
+        changedValues = ('Grav','hplanck','hbar','e','me','mp','k','pc','amu','Hartree','GalUS')
+        changedUnits = set(changedNames.keys())
+        changedUnits.add(changedValues)
+
+        unit1_0 = PhysicalQuantity(unitStr)
+        if unit1_0.unit.name() in changedUnits:
+            if unit1_0.unit.name() in changedValues:
+                _logger.warn("Value of natural or technical constant '%s' has changed. Conversion to base units." % unit1_0)
+                return Quantity(str(unit1_0.inBaseUnits()))
             else:
-                unit = float(unitStr)
-        except:
-            raise ValueError, "Unit %s cannot be interpreted." % unit
-    return unit
+                return Quantity(unit1_0.value,
+                                changedNames[unit1_0.unit.name()])
 
+    return Quantity(unitStr) 
+        
 def parseQuantity(value,FMFversion='1.1'):
     import re
     pm = re.compile(ur"(?:\\pm|\+-|\+/-)")
@@ -147,6 +131,7 @@ def parseQuantity(value,FMFversion='1.1'):
 def parseVariable(oldVal,FMFversion='1.1'):
     shortname, value = tuple([s.strip() for s in oldVal.split('=')])
     value, error = parseQuantity(value,FMFversion)
+    print (shortname, value, error)
     return (shortname, value, error)
 
 def parseDateTime(value,FMFversion='1.1'):
