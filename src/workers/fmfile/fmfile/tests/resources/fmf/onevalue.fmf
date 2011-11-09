@@ -1,0 +1,10 @@
+; -*- fmf-version: 1.0; coding: utf-8; delimiter: whitespace -*-
+[*reference]
+title: one value test
+creator: Alexander Held
+created: 2011-11-09 10:45:00+02:00
+place: Freiburger Materialforschungszentrum
+[*data definitions]
+time: t [s]
+[*data]
+1.0

@@ -411,6 +411,16 @@ def config2tables(preParsedData, config, FMFversion='1.1'):
 
 def data2table(longname, shortname, preParsedData, config, FMFversion='1.1'):
     datTable = []
+    shapelen = len(preParsedData.shape)
+    if len(config) == 1:
+        if shapelen == 0:
+            preParsedData = preParsedData.reshape((1, 1))
+        elif shapelen == 1:
+            preParsedData = preParsedData.reshape((1, preParsedData.shape[0]))
+    else:
+        if shapelen == 1:
+            preParsedData = preParsedData.reshape((preParsedData.shape[0], 1))
+    assert len(preParsedData.shape) == 2
     for col in preParsedData:
         try:
             result = col.astype('i')
@@ -470,13 +480,15 @@ def data2table(longname, shortname, preParsedData, config, FMFversion='1.1'):
     for field in fields:
         try:
             newField = reshapeField(field)
-        except TypeError, e:
+        except TypeError:
+            raise
             if field.data.dtype.name.startswith('string'):
                 _logger.warning('Warning: Cannot reshape numpy.array \
                                    of string: %s' % field)
                 newField = field
             else:
                 _logger.error('Error: Cannot reshape numpy.array: %s' % field)
+                import sys
                 sys.exit(0)
         reshapedFields.append(newField)
     if shortname == None:
@@ -520,7 +532,7 @@ def preParseData(b):
                                             dtype='S',
                                             delimiter=localVar['delimiter']
                                             )
-        except Exception, e:
+        except Exception:
             return match.group(0)
         return u""
     d = re.sub(dataExpr, preParseData, d)

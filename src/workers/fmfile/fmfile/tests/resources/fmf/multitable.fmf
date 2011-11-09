@@ -1,0 +1,169 @@
+; -*- fmf-version: 1.0; coding: utf-8; delimeter: \t -*-
+; Full-Metadata Format as described in http://arxiv.org/abs/0904.1299
+; written by simplefmf 0.1 (python)
+[*reference]
+title: fixed energy calculation of Cr2
+creator: Rolf Wuerdemann
+created: 2011-01-26 18:48:02+02:00
+place: Freiburg centre of materials research
+[setup]
+Molecule: Cr2
+charge: +1.000 [e]
+spin-polarization: True
+polarization-type: spin-separated
+; spin-separated: fixes summarized magmom
+summarized magmom:  1.00 [(e*hbar)/(2*me)]
+; [(e*hbar)/(2*me)]: =[\mu_B]
+fermi-temperature:  0.10 [eV]
+xc: PBE
+bands: None
+grid-spacing: x =  0.10 [Ang], y =  0.10 [Ang], z =  0.10 [Ang]
+grid-points: x = 96, y = 80, z = 80
+periodic boundary conditions: x = False, y = False, z = False
+mode: fixed energy calculation
+input-file: Cr2+.w165.xyz
+maxiter: 240
+[mixer]
+type: MixerDif
+beta:  0.25
+maxold: 3
+weight: 1 [%]
+eigensolver: cg
+[convergence-criteria]
+bands: occupied
+energy: 5.0e-04 [eV]
+eigenstates: 1.0e-09
+density: 1.0e-04
+[system]
+Hostname: n030405
+OS: Linux
+OS-Version: 2.6.18-194.26.1.el5
+Architecture: x86_64
+[software]
+gpaw-version: 0.8.0.7655
+ase-version: 3.5.0.1849
+[outcome]
+; summarized outcome: 
+converged: True
+Zero Kelvin:  -6.161 [eV]
+Fermi-Level:  -9.209 [eV], -10.250 [eV]
+Total-Charge:  +1.000 [e]
+summarized magnetic moment: 1.000 [(e*hbar)/(2*me)]
+; [(e*hbar)/(2*me)]: =[\mu_B]
+iterations: 23
+[energy-contributions]
+reference: -57164.775 [eV]
+kinetic:  +8.180 [eV]
+potential:  -6.602 [eV]
+external:  +0.000 [eV]
+xc:  -6.668 [eV]
+entropy:  +0.017 [eV]
+local:  -1.062 [eV]
+[errors]
+density: 7.772e-05
+energy: 2.461e-06 [eV]
+eigenstates: 2.570e-08
+[*table definitions]
+Atoms, Elements, initial charge and setups: I
+Atoms and Postions: A
+Atoms and rel. (cm) Postions: R
+Atoms and local magnetic moment: MM
+Atoms and distances: D
+Eigenvalues and occupations: E
+[*data definitions: I]
+Atom Number: n
+Element: El(n)
+Atomic Number: an(n)
+Charge: q(n) [e]
+Corehole: c(n)
+initial magnetic moment: mm_i(n) [(e*hbar)/(2*me)]
+Setup: fn(n)
+Fingerprint: fp(n)
+[*data: I]
+0	'Cr'	24	0.0	0.0	6.0	'/home/rw1001/nano/Setups/PBE_TEST/Cr.PBE'	'b4de086e2ea9766f52afa320aa12532e'
+1	'Cr'	24	0.0	0.0	-5.0	'/home/rw1001/nano/Setups/PBE_TEST/Cr.PBE'	'b4de086e2ea9766f52afa320aa12532e'
+[*data definitions: A]
+Atom Number: n
+x-Pos: x(n) [Ang]
+y-Pos: y(n) [Ang]
+z-Pos: z(n) [Ang]
+[*data: A]
+0	3.9750000000000005	4.0	4.0
+1	5.6250000000000009	4.0	4.0
+[*data definitions: R]
+Atom Number: n
+rel. x-Pos: x(n) [Ang]
+rel. y-Pos: y(n) [Ang]
+rel. z-Pos: z(n) [Ang]
+[*data: R]
+0	-0.82500000000000018	0.0	0.0
+1	0.82500000000000018	0.0	0.0
+[*data definitions: MM]
+Atom Number: n
+local magnetic Moment: mm(n) [(e*hbar)/(2*me)]
+[*data: MM]
+0	22.289047007950654
+1	-21.289047007950654
+[*data definitions: D]
+Atom Number one: n_1
+Atom Number two: n_2
+Distance: r_0(n_1, n_2) [Ang]
+[*data: D]
+0	1	1.6500000000000004
+[*data definitions: E]
+Energy: E_n [eV]
+Spin: s
+Occupation: O(E_n, s)
+[*data: E]
+-82.292737673881746	0	1.0
+-79.492830457990834	0	1.0
+-55.465432589136306	0	1.0
+-53.406246471943582	0	1.0
+-53.406246471943419	0	1.0
+-50.882232483859703	0	1.0
+-50.882232483859461	0	1.0
+-49.826329335633901	0	1.0
+-12.709302865321726	0	0.99999999999999933
+-12.709302865321687	0	0.99999999999999933
+-12.372137539418508	0	0.99999999999998179
+-10.935642085048487	0	0.99999996840938687
+-10.934525512485784	0	0.99999996805467817
+-10.367533052501589	0	0.99999073553756712
+-7.9821489817052242	0	4.716092471802872e-06
+-7.9785873128247182	0	4.5510777215472903e-06
+-7.5373125967923782	0	5.5167647275250269e-08
+-7.2402132730875834	0	2.8274733301767827e-09
+-7.2402132730875461	0	2.8274733301757177e-09
+-6.5400971328505024	0	2.5753292141570973e-12
+-6.5400971328504642	0	2.5753292141561e-12
+-6.3648869774725014	0	4.4658560269654832e-13
+-3.9141825294914123	0	1.0153845070603966e-23
+-2.4773909964269198	0	5.8441881323326783e-30
+-2.477390996426891	0	5.8441881323310163e-30
+-1.2503911573324242	0	2.7411423779966341e-35
+-82.179207691597028	1	1.0
+-79.467216685742073	1	1.0
+-55.381135453233519	1	1.0
+-53.274910042208838	1	1.0
+-53.274910042208496	1	1.0
+-50.827077314858698	1	1.0
+-50.827077314858613	1	1.0
+-49.793910097097204	1	1.0
+-12.487432989300393	1	0.99999999980723442
+-12.48743298930038	1	0.99999999980723442
+-12.128830695313949	1	0.99999999304303788
+-10.73805503369028	1	0.99242851910308527
+-10.737684136890605	1	0.99240059838552064
+-9.8331694336576021	1	0.015170889803837618
+-7.7991282431482452	1	2.2590275453575949e-11
+-7.7972493720359326	1	2.2169795798865116e-11
+-7.0472135564909602	1	1.2257376713470428e-14
+-7.046626641315199	1	1.2185647011547582e-14
+-7.0466266413151839	1	1.2185647011545766e-14
+-6.0260681491130175	1	4.5042177457544589e-19
+-6.0260681491129855	1	4.5042177457530183e-19
+-6.0092918543202192	1	3.8085604637774664e-19
+-3.2429732332786463	1	3.6880069575344495e-31
+-2.0342883159341834	1	2.0774942578060646e-36
+-2.0342883159341398	1	2.0774942578051491e-36
+-0.79342262592098656	1	8.4825926625509071e-42
