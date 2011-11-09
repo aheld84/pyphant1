@@ -49,55 +49,75 @@ _logger = logging.getLogger("pyphant")
 ACCURACY = 1.0 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1
 
 def str2unit(unitStr,FMFversion='1.1'):
-    """The function str2unit returns either a quantity or a float from a given string."""
+    """The function str2unit is a factory, which either returns a float or a Quantity instance from a given string. Because the definition of units and physical constants is not unique for 
+    FMFversion 1.0 (http://arxiv.org/abs/0904.1299) and 
+    FMFversion 1.1 (http://dx.doi.org/10.1016/j.cpc.2009.11.014), the result of str2unit() depends on FMFversion.
+    """
+    if FMFversion not in ['1.0','1.1']:
+        raise ValueError, 'FMFversion %s not supported.' % FMFversion
+
+    # Deal with exceptional units like '%' or 'a.u.'
+    if unitStr.endswith('%'):
+        if len(unitStr.strip()) == 1:
+            return 0.01
+        else:
+            return float(unitStr[:-1])/100.0
+    elif unitStr.endswith('a.u.'):
+        if len(unitStr.strip()) == 4:
+            return 1.0
+        else:
+            return float(unitStr[:-4])
+
     # Prepare conversion to quantity
     if unitStr.startswith('.'):
         unitStr = '0'+unitStr
-    elif unitStr.endswith('%'):
-        try:
-            unit = float(unitStr[:-1])/100.0
-        except: 
-            unit = 0.01
-    elif unitStr.endswith('a.u.'):
-        try:
-            unit = float(unitStr[:-4])
-        except:
-            unit = 1.0
     elif not (unitStr[0].isdigit() or unitStr[0]=='-'):
         unitStr = '1'+unitStr
-    # Convert input to quantity or float
-    if FMFversion not in ['1.0','1.1']:
-        raise ValueError, 'FMFversion %s not supported.' % FMFversion
-    else:
-        unitStr = unitStr.replace('^', '**')
-        try: #FMFversion=='1.1'
-            unit = Quantity(unitStr.encode('utf-8'))
-        except:
-            unit = None
-        if FMFversion=='1.0':
-            try:
-                unit1_0 = PhysicalQuantity(unitStr.encode('utf-8'))
-                unit1_1 = Quantity(str(unit1_0.inBaseUnits()))
-            except:
-                unit1_1 = None
-            
-            if (isinstance(unit,Quantity) and
-                isinstance(unit1_1,Quantity) and
-                not unit.inBaseUnits() == unit1_1):
-                try: 
-                    diff = unit - unit1_1
-                    if diff > ACCURACY:
-                        unit = Quantity(str(unit1_0))
-                except: 
-                    unit = unit1_1
-                    _logger.warn('Usage of old unit "%s" required '
-                                 'conversion to base units.' % unit1_0)
+    
+    # Convert LaTeX syntax of exponentials to Python syntax
+    unitStr = unitStr.replace('^', '**')
 
-        if unit == None:
-            try:
-                unit = float(unit)
-            except e:
-                raise ValueError, "Unit %s cannot be interpreted." % unit
+    try: #FMFversion=='1.1'
+        unit = Quantity(unitStr.encode('utf-8'))
+    except:
+        unit = None
+
+    # Conversion of FMF 1.0 quantities to FMF 1.1 quantities
+    if FMFversion=='1.0':
+        print unit
+        try:
+            unit1_0 = PhysicalQuantity(unitStr.encode('utf-8'))
+            unit1_1 = Quantity(str(unit1_0.inBaseUnits()))
+        except:
+            unit1_1 = None
+
+        if isinstance(unit1_1,Quantity):
+            # unitStr exists in FMF 1.0 
+            if  isinstance(unit,Quantity) and unit.isCompatible(unit1_1.unit):
+                # unitStr exists in FMF 1.0 and FMF 1.1 and have compatible units
+                diff = unit - unit1_1
+                print diff, ACCURACY, abs(diff.value)< ACCURACY
+                if abs(diff.value) < ACCURACY:
+                    # Different values most propably arise from floating point inaccurarcy
+                    return unit
+                else: # Different values arise from different value of physical constants
+                    return Quantity(str(unit1_0))
+            else: # unitStr exists in FMF 1.0 and FMF 1.1 but are interpreted differently
+                _logger.warn('Usage of old unit "%s" required '
+                             'conversion to base units.' % unit1_0)
+                return unit1_1
+        else:
+            unit = None
+
+    # Now unitStr can only contain a real or complex number
+    if unit == None:
+        try:
+            if 'j' in unitStr:
+                unit = complex(unitStr)
+            else:
+                unit = float(unitStr)
+        except:
+            raise ValueError, "Unit %s cannot be interpreted." % unit
     return unit
 
 def parseQuantity(value,FMFversion='1.1'):

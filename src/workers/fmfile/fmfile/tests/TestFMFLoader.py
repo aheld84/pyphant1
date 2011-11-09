@@ -1,8 +1,8 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python2.6
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008-2009,  Rectorate of the University of Freiburg
-# Copyright (c) 2009-2010, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009-2011, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -111,10 +111,10 @@ class TestDiscriminatingJouleAndImaginary(unittest.TestCase):
     def setUp(self):
         self.inputDict = {'complexJ':'1.0j','Joule':'1.0J'}
 
-    def testComplexVale(self):
+    def testComplexValue(self):
         """Imaginary numbers are indicated by 'j'."""
         result = FMFLoader.item2value(self.inputDict['complexJ'])
-        self.assertEqual(result,complex(self.inputDict['complexJ']))
+        self.assertEqual(result,(complex(self.inputDict['complexJ']),None))
 
     def testJouleValue1_1(self):
         """Physical quantities with unit Joule are indicated by 'J'."""
@@ -184,6 +184,7 @@ N_2	1	2
         self.assertEqual(consts[u'Gravitational constant'][1],str2unit("1 Grav",FMFversion="1.0"))
         self.assertEqual(consts[u'Planck constant'][1],str2unit("1 hplanck",FMFversion="1.0"))
         self.assertEqual(consts[u'Planck constant / 2pi'][1],str2unit("1 hbar",FMFversion="1.0"))
+        self.assertEqual(consts[u'Planck constant / 2pi'][1],str2unit("1 hbar",FMFversion="1.1"))
         self.assertEqual(consts[u'Elementary charge'][1],str2unit("1 e",FMFversion="1.0"))
         self.assertNotEqual(consts[u'Elementary charge'][1],str2unit("1 e"),
                          "Elementary charge has been adapted to new CODATA recommendations.")

@@ -58,15 +58,20 @@ class TestParseDateTime(unittest.TestCase):
 
 class TestStr2unit(unittest.TestCase):
     """Test the correct conversion of strings to quantities or floats."""
+    def setUp(self):
+        self.inputDict = {'complexJ':'1.0j','Joule':'1.0J'}
+
     def testSimpleQuantity(self):
         """The the conversion of a simple textual quantity specification to a quantity object."""
         expected = Quantity('1V')
         result = str2unit('1V')
         self.assertEqual(expected,result)
 
-    def setUp(self):
-        self.inputDict = {'complexJ':'1.0j','Joule':'1.0J'}
-
+    def testComplexNumber(self):
+        """Complex numbers have to be denoted by small 'j', in oder to discriminate them from Joule."""
+        result = str2unit(self.inputDict['complexJ'])
+        self.assertEqual(result,complex(self.inputDict['complexJ']))
+    
     def testJouleValue(self):
         """Physical quantities with unit Joule are indicated by 'J'."""
         result = str2unit(self.inputDict['Joule'])
@@ -86,6 +91,10 @@ class TestStr2unit(unittest.TestCase):
         result = str2unit('16.8 mm',FMFversion='1.0')
         diff = Quantity('16.8 mm')
         self.assertEqual(result,diff)
+        
+    def testGravitationalConstant(self):
+        result = str2unit("1 Grav",FMFversion="1.0")
+        self.assertEqual(result,str2unit('6.67259e-11 m**3/kg/s**2'))
         
 
 if __name__ == "__main__":
