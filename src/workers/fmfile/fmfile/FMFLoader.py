@@ -329,6 +329,8 @@ def loadFMFFromFile(filename, subscriber=0):
 def readSingleFile(b, pixelName):
     _logger.info(u"Parsing file %s." % pixelName)
     preParsedData, d, FMFversion, commentChar = preParseData(b)
+    if commentChar == "#":
+        commentChar = "\#"
     from configobj import ConfigObj, ConfigObjError
     class FMFConfigObj(ConfigObj):
         #   ConfigObj sets the following default
@@ -389,7 +391,7 @@ def readSingleFile(b, pixelName):
             \s*(%s.*)?          # optional comment
             $''' % ((commentChar, )*4),
             re.VERBOSE)
-    
+
         # use findall to get the members of a list value
         _listvalueexp = re.compile(r'''
             (
@@ -400,7 +402,7 @@ def readSingleFile(b, pixelName):
             \s*,\s*                 # comma
             ''' % commentChar,
             re.VERBOSE)
-    
+
         # this regexp is used for the value
         # when lists are switched off
         _nolistvalue = re.compile(r'''^
@@ -413,19 +415,19 @@ def readSingleFile(b, pixelName):
             \s*(%s.*)?              # optional comment
             $''' % (commentChar, commentChar),
             re.VERBOSE)
-    
+
         # regexes for finding triple quoted values on one line
         _single_line_single = re.compile(
-                                r"^'''(.*?)'''\s*(%s.*)?$" % commentChar, 
+                                r"^'''(.*?)'''\s*(%s.*)?$" % commentChar,
                                 re.VERBOSE)
         _single_line_double = re.compile(
-                                r'^"""(.*?)"""\s*(%s.*)?$' % commentChar, 
+                                r'^"""(.*?)"""\s*(%s.*)?$' % commentChar,
                                 re.VERBOSE)
         _multi_line_single = re.compile(
-                                r"^(.*?)'''\s*(%s.*)?$" % commentChar, 
+                                r"^(.*?)'''\s*(%s.*)?$" % commentChar,
                                 re.VERBOSE)
         _multi_line_double = re.compile(
-                                r'^(.*?)"""\s*(%s.*)?$' % commentChar, 
+                                r'^(.*?)"""\s*(%s.*)?$' % commentChar,
                                 re.VERBOSE)
     try:
         config = FMFConfigObj(d.encode('utf-8').splitlines(), encoding='utf-8')

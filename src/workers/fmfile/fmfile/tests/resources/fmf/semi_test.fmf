@@ -12,7 +12,7 @@ Distance and Energys: DE
 [*data definitions: DE]
 Distance: D [Ang]
 Energy_PBE: E_PBE(D) [eV]
-[*data: FM]
+[*data: DE]
 1.70	6.682
 1.75	5.564
 1.80	4.570

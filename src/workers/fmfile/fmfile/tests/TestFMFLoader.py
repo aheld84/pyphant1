@@ -314,7 +314,7 @@ class Emd5ConsistencyTestCase(unittest.TestCase):
             self.assertEqual(emd5, table['x'].id)
 
 
-class PathologicalTestCase(unittest.TestCase):
+class LoaderTestCase(unittest.TestCase):
     def setUp(self):
         self.loader = FMFLoader.FMFLoader()
         from fmfile import __path__ as path
@@ -326,6 +326,8 @@ class PathologicalTestCase(unittest.TestCase):
         self.loader.paramFilename.value = os.path.join(self.path, filename)
         return self.loader.loadFMF()
 
+
+class PathologicalTestCase(LoaderTestCase):
     def checkExpected(self, columns, result):
         expected = SampleContainer(columns, longname='Table', shortname='T',
                                    attributes=deepcopy(result.attributes))
@@ -363,6 +365,19 @@ class PathologicalTestCase(unittest.TestCase):
 
     def testLoadMultiTable(self):
         self.load('multitable.fmf')
+
+
+class CommentCharTestCase(LoaderTestCase):
+    def testHash(self):
+        result = self.load('hash_test.fmf')
+        title = "Testfile for # checking"
+        self.assertEqual(result.attributes['*reference']['title'], title)
+
+    def testSemi(self):
+        result = self.load('semi_test.fmf')
+        title = "Testfile for ; checking"
+        self.assertEqual(result.attributes['*reference']['title'], title)
+
 
 
 if __name__ == "__main__":
