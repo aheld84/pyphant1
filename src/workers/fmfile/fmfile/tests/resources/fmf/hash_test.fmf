@@ -1,0 +1,18 @@
+; -*- fmf-version: 1.0; coding: utf-8; delimeter: \t -*-
+; Full-Metadata Format as described in http://arxiv.org/abs/0904.1299
+; written by simplefmf 0.1 (python)
+[*reference]
+title: Testfile for # checking
+creator: Rolf Wuerdemann
+created: 2011-11-14 12:14:00+01:00
+place: Freiburg centre of materials research
+contact: rolf.wuerdemann@fmf.uni-freiburg.de
+[*table definitions]
+Distance and Energys: DE
+[*data definitions: DE]
+Distance: D [Ang]
+Energy_PBE: E_PBE(D) [eV]
+[*data: FM]
+1.70	6.682
+1.75	5.564
+1.80	4.570
