@@ -75,7 +75,7 @@ class CoverageTestCase(unittest.TestCase):
                 stuff1 = (stuff1 * rho1).inUnitsOf('C / m ** 3').value
                 stuff2 = (stuff2 * rho2).inUnitsOf('C / m ** 3').value
                 actualRatio = stuff1 / (stuff1 + stuff2)
-                self.assertAlmostEqual(ratio, actualRatio, delta=delta)
+                self.assertTrue(abs(ratio - actualRatio) <= delta)
 
 
 if __name__ == "__main__":
