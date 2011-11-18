@@ -39,10 +39,8 @@ __version__ = "$Revision$"
 # $Source$:
 import tables
 from pyphant.core import DataContainer
-from tables import StringCol
 from pyphant.quantities import Quantity
 PhysicalQuantity = Quantity
-import scipy
 import logging
 import os
 from pyphant.core import PyTablesPersister
@@ -261,7 +259,7 @@ class H5FileHandler(object):
                        in the file.
         result -- SampleContainer instance to be saved
         """
-        PyTablesPersister.saveSample(self.handle, resultGroup, result)
+        return PyTablesPersister.saveSample(self.handle, resultGroup, result)
 
     def saveField(self, resultGroup, result):
         """
@@ -271,4 +269,13 @@ class H5FileHandler(object):
                        in the file.
         result -- FieldContainer instance to be saved
         """
-        PyTablesPersister.saveField(self.handle, resultGroup, result)
+        return PyTablesPersister.saveField(self.handle, resultGroup, result)
+
+    def saveRecipe(self, recipe, saveResults=True):
+        """
+        Saves a recipe
+
+        recipe -- CompositeWorker to be saved
+        saveResults -- Whether to save results of the workers
+        """
+        return PyTablesPersister.saveRecipe(self.handle, recipe, saveResults)

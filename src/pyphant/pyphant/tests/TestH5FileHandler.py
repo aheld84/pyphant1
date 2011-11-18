@@ -45,8 +45,7 @@ import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
 from pyphant.quantities import Quantity as PQ
-from pyphant.core.DataContainer import FieldContainer, SampleContainer,\
-    assertEqual
+from pyphant.core.DataContainer import FieldContainer, SampleContainer
 from pyphant.core.H5FileHandler import H5FileHandler as H5FH
 from numpy import array as NPArray
 import os
@@ -56,7 +55,7 @@ from tempfile import mkstemp
 class BasicTestCase(unittest.TestCase):
     def testReadOnlyFileNotFound(self):
         try:
-            handler = H5FH('', 'r')
+            H5FH('', 'r')
             assert False
         except IOError:
             pass
@@ -78,8 +77,8 @@ class FieldContainerTestCase(unittest.TestCase):
 class FCSaveLoadTestCase(FieldContainerTestCase):
     def setUp(self):
         FieldContainerTestCase.setUp(self)
-        osHandle, self.fcFilename = mkstemp(suffix = '.h5',
-                                            prefix = 'pyphantH5FileHandlerTest')
+        osHandle, self.fcFilename = mkstemp(
+            suffix = '.h5', prefix = 'pyphantH5FileHandlerTest')
         os.close(osHandle)
 
     def tearDown(self):
@@ -96,8 +95,8 @@ class FCSaveLoadTestCase(FieldContainerTestCase):
 class FCReadOnlyTestCase(FieldContainerTestCase):
     def setUp(self):
         FieldContainerTestCase.setUp(self)
-        osHandle, self.rofcFilename = mkstemp(suffix = '.h5',
-                                            prefix = 'pyphantH5FileHandlerTest')
+        osHandle, self.rofcFilename = mkstemp(
+            suffix = '.h5', prefix = 'pyphantH5FileHandlerTest')
         os.close(osHandle)
         handler = H5FH(self.rofcFilename, 'w')
         with handler:
@@ -137,10 +136,9 @@ class SampleContainerTestCase(unittest.TestCase):
 class SCSaveLoadTestCase(SampleContainerTestCase):
     def setUp(self):
         SampleContainerTestCase.setUp(self)
-        osHandle, self.scFilename = mkstemp(suffix = '.h5',
-                                            prefix = 'pyphantH5FileHandlerTest')
+        osHandle, self.scFilename = mkstemp(
+            suffix = '.h5', prefix = 'pyphantH5FileHandlerTest')
         os.close(osHandle)
-
 
     def tearDown(self):
         os.remove(self.scFilename)
@@ -156,8 +154,8 @@ class SCSaveLoadTestCase(SampleContainerTestCase):
 class SCReadOnlyTestCase(SampleContainerTestCase):
     def setUp(self):
         SampleContainerTestCase.setUp(self)
-        osHandle, self.roscFilename = mkstemp(suffix = '.h5',
-                                            prefix = 'pyphantH5FileHandlerTest')
+        osHandle, self.roscFilename = mkstemp(
+            suffix = '.h5', prefix = 'pyphantH5FileHandlerTest')
         os.close(osHandle)
         handler = H5FH(self.roscFilename, 'w')
         with handler:
@@ -176,8 +174,8 @@ class SCReadOnlyTestCase(SampleContainerTestCase):
 class MixedAppendTestCase(SampleContainerTestCase):
     def setUp(self):
         SampleContainerTestCase.setUp(self)
-        osHandle, self.appscFilename = mkstemp(suffix = '.h5',
-                                            prefix = 'pyphantH5FileHandlerTest')
+        osHandle, self.appscFilename = mkstemp(
+            suffix = '.h5', prefix = 'pyphantH5FileHandlerTest')
         os.close(osHandle)
         handler = H5FH(self.appscFilename, 'w')
         with handler:
@@ -199,8 +197,8 @@ class MixedAppendTestCase(SampleContainerTestCase):
 class SummaryTestCase(SampleContainerTestCase):
     def setUp(self):
         SampleContainerTestCase.setUp(self)
-        osHandle, self.summFilename = mkstemp(suffix = '.h5',
-                                            prefix = 'pyphantH5FileHandlerTest')
+        osHandle, self.summFilename = mkstemp(
+            suffix = '.h5', prefix = 'pyphantH5FileHandlerTest')
         os.close(osHandle)
         handler = H5FH(self.summFilename, 'w')
         with handler:
@@ -231,6 +229,38 @@ class SummaryTestCase(SampleContainerTestCase):
         self.assertEqual(scsummary['columns'][0], self.fc.id)
         from pyphant.core.H5FileHandler import im_id
         self.assertEqual(fcsummary['dimensions'], [im_id])
+
+
+class RecipeTestCase(unittest.TestCase):
+    def setUp(self):
+        osHandle, self.path = mkstemp(
+            suffix='.h5', prefix='pyphantH5RecipeTest')
+        os.close(osHandle)
+
+    def tearDown(self):
+        os.remove(self.path)
+
+    def testSaveLoadRecipe(self):
+        from pyphant.core.CompositeWorker import CompositeWorker
+        from pyphant.core.WorkerRegistry import WorkerRegistry
+        from itertools import chain
+        recipe = CompositeWorker()
+        wreg = WorkerRegistry.getInstance()
+        workerInfos = [t.workerInfos for t in wreg.getToolBoxInfoList()]
+        for wInfo in chain(*workerInfos):
+            worker = wInfo.createWorker()
+            recipe.addWorker(worker)
+        with H5FH(self.path, 'w') as handler:
+            handler.saveRecipe(recipe)
+        with H5FH(self.path, 'r') as handler:
+            loadedRecipe = handler.loadRecipe()
+        loadedWorkers = loadedRecipe.getWorkers()
+        workers = recipe.getWorkers()
+        self.assertEqual(len(loadedWorkers), len(workers))
+        workerNames = [w.name for w in workers]
+        loadedWorkerNames = [w.name for w in loadedWorkers]
+        for name in loadedWorkerNames:
+            self.assertTrue(name in workerNames)
 
 
 if __name__ == "__main__":
