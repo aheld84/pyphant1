@@ -109,6 +109,7 @@ def saveExecutionOrder(h5, order):
 def saveRecipe(h5, recipe, saveResults=True):
     recipeGroup = h5.createGroup("/", "recipe")
     h5.createGroup("/", "results")
+    h5.setNodeAttr(recipeGroup, "Annotations", recipe._annotations)
     workers = recipe.getWorkers()
     for worker in workers:
         saveWorker(h5, recipeGroup, worker, saveResults)
@@ -257,7 +258,11 @@ def restoreParamsToWorkers(recipeGroup, workers):
 
 def loadRecipe(h5):
     recipeGroup = h5.root.recipe
-    recipe = CompositeWorker.CompositeWorker()
+    try:
+        annotations = recipeGroup._v_attrs.Annotations
+    except AttributeError:
+        annotations = {}
+    recipe = CompositeWorker.CompositeWorker(annotations=annotations)
     workers = {}
     createWorkerGraph(recipeGroup, workers, recipe)
     restoreResultsToWorkers(recipeGroup, workers, h5)

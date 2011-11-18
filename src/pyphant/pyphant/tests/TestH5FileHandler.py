@@ -244,7 +244,7 @@ class RecipeTestCase(unittest.TestCase):
         from pyphant.core.CompositeWorker import CompositeWorker
         from pyphant.core.WorkerRegistry import WorkerRegistry
         from itertools import chain
-        recipe = CompositeWorker()
+        recipe = CompositeWorker(annotations={'foo':42.0, 'bar':u'Hääh?'})
         wreg = WorkerRegistry.getInstance()
         workerInfos = [t.workerInfos for t in wreg.getToolBoxInfoList()]
         for wInfo in chain(*workerInfos):
@@ -261,6 +261,7 @@ class RecipeTestCase(unittest.TestCase):
         loadedWorkerNames = [w.name for w in loadedWorkers]
         for name in loadedWorkerNames:
             self.assertTrue(name in workerNames)
+        self.assertEqual(recipe._annotations, loadedRecipe._annotations)
 
 
 if __name__ == "__main__":
