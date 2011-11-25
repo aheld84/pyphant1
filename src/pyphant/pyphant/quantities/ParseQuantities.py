@@ -45,9 +45,6 @@ from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 import logging
 _logger = logging.getLogger("pyphant")
 
-#Estimate floating point accuracy
-ACCURACY = 1.0 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1
-
 def str2unit(unitStr,FMFversion='1.1'):
     """The function str2unit is a factory, which either returns a float or a Quantity instance from a given string. Because the definition of units and physical constants is not unique for 
     FMFversion 1.0 (http://arxiv.org/abs/0904.1299) and 
@@ -73,36 +70,45 @@ def str2unit(unitStr,FMFversion='1.1'):
         unitStr = '0'+unitStr
     elif not (unitStr[0].isdigit() or unitStr[0]=='-'):
         unitStr = '1'+unitStr
-       
-    #Try to convert unitStr to real or complex number
-    try:
-        if 'j' in unitStr:
-            return complex(unitStr)
-        else:
-            return float(unitStr)
-    except ValueError:
-        pass
+    # Convert input to quantity or float
+    if FMFversion not in ['1.0','1.1']:
+        raise ValueError, 'FMFversion %s not supported.' % FMFversion
+    else:
+        unitStr = unitStr.replace('^', '**')
+        try: #FMFversion=='1.1'
+            unit = Quantity(unitStr.encode('utf-8'))
+        except:
+            unit = None
 
-    if FMFversion=='1.0':
-        changedNames = {'h': 'hr',
-                        'Grav': 'G',
-                        'hplanck': 'h',
-                        'Nav': 'NA',
-                        'amu': 'u'}
-        changedValues = ('Grav','hplanck','hbar','e','me','mp','k','pc','amu','Hartree','GalUS')
-        changedUnits = set(changedNames.keys())
-        changedUnits.add(changedValues)
-
-        unit1_0 = PhysicalQuantity(unitStr)
-        if unit1_0.unit.name() in changedUnits:
-            if unit1_0.unit.name() in changedValues:
-                _logger.warn("Value of natural or technical constant '%s' has changed. Conversion to base units." % unit1_0)
-                return Quantity(str(unit1_0.inBaseUnits()))
-            else:
-                return Quantity(unit1_0.value,
-                                changedNames[unit1_0.unit.name()])
-
-    return Quantity(unitStr) 
+        if FMFversion=='1.0':
+            try:
+                unit1_0 = PhysicalQuantity(unitStr.encode('utf-8'))
+                unit1_1 = Quantity(str(unit1_0.inBaseUnits()))
+            except:
+                unit1_1 = None
+            
+            if isinstance(unit1_1,Quantity): # Unit exists in 1.0
+                if isinstance(unit,Quantity): # Unit also exists in 1.1
+                    if unit.isCompatible(unit1_1.unit): # Interpretation of unit has not changed
+                        unit = unit1_1.inUnitsOf(unit.unit)
+                    else:
+                        unit = unit1_1
+                        _logger.warn('Usage of old unit "%s" required '
+                                     'conversion to base units.' % unitStr)
+                else:
+                    unit = unit1_1
+                    _logger.warn('Usage of old unit "%s" required '
+                                 'conversion to base units.' % unitStr)
+                
+        if unit == None:
+            try:
+                if 'j' in unitStr:
+                    unit = complex(unitStr)
+                else:
+                    unit = float(unitStr)
+            except:
+                raise ValueError, "Unit %s cannot be interpreted." % unitStr
+    return unit
         
 def parseQuantity(value,FMFversion='1.1'):
     import re
@@ -131,7 +137,6 @@ def parseQuantity(value,FMFversion='1.1'):
 def parseVariable(oldVal,FMFversion='1.1'):
     shortname, value = tuple([s.strip() for s in oldVal.split('=')])
     value, error = parseQuantity(value,FMFversion)
-    print (shortname, value, error)
     return (shortname, value, error)
 
 def parseDateTime(value,FMFversion='1.1'):
