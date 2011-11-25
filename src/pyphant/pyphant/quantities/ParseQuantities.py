@@ -45,9 +45,6 @@ from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 import logging
 _logger = logging.getLogger("pyphant")
 
-#Estimate floating point accuracy
-ACCURACY = 1.0 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1
-
 def str2unit(unitStr,FMFversion='1.1'):
     """The function str2unit returns either a quantity or a float from a given string."""
     # Prepare conversion to quantity
@@ -74,6 +71,7 @@ def str2unit(unitStr,FMFversion='1.1'):
             unit = Quantity(unitStr.encode('utf-8'))
         except:
             unit = None
+
         if FMFversion=='1.0':
             try:
                 unit1_0 = PhysicalQuantity(unitStr.encode('utf-8'))
@@ -81,22 +79,23 @@ def str2unit(unitStr,FMFversion='1.1'):
             except:
                 unit1_1 = None
             
-            if (isinstance(unit,Quantity) and
-                isinstance(unit1_1,Quantity) and
-                not unit.inBaseUnits() == unit1_1):
-                try: 
-                    diff = unit - unit1_1
-                    if diff > ACCURACY:
-                        unit = Quantity(str(unit1_0))
-                except: 
+            if isinstance(unit1_1,Quantity): # Unit exists in 1.0
+                if isinstance(unit,Quantity): # Unit also exists in 1.1
+                    if unit.isCompatible(unit1_1.unit): # Interpretation of unit has not changed
+                        unit = unit1_1.inUnitsOf(unit.unit)
+                    else:
+                        unit = unit1_1
+                        _logger.warn('Usage of old unit "%s" required '
+                                     'conversion to base units.' % unitStr)
+                else:
                     unit = unit1_1
                     _logger.warn('Usage of old unit "%s" required '
-                                 'conversion to base units.' % unit1_0)
-
+                                 'conversion to base units.' % unitStr)
+                
         if unit == None:
             try:
                 unit = float(unit)
-            except e:
+            except:
                 raise ValueError, "Unit %s cannot be interpreted." % unit
     return unit
 

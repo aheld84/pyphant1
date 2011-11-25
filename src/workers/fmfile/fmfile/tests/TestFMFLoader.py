@@ -1,8 +1,8 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python2.6
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008-2009,  Rectorate of the University of Freiburg
-# Copyright (c) 2009-2010, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009-2011, Andreas W. Liehr (liehr@users.sourceforge.net)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,9 @@ from fmfile import FMFLoader
 from pyphant.core.DataContainer import FieldContainer,assertEqual
 from pyphant.quantities import Quantity
 from pyphant.quantities.ParseQuantities import str2unit
+
+#Estimate floating point accuracy
+ACCURACY = 1.0 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.
 
 class FieldContainerCondenseDim(unittest.TestCase):
     def setUp(self):
@@ -127,6 +130,11 @@ class TestDiscriminatingJouleAndImaginary(unittest.TestCase):
         self.assertEqual(result,(Quantity(self.inputDict['Joule']),None))
 
 class TestFMFversion1_0(unittest.TestCase):
+    def almostEqual(self,a,b):
+        diff = a-b
+        mean = 0.5*(a+b)
+        self.assertTrue(abs(diff/mean) < ACCURACY)
+
     def setUp(self):
         self.FMFinput = """# -*- fmf-version: 1.0; coding: utf-8 -*-
 [*reference]
@@ -182,9 +190,9 @@ N_2	1	2
         self.assertEqual(consts[u'Permeability of vacuum'][1],str2unit("1 mu0",FMFversion="1.0"))
         self.assertEqual(consts[u'Permittivity of vacuum'][1],str2unit("1 eps0",FMFversion="1.0"))
         self.assertEqual(consts[u'Gravitational constant'][1],str2unit("1 Grav",FMFversion="1.0"))
-        self.assertEqual(consts[u'Planck constant'][1],str2unit("1 hplanck",FMFversion="1.0"))
-        self.assertEqual(consts[u'Planck constant / 2pi'][1],str2unit("1 hbar",FMFversion="1.0"))
-        self.assertEqual(consts[u'Elementary charge'][1],str2unit("1 e",FMFversion="1.0"))
+        self.assertTrue(consts[u'Planck constant'][1],str2unit("1 hplanck",FMFversion="1.0"))
+        self.almostEqual(consts[u'Planck constant / 2pi'][1],str2unit("1 hbar",FMFversion="1.0"))
+        self.almostEqual(consts[u'Elementary charge'][1],str2unit("1 e",FMFversion="1.0"))
         self.assertNotEqual(consts[u'Elementary charge'][1],str2unit("1 e"),
                          "Elementary charge has been adapted to new CODATA recommendations.")
         self.assertEqual(consts[u'Electron mass'][1],str2unit("1 me",FMFversion="1.0"))
@@ -196,8 +204,8 @@ N_2	1	2
         self.assertEqual(consts[u'Avogadro number'][1],str2unit("1 Nav",FMFversion="1.0"))
         self.assertEqual(consts[u'Boltzmann constant'][1],str2unit("1 k",FMFversion="1.0"))
         consts = FMFLoader.readSingleFile(self.FMFinput,"testReadSingleFile")[0].attributes['Additional constants changed from FMF version 1.0 to 1.1']
-        self.assertEqual(consts[u'Parsec'][1],str2unit("1 pc",FMFversion="1.0"))
-        self.assertEqual(consts[u'US gallon'][1],str2unit("1 galUS",FMFversion="1.0"))
+        self.almostEqual(consts[u'Parsec'][1],str2unit("1 pc",FMFversion="1.0"))
+        self.almostEqual(consts[u'US gallon'][1],str2unit("1 galUS",FMFversion="1.0"))
         self.assertEqual(consts[u'Atomic mass units'][1],str2unit("1 amu",FMFversion="1.0"))
 
 class TestFMFversion1_1(unittest.TestCase):
