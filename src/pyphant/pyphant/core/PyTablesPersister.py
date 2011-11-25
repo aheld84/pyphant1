@@ -106,15 +106,13 @@ def saveExecutionOrder(h5, order):
     input.flush()
     orderGroup._v_attrs.resultPlug = order[1]
 
-def saveRecipeToHDF5File(recipe, filename, saveResults=True):
-    _logger.info( "Saving to %s" % filename )
-    h5 = tables.openFile(filename, 'w')
+def saveRecipe(h5, recipe, saveResults=True):
     recipeGroup = h5.createGroup("/", "recipe")
-    resultsGroup = h5.createGroup("/", "results")
-    workers=recipe.getWorkers()
+    h5.createGroup("/", "results")
+    h5.setNodeAttr(recipeGroup, "Annotations", recipe._annotations)
+    workers = recipe.getWorkers()
     for worker in workers:
         saveWorker(h5, recipeGroup, worker, saveResults)
-    h5.close()
 
 def saveWorker(h5, recipeGroup, worker, saveResults=True):
     workerGroup = h5.createGroup(recipeGroup, "worker_"+str(hash(worker)))
@@ -258,15 +256,13 @@ def restoreParamsToWorkers(recipeGroup, workers):
             except KeyError:
                 _logger.warning(u'Could not restore "%s" to parameter: "%s"'%(param,paramName))
 
-def loadRecipeFromHDF5File( filename ):
-    h5 = tables.openFile(filename, 'r')
-    recipe = loadRecipe(h5)
-    h5.close()
-    return recipe
-
 def loadRecipe(h5):
     recipeGroup = h5.root.recipe
-    recipe = CompositeWorker.CompositeWorker()
+    try:
+        annotations = recipeGroup._v_attrs.Annotations
+    except AttributeError:
+        annotations = {}
+    recipe = CompositeWorker.CompositeWorker(annotations=annotations)
     workers = {}
     createWorkerGraph(recipeGroup, workers, recipe)
     restoreResultsToWorkers(recipeGroup, workers, h5)

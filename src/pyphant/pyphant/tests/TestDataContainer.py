@@ -557,17 +557,20 @@ class SampleContainerTest(unittest.TestCase):
 class AlgebraSampleContainerTests(SampleContainerTest):
 
     def testNodeTransformer(self):
-        from pyphant.core.DataContainer import (ReplaceName, ReplaceOperator)
+        from pyphant.core.AstTransformers import (ReplaceName, ReplaceOperator,
+                                                  ReplaceCompare)
         rpn = ReplaceName(self.sampleContainer)
         import ast
         exprStr = 'col("i") / (col("t") + col("t"))'
         expr = compile(exprStr, "<TestCase>", 'eval', ast.PyCF_ONLY_AST)
         replacedExpr = rpn.visit(expr)
-        #print rpn.localDict
-        #print ast.dump(replacedExpr)
-        rpb = ReplaceOperator(rpn.localDict)
-        factorExpr = rpb.visit(replacedExpr)
-        #print ast.dump(factorExpr)
+        print rpn.localDict
+        print ast.dump(replacedExpr)
+        rpc = ReplaceCompare(rpn.localDict)
+        factorExpr = rpc.visit(replacedExpr)
+        rpo = ReplaceOperator(rpn.localDict)
+        factorExpr = rpo.visit(factorExpr)
+        print ast.dump(factorExpr)
 
     def testCalcColumn(self):
         exprStr = 'col("i") / (col("t") + col("t")) + "1km/s"'
@@ -854,7 +857,7 @@ class SampleContainerSlicingTests(SampleContainerTest):
     #purely one dimensional Tests:
     def testConsistancy(self):
         result1 = self.sampleContainer.filter(
-            '("20m" < col("i")) & ("80m" > col("i"))')
+            '"20m" < col("i") and "80m" > col("i")')
         result2 = self.sampleContainer.filter('"20m" < col("i") < "80m"')
         self.assertEqual(result1[0], result2[0])
         self.assertEqual(result1[1], result2[1])
@@ -875,7 +878,7 @@ class SampleContainerSlicingTests(SampleContainerTest):
 
     def testANDExpression(self):
         result = self.sampleContainer.filter(
-            '(col("i") >= "20m") & (col("t") <= "98.5s")')
+            'col("i") >= "20m" and col("t") <= "98.5s"')
         expectedi = self.sampleContainer["i"][20:98]
         expectedt = self.sampleContainer["t"][20:98]
         expectedi.attributes = {}
@@ -916,21 +919,32 @@ class SampleContainerSlicingTests(SampleContainerTest):
                               [True, True, False, True, True])
 
     def testNot2dExpression(self):
-        self._compareExpected('~ (col("t") == "10s")',
+        self._compareExpected('not col("t") == "10s"',
                               [True, True, True, False, True])
 
     def testAnd2dExpression(self):
         self._compareExpected(
-            '(col("Zeit") == "60s") & ("20000m" == col("Strecke"))',
+            'col("Zeit") == "60s" and "20000m" == col("Strecke")',
             [False, False, True, False, False])
+
+    def testMultiAnd2dExpression(self):
+        self._compareExpected(
+            "col('l') >= '0 km' and col('l') < '20 km' and col('t') <= '60s'",
+            [False, True, False, True, False])
 
     def testOr2dExpression(self):
         self._compareExpected(
-            '(col("Zeit") < "60s") | (col("Strecke") == "5500m")',
+            'col("Zeit") < "60s" or col("Strecke") == "5500m"',
             [True, True, False, True, True])
 
+    def testMultiOr2dExpression(self):
+        self._compareExpected(
+            "col('t') == '20s' or col('l') == '0 km' or col('t') > '1000.2 s'",
+            [True, True, False, False, True]
+            )
+
     def testMultipleCompareOpPrecedence2dExpression(self):
-        self._compareExpected('~ ("0m" <= col("l") <= "10000m")',
+        self._compareExpected('not "0m" <= col("l") <= "10000m"',
                               [True, False, True, False, False])
 
     def testColumnToColumn2dExpression(self):

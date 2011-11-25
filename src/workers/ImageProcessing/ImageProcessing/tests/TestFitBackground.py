@@ -29,38 +29,35 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""
-The Medianiser Worker is a class of Pyphant's Image Processing
-Toolbox. It is used to remove noise from an image, by implementing a
-standard median filter. In its configurations the size of the applied
-kernel and the number of smoothing runs can be edited.
+u"""Provides unittest classes for FitBackground worker
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
+__id__ = "$Id$".replace('$','')
+__author__ = "$Author$".replace('$','')
+__version__ = "$Revision$".replace('$','')
 # $Source$
 
-from pyphant.core import (Worker, Connectors)
-import scipy.ndimage.filters
-import copy
+import unittest
+import numpy
+import pkg_resources
+pkg_resources.require("pyphant")
 
 
-class Medianiser(Worker.Worker):
-    API = 2
-    VERSION = 1
-    REVISION = "$Revision$"[11:-1]
-    name = "Median"
-    _sockets = [("field", Connectors.TYPE_IMAGE)]
-    _params = [("size", "Kernel Size", 5, None),
-               ("runs", "Runs", 3, None)]
+class FitBackgroundTestCase(unittest.TestCase):
+    def testCall(self):
+        from ImageProcessing.FitBackground import FitBackground
+        from pyphant.core.DataContainer import FieldContainer
+        data = (numpy.arange(0, 256, .001)).reshape((800, 320))
+        image = FieldContainer(data)
+        fbw = FitBackground()
+        fbw.fit_background(image)
 
-    @Worker.plug(Connectors.TYPE_IMAGE)
-    def medianize(self, field, subscriber=0):
-        im = copy.deepcopy(field)
-        size = self.paramSize.value
-        ru = self.paramRuns.value
-        for i in range(ru):
-            im.data = scipy.ndimage.filters.median_filter(im.data, size=size)
-        im.seal()
-        return im
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) == 1:
+        unittest.main()
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(
+            eval(sys.argv[1:][0]))
+        unittest.TextTestRunner().run(suite)

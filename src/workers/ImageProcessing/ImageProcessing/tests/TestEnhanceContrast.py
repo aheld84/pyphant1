@@ -29,38 +29,37 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""
-The Medianiser Worker is a class of Pyphant's Image Processing
-Toolbox. It is used to remove noise from an image, by implementing a
-standard median filter. In its configurations the size of the applied
-kernel and the number of smoothing runs can be edited.
+u"""Provides unittest classes for EnhanceContrast worker
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
+__id__ = "$Id$".replace('$','')
+__author__ = "$Author$".replace('$','')
+__version__ = "$Revision$".replace('$','')
 # $Source$
 
-from pyphant.core import (Worker, Connectors)
-import scipy.ndimage.filters
-import copy
+import unittest
+import numpy
+import pkg_resources
+pkg_resources.require("pyphant")
 
 
-class Medianiser(Worker.Worker):
-    API = 2
-    VERSION = 1
-    REVISION = "$Revision$"[11:-1]
-    name = "Median"
-    _sockets = [("field", Connectors.TYPE_IMAGE)]
-    _params = [("size", "Kernel Size", 5, None),
-               ("runs", "Runs", 3, None)]
+class EnhanceContrastTestCase(unittest.TestCase):
+    def testNormalize(self):
+        from ImageProcessing.EnhanceContrast import EnhanceContrast
+        from pyphant.core.DataContainer import FieldContainer
+        data = (numpy.arange(0, 256, 1) * .5 + 20.).reshape((16, 16))
+        image = FieldContainer(data)
+        enhanceContrast = EnhanceContrast()
+        result = enhanceContrast.enhance(image)
+        self.assertEqual(result.data.min(), 0)
+        self.assertEqual(result.data.max(), 255)
 
-    @Worker.plug(Connectors.TYPE_IMAGE)
-    def medianize(self, field, subscriber=0):
-        im = copy.deepcopy(field)
-        size = self.paramSize.value
-        ru = self.paramRuns.value
-        for i in range(ru):
-            im.data = scipy.ndimage.filters.median_filter(im.data, size=size)
-        im.seal()
-        return im
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) == 1:
+        unittest.main()
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(
+            eval(sys.argv[1:][0]))
+        unittest.TextTestRunner().run(suite)

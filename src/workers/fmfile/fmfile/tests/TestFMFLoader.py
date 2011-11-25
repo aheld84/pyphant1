@@ -38,9 +38,12 @@ pkg_resources.require('pyphant.fmf')
 
 import unittest, numpy
 from fmfile import FMFLoader
-from pyphant.core.DataContainer import FieldContainer,assertEqual
+from pyphant.core.DataContainer import (
+    FieldContainer, SampleContainer, assertEqual
+    )
 from pyphant.quantities import Quantity
 from pyphant.quantities.ParseQuantities import str2unit
+from copy import deepcopy
 
 class FieldContainerCondenseDim(unittest.TestCase):
     def setUp(self):
@@ -310,6 +313,72 @@ class Emd5ConsistencyTestCase(unittest.TestCase):
             summary = kmanager.getSummary(table[column].id)
             emd5 = summary['dimensions'][0]
             self.assertEqual(emd5, table['x'].id)
+
+
+class LoaderTestCase(unittest.TestCase):
+    def setUp(self):
+        self.loader = FMFLoader.FMFLoader()
+        from fmfile import __path__ as path
+        import os
+        self.path = os.path.join(path[0], 'tests', 'resources', 'fmf')
+
+    def load(self, filename):
+        import os
+        self.loader.paramFilename.value = os.path.join(self.path, filename)
+        return self.loader.loadFMF()
+
+
+class PathologicalTestCase(LoaderTestCase):
+    def checkExpected(self, columns, result):
+        expected = SampleContainer(columns, longname='Table', shortname='T',
+                                   attributes=deepcopy(result.attributes))
+        expected.seal()
+        self.assertEqual(result, expected)
+
+    def testLoadOneRowDep(self):
+        result = self.load('onerow_dep.fmf')
+        t = FieldContainer(numpy.array([1.0]), unit=Quantity('1 s'),
+                           shortname='t', longname='time')
+        s = FieldContainer(numpy.array([5.0]), unit=Quantity('1 m'),
+                           shortname='s', longname='distance')
+        s.dimensions[0] = deepcopy(t)
+        self.checkExpected([t, s], result)
+
+    def testLoadOneRow(self):
+        result = self.load('onerow.fmf')
+        t = FieldContainer(numpy.array([1.0]), unit=Quantity('1 s'),
+                           shortname='t', longname='time')
+        s = FieldContainer(numpy.array([2.0]), unit=Quantity('1 m'),
+                           shortname='s', longname='distance')
+        self.checkExpected([t, s], result)
+
+    def testLoadOneColumn(self):
+        result = self.load('onecolumn.fmf')
+        t = FieldContainer(numpy.array([1, 2, 3, 4]), unit=Quantity('1 s'),
+                           shortname='t', longname='time')
+        self.checkExpected([t], result)
+
+    def testLoadOneValue(self):
+        result = self.load('onevalue.fmf')
+        t = FieldContainer(numpy.array([1.0]), unit=Quantity('1 s'),
+                           shortname='t', longname='time')
+        self.checkExpected([t], result)
+
+    def testLoadMultiTable(self):
+        self.load('multitable.fmf')
+
+
+class CommentCharTestCase(LoaderTestCase):
+    def testHash(self):
+        result = self.load('hash_test.fmf')
+        title = "Testfile for # checking"
+        self.assertEqual(result.attributes['*reference']['title'], title)
+
+    def testSemi(self):
+        result = self.load('semi_test.fmf')
+        title = "Testfile for ; checking"
+        self.assertEqual(result.attributes['*reference']['title'], title)
+
 
 
 if __name__ == "__main__":

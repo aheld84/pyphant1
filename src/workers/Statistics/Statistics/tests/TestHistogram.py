@@ -47,12 +47,9 @@ import pkg_resources
 pkg_resources.require("pyphant")
 
 import Statistics.Histogram as S
-from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 import numpy
 import scipy.special
-import pyphant.quantities as pq
 from pyphant.core import DataContainer
-import pylab
 
 dim = 100000
 uniformSample = numpy.random.uniform(size=dim)

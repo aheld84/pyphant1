@@ -39,7 +39,6 @@ __version__ = "$Revision$"
 # $Source$
 
 from pyphant.core import (Worker, Connectors, DataContainer)
-from ImageProcessing.NDImageWorker import pile
 import copy
 import heapq
 import scipy
@@ -96,7 +95,7 @@ class Watershed(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def wsworker(self, image, markers, subscriber=0):
         self._markers = markers.data
-        newdata = pile(self.watershed, image.data)
+        newdata = self.watershed(image.data)
         longname = "Watershed"
         result = DataContainer.FieldContainer(newdata,
                                               copy.deepcopy(image.unit),

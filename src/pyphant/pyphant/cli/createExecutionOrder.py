@@ -1,6 +1,7 @@
 import pkg_resources
 pkg_resources.require('pyphant')
 from pyphant.core import PyTablesPersister
+from pyphant.core.H5FileHandler import H5FileHandler
 import optparse
 import sys
 
@@ -105,7 +106,8 @@ def main():
     orderLists.append(orders[i:])
     for i, orderList in enumerate(orderLists):
         filename = os.path.basename(sourcefile)[:-3]+'_%i.h5'%i
-        PyTablesPersister.saveRecipeToHDF5File(recipe, filename)
+        with H5FileHandler(filename, 'w') as handler:
+            handler.saveRecipe(recipe)
         h5 = tables.openFile(filename, 'r+')
         for o in orderList:
             PyTablesPersister.saveExecutionOrder(h5, o)

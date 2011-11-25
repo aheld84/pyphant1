@@ -61,8 +61,7 @@ import wx
 import wx.aui
 import sogl
 import pyphant.wxgui2.paramvisualization.ParamVisReg as ParamVisReg
-from pyphant.core.PyTablesPersister import (loadRecipeFromHDF5File,
-                                            saveRecipeToHDF5File)
+from pyphant.core.H5FileHandler import H5FileHandler
 import WorkerRepository
 import ConfigureFrame
 import platform
@@ -226,8 +225,9 @@ class wxPyphantFrame(wx.Frame):
         if self._wxPyphantApp.pathToRecipe[-3:] == '.h5':
             if os.path.exists(self._wxPyphantApp.pathToRecipe):
                 try:
-                    recipe = loadRecipeFromHDF5File(
-                        self._wxPyphantApp.pathToRecipe)
+                    with H5FileHandler(self._wxPyphantApp.pathToRecipe, 'r') \
+                             as handler:
+                        recipe = handler.loadRecipe()
                     self._remainingSpace = PyphantCanvas.PyphantCanvas(
                         self, recipe)
                 except:
@@ -259,9 +259,9 @@ class wxPyphantFrame(wx.Frame):
         self.recipeState = 'dirty'
 
     def onSaveCompositeWorker(self, event=None):
-        saveRecipeToHDF5File(self._remainingSpace.diagram.recipe,
-                             self._wxPyphantApp.pathToRecipe,
-                             self._fileMenu.IsChecked(wx.ID_FILE4))
+        with H5FileHandler(self._wxPyphantApp.pathToRecipe, 'w') as handler:
+            handler.saveRecipe(self._remainingSpace.diagram.recipe,
+                               self._fileMenu.IsChecked(wx.ID_FILE4))
         self.recipeState = 'clean'
 
     def onSaveAsCompositeWorker(self, event=None):
@@ -273,9 +273,10 @@ class wxPyphantFrame(wx.Frame):
             filename = dlg.GetPath()
             if not filename.endswith(".h5"):
                 filename += ".h5"
-            saveRecipeToHDF5File(
-                self._remainingSpace.diagram.recipe,
-                filename, self._fileMenu.IsChecked(wx.ID_FILE4))
+            with H5FileHandler(filename, 'w') as handler:
+                handler.saveRecipe(
+                    self._remainingSpace.diagram.recipe,
+                    self._fileMenu.IsChecked(wx.ID_FILE4))
             self._wxPyphantApp.pathToRecipe = filename
             self.recipeState = 'clean'
             from pyphant.core.WebInterface import shorten
@@ -533,10 +534,10 @@ class wxPyphantFrame(wx.Frame):
                 if isinstance(exep, socket_error):
                     try:
                         #Python 2.6
-                        eno = err.errno
+                        eno = exep.errno
                     except AttributeError:
                         #Python 2.5
-                        eno = err.args[0]
+                        eno = exep.args[0]
                     from errno import EADDRINUSE
                     if eno == EADDRINUSE:
                         msg += "\nReason: Could not find a free port."\
@@ -620,6 +621,7 @@ class mySplashScreen(wx.Frame):
 
         # The program will freeze without this line.
         evt.Skip()  # Make sure the default handler runs too...
+        self.Destroy()
 
 
 import optparse

@@ -328,20 +328,107 @@ def loadFMFFromFile(filename, subscriber=0):
 
 def readSingleFile(b, pixelName):
     _logger.info(u"Parsing file %s." % pixelName)
-    preParsedData, d, FMFversion = preParseData(b)
+    preParsedData, d, FMFversion, commentChar = preParseData(b)
+    if commentChar == "#":
+        commentChar = "\#"
     from configobj import ConfigObj, ConfigObjError
     class FMFConfigObj(ConfigObj):
+        #   ConfigObj sets the following default
+        #   in opposition to FMF
+        #   Function            ConfigObj   FMF
+        #   Key-Value-Seperator "="         ":"
+        #   CommentChar         "#"         "#",";", ....
+        #
+        #   So we have to redefine our regexp
+        #
         _keyword = re.compile(r'''^ # line start
             (\s*)                   # indentation
             (                       # keyword
                 (?:".*?")|          # double quotes
-                (?:'.*?')|          # single quotes
+                (?:'.*?')|          # 'single quotes
                 (?:[^'":].*?)       # no quotes
             )
             \s*:\s*                 # divider
             (.*)                    # value (including list values and comments)
             $   # line end
-            ''', re.VERBOSE)
+            ''', re.VERBOSE)  #'
+
+        _sectionmarker = re.compile(r'''^
+            (\s*)                     # 1: indentation
+            ((?:\[\s*)+)              # 2: section marker open
+            (                         # 3: section name open
+                (?:"\s*\S.*?\s*")|    # at least one non-space with double quotes
+                (?:'\s*\S.*?\s*')|    # at least one non-space with single quotes
+                (?:[^'"\s].*?)        # at least one non-space unquoted
+            )                         # section name close
+            ((?:\s*\])+)              # 4: section marker close
+            \s*(%s.*)?                # 5: optional comment
+            $''' % commentChar,
+            re.VERBOSE)
+
+        _valueexp = re.compile(r'''^
+            (?:
+                (?:
+                    (
+                        (?:
+                            (?:
+                                (?:".*?")|              # double quotes
+                                (?:'.*?')|              # single quotes
+                                (?:[^'",%s][^,%s]*?)    # unquoted
+                            )
+                            \s*,\s*                     # comma
+                        )*      # match all list items ending in a comma (if any)
+                    )
+                    (
+                        (?:".*?")|                      # double quotes
+                        (?:'.*?')|                      # single quotes
+                        (?:[^'",%s\s][^,]*?)|  # unquoted
+                        (?:(?<!,))                      # Empty value
+                    )?          # last item in a list - or string value
+                )|
+                (,)             # alternatively a single comma - empty list
+            )
+            \s*(%s.*)?          # optional comment
+            $''' % ((commentChar, )*4),
+            re.VERBOSE)
+
+        # use findall to get the members of a list value
+        _listvalueexp = re.compile(r'''
+            (
+                (?:".*?")|          # double quotes
+                (?:'.*?')|          # single quotes
+                (?:[^'",%s]?.*?)       # unquoted
+            )
+            \s*,\s*                 # comma
+            ''' % commentChar,
+            re.VERBOSE)
+
+        # this regexp is used for the value
+        # when lists are switched off
+        _nolistvalue = re.compile(r'''^
+            (
+                (?:".*?")|          # double quotes
+                (?:'.*?')|          # single quotes
+                (?:[^'"%s].*?)|     # unquoted
+                (?:)                # Empty value
+            )
+            \s*(%s.*)?              # optional comment
+            $''' % (commentChar, commentChar),
+            re.VERBOSE)
+
+        # regexes for finding triple quoted values on one line
+        _single_line_single = re.compile(
+                                r"^'''(.*?)'''\s*(%s.*)?$" % commentChar,
+                                re.VERBOSE)
+        _single_line_double = re.compile(
+                                r'^"""(.*?)"""\s*(%s.*)?$' % commentChar,
+                                re.VERBOSE)
+        _multi_line_single = re.compile(
+                                r"^(.*?)'''\s*(%s.*)?$" % commentChar,
+                                re.VERBOSE)
+        _multi_line_double = re.compile(
+                                r'^(.*?)"""\s*(%s.*)?$' % commentChar,
+                                re.VERBOSE)
     try:
         config = FMFConfigObj(d.encode('utf-8').splitlines(), encoding='utf-8')
     except ConfigObjError, e:
@@ -411,6 +498,16 @@ def config2tables(preParsedData, config, FMFversion='1.1'):
 
 def data2table(longname, shortname, preParsedData, config, FMFversion='1.1'):
     datTable = []
+    shapelen = len(preParsedData.shape)
+    if len(config) == 1:
+        if shapelen == 0:
+            preParsedData = preParsedData.reshape((1, 1))
+        elif shapelen == 1:
+            preParsedData = preParsedData.reshape((1, preParsedData.shape[0]))
+    else:
+        if shapelen == 1:
+            preParsedData = preParsedData.reshape((preParsedData.shape[0], 1))
+    assert len(preParsedData.shape) == 2
     for col in preParsedData:
         try:
             result = col.astype('i')
@@ -470,13 +567,15 @@ def data2table(longname, shortname, preParsedData, config, FMFversion='1.1'):
     for field in fields:
         try:
             newField = reshapeField(field)
-        except TypeError, e:
+        except TypeError:
+            raise
             if field.data.dtype.name.startswith('string'):
                 _logger.warning('Warning: Cannot reshape numpy.array \
                                    of string: %s' % field)
                 newField = field
             else:
                 _logger.error('Error: Cannot reshape numpy.array: %s' % field)
+                import sys
                 sys.exit(0)
         reshapedFields.append(newField)
     if shortname == None:
@@ -520,11 +619,11 @@ def preParseData(b):
                                             dtype='S',
                                             delimiter=localVar['delimiter']
                                             )
-        except Exception, e:
+        except Exception:
             return match.group(0)
         return u""
     d = re.sub(dataExpr, preParseData, d)
-    return preParsedData, d, str(localVar['fmf-version'])
+    return preParsedData, d, str(localVar['fmf-version']), commentChar
 
 
 class FMFLoader(Worker.Worker):

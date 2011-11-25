@@ -56,7 +56,7 @@ class InvertWorker(Worker.Worker):
         max = scipy.amax(image.data)
         min = scipy.amin(image.data)
         data = max + min - image.data
-        from DataContainer import FieldContainer
+        from pyphant.core.DataContainer import FieldContainer
         result = FieldContainer(data, unit=image.unit,
                                 dimensions=copy.deepcopy(image.dimensions),
                                 mask=copy.deepcopy(image.mask),

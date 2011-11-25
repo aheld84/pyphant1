@@ -49,9 +49,7 @@ pkg_resources.require("pyphant")
 
 import ImageProcessing as I
 import ImageProcessing.ThresholdingWorker as IM
-import PIL.Image as Image
-import scipy, numpy
-import pyphant.quantities as pq
+import numpy
 from pyphant.core import DataContainer
 
 class TestThresholding(unittest.TestCase):
@@ -60,7 +58,7 @@ class TestThresholding(unittest.TestCase):
         self.worker = IM.ThresholdingWorker(None)
         self.referenceField = DataContainer.FieldContainer(
             numpy.fromfunction(lambda i,j: i,[self.dim,self.dim]),
-            unit = '1 V/m',
+            unit = '5 V/m',
             longname='Linear Reference Field',
             shortname='R')
         self.referenceField.seal()
@@ -68,10 +66,21 @@ class TestThresholding(unittest.TestCase):
 
     def testThreshold(self):
         """Test thresholding of an intermediate graylevel."""
-        for th in xrange(self.dim+1):
+        self.worker.paramUnit.value = 'ignore'
+        for th in xrange(self.dim + 1):
             self.worker.paramThreshold.value = th
-            self.testArray[:th,:]=I.FEATURE_COLOR
-            self.testArray[th:,:]=I.BACKGROUND_COLOR
+            self.testArray[:th,:] = I.FEATURE_COLOR
+            self.testArray[th:,:] = I.BACKGROUND_COLOR
+            result = self.worker.threshold(self.referenceField)
+            numpy.testing.assert_array_equal(self.testArray, result.data)
+
+    def testUnitThreshold(self):
+        """Test thresholding of an intermediate graylevel with units."""
+        self.worker.paramUnit.value = 'V / km'
+        for th in xrange(self.dim + 1):
+            self.worker.paramThreshold.value = 5000 * th
+            self.testArray[:th,:] = I.FEATURE_COLOR
+            self.testArray[th:,:] = I.BACKGROUND_COLOR
             result = self.worker.threshold(self.referenceField)
             numpy.testing.assert_array_equal(self.testArray, result.data)
 

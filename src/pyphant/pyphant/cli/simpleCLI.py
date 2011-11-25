@@ -34,11 +34,12 @@ __id__ = "$Id$"
 __author__ = "$Author: liehr $"
 __version__ = "$Revision: 29 $"
 
-import pyphant.core.PyTablesPersister
+from pyphant.core.H5FileHandler import H5FileHandler
 from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 
 #Load recipe from hdf file
-recipe = pyphant.core.PyTablesPersister.loadRecipeFromHDF5File('demo.h5')
+with H5FileHandler('demo.h5', 'r') as handler:
+    recipe = handler.loadRecipe()
 
 #Configure ImageLoaderWorker
 inputWorker = recipe.getWorkers('Image Loader')[0]
@@ -52,7 +53,3 @@ result = worker.plugCreateMaskedImage.getResult()
 #Visualise result
 visualizer = ImageVisualizer(result)
 visualizer.figure.savefig('result-'+imageName)
-
-
-
-
