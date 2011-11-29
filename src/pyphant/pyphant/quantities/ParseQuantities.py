@@ -45,72 +45,70 @@ from pyphant.quantities.PhysicalQuantities import PhysicalQuantity
 import logging
 _logger = logging.getLogger("pyphant")
 
-def str2unit(unitStr,FMFversion='1.1'):
-    """The function str2unit is a factory, which either returns a float or a Quantity instance from a given string. Because the definition of units and physical constants is not unique for 
-    FMFversion 1.0 (http://arxiv.org/abs/0904.1299) and 
-    FMFversion 1.1 (http://dx.doi.org/10.1016/j.cpc.2009.11.014), the result of str2unit() depends on FMFversion.
-    """
-    if FMFversion not in ['1.0','1.1']:
-        raise ValueError, 'FMFversion %s not supported.' % FMFversion
+def str2unit(unitStr, FMFversion='1.1'):
+    """return float or Quantity instance
 
+    The function str2unit is a factory, which either returns a float
+    or a Quantity instance from a given string.
+    Because the definition of units and physical constants is not unique for
+    FMFversion 1.0 (http://arxiv.org/abs/0904.1299) and
+    FMFversion 1.1 (http://dx.doi.org/10.1016/j.cpc.2009.11.014),
+    the result of str2unit() depends on FMFversion.
+    """
+    if FMFversion not in ['1.0', '1.1']:
+        raise ValueError('FMFversion %s not supported.' % (FMFversion, ))
     # Deal with exceptional units like '%' or 'a.u.'
     if unitStr.endswith('%'):
         if len(unitStr.strip()) == 1:
             return 0.01
         else:
-            return float(unitStr[:-1])/100.0
+            return float(unitStr[:-1]) / 100.0
     elif unitStr.endswith('a.u.'):
         if len(unitStr.strip()) == 4:
             return 1.0
         else:
             return float(unitStr[:-4])
-
     # Prepare conversion to quantity
     if unitStr.startswith('.'):
-        unitStr = '0'+unitStr
-    elif not (unitStr[0].isdigit() or unitStr[0]=='-'):
-        unitStr = '1'+unitStr
+        unitStr = '0' + unitStr
+    elif not (unitStr[0].isdigit() or unitStr[0] == '-'):
+        unitStr = '1' + unitStr
     # Convert input to quantity or float
-    if FMFversion not in ['1.0','1.1']:
-        raise ValueError, 'FMFversion %s not supported.' % FMFversion
-    else:
-        unitStr = unitStr.replace('^', '**')
-        try: #FMFversion=='1.1'
-            unit = Quantity(unitStr.encode('utf-8'))
+    unitStr = unitStr.replace('^', '**')
+    try: #FMFversion == '1.1'
+        unit = Quantity(unitStr.encode('utf-8'))
+    except:
+        unit = None
+    if FMFversion == '1.0':
+        try:
+            unit1_0 = PhysicalQuantity(unitStr.encode('utf-8'))
+            unit1_1 = Quantity(str(unit1_0.inBaseUnits()))
         except:
-            unit = None
-
-        if FMFversion=='1.0':
-            try:
-                unit1_0 = PhysicalQuantity(unitStr.encode('utf-8'))
-                unit1_1 = Quantity(str(unit1_0.inBaseUnits()))
-            except:
-                unit1_1 = None
-            
-            if isinstance(unit1_1,Quantity): # Unit exists in 1.0
-                if isinstance(unit,Quantity): # Unit also exists in 1.1
-                    if unit.isCompatible(unit1_1.unit): # Interpretation of unit has not changed
-                        unit = unit1_1.inUnitsOf(unit.unit)
-                    else:
-                        unit = unit1_1
-                        _logger.warn('Usage of old unit "%s" required '
-                                     'conversion to base units.' % unitStr)
+            unit1_1 = None
+        if isinstance(unit1_1, Quantity): # Unit exists in 1.0
+            if isinstance(unit, Quantity): # Unit also exists in 1.1
+                if unit.isCompatible(unit1_1.unit):
+                    # Interpretation of unit has not changed
+                    unit = unit1_1.inUnitsOf(unit.unit)
                 else:
                     unit = unit1_1
                     _logger.warn('Usage of old unit "%s" required '
-                                 'conversion to base units.' % unitStr)
-                
-        if unit == None:
-            try:
-                if 'j' in unitStr:
-                    unit = complex(unitStr)
-                else:
-                    unit = float(unitStr)
-            except:
-                raise ValueError, "Unit %s cannot be interpreted." % unitStr
+                                 'conversion to base units.' % (unitStr, ))
+            else:
+                unit = unit1_1
+                _logger.warn('Usage of old unit "%s" required '
+                             'conversion to base units.' % (unitStr, ))
+    if unit is None:
+        try:
+            if 'j' in unitStr:
+                unit = complex(unitStr)
+            else:
+                unit = float(unitStr)
+        except:
+            raise ValueError("Unit %s cannot be interpreted." % (unitStr, ))
     return unit
-        
-def parseQuantity(value,FMFversion='1.1'):
+
+def parseQuantity(value, FMFversion='1.1'):
     import re
     pm = re.compile(ur"(?:\\pm|\+-|\+/-)")
     try:
@@ -126,36 +124,39 @@ def parseQuantity(value,FMFversion='1.1'):
         value = str2unit(value,FMFversion)
     if error != None:
         if error.endswith('%'):
-            error = value*float(error[:-1])/100.0
+            error = value * float(error[:-1]) / 100.0
         else:
             try:
-                error = float(error)*unit
+                error = float(error) * unit
             except:
-                error = str2unit(error,FMFversion)
+                error = str2unit(error, FMFversion)
     return value, error
 
-def parseVariable(oldVal,FMFversion='1.1'):
+def parseVariable(oldVal, FMFversion='1.1'):
     shortname, value = tuple([s.strip() for s in oldVal.split('=')])
-    value, error = parseQuantity(value,FMFversion)
+    value, error = parseQuantity(value, FMFversion)
     return (shortname, value, error)
 
-def parseDateTime(value,FMFversion='1.1'):
+def parseDateTime(value, FMFversion='1.1'):
     """
     >>>parseDateTime('2004-08-21 12:00:00+-12hr')
-    (Quantity(731814.5,'d'), Quantity(0.5,'d'))
+    (Quantity(731814.5, 'd'), Quantity(0.5, 'd'))
     >>>parseDateTime('2004-08-21 12:00:00')
-    (Quantity(731814.5,'d'), None)
+    (Quantity(731814.5, 'd'), None)
     """
     datetimeWithError = value.split('+-')
-    if len(datetimeWithError)==2:
+    if len(datetimeWithError) == 2:
         datetime = mx.DateTime.ISO.ParseAny(datetimeWithError[0])
-        uncertainty = parseQuantity(datetimeWithError[1],FMFversion)[0]
+        uncertainty = parseQuantity(datetimeWithError[1], FMFversion)[0]
         if uncertainty.isCompatible('h'):
-            _logger.warning("The uncertainty of timestamp %s has the unit 'h', which is deprecated. The correct abbreviation for hour is 'hr'." % value)
-            uncertainty = uncertainty*Quantity('1hr/h')
+            _logger.warning(
+                "The uncertainty of timestamp %s has the unit 'h', "
+                "which is deprecated. "
+                "The correct abbreviation for hour is 'hr'." % (value, ))
+            uncertainty = uncertainty * Quantity('1hr/h')
         error = uncertainty.inUnitsOf('d')
     else:
         datetime = mx.DateTime.ISO.ParseAny(value)
         error = None
-    days,seconds = datetime.absvalues()
-    return (Quantity(days,'d')+Quantity(seconds,'s'),error)
+    days, seconds = datetime.absvalues()
+    return (Quantity(days, 'd') + Quantity(seconds, 's'), error)

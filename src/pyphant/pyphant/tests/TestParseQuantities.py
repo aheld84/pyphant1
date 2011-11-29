@@ -35,72 +35,86 @@
 
 import pkg_resources
 pkg_resources.require('pyphant')
-
-import unittest, numpy
+import unittest
 from pyphant.quantities.ParseQuantities import parseDateTime,str2unit
 from pyphant.quantities import Quantity
-"""
-    >>>parseDateTime('2004-08-21 12:00:00+-12hr')
-    (Quantity(731814.5,'d'), Quantity(0.5,'d'))
-    >>>parseDateTime('2004-08-21 12:00:00')
-    (Quantity(731814.5,'d'), None)
-"""
+
+
 class TestParseDateTime(unittest.TestCase):
+    """
+    >>>parseDateTime('2004-08-21 12:00:00+-12hr')
+    (Quantity(731814.5, 'd'), Quantity(0.5, 'd'))
+    >>>parseDateTime('2004-08-21 12:00:00')
+    (Quantity(731814.5, 'd'), None)
+    """
+
     def testWithError(self):
         self.assertEqual(parseDateTime('2004-08-21 12:00:00+-12hr'),
-                         (Quantity(731814.5,'d'), Quantity(0.5,'d'))
+                         (Quantity(731814.5, 'd'), Quantity(0.5, 'd'))
                          )
 
     def testWithErrorOldDeprecatedAbbreviation(self):
         self.assertEqual(parseDateTime('2004-08-21 12:00:00+-12h'),
-                         (Quantity(731814.5,'d'), Quantity(0.5,'d'))
+                         (Quantity(731814.5, 'd'), Quantity(0.5, 'd'))
                          )
+
 
 class TestStr2unit(unittest.TestCase):
     """Test the correct conversion of strings to quantities or floats."""
+
     def setUp(self):
-        self.inputDict = {'complexJ':'1.0j','Joule':'1.0J'}
+        self.inputDict = {'complexJ':'1.0j', 'Joule':'1.0J'}
 
     def testSimpleQuantity(self):
-        """The the conversion of a simple textual quantity specification to a quantity object."""
+        """
+        The the conversion of a simple textual quantity specification
+        to a quantity object.
+        """
         expected = Quantity('1V')
         result = str2unit('1V')
-        self.assertEqual(expected,result)
+        self.assertEqual(expected, result)
 
     def testComplexNumber(self):
-        """Complex numbers have to be denoted by small 'j', in oder to discriminate them from Joule."""
+        """
+        Complex numbers have to be denoted by small 'j',
+        in oder to discriminate them from Joule.
+        """
         result = str2unit(self.inputDict['complexJ'])
-        self.assertEqual(result,complex(self.inputDict['complexJ']))
-    
+        self.assertEqual(result, complex(self.inputDict['complexJ']))
+
     def testJouleValue(self):
         """Physical quantities with unit Joule are indicated by 'J'."""
         result = str2unit(self.inputDict['Joule'])
-        self.assertEqual(result,Quantity(self.inputDict['Joule']))
+        self.assertEqual(result, Quantity(self.inputDict['Joule']))
 
     def testHourPlanck(self):
-        """In FMF 1.0 unit 'h' denotes hours, while in FMF 1.1 'h' denotes the Planck constant."""
+        """
+        In FMF 1.0 unit 'h' denotes hours,
+        while in FMF 1.1 'h' denotes the Planck constant.
+        """
         result = str2unit('1h')
-        self.assertEqual(result,Quantity('6.62606896e-34 J*s'))
-        result = str2unit('1h',FMFversion='1.0')
-        self.assertEqual(result,Quantity('3600s'))
+        self.assertEqual(result, Quantity('6.62606896e-34 J*s'))
+        result = str2unit('1h', FMFversion='1.0')
+        self.assertEqual(result, Quantity('3600s'))
 
     def testFloatAccuracy(self):
-        result = str2unit('16.8 mm',FMFversion='1.0')
+        result = str2unit('16.8 mm', FMFversion='1.0')
         diff = result - Quantity('16.8 mm')
         self.assertEqual(abs(diff.value) < 2e-14,True)
-        result = str2unit('16.8 mm',FMFversion='1.0')
+        result = str2unit('16.8 mm', FMFversion='1.0')
         diff = Quantity('16.8 mm')
-        self.assertEqual(result,diff)
-        
+        self.assertEqual(result, diff)
+
     def testGravitationalConstant(self):
-        result = str2unit("1 Grav",FMFversion="1.0")
-        self.assertEqual(result,str2unit('6.67259e-11 m**3/kg/s**2'))
-        
+        result = str2unit("1 Grav", FMFversion="1.0")
+        self.assertEqual(result, str2unit('6.67259e-11 m**3/kg/s**2'))
+
 
 if __name__ == "__main__":
     import sys
     if len(sys.argv) == 1:
         unittest.main()
     else:
-        suite = unittest.TestLoader().loadTestsFromTestCase(eval(sys.argv[1:][0]))
+        suite = unittest.TestLoader().loadTestsFromTestCase(
+            eval(sys.argv[1:][0]))
         unittest.TextTestRunner().run(suite)

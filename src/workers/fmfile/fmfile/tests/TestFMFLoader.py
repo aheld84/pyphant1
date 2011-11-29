@@ -53,10 +53,14 @@ class FieldContainerCondenseDim(unittest.TestCase):
         self.x = numpy.linspace(0,0.9,10)
         m = numpy.meshgrid(self.x, self.x*5)
         self.valid = numpy.tile(self.x, (10,1))
-        self.invalid = [ a.squeeze() for a in numpy.vsplit(m[0]+m[1], len(m[0])) ]
+        self.invalid = [
+            a.squeeze() for a in numpy.vsplit(m[0] + m[1], len(m[0]))
+            ]
 
     def testInvalid(self):
-        self.assertRaises(AssertionError, FMFLoader.checkAndCondense, self.invalid)
+        self.assertRaises(
+            AssertionError, FMFLoader.checkAndCondense, self.invalid
+            )
 
     def testValid(self):
         result = FMFLoader.checkAndCondense(self.valid)
@@ -64,79 +68,99 @@ class FieldContainerCondenseDim(unittest.TestCase):
 
 class TestColumn2FieldContainer(unittest.TestCase):
     def testStrings(self):
-        column = ['Hello','World']
-        result = FMFLoader.column2FieldContainer('simple string',column)
-        expectedResult = FieldContainer(numpy.array(column),longname='simple string')
-        assertEqual(result,expectedResult)
+        column = ['Hello', 'World']
+        result = FMFLoader.column2FieldContainer('simple string', column)
+        expectedResult = FieldContainer(
+            numpy.array(column), longname='simple string'
+            )
+        assertEqual(result, expectedResult)
 
     def testListofStrings(self):
-        column = ['World',['Hello', 'World'],'World']
-        result = FMFLoader.column2FieldContainer('simple string',column)
-        expectedResult = FieldContainer(numpy.array(['World','Hello, World','World']),longname='simple string')
-        assertEqual(result,expectedResult)
+        column = ['World', ['Hello', 'World'], 'World']
+        result = FMFLoader.column2FieldContainer('simple string', column)
+        expectedResult = FieldContainer(
+            numpy.array(['World', 'Hello, World', 'World']),
+            longname='simple string'
+            )
+        assertEqual(result, expectedResult)
 
     def testListofStrings2(self):
-        column = [['Hello', 'World'],'World']
-        result = FMFLoader.column2FieldContainer('simple string',column)
-        expectedResult = FieldContainer(numpy.array(['Hello, World','World']),longname='simple string')
-        assertEqual(result,expectedResult)
+        column = [['Hello', 'World'], 'World']
+        result = FMFLoader.column2FieldContainer('simple string', column)
+        expectedResult = FieldContainer(
+            numpy.array(['Hello, World', 'World']), longname='simple string'
+            )
+        assertEqual(result, expectedResult)
 
     def testVariable(self):
-        column = [('T',Quantity('22.4 degC'),Quantity('0.5 degC')),
-                  ('T',Quantity('11.2 degC'),Quantity('0.5 degC'))
-                  ]
-        result = FMFLoader.column2FieldContainer('temperature',column)
-        expectedResult = FieldContainer(numpy.array([22.4,11.2]),error=numpy.array([0.5,0.5]),
-                                        mask = numpy.array([False,False]),
-                                        unit='1 degC',longname='temperature',shortname='T')
-        assertEqual(result,expectedResult)
+        column = [
+            ('T', Quantity('22.4 degC'), Quantity('0.5 degC')),
+            ('T', Quantity('11.2 degC'), Quantity('0.5 degC'))
+            ]
+        result = FMFLoader.column2FieldContainer('temperature', column)
+        expectedResult = FieldContainer(
+            numpy.array([22.4, 11.2]) ,error=numpy.array([0.5, 0.5]),
+            mask=numpy.array([False, False]),
+            unit='1 degC', longname='temperature', shortname='T'
+            )
+        assertEqual(result, expectedResult)
 
     def testVariableWithNaN(self):
-        column = [('T',Quantity('22.4 degC'),Quantity('0.5 degC')),
-                  ('T',Quantity('11.2 degC'),None)
-                  ]
-        result = FMFLoader.column2FieldContainer('temperature',column)
-        expectedResult = FieldContainer(numpy.array([22.4,11.2]),error=numpy.array([0.5,0.0]),
-                                        mask = numpy.array([False,False]),
-                                        unit='1 degC',longname='temperature',shortname='T')
-        assertEqual(result,expectedResult)
+        column = [
+            ('T', Quantity('22.4 degC'), Quantity('0.5 degC')),
+            ('T', Quantity('11.2 degC'), None)
+            ]
+        result = FMFLoader.column2FieldContainer('temperature', column)
+        expectedResult = FieldContainer(
+            numpy.array([22.4, 11.2]), error=numpy.array([0.5, 0.0]),
+            mask = numpy.array([False, False]),
+            unit='1 degC', longname='temperature', shortname='T'
+            )
+        assertEqual(result, expectedResult)
 
     def testVariableFirstNaN(self):
-        column = [('T','NaN',Quantity('0.5 degC')),
-                  ('T',Quantity('11.2 degC'),None)
-                  ]
-        result = FMFLoader.column2FieldContainer('temperature',column)
-        expectedResult = FieldContainer(numpy.array([numpy.NaN,11.2]),error=numpy.array([0.5,0.0]),
-                                        mask = numpy.array([True,False]),
-                                        unit='1 degC',longname='temperature',shortname='T')
-        assertEqual(result,expectedResult)
+        column = [
+            ('T', 'NaN', Quantity('0.5 degC')),
+            ('T', Quantity('11.2 degC'), None)
+            ]
+        result = FMFLoader.column2FieldContainer('temperature', column)
+        expectedResult = FieldContainer(
+            numpy.array([numpy.NaN, 11.2]), error=numpy.array([0.5, 0.0]),
+            mask = numpy.array([True, False]),
+            unit='1 degC', longname='temperature', shortname='T')
+        assertEqual(result, expectedResult)
 
 class TestDiscriminatingJouleAndImaginary(unittest.TestCase):
-    """In order to discriminate between an imaginary number and unit Joule, imaginary numbers have to be indicated only by a minor capital 'j', while a major capital 'J' indicates the unit Joule.
+    """
+    In order to discriminate between an imaginary number and unit Joule,
+    imaginary numbers have to be indicated only by a minor capital 'j',
+    while a major capital 'J' indicates the unit Joule.
     """
     def setUp(self):
-        self.inputDict = {'complexJ':'1.0j','Joule':'1.0J'}
+        self.inputDict = {'complexJ':'1.0j', 'Joule':'1.0J'}
 
     def testComplexValue(self):
         """Imaginary numbers are indicated by 'j'."""
         result = FMFLoader.item2value(self.inputDict['complexJ'])
-        self.assertEqual(result,(complex(self.inputDict['complexJ']),None))
+        self.assertEqual(result, (complex(self.inputDict['complexJ']), None))
 
     def testJouleValue1_1(self):
         """Physical quantities with unit Joule are indicated by 'J'."""
         result = FMFLoader.item2value(self.inputDict['Joule'])
-        self.assertEqual(result,(Quantity(self.inputDict['Joule']),None))
+        self.assertEqual(result, (Quantity(self.inputDict['Joule']), None))
 
     def testJouleValue1_0(self):
         """Physical quantities with unit Joule are indicated by 'J'."""
-        result = FMFLoader.item2value(self.inputDict['Joule'],FMFversion='1.0')
-        self.assertEqual(result,(Quantity(self.inputDict['Joule']),None))
+        result = FMFLoader.item2value(
+            self.inputDict['Joule'], FMFversion='1.0'
+            )
+        self.assertEqual(result, (Quantity(self.inputDict['Joule']), None))
 
 class TestFMFversion1_0(unittest.TestCase):
-    def almostEqual(self,a,b):
-        diff = a-b
-        mean = 0.5*(a+b)
-        self.assertTrue(abs(diff/mean) < ACCURACY)
+    def almostEqual(self, a, b):
+        diff = a - b
+        mean = 0.5 * (a + b)
+        self.assertTrue(abs(diff / mean) < ACCURACY)
 
     def setUp(self):
         self.FMFinput = """# -*- fmf-version: 1.0; coding: utf-8 -*-
@@ -186,30 +210,83 @@ N_2	1	2
 2	1+1j	2.
 """
     def testReadSingleFile(self):
-        """Test the correct interpretation of physical constants as definied in FMF version 1.0."""
-        consts = FMFLoader.readSingleFile(self.FMFinput,"testReadSingleFile")[0].attributes['Mathematical and Physical Constants']
-        self.assertEqual(consts[u'Speed of light'][1],str2unit("1 c",FMFversion="1.0"))
-        self.assertEqual(consts[u'Speed of light'][1],str2unit("1 c"))
-        self.assertEqual(consts[u'Permeability of vacuum'][1],str2unit("1 mu0",FMFversion="1.0"))
-        self.assertEqual(consts[u'Permittivity of vacuum'][1],str2unit("1 eps0",FMFversion="1.0"))
-        self.assertEqual(consts[u'Gravitational constant'][1],str2unit("1 Grav",FMFversion="1.0"))
-        self.assertTrue(consts[u'Planck constant'][1],str2unit("1 hplanck",FMFversion="1.0"))
-        self.almostEqual(consts[u'Planck constant / 2pi'][1],str2unit("1 hbar",FMFversion="1.0"))
-        self.almostEqual(consts[u'Elementary charge'][1],str2unit("1 e",FMFversion="1.0"))
-        self.assertNotEqual(consts[u'Elementary charge'][1],str2unit("1 e"),
-                         "Elementary charge has been adapted to new CODATA recommendations.")
-        self.assertEqual(consts[u'Electron mass'][1],str2unit("1 me",FMFversion="1.0"))
-        self.assertNotEqual(consts[u'Electron mass'][1],str2unit("1 me"),
-                            "Electron mass has been adapted to new CODATA recommendations.")
-        self.assertEqual(consts[u'Proton mass'][1],str2unit("1 mp",FMFversion="1.0"))
-        self.assertNotEqual(consts[u'Proton mass'][1],str2unit("1 mp"),
-                            "Proton mass has been adapted to new CODATA recommendations.")
-        self.assertEqual(consts[u'Avogadro number'][1],str2unit("1 Nav",FMFversion="1.0"))
-        self.assertEqual(consts[u'Boltzmann constant'][1],str2unit("1 k",FMFversion="1.0"))
-        consts = FMFLoader.readSingleFile(self.FMFinput,"testReadSingleFile")[0].attributes['Additional constants changed from FMF version 1.0 to 1.1']
-        self.almostEqual(consts[u'Parsec'][1],str2unit("1 pc",FMFversion="1.0"))
-        self.almostEqual(consts[u'US gallon'][1],str2unit("1 galUS",FMFversion="1.0"))
-        self.assertEqual(consts[u'Atomic mass units'][1],str2unit("1 amu",FMFversion="1.0"))
+        """
+        Test the correct interpretation of physical constants
+        as definied in FMF version 1.0.
+        """
+        consts = FMFLoader.readSingleFile(
+            self.FMFinput,
+            "testReadSingleFile")[0].attributes[
+            'Mathematical and Physical Constants'
+            ]
+        self.assertEqual(
+            consts[u'Speed of light'][1], str2unit("1 c", FMFversion="1.0")
+            )
+        self.assertEqual(consts[u'Speed of light'][1], str2unit("1 c"))
+        self.assertEqual(
+            consts[u'Permeability of vacuum'][1],
+            str2unit("1 mu0", FMFversion="1.0")
+            )
+        self.assertEqual(
+            consts[u'Permittivity of vacuum'][1],
+            str2unit("1 eps0", FMFversion="1.0")
+            )
+        self.assertEqual(
+            consts[u'Gravitational constant'][1],
+            str2unit("1 Grav", FMFversion="1.0")
+            )
+        self.assertTrue(
+            consts[u'Planck constant'][1],
+            str2unit("1 hplanck", FMFversion="1.0")
+            )
+        self.almostEqual(
+            consts[u'Planck constant / 2pi'][1],
+            str2unit("1 hbar", FMFversion="1.0")
+            )
+        self.almostEqual(
+            consts[u'Elementary charge'][1],
+            str2unit("1 e", FMFversion="1.0")
+            )
+        self.assertNotEqual(
+            consts[u'Elementary charge'][1], str2unit("1 e"),
+            "Elementary charge has been adapted to new CODATA recommendations."
+            )
+        self.assertEqual(
+            consts[u'Electron mass'][1], str2unit("1 me", FMFversion="1.0")
+            )
+        self.assertNotEqual(
+            consts[u'Electron mass'][1], str2unit("1 me"),
+            "Electron mass has been adapted to new CODATA recommendations."
+            )
+        self.assertEqual(
+            consts[u'Proton mass'][1], str2unit("1 mp", FMFversion="1.0")
+            )
+        self.assertNotEqual(
+            consts[u'Proton mass'][1], str2unit("1 mp"),
+            "Proton mass has been adapted to new CODATA recommendations."
+            )
+        self.assertEqual(
+            consts[u'Avogadro number'][1], str2unit("1 Nav", FMFversion="1.0")
+            )
+        self.assertEqual(
+            consts[u'Boltzmann constant'][1], str2unit("1 k", FMFversion="1.0")
+            )
+        consts = FMFLoader.readSingleFile(
+            self.FMFinput,
+            "testReadSingleFile")[0].attributes[
+            'Additional constants changed from FMF version 1.0 to 1.1'
+            ]
+        self.almostEqual(
+            consts[u'Parsec'][1], str2unit("1 pc", FMFversion="1.0")
+            )
+        self.almostEqual(
+            consts[u'US gallon'][1], str2unit("1 galUS", FMFversion="1.0")
+            )
+        self.assertEqual(
+            consts[u'Atomic mass units'][1],
+            str2unit("1 amu", FMFversion="1.0")
+            )
+
 
 class TestFMFversion1_1(unittest.TestCase):
     def setUp(self):
@@ -263,26 +340,76 @@ N_2	1	2
 2	1+1j	2.
 """
     def testReadSingleFile(self):
-        """Test the correct interpretation of physical constants as definied in FMF version 1.1."""
-        consts = FMFLoader.readSingleFile(self.FMFinput,"testReadSingleFile")[0].attributes['Mathematical and Physical Constants']
-        self.assertEqual(consts[u'Speed of light'][1],str2unit("1 c",FMFversion="1.1"))
-        self.assertEqual(consts[u'Permeability of vacuum'][1],str2unit("1 mu0",FMFversion="1.1"),
-                         'The values differ by %s.' % (consts[u'Permeability of vacuum'][1]-str2unit("1 mu0",FMFversion="1.1"),))
-        self.assertEqual(consts[u'Permittivity of vacuum'][1],str2unit("1 eps0",FMFversion="1.1"))
-        self.assertEqual(consts[u'Gravitational constant'][1],str2unit("1 G",FMFversion="1.1"))
-        self.assertEqual(consts[u'Planck constant'][1],str2unit("1 h",FMFversion="1.1"))
-        self.assertEqual(consts[u'Planck constant / 2pi'][1],str2unit("1 hbar",FMFversion="1.1"))
-        self.assertEqual(consts[u'Elementary charge'][1],str2unit("1 e",FMFversion="1.1"),
-                         'The elements %s and %s do not match.' % (consts[u'Elementary charge'][1],str2unit("1 e",FMFversion="1.1")))
-        self.assertEqual(consts[u'Electron mass'][1],str2unit("1 me",FMFversion="1.1"))
-        self.assertEqual(consts[u'Proton mass'][1],str2unit("1 mp",FMFversion="1.1"))
-        self.assertEqual(consts[u'Avogadro number'][1],str2unit("1 NA",FMFversion="1.1"))
-        self.assertEqual(consts[u'Boltzmann constant'][1],str2unit("1 k",FMFversion="1.1"))
-        self.assertEqual(consts[u'Rydberg constant'][1],str2unit("1 Ryd",FMFversion="1.1"))
-        consts = FMFLoader.readSingleFile(self.FMFinput,"testReadSingleFile")[0].attributes['Additional constants changed from FMF version 1.0 to 1.1']
-        self.assertEqual(consts[u'Parsec'][1],str2unit("1 pc",FMFversion="1.1"))
-        self.assertEqual(consts[u'US gallon'][1],str2unit("1 galUS",FMFversion="1.1"))
-        self.assertEqual(consts[u'Atomic mass units'][1],str2unit("1 u",FMFversion="1.1"))
+        """
+        Test the correct interpretation of physical constants
+        as definied in FMF version 1.1.
+        """
+        consts = FMFLoader.readSingleFile(
+            self.FMFinput, "testReadSingleFile")[0].attributes[
+            'Mathematical and Physical Constants'
+            ]
+        self.assertEqual(
+            consts[u'Speed of light'][1], str2unit("1 c", FMFversion="1.1")
+            )
+        self.assertEqual(
+            consts[u'Permeability of vacuum'][1],
+            str2unit("1 mu0", FMFversion="1.1"),
+            'The values differ by %s.' % (
+                consts[u'Permeability of vacuum'][1] -\
+                str2unit("1 mu0", FMFversion="1.1"),
+                )
+            )
+        self.assertEqual(
+            consts[u'Permittivity of vacuum'][1],
+            str2unit("1 eps0", FMFversion="1.1")
+            )
+        self.assertEqual(
+            consts[u'Gravitational constant'][1],
+            str2unit("1 G", FMFversion="1.1")
+            )
+        self.assertEqual(
+            consts[u'Planck constant'][1],
+            str2unit("1 h", FMFversion="1.1")
+            )
+        self.assertEqual(
+            consts[u'Planck constant / 2pi'][1],
+            str2unit("1 hbar", FMFversion="1.1")
+            )
+        self.assertEqual(
+            consts[u'Elementary charge'][1], str2unit("1 e",FMFversion="1.1"),
+            'The elements %s and %s do not match.' % (
+                consts[u'Elementary charge'][1],
+                str2unit("1 e", FMFversion="1.1")
+                )
+            )
+        self.assertEqual(
+            consts[u'Electron mass'][1], str2unit("1 me", FMFversion="1.1")
+            )
+        self.assertEqual(
+            consts[u'Proton mass'][1], str2unit("1 mp", FMFversion="1.1")
+            )
+        self.assertEqual(
+            consts[u'Avogadro number'][1], str2unit("1 NA", FMFversion="1.1")
+            )
+        self.assertEqual(
+            consts[u'Boltzmann constant'][1], str2unit("1 k",FMFversion="1.1")
+            )
+        self.assertEqual(
+            consts[u'Rydberg constant'][1], str2unit("1 Ryd", FMFversion="1.1")
+            )
+        consts = FMFLoader.readSingleFile(
+            self.FMFinput, "testReadSingleFile")[0].attributes[
+            'Additional constants changed from FMF version 1.0 to 1.1'
+            ]
+        self.assertEqual(
+            consts[u'Parsec'][1], str2unit("1 pc", FMFversion="1.1")
+            )
+        self.assertEqual(
+            consts[u'US gallon'][1], str2unit("1 galUS", FMFversion="1.1")
+            )
+        self.assertEqual(
+            consts[u'Atomic mass units'][1], str2unit("1 u", FMFversion="1.1")
+            )
 
 
 class Emd5ConsistencyTestCase(unittest.TestCase):
@@ -385,7 +512,6 @@ class CommentCharTestCase(LoaderTestCase):
         result = self.load('semi_test.fmf')
         title = "Testfile for ; checking"
         self.assertEqual(result.attributes['*reference']['title'], title)
-
 
 
 if __name__ == "__main__":
