@@ -42,14 +42,14 @@ with H5FileHandler('demo.h5', 'r') as handler:
     recipe = handler.loadRecipe()
 
 #Configure ImageLoaderWorker
-inputWorker = recipe.getWorkers('Image Loader')[0]
+inputWorker = recipe.getWorker('Load Image')
 imageName = 'demo.png'
 inputWorker.getParam('filename').value=imageName
 
 #Fetch Result
-worker = recipe.getWorkers('Apply Mask')[0]
-result = worker.plugCreateMaskedImage.getResult()
+worker = recipe.getWorker('Invert')
+result = worker.plugInvert.getResult()
 
 #Visualise result
 visualizer = ImageVisualizer(result)
-visualizer.figure.savefig('result-'+imageName)
+visualizer.figure.savefig('result-' + imageName)
