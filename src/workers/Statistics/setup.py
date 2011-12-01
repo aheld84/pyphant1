@@ -9,24 +9,29 @@ the Pyphant framework installed first. Visit
 http://pyphant.sourceforge.net for more information.
 """
 
-__author__ = "Klaus Zimmermann, Andreas W. Liehr"
+__author__ = "Alexander Held, Andreas W. Liehr, Klaus Zimmermann"
 
 __id__ = '$Id$'
 __revision__ = '$Revision: 25 $'
 
-VERSION = '0.1'
+VERSION = '1.0b1'
 
 import setuptools
 
 setuptools.setup(
-    name = "pyphant.statistics",
-    version = VERSION,
-    author = __author__,
-    description = __doc__,
-    install_requires=['pyphant>=0.4alpha3'],
-    packages = ['Statistics'],
-    entry_points = """
+    name="pyphant.statistics",
+    version=VERSION,
+    author=__author__,
+    author_email='alexander.held@fmf.uni-freiburg.de',
+    maintainer='Alexander Held',
+    maintainer_email='alexander.held@fmf.uni-freiburg.de',
+    license="BSD",
+    description=__doc__,
+    install_requires=['pyphant>=1.0b1'],
+    packages=['Statistics'],
+    entry_points="""
     [pyphant.workers]
     myeentry = Statistics
     """,
-    test_suite = 'Statistics.tests')
+    test_suite='Statistics.tests'
+    )
