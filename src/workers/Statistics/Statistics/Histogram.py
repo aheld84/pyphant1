@@ -42,31 +42,33 @@ __version__ = "$Revision$"
 # $Source$
 
 from pyphant.core import (Connectors, DataContainer,
-                          Param, Worker)
-import scipy, scipy.stats
+                          Worker)
 import numpy
 
 class Histogram(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
-    name = u"Histogram"
+    name = "Histogram"
     _sockets=[("vector", Connectors.TYPE_IMAGE)]
     _params = [("bins", "Bins", 10, None)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def calculateHistogram(self, vector, subscriber=0):
         bins = self.paramBins.value
+        assert bins >= 2
+        # numpy 1.3
         try:
             histo = numpy.histogram(vector.data.flat, bins, new=True,
                                     range=(numpy.floor(vector.data.min()),
                                            numpy.ceil(vector.data.max())))
-            binCenters = histo[1][:-1]+(numpy.diff(histo[1])/2.0)
+        # newer numpy versions
         except TypeError:
             histo = numpy.histogram(vector.data.flat, bins,
                                     range=(numpy.floor(vector.data.min()),
                                            numpy.ceil(vector.data.max())))
-            binCenters = histo[1]+((histo[1][1]-histo[1][0])/2.0)
+        binCenters = histo[1][:-1] + (numpy.diff(histo[1]) / 2.0)
+        assert len(binCenters) == bins == len(histo[0])
         xdim = DataContainer.FieldContainer(binCenters, vector.unit,
                                             longname=vector.longname,
                                             shortname=vector.shortname)
