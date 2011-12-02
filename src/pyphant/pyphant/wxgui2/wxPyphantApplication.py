@@ -614,9 +614,10 @@ class mySplashScreen(wx.Frame):
         # wxPyphantFrame is the main frame.
         self.parent._frame = wxPyphantFrame(self.parent)
         self.parent._frame.Show()
-                
+
         # The program will freeze without this line.
         evt.Skip()  # Make sure the default handler runs too...
+        self.Destroy()
 
 
 import optparse
