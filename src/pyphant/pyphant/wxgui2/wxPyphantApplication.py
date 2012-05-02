@@ -109,6 +109,10 @@ class wxPyphantApplication(wx.PySimpleApp):
         self._frame.editCompositeWorker(worker)
 
 
+class AbortRecipeCreation(Exception):
+    pass
+
+
 class wxPyphantFrame(wx.Frame):
 
     ID_WINDOW_TOP = 100
@@ -134,7 +138,11 @@ class wxPyphantFrame(wx.Frame):
         self._initMenuBar()
         self._initWorkerRep()
         self.recipeState = None
-        self.onOpenCompositeWorker(None)
+        try:
+            self.onOpenCompositeWorker(None)
+        except AbortRecipeCreation:
+            self.shutdown()
+            return
         self._initAui()
         self.compositeWorkerStack = []
 
@@ -220,6 +228,9 @@ class wxPyphantFrame(wx.Frame):
                     if not path[:-3] == '.h5':
                         path += '.h5'
                     self._wxPyphantApp.pathToRecipe = path
+                else:
+                    dlg.Destroy()
+                    raise AbortRecipeCreation
             dlg.Destroy()
         import PyphantCanvas
         if self._wxPyphantApp.pathToRecipe[-3:] == '.h5':
@@ -405,12 +416,18 @@ class wxPyphantFrame(wx.Frame):
                 self.onSaveCompositeWorker()
             dlg.Destroy()
         if dlgid != wx.ID_CANCEL:
-            try:
-                self._wxPyphantApp._knowledgeNode.stop()
-            except AttributeError:
-                pass
+            self.shutdown()
+
+    def shutdown(self):
+        try:
+            self._wxPyphantApp._knowledgeNode.stop()
+        except AttributeError:
+            pass
+        try:
             self._auiManager.UnInit()
-            self.Destroy()
+        except AttributeError:
+            pass
+        self.Destroy()
 
     def editCompositeWorker(self, worker):
         import PyphantCanvas
