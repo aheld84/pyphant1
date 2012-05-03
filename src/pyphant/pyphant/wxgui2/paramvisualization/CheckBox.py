@@ -38,8 +38,6 @@ __version__ = "$Revision$"
 # $Source$
 
 import wx
-from pyphant.core.Param import (
-    ParamChangeExpected, VisualizerChangeValue)
 
 
 class CheckBox(wx.CheckBox):
@@ -49,19 +47,3 @@ class CheckBox(wx.CheckBox):
 
     def getValue(self):
         return self.GetValue()
-
-class InstantCheckBox(CheckBox):
-    def __init__(self, parent, param, validator):
-        CheckBox.__init__(self, parent, param, validator)
-        self.param = param
-        self.Bind(wx.EVT_CHECKBOX, self.onCheck)
-        param._eventDispatcher.registerExclusiveListener(
-            self.onVCV, VisualizerChangeValue)
-
-    def onCheck(self, Event):
-        pce = ParamChangeExpected(self.param, expectedValue=self.getValue())
-        self.param._eventDispatcher.dispatchEvent(pce)
-        Event.Skip()
-
-    def onVCV(self, event):
-        self.SetValue(event.value)
