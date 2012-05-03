@@ -43,8 +43,6 @@ from pyphant.core.Helpers import getPyphantPath
 LOGDIR = getPyphantPath()
 import logging
 import logging.handlers
-#    logging.basicConfig(level=logging.DEBUG)
-#else:
 logging.basicConfig(level=logging.DEBUG,
                     filename=os.path.join(LOGDIR, u'pyphant.log'),
                     filemode='w',
@@ -86,8 +84,6 @@ class wxPyphantApplication(wx.PySimpleApp):
         self.splash = mySplashScreen(self)
         self.splash.Center()
         self.splash.Show()
-#        self._frame = wxPyphantFrame(self)
-#        self._frame.Show()
         return True
 
     def excepthook(self, type, value, trace):
@@ -125,14 +121,12 @@ class wxPyphantFrame(wx.Frame):
     ID_VIEW_LOGFILE = wx.NewId()
     ID_KM_URL = wx.NewId()
     ID_KM_LOCAL = wx.NewId()
-    #ID_KM_ZSTACK_XML = wx.NewId()
     ID_KM_SHARE = wx.NewId()
 
     def __init__(self, _wxPyphantApp):
         self.titleStr = "wxPyphant %s | Recipe: %s" % (__version__, "%s")
         wx.Frame.__init__(self, None, -1, self.titleStr % "None",
                           size=(640,480))
-        #import PyphantCanvas # unused (?)
         self._statusBar = self.CreateStatusBar()
         self._wxPyphantApp = _wxPyphantApp
         self._initMenuBar()
@@ -199,7 +193,6 @@ class wxPyphantFrame(wx.Frame):
         self._auiManager.AddPane(self._workerRepository, wx.RIGHT,
                                  'Worker Repository')
         self._auiManager.AddPane(self._remainingSpace, wx.CENTER, 'Main')
-        #wrpane = self._auiManager.GetPane(self._workerRepository)
         self._auiManager.GetPane(self._workerRepository)
         self._auiManager.Update()
 
@@ -214,8 +207,10 @@ class wxPyphantFrame(wx.Frame):
             else:
                 raise OSError, "Operating System %s not supported!" % pltform
             wc = "Pyphant Recipe(*.h5)|*.h5"
-            dlg = wx.FileDialog(self, message=osMessage, defaultDir=os.getcwd(),
-                                defaultFile="", wildcard=wc, style=wx.OPEN)
+            dlg = wx.FileDialog(
+                self, message=osMessage, defaultDir=os.getcwd(),
+                defaultFile="", wildcard=wc, style=wx.OPEN
+                )
             if dlg.ShowModal() == wx.ID_OK:
                 self._wxPyphantApp.pathToRecipe = dlg.GetPath()
             else:
@@ -264,7 +259,9 @@ class wxPyphantFrame(wx.Frame):
             raise IOError('Unknown file format in file "%s"'\
                               % self._wxPyphantApp.pathToRecipe)
         self.recipeState = 'clean'
-        self._remainingSpace.diagram.recipe.registerListener(self.recipeChanged)
+        self._remainingSpace.diagram.recipe.registerListener(
+            self.recipeChanged
+            )
 
     def recipeChanged(self, event):
         self.recipeState = 'dirty'
@@ -298,8 +295,6 @@ class wxPyphantFrame(wx.Frame):
     def _initMenuBar(self):
         self._menuBar = wx.MenuBar()
         self._fileMenu = wx.Menu()
-        #self._fileMenu.Append(wx.ID_NEW, "&New\tCTRL+n")
-        #self._fileMenu.Append(wx.ID_OPEN, "&Open\tCTRL+o")
         self._fileMenu.AppendCheckItem(wx.ID_FILE4, "Save &results\tCTRL+r")
         self._fileMenu.Check(wx.ID_FILE4, True)
         self._fileMenu.Append(wx.ID_SAVE, "&Save\tCTRL+s")
@@ -319,8 +314,6 @@ class wxPyphantFrame(wx.Frame):
         self._menuBar.Append(self._kmanagerMenu, "&Knowledge Manager")
         self.SetMenuBar(self._menuBar)
         self._menuBar.EnableTop(1, False)
-        #self.Bind(wx.EVT_MENU, self.onCreateNew, id=wx.ID_NEW)
-        #self.Bind(wx.EVT_MENU, self.onOpenCompositeWorker, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.onSaveCompositeWorker, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.onSaveAsCompositeWorker, id=wx.ID_SAVEAS)
         self.Bind(wx.EVT_CLOSE, self.onClose)
@@ -354,12 +347,9 @@ class wxPyphantFrame(wx.Frame):
         kmanagerMenu = wx.Menu()
         kmanagerMenu.Append(self.ID_KM_URL, "Import HDF5 or FMF from &URL")
         kmanagerMenu.Append(self.ID_KM_LOCAL, "Import &local HDF5 or FMF file")
-        #kmanagerMenu.Append(self.ID_KM_ZSTACK_XML, "Import ZStack from &XML")
         kmanagerMenu.Append(self.ID_KM_SHARE, "Start/pause sharing &knowledge")
         self.Bind(wx.EVT_MENU, self.onImportURL, id=self.ID_KM_URL)
         self.Bind(wx.EVT_MENU, self.onImportLocal, id=self.ID_KM_LOCAL)
-        #self.Bind(wx.EVT_MENU, self.onImportZStackXML,
-        #          id=self.ID_KM_ZSTACK_XML)
         self.Bind(wx.EVT_MENU, self.onShare, id=self.ID_KM_SHARE)
         return kmanagerMenu
 
@@ -433,7 +423,9 @@ class wxPyphantFrame(wx.Frame):
         import PyphantCanvas
         self.compositeWorkerStack.append(self._remainingSpace)
         self._remainingSpace = PyphantCanvas.PyphantCanvas(self, worker)
-        self._remainingSpace.diagram.recipe.registerListener(self.recipeChanged)
+        self._remainingSpace.diagram.recipe.registerListener(
+            self.recipeChanged
+            )
         self._menuBar.EnableTop(1, True)
 
     def onCloseCompositeWorker(self, event):
@@ -496,39 +488,6 @@ class wxPyphantFrame(wx.Frame):
                 dlg2.Destroy()
         else:
             dlg.Destroy()
-
-    ## def onImportZStackXML(self, event):
-    ##     msg = "Select XML file to import ZStack from."
-    ##     wc = "*.xml|*.xml"
-    ##     dlg = wx.FileDialog(self, message=msg, defaultDir=os.getcwd(),
-    ##                         defaultFile="", wildcard=wc, style=wx.OPEN)
-    ##     if dlg.ShowModal() == wx.ID_OK:
-    ##         filename = os.path.realpath(dlg.GetPath())
-    ##         from pyphant.core.ZStackManager import ZStackManager
-    ##         tedlg = wx.TextEntryDialog(self, "Enter name for ZStack:",
-    ##                                    "", "ZStack")
-    ##         if tedlg.ShowModal() == wx.ID_OK:
-    ##             name = tedlg.GetValue()
-    ##             zsm = ZStackManager()
-    ##             try:
-    ##                 dummy = zsm.getZStackByName(name)
-    ##                 cpt2 = "Error"
-    ##                 msg2 = "ZStack %s already exists!" % name
-    ##             except ValueError:
-    ##                 tedlg2 = wx.TextEntryDialog(self, "Enter crystal name:",
-    ##                                             "", "Crystal01")
-    ##                 if tedlg2.ShowModal() == wx.ID_OK:
-    ##                     crystal = tedlg2.GetValue()
-    ##                     zsm.importZStack(name=name, xmlFName=filename,
-    ##                                      crystal=crystal)
-    ##                     cpt2 = "Info"
-    ##                     msg2 = "Successfully imported ZStack."
-    ##                 tedlg2.Destroy()
-    ##             dlg2 = wx.MessageDialog(self, msg2, cpt2, wx.OK)
-    ##             dlg2.ShowModal()
-    ##             dlg2.Destroy()
-    ##         tedlg.Destroy()
-    ##     dlg.Destroy()
 
     def onShare(self, event):
         cpt = "Share Knowledge"
@@ -615,7 +574,8 @@ class mySplashScreen(wx.Frame):
             # this event.
             self.Bind(wx.EVT_WINDOW_CREATE, self.SetWindowShape)
         else:
-            # On wxMSW and wxMac the window has already been created, so go for it.
+            # On wxMSW and wxMac the window has already been created,
+            # so go for it.
             self.SetWindowShape()
 
         dc = wx.ClientDC(self)
@@ -645,10 +605,10 @@ import optparse
 
 def startWxPyphant():
     usage = "usage: %prog [options] pathToRecipe"
-    parser = optparse.OptionParser(usage,version=__id__.replace('$',''))
+    parser = optparse.OptionParser(usage,version=__id__.replace('$', ''))
     (options, args) = parser.parse_args()
 
-    if len(args)>0:
+    if len(args) > 0:
         pathToRecipe = args[0]
     else:
         pathToRecipe = None
