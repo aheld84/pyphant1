@@ -47,19 +47,6 @@ def createParam(worker, paramName, displayName, values, subtype=None):
         return Param(worker, paramName, displayName, values, subtype)
 
 
-class ParamChangeExpected(object):
-    def __init__(self, param, expectedValue):
-        self.param = param
-        self.expectedValue = expectedValue
-
-
-class VisualizerChangeValue(object):
-    def __init__(self, param, **kargs):
-        self.param = param
-        for key, value in kargs.iteritems():
-            setattr(self, key, value)
-
-
 class ParamChangeRequested(object):
     def __init__(self, param, oldValue, newValue):
         self.param = param

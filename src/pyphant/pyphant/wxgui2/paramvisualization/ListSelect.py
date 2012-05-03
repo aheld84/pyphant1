@@ -38,9 +38,6 @@ __version__ = "$Revision$"
 # $Source$
 
 import wx
-from wx import EVT_CHOICE
-from pyphant.core.Param import (
-    ParamChangeExpected, VisualizerChangeValue)
 
 class ListSelect(wx.Choice):
     def __init__(self, parent, param, validator):
@@ -58,45 +55,3 @@ class ListSelect(wx.Choice):
 
     def SetValue(self, value):
         self.SetStringSelection(str(value))
-
-
-class InstantSelect(ListSelect):
-    """
-    This class dispatches the ParamChangeExpected event as soon as
-    the user selects a new value and listens for the
-    VisualizerChangeValue event which should be raised
-    if the possible values for the underlying ListSelect
-    need to be updated.
-    """
-    def __init__(self, parent, param, validator):
-        ListSelect.__init__(self, parent, param, validator)
-        self.Bind(EVT_CHOICE, self.onChoice)
-        self.param = param
-        self.possibleValues = param.possibleValues
-        param._eventDispatcher.registerExclusiveListener(
-            self.onVCV, VisualizerChangeValue)
-
-    def onVCV(self, event):
-        if not hasattr(event, 'value'):
-            value = self.data[self.GetStringSelection()]
-        else:
-            value = event.value
-        assert value in event.possibleValues, "%s not in %s" \
-               % (value, event.possibleValues)
-        self.data = dict([(str(val), val) for val in event.possibleValues])
-        self.possibleValues = event.possibleValues
-        self.SetItems(map(str, event.possibleValues))
-        self.SetValue(value)
-
-    def onChoice(self, event):
-        event.Skip()
-        self.param._eventDispatcher.dispatchEvent(
-            ParamChangeExpected(
-            self.param, expectedValue=self.data[self.GetStringSelection()]))
-
-    def getValue(self):
-        if self.GetSelection()==wx.NOT_FOUND:
-            raise ValueError("Invalid value")
-        else:
-            self.param.possibleValues = self.possibleValues
-            return self.data[self.GetStringSelection()]

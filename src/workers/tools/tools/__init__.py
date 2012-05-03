@@ -39,9 +39,7 @@ __version__ = "$Revision$"
 # $Source$
 
 workers=[
-    #"Emd5Src",
-    "FCSource",
-    "SCSource",
+    "Emd5Src",
     "AlgebraWorker",
     "ExtractRows",
     "AddColumn",

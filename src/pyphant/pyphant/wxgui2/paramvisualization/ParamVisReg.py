@@ -92,12 +92,9 @@ class ParamVisReg:
         register = [
             (0, None, BoundedIntegerTextField.BoundedIntegerTextField),
             (" ", None, OneLineStringField.OLSF),
-            (" ", Connectors.SUBTYPE_INSTANT, OneLineStringField.InstantOLSF),
             (" ", Connectors.SUBTYPE_FILE, FileButton.FileButton),
             (True, None, CheckBox.CheckBox),
-            (True, Connectors.SUBTYPE_INSTANT, CheckBox.InstantCheckBox),
             ([], None, ListSelect.ListSelect),
-            ([], Connectors.SUBTYPE_INSTANT, ListSelect.InstantSelect)
             ]
         for prototype, subtype, visualizer in register:
             self.setVisualizer(type(prototype), subtype, visualizer)

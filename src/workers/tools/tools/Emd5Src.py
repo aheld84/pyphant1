@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-This module provides a dummy worker for batching algorithms
+This module provides a worker for selecting DCs by id (emd5)
 """
 
 __id__ = "$Id$"
@@ -38,20 +38,19 @@ __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 
-from pyphant.core import (Worker, Connectors,
-                          Param)
+from pyphant.core import (Worker, Connectors)
 from pyphant.core.KnowledgeManager import KnowledgeManager
 
 
 class Emd5Src(Worker.Worker):
     """
-    This is a dummy worker for batching algorithms
+    Select DataContainer by id (emd5)
     """
     API = 2
     VERSION = 1
     REVISION = "$Revision$"[11:-1]
     name = "Emd5Src"
-    _params = [("emd5", u"emd5", "", None)]
+    _params = [("emd5", u"id (emd5)", "", None)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def getDataContainer(self, subscriber = 0):
