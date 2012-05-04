@@ -87,7 +87,7 @@ class wxPyphantApplication(wx.PySimpleApp):
         return True
 
     def excepthook(self, type, value, trace):
-        self._logger.debug(u"An unhandled exception occured.",
+        self._logger.error(u"An unhandled exception occured.",
                            exc_info=(type, value, trace))
         sys.__excepthook__(type, value, trace)
 
@@ -148,7 +148,7 @@ class wxPyphantFrame(wx.Frame):
             self._workerRepository.Expand(self._workerRepository.RootItem)
         except:
             import sys
-            self._wxPyphantApp._logger.debug(
+            self._wxPyphantApp._logger.error(
                 u"An exception occured while loading the toolboxes.",
                 exc_info=sys.exc_info())
             wx.MessageBox(
