@@ -84,7 +84,7 @@ class Computer(threading.Thread):
             try:
                 self.result = self.method(subscriber=self.kwargs["subscriber"])
             except Exception, e:
-                logging.getLogger('pyphant').debug(
+                logging.getLogger('pyphant').error(
                     u"An unhandled exception occured in the calculation.",
                     exc_info = True)
                 self.exception_queue.put(e)
