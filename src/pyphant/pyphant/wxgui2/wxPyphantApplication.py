@@ -42,17 +42,18 @@ import os, os.path, pkg_resources
 from pyphant.core.Helpers import getPyphantPath
 LOGDIR = getPyphantPath()
 import logging
-import logging.handlers
-logging.basicConfig(level=logging.DEBUG,
+from logging.handlers import MemoryHandler
+logging.basicConfig(level=logging.NOTSET,
                     filename=os.path.join(LOGDIR, u'pyphant.log'),
                     filemode='w',
                     format="%(asctime)s - %(levelname)s:%(name)s:%(thread)"\
                     "d:%(module)s.%(funcName)s(l %(lineno)d):%(message)s")
 console = logging.StreamHandler()
 console.setLevel(logging.WARNING)
-logbuffer = logging.handlers.MemoryHandler(1000)
+pdmh = MemoryHandler(1000, flushLevel=logging.CRITICAL + 1)
+pdmh.setLevel(logging.WARNING)
+logging.getLogger('').addHandler(pdmh)
 logging.getLogger('').addHandler(console)
-logging.getLogger('').addHandler(logbuffer)
 
 import sys
 import wx
@@ -162,33 +163,31 @@ class wxPyphantFrame(wx.Frame):
 
     def _initAui(self):
         self._auiManager = wx.aui.AuiManager(self)
-        class ClickableText(wx.TextCtrl):
-            def __init__(self, *args, **kwargs):
-                wx.TextCtrl.__init__(self, *args, **kwargs)
-                self.Bind(wx.EVT_LEFT_DOWN,  self.OnClick)
-            def OnClick(self, event):
-                logbuffer.flush()
-                event.Skip()
-        self._logpane = ClickableText(
+        self._logpane = wx.TextCtrl(
             self, -1, "", wx.DefaultPosition, wx.Size(640, 200),
-            wx.NO_BORDER | wx.TE_MULTILINE | wx.TE_READONLY)
-        class WxHandler(logging.Handler):
-            def __init__(self, ctrl):
-                logging.Handler.__init__(self)
-                self.ctrl = ctrl
-            def emit(self, record):
+            wx.NO_BORDER | wx.TE_MULTILINE | wx.TE_READONLY
+            )
+        class TextCtrlStream(object):
+            def __init__(self, textctrl):
+                self.textctrl = textctrl
+
+            def write(self, msg):
                 try:
-                    self.ctrl.AppendText(self.format(record) + "\n")
+                    wx.CallAfter(self.textctrl.WriteText, msg)
                 except wx.PyDeadObjectError:
                     pass
-        handler = WxHandler(self._logpane)
+        handler = logging.StreamHandler(TextCtrlStream(self._logpane))
         handler.setFormatter(logging.Formatter(
             "%(asctime)s - %(levelname)s:%(name)s:%(thread)"\
             "d:%(module)s.%(funcName)s(l %(lineno)d):%(message)s"))
-        logbuffer.setTarget(handler)
-        logbuffer.flush()
+        handler.setLevel(logging.WARNING)
+        global pdmh
+        pdmh.setTarget(handler)
+        pdmh.close()
+        logging.getLogger('').removeHandler(pdmh)
+        del pdmh
+        logging.getLogger('').addHandler(handler)
         self._auiManager.AddPane(self._logpane, wx.BOTTOM, 'Logfile @ %s'\
-                                 ' (click into text to update)' \
                                  % os.path.join(LOGDIR, 'pyphant.log'))
         self._auiManager.AddPane(self._workerRepository, wx.RIGHT,
                                  'Worker Repository')
@@ -237,7 +236,7 @@ class wxPyphantFrame(wx.Frame):
                     self._remainingSpace = PyphantCanvas.PyphantCanvas(
                         self, recipe)
                 except:
-                    self._wxPyphantApp._logger.debug(
+                    self._wxPyphantApp._logger.error(
                         u"An exception occured while loading a recipe.",
                         exc_info=sys.exc_info())
                     wx.MessageBox(
