@@ -48,7 +48,7 @@ pkg_resources.require("pyphant.osc")
 import numpy, scipy, scipy.optimize
 import OSC.MRA as MRA
 from pyphant.core import DataContainer as DC
-from TestExtremumFinder import fixedPoints
+from pyphant.tests.Helpers import fixedPoints
 
 
 class TestMRA(unittest.TestCase):

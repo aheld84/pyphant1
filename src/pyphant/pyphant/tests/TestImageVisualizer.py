@@ -47,7 +47,6 @@ sys.path.append("..")
 import pkg_resources
 
 pkg_resources.require("pyphant")
-pkg_resources.require("pyphant.osc")
 
 import numpy
 from pyphant.visualizers.ImageVisualizer import ImageVisualizer
