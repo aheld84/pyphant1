@@ -134,8 +134,8 @@ def batch(recipe, input, plug, longname, dobatch=True, temporary=False):
                  dobatch is set to True
     """
     socket = recipe.getOpenSocketsForPlug(plug)[0]
-    from tools import Emd5Src
-    DummyWorker = Emd5Src.Emd5Src()
+    from pyphant.core.Emd5Src import Emd5Src
+    DummyWorker = Emd5Src()
     socket.insert(DummyWorker.getPlugs()[0])
     DummyWorker.paramSelectby.value = u"enter emd5"
     from pyphant.core.KnowledgeManager import KnowledgeManager

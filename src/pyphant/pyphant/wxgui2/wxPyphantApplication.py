@@ -143,6 +143,9 @@ class wxPyphantFrame(wx.Frame):
 
     def _initWorkerRep(self):
         try:
+            # adds Emd5Src worker to WorkerRepository
+            from pyphant.core.Emd5Src import Emd5Src
+            Emd5Src()
             self._workerRepository = WorkerRepository.WorkerRepository(
                 self, self.ID_WINDOW_RIGHT, wx.DefaultPosition,
                 wx.Size(220, -1))

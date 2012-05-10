@@ -39,17 +39,12 @@ __version__ = "$Revision$"
 # $Source$
 
 
-import sys,copy
 import unittest
-
 import pkg_resources
 pkg_resources.require("pyphant")
-pkg_resources.require("pyphant.tools")
 
-import os.path
 
-import numpy, scipy, scipy.optimize
-import pyphant.quantities as pq
+import numpy
 from pyphant.core import DataContainer as DC
 
 
@@ -60,14 +55,15 @@ class TestEmd5Source(unittest.TestCase):
         self.V = DC.FieldContainer(numpy.random.randn(10,10))
         self.V.seal()
         from pyphant.core import KnowledgeManager
-        KnowledgeManager.KnowledgeManager.getInstance().registerDataContainer(self.V, temporary=True)
+        KnowledgeManager.KnowledgeManager.getInstance(
+            ).registerDataContainer(self.V, temporary=True)
 
     def testEmd5Source(self):
         """Retrieves the previously registered FieldContainer via the
         Emd5Source and checks for equality."""
         #Predict result
-        from tools import Emd5Src
-        s = Emd5Src.Emd5Src()
+        from pyphant.core.Emd5Src import Emd5Src
+        s = Emd5Src()
         s.paramEmd5.value = self.V.id
         result = s.plugGetDataContainer.getResult()
         self.assertEqual(result, self.V)
