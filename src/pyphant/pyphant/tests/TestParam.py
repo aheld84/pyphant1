@@ -40,16 +40,22 @@ __version__ = "$Revision$"
 import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
-pkg_resources.require("pyphant.imageprocessing")
-import ImageProcessing.ThresholdingWorker
 import pyphant.core.Param as Param
-
+from pyphant.core import Worker
 import pyphant.core.EventDispatcher as EventDispatcher
+
+
+class TestParamDummyWorker(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "TestParamDummyWorker"
+
 
 class VetoParamChangeTest(unittest.TestCase):
 
     def setUp(self):
-        self.worker = ImageProcessing.ThresholdingWorker.ThresholdingWorker()
+        self.worker = TestParamDummyWorker()
         self.worker.registerParamListener(self.vetoer, 'name', Param.ParamChangeRequested)
 
     def vetoer(self, event):

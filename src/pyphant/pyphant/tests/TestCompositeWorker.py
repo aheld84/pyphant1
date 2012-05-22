@@ -40,18 +40,25 @@ __version__ = "$Revision$"
 import unittest
 import pkg_resources
 pkg_resources.require("pyphant")
-pkg_resources.require("pyphant.imageprocessing")
-from ImageProcessing.ThresholdingWorker import ThresholdingWorker
 import pyphant.core.Param as Param
 from pyphant.core.CompositeWorker import CompositeWorker
 import pyphant.core.EventDispatcher as EventDispatcher
+from pyphant.core import Worker
+
+
+class TestCompositeDummyWorker(Worker.Worker):
+    API = 2
+    VERSION = 1
+    REVISION = "$Revision$"[11:-1]
+    name = "TestCompositeDummyWorker"
+
 
 class CompositeWorkerParamNameChangeTest(unittest.TestCase):
     def setUp(self):
         self.composite = CompositeWorker()
-        self.worker1 = ThresholdingWorker(self.composite)
+        self.worker1 = TestCompositeDummyWorker(self.composite)
         self.worker1.getParam('name').value = 'worker1'
-        self.worker2 = ThresholdingWorker(self.composite)
+        self.worker2 = TestCompositeDummyWorker(self.composite)
         self.worker2.getParam('name').value = 'worker2'
 
     def testVetoBadNameChange(self):
@@ -63,12 +70,12 @@ class CompositeWorkerParamNameChangeTest(unittest.TestCase):
         self.worker1.getParam('name').value = 'worker1_neu'
 
     def testVetoBadNameCreation(self):
-        ThresholdingWorker(self.composite)
-        ThresholdingWorker(self.composite)
-        ThresholdingWorker(self.composite)
-        ThresholdingWorker(self.composite)
-        ThresholdingWorker(self.composite)
-        ThresholdingWorker(self.composite)
+        TestCompositeDummyWorker(self.composite)
+        TestCompositeDummyWorker(self.composite)
+        TestCompositeDummyWorker(self.composite)
+        TestCompositeDummyWorker(self.composite)
+        TestCompositeDummyWorker(self.composite)
+        TestCompositeDummyWorker(self.composite)
 
 if __name__ == '__main__':
     unittest.main()
