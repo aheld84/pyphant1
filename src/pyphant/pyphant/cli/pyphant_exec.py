@@ -32,13 +32,6 @@
 #import pkg_resources
 #pkg_resources.require("pyphant")
 
-import pyphant
-import ImageProcessing
-import ImageProcessing.ImageLoaderWorker
-import ImageProcessing.InvertWorker
-import PIL.Image
-import tools
-
 def main():
     import sys
     filename = sys.argv[1]
@@ -52,13 +45,13 @@ def main():
     recipe = PyTablesPersister.loadRecipe(h5)
     executionOrders = PyTablesPersister.loadExecutionOrders(h5)
     h5.close()
-    from tools import Emd5Src
+    from pyphant.core.Emd5Src import Emd5Src
     for order in executionOrders:
         for socket, emd5 in order[0].iteritems():
             sSpec = socket.split('.')
             w = recipe.getWorker(sSpec[0])
             s = getattr(w, sSpec[-1])
-            src = Emd5Src.Emd5Src(recipe)
+            src = Emd5Src(recipe)
             src.paramEmd5.value=emd5
             if s.isFull():
                 s.pullPlug()

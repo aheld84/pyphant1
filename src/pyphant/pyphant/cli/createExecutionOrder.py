@@ -42,11 +42,9 @@ def processArgs(h5):
     # Order ::= (socketMap, resultPlug)
     return (options, args, recipe, [(options.socketMap, [p.id for p in options.requestedResults])])
 
-from ImageProcessing.ImageLoaderWorker import ImageLoaderWorker
+from pyphant.core.Helpers import loadImageAsGreyScale
 def f2dc(f):
-    il = ImageLoaderWorker()
-    il.paramFilename.value=f
-    res = il.plugLoadImageAsGreyScale.getResult()
+    res = loadImageAsGreyScale(f)
     res.seal()
     return res
 

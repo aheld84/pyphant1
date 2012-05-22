@@ -40,4 +40,3 @@ __version__ = "$Revision$"
 # $Source$
 
 workers=["FMFLoader"]
-

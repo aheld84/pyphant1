@@ -47,7 +47,7 @@ import os
 import logging
 import re
 from pyphant.core.H5FileHandler import (H5FileHandler, im_id)
-from fmfile import FMFLoader
+from pyphant.core import LoadFMF
 from pyphant.core.SQLiteWrapper import (SQLiteWrapper, AnyValue)
 from pyphant.core.Helpers import getPyphantPath
 from uuid import uuid1
@@ -360,7 +360,7 @@ class KnowledgeManager(Singleton):
         filename -- path to the FMF file
         temporary -- see registerDataContainer
         """
-        sc = FMFLoader.loadFMFFromFile(filename)
+        sc = LoadFMF.loadFMFFromFile(filename)
         self.registerDataContainer(sc, temporary)
         return sc.id
 

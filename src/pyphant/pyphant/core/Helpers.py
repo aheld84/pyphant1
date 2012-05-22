@@ -134,8 +134,8 @@ def batch(recipe, input, plug, longname, dobatch=True, temporary=False):
                  dobatch is set to True
     """
     socket = recipe.getOpenSocketsForPlug(plug)[0]
-    from tools import Emd5Src
-    DummyWorker = Emd5Src.Emd5Src()
+    from pyphant.core.Emd5Src import Emd5Src
+    DummyWorker = Emd5Src()
     socket.insert(DummyWorker.getPlugs()[0])
     DummyWorker.paramSelectby.value = u"enter emd5"
     from pyphant.core.KnowledgeManager import KnowledgeManager
@@ -207,3 +207,45 @@ def getModuleUniqueTimestamp():
     finally:
         TIMESTAMP_LOCK.release()
     return timestamp
+
+def loadImageAsGreyScale(
+    filename,  xscale='1mum', yscale='link2X', fieldunit=1
+    ):
+    from PIL import Image
+    import scipy
+    from scipy.misc import fromimage
+    from pyphant.core import DataContainer
+    from pyphant.quantities import Quantity
+    im = Image.open(filename)
+    if im.mode == "I;16":
+        im = im.convert("I")
+        data = fromimage(im).astype("int16")
+    else:
+        data = fromimage(im, flatten=True)
+    Ny, Nx = data.shape
+    xUnit = Quantity(xscale.encode('utf-8'))
+    xAxis =  DataContainer.FieldContainer(scipy.linspace(0.0, xUnit.value,
+                                                         Nx, True),
+                                          xUnit / xUnit.value,
+                                          longname = 'x-coordinate',
+                                          shortname = 'x')
+    if yscale == 'link2X':
+        yUnit = xUnit * float(Ny) / Nx
+    else:
+        yUnit = Quantity(yscale.encode('utf-8'))
+    yAxis =  DataContainer.FieldContainer(scipy.linspace(0.0, yUnit.value,
+                                                         Ny, True),
+                                          yUnit / yUnit.value,
+                                          longname = 'y-coordinate',
+                                          shortname = 'y')
+    try:
+        FieldUnit = Quantity(fieldunit.encode('utf-8'))
+    except AttributeError:
+        FieldUnit = fieldunit
+    return DataContainer.FieldContainer(
+        data,
+        FieldUnit,
+        longname="Image",
+        shortname="I",
+        dimensions=[yAxis, xAxis]
+        )

@@ -45,12 +45,11 @@ sys.path.append("..")
 import pkg_resources
 
 pkg_resources.require("pyphant")
-pkg_resources.require("pyphant.osc")
 
 import numpy
 from pyphant.visualizers.Chart import LineChart,ScatterPlot
 from pyphant.core import DataContainer as DC
-import OSC.tests.TestExtremumFinder as TEF
+from pyphant.tests import Helpers
 
 outputFormat = 'ps'
 
@@ -166,7 +165,7 @@ class TestLinePlot(unittest.TestCase):
                                    unit = '1 m',
                                    longname = 'position',
                                    shortname = 'x')
-        x0,curv,mask = TEF.fixedPoints(lambField.data,kappa1=self.kappa1)
+        x0,curv,mask = Helpers.fixedPoints(lambField.data,kappa1=self.kappa1)
         fixedPoints = DC.FieldContainer(numpy.array(x0).transpose(),
                                         unit = xField.unit,
                                         dimensions=[DC.generateIndex(0,3), lambField],
@@ -191,7 +190,7 @@ class TestLinePlot(unittest.TestCase):
                                    unit = '1 m',
                                    longname = 'position',
                                    shortname = 'x')
-        x0,curv,mask = TEF.fixedPoints(lambField.data,kappa1=self.kappa1)
+        x0,curv,mask = Helpers.fixedPoints(lambField.data,kappa1=self.kappa1)
         fixedPoints = DC.FieldContainer(numpy.array(x0).transpose(),
                                         unit = xField.unit,
                                         dimensions=[DC.generateIndex(0,3), lambField],
