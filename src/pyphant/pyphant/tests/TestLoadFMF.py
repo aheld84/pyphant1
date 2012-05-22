@@ -33,17 +33,14 @@
 
 # $Source$
 
-import pkg_resources
-pkg_resources.require('pyphant.fmf')
-
 import unittest, numpy
-from fmfile import FMFLoader
 from pyphant.core.DataContainer import (
     FieldContainer, SampleContainer, assertEqual
     )
 from pyphant.quantities import Quantity
 from pyphant.quantities.ParseQuantities import str2unit
 from copy import deepcopy
+from pyphant.core import LoadFMF
 
 #Estimate floating point accuracy
 ACCURACY = 1.0 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.
@@ -59,17 +56,17 @@ class FieldContainerCondenseDim(unittest.TestCase):
 
     def testInvalid(self):
         self.assertRaises(
-            AssertionError, FMFLoader.checkAndCondense, self.invalid
+            AssertionError, LoadFMF.checkAndCondense, self.invalid
             )
 
     def testValid(self):
-        result = FMFLoader.checkAndCondense(self.valid)
+        result = LoadFMF.checkAndCondense(self.valid)
         numpy.testing.assert_array_equal(self.x, result)
 
 class TestColumn2FieldContainer(unittest.TestCase):
     def testStrings(self):
         column = ['Hello', 'World']
-        result = FMFLoader.column2FieldContainer('simple string', column)
+        result = LoadFMF.column2FieldContainer('simple string', column)
         expectedResult = FieldContainer(
             numpy.array(column), longname='simple string'
             )
@@ -77,7 +74,7 @@ class TestColumn2FieldContainer(unittest.TestCase):
 
     def testListofStrings(self):
         column = ['World', ['Hello', 'World'], 'World']
-        result = FMFLoader.column2FieldContainer('simple string', column)
+        result = LoadFMF.column2FieldContainer('simple string', column)
         expectedResult = FieldContainer(
             numpy.array(['World', 'Hello, World', 'World']),
             longname='simple string'
@@ -86,7 +83,7 @@ class TestColumn2FieldContainer(unittest.TestCase):
 
     def testListofStrings2(self):
         column = [['Hello', 'World'], 'World']
-        result = FMFLoader.column2FieldContainer('simple string', column)
+        result = LoadFMF.column2FieldContainer('simple string', column)
         expectedResult = FieldContainer(
             numpy.array(['Hello, World', 'World']), longname='simple string'
             )
@@ -97,7 +94,7 @@ class TestColumn2FieldContainer(unittest.TestCase):
             ('T', Quantity('22.4 degC'), Quantity('0.5 degC')),
             ('T', Quantity('11.2 degC'), Quantity('0.5 degC'))
             ]
-        result = FMFLoader.column2FieldContainer('temperature', column)
+        result = LoadFMF.column2FieldContainer('temperature', column)
         expectedResult = FieldContainer(
             numpy.array([22.4, 11.2]) ,error=numpy.array([0.5, 0.5]),
             mask=numpy.array([False, False]),
@@ -110,7 +107,7 @@ class TestColumn2FieldContainer(unittest.TestCase):
             ('T', Quantity('22.4 degC'), Quantity('0.5 degC')),
             ('T', Quantity('11.2 degC'), None)
             ]
-        result = FMFLoader.column2FieldContainer('temperature', column)
+        result = LoadFMF.column2FieldContainer('temperature', column)
         expectedResult = FieldContainer(
             numpy.array([22.4, 11.2]), error=numpy.array([0.5, 0.0]),
             mask = numpy.array([False, False]),
@@ -123,7 +120,7 @@ class TestColumn2FieldContainer(unittest.TestCase):
             ('T', 'NaN', Quantity('0.5 degC')),
             ('T', Quantity('11.2 degC'), None)
             ]
-        result = FMFLoader.column2FieldContainer('temperature', column)
+        result = LoadFMF.column2FieldContainer('temperature', column)
         expectedResult = FieldContainer(
             numpy.array([numpy.NaN, 11.2]), error=numpy.array([0.5, 0.0]),
             mask = numpy.array([True, False]),
@@ -141,17 +138,17 @@ class TestDiscriminatingJouleAndImaginary(unittest.TestCase):
 
     def testComplexValue(self):
         """Imaginary numbers are indicated by 'j'."""
-        result = FMFLoader.item2value(self.inputDict['complexJ'])
+        result = LoadFMF.item2value(self.inputDict['complexJ'])
         self.assertEqual(result, (complex(self.inputDict['complexJ']), None))
 
     def testJouleValue1_1(self):
         """Physical quantities with unit Joule are indicated by 'J'."""
-        result = FMFLoader.item2value(self.inputDict['Joule'])
+        result = LoadFMF.item2value(self.inputDict['Joule'])
         self.assertEqual(result, (Quantity(self.inputDict['Joule']), None))
 
     def testJouleValue1_0(self):
         """Physical quantities with unit Joule are indicated by 'J'."""
-        result = FMFLoader.item2value(
+        result = LoadFMF.item2value(
             self.inputDict['Joule'], FMFversion='1.0'
             )
         self.assertEqual(result, (Quantity(self.inputDict['Joule']), None))
@@ -214,7 +211,7 @@ N_2	1	2
         Test the correct interpretation of physical constants
         as definied in FMF version 1.0.
         """
-        consts = FMFLoader.readSingleFile(
+        consts = LoadFMF.readSingleFile(
             self.FMFinput,
             "testReadSingleFile")[0].attributes[
             'Mathematical and Physical Constants'
@@ -271,7 +268,7 @@ N_2	1	2
         self.assertEqual(
             consts[u'Boltzmann constant'][1], str2unit("1 k", FMFversion="1.0")
             )
-        consts = FMFLoader.readSingleFile(
+        consts = LoadFMF.readSingleFile(
             self.FMFinput,
             "testReadSingleFile")[0].attributes[
             'Additional constants changed from FMF version 1.0 to 1.1'
@@ -344,7 +341,7 @@ N_2	1	2
         Test the correct interpretation of physical constants
         as definied in FMF version 1.1.
         """
-        consts = FMFLoader.readSingleFile(
+        consts = LoadFMF.readSingleFile(
             self.FMFinput, "testReadSingleFile")[0].attributes[
             'Mathematical and Physical Constants'
             ]
@@ -397,7 +394,7 @@ N_2	1	2
         self.assertEqual(
             consts[u'Rydberg constant'][1], str2unit("1 Ryd", FMFversion="1.1")
             )
-        consts = FMFLoader.readSingleFile(
+        consts = LoadFMF.readSingleFile(
             self.FMFinput, "testReadSingleFile")[0].attributes[
             'Additional constants changed from FMF version 1.0 to 1.1'
             ]
@@ -414,14 +411,14 @@ N_2	1	2
 
 class Emd5ConsistencyTestCase(unittest.TestCase):
     def setUp(self):
-        from fmfile import __path__ as path
+        from pyphant import __path__ as path
         import os
         self.filename = os.path.join(path[0], 'tests', 'resources',
                                      'fmf','dep.fmf')
 
     def testImportFMF(self):
-        from fmfile import FMFLoader
-        table = FMFLoader.loadFMFFromFile(self.filename)
+        from pyphant.core.LoadFMF import loadFMFFromFile
+        table = loadFMFFromFile(self.filename)
         print "Testing imported SampleContainer for consistency..."
         for column in ['y0', 'y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7', 'y8']:
             self.assertEqual(table[column].dimensions[0].id,
@@ -451,15 +448,15 @@ class Emd5ConsistencyTestCase(unittest.TestCase):
 
 class LoaderTestCase(unittest.TestCase):
     def setUp(self):
-        self.loader = FMFLoader.FMFLoader()
-        from fmfile import __path__ as path
+        from pyphant import __path__ as path
         import os
         self.path = os.path.join(path[0], 'tests', 'resources', 'fmf')
 
     def load(self, filename):
         import os
-        self.loader.paramFilename.value = os.path.join(self.path, filename)
-        return self.loader.loadFMF()
+        data = LoadFMF.loadFMFFromFile(os.path.join(self.path, filename))
+        data.seal()
+        return data
 
 
 class PathologicalTestCase(LoaderTestCase):
