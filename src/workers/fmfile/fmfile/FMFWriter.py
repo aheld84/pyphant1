@@ -40,63 +40,21 @@ __version__ = "$Revision$"
 import wx
 from pyphant.core.WriteFMF import field2fmf
 
-ID_EXIT = 102
 
+class FMFWriter(wx.Frame):
+    name = 'FMF Writer'
 
-class FMFframe(wx.Frame):
-    def __init__(self,parent, ID, title):
-        wx.Frame.__init__(self,parent,ID, title,
-                          wx.DefaultPosition,wx.Size(300,300))
-        self.CreateStatusBar()
-        self.SetStatusText("Full-Metadata Format")
-        wx.Panel(self)
-        menuBar = wx.MenuBar()
-        menu = wx.Menu()
-        menu.Append(101, "&About",
-                    "Full-Metadata Format Viewer")
-        menu.AppendSeparator()
-        menu.Append(ID_EXIT,"E&xit","Terminate the program")
-        menuBar.Append(menu,"&File")
-        self.SetMenuBar(menuBar)
-
-        wx.EVT_MENU(self,ID_EXIT, self.timeToQuit)
-
-    def timeToQuit(self,event):
-        self.Close(True)
-
-
-class TextFrame(wx.Frame):
-    def __init__(self,fmf):
-        wx.Frame.__init__(self,None,-1,'FMFWriter', size=(300,200))
-        multiText = wx.TextCtrl(self,-1,fmf,size=(200,200),style=wx.TE_MULTILINE)
+    def __init__(self, dataContainer, show=True):
+        wx.Frame.__init__(self, None, -1,
+                          "FMF representation of " + dataContainer.longname)
+        text = field2fmf(dataContainer)
+        multiText = wx.TextCtrl(self, -1, text, size=(200, 200),
+                                style=wx.TE_MULTILINE)
         multiText.SetInsertionPoint(0)
-
-
-class MyApp(wx.App):
-    def OnInit(self):
-        frame = FMFframe(None,-1,"Pyphant Full-Metadata Format Viewer")
-        frame.Show(True)
-        return True
-
-    def OnExit(self):
-        self.ExitMainLoop()
-        wx.Exit()
-
-
-class FMFWriter(object):
-    name='FMF Writer'
-    def __init__(self, fieldContainer,show=True):
-        self.fieldContainer = fieldContainer
-        self.show = show
-        self.execute()
+        self.Show(show)
 
     def execute(self):
-        self.text =  field2fmf(self.fieldContainer)
-        app = wx.PySimpleApp()
-        frame = TextFrame(self.text)
-        frame.Show()
-        app.MainLoop()
+        self.Show(True)
 
-    def OnExit(self):
-        self.ExitMainLoop()
-        wx.Exit()
+    def OnExit(self, event):
+        self.Close()
