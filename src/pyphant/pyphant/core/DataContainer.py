@@ -260,7 +260,7 @@ class SampleContainer(DataContainer):
         self.lock.release()
 
     def __getitem__(self, key):
-        if isinstance(key, int):
+        if isinstance(key, int) or isinstance(key, slice):
             return self.columns[key]
         try:
             return self.longnames[key]
