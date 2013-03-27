@@ -35,7 +35,7 @@ u"""
 
 __id__ = "$Id$"
 __author__ = "$Author$"
-__version__ = "Sprint"
+__version__ = "1.0b1"
 # $Source$
 
 import os, os.path, pkg_resources
