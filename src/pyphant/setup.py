@@ -4,7 +4,7 @@
 __id__ = '$Id: $'
 __revision__ = '$Revision: 25 $'
 
-VERSION = '1.0b1'
+VERSION = '1.0b2.dev'
 
 
 from setuptools import setup, find_packages

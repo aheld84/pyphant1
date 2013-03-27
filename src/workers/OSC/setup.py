@@ -11,7 +11,7 @@ __author__ = "Andreas W. Liehr, Klaus Zimmermann"
 __id__ = '$Id$'
 __revision__ = '$Revision: 25 $'
 
-VERSION = '1.0b1'
+VERSION = '1.0b2.dev'
 
 import setuptools
 
@@ -24,7 +24,7 @@ setuptools.setup(
     maintainer_email='klaus.zimmermann@fmf.uni-freiburg.de',
     license="BSD",
     description=__doc__,
-    install_requires=['pyphant>=1.0b1'],
+    install_requires=['pyphant>=1.0b2.dev'],
     packages=['OSC'],
     entry_points="""
     [pyphant.workers]

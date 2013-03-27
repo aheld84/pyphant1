@@ -12,7 +12,7 @@ __author__ = "Alexander Held, Andreas W. Liehr, Rolf Wuerdemann, " +\
 __id__ = '$Id$'
 __revision__ = '$Revision: 25 $'
 
-VERSION = '1.0b1'
+VERSION = '1.0b2.dev'
 
 import setuptools
 
@@ -26,7 +26,7 @@ setuptools.setup(
     license="BSD",
     description=__doc__,
     install_requires=[
-        'pyphant>=1.0b1',
+        'pyphant>=1.0b2.dev',
         'ConfigObj'
         ],
     packages=['fmfile'],
