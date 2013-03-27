@@ -33,7 +33,6 @@
 This module provides a worker for selecting DCs by id (emd5)
 """
 
-__id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$

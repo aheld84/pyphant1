@@ -33,7 +33,6 @@ u"""
 This is the main pyphant package.
 """
 
-__id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$

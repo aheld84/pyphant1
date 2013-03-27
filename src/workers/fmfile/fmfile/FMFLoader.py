@@ -35,7 +35,6 @@ The FMF Loader is a class of Pyphant's FMF Toolbox. It loads an FMF
 file from the location given in the worker's configuration.
 """
 
-__id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$

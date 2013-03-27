@@ -9,7 +9,6 @@ Visit http://pyphant.sourceforge.net for more information.
 __author__ = "Alexander Held, Andreas W. Liehr, Rolf Wuerdemann, " +\
              "Klaus Zimmermann"
 
-__id__ = '$Id$'
 __revision__ = '$Revision: 25 $'
 
 VERSION = '1.0b2.dev'

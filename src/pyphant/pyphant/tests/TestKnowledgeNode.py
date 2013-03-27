@@ -33,7 +33,6 @@
 u"""Provides unittest classes for KnowledgeNode.
 """
 
-__id__ = "$Id$".replace('$','')
 __author__ = "$Author$".replace('$','')
 __version__ = "$Revision$".replace('$','')
 # $Source$

@@ -65,7 +65,6 @@ realization of a random variable.
 """
 from __future__ import with_statement
 
-__id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 

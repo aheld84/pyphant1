@@ -35,7 +35,6 @@ The Smoother Worker is a class of Pyphant's OSC Toolbox. It is used to
 reduce noise from a field. The numer of smoothing runs can be edited.
 """
 
-__id__ = "$Id$"
 __author__ = "$Author: obi $"
 __version__ = "$Revision: 4276 $"
 # $Source$

@@ -34,7 +34,6 @@ The FMF Toolbox holds workers for processing full meta data format files.
 """
 
 
-__id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$

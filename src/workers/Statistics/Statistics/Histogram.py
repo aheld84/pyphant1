@@ -36,7 +36,6 @@ visualisd as bar charts or line charts. The rexpective axes are
 automatically correctly labled.
 """
 
-__id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$

@@ -32,7 +32,6 @@
 u"""
 """
 
-__id__ = "$Id: ThresholdingWorker.py 10 2006-11-06 16:07:58Z liehr $"
 __author__ = "$Author: liehr $"
 __version__ = "$Revision: 10 $"
 # $Source$

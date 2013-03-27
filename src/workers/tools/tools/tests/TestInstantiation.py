@@ -32,7 +32,6 @@
 u"""Provides simple instantiation tests for tools workers.
 """
 
-__id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$

@@ -36,7 +36,6 @@ This module provides the WebInterface class for the KnowledgeNode
 as well as some HTTP and HTML helper classes.
 """
 
-__id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source: $

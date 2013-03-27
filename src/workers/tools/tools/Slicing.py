@@ -35,7 +35,6 @@ The Slicing Worker is a class of Pyphant's tools toolbox. It cuts out one
 part of a field and provides it as a new field to work on.
 """
 
-__id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$

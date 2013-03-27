@@ -8,7 +8,6 @@ Visit http://pyphant.sourceforge.net for more information.
 
 __author__ = "Andreas W. Liehr, Klaus Zimmermann"
 
-__id__ = '$Id$'
 __revision__ = '$Revision: 25 $'
 
 VERSION = '1.0b2.dev'

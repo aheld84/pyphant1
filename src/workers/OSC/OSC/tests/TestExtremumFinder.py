@@ -33,7 +33,6 @@
 u"""Provides unittest classes TestExtremumFinder and TestExtremumFinderDiscontinuousDiscretisation.
 """
 
-__id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$

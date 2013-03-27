@@ -30,7 +30,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__id__ = "$Id$"
 __author__ = "$Author: liehr $"
 __version__ = "$Revision: 29 $"
 

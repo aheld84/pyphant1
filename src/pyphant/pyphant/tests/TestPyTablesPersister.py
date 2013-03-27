@@ -34,7 +34,6 @@
 u"""Provides unittest classes FieldContainerTestCase.
 """
 
-__id__ = "$Id$".replace('$','')
 __author__ = "$Author$".replace('$','')
 __version__ = "$Revision$".replace('$','')
 # $Source$
@@ -59,8 +58,12 @@ class ContainerTestCase(unittest.TestCase):
         self.longname = u"Sampled Data"
         self.shortname = u"I\\omega"
         self.unit = Quantity('3.14 m')
-        self.attributes = {'id': __id__, 'author':__author__,'version':__version__,
-                           'unit':self.unit}
+        self.attributes = {
+            'id': 'dummy id',
+            'author': 'dummy author',
+            'version': 'dummy version',
+            'unit': self.unit
+            }
         self.eln = tables.openFile('FieldContainerTestCase.h5','w',
                                    title='Testing the saving and restoring of FieldContainers.')
         self.eln.createGroup(self.eln.root,'results')

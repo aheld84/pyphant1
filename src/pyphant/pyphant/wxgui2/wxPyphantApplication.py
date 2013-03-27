@@ -33,7 +33,6 @@
 u"""
 """
 
-__id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "1.0b1"
 # $Source$
@@ -607,7 +606,8 @@ import optparse
 
 def startWxPyphant():
     usage = "usage: %prog [options] pathToRecipe"
-    parser = optparse.OptionParser(usage,version=__id__.replace('$', ''))
+    version = pkg_resources.require("pyphant")[0].version
+    parser = optparse.OptionParser(usage, version=version)
     (options, args) = parser.parse_args()
 
     if len(args) > 0:

@@ -36,7 +36,6 @@ Toolbox. It simply loads an image from the location given in the
 worker's configuration.
 """
 
-__id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$

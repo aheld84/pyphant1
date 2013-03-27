@@ -38,7 +38,6 @@ algorithm loops over the 0th dimension denoting the y-axis, which
 corresponds to an iteration over the rows of the data matrix.
 """
 
-__id__ = "$Id$"
 __author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$

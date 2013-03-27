@@ -32,7 +32,6 @@
 u"""Provides unittest classes for UltimatePointsCalculator worker
 """
 
-__id__ = "$Id$".replace('$','')
 __author__ = "$Author$".replace('$','')
 __version__ = "$Revision$".replace('$','')
 # $Source$
