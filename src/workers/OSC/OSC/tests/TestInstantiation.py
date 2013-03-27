@@ -32,7 +32,6 @@
 u"""Provides simple instantiation tests for OSC workers.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

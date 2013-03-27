@@ -33,7 +33,6 @@ u"""
 This module provides the refactored AutoFocus Worker and its little helpers
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

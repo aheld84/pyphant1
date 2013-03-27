@@ -34,7 +34,6 @@ The ImageProcessing toolbox holds workers to process data
 resulting from scalar fields.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

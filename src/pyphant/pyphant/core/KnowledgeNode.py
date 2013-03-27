@@ -38,7 +38,6 @@ arbitrary many remote KnowledgeManagers. It comes with a RoutingHTTPServer
 and an optional WebInterface.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source: $
 

@@ -36,7 +36,6 @@ from __future__ import with_statement
 u"""Provides unittest classes for SQLiteWrapper.
 """
 
-__author__ = "$Author$".replace('$','')
 __version__ = "$Revision$".replace('$','')
 # $Source$
 

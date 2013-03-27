@@ -6,9 +6,6 @@ Pyphant Full Meta File Toolbox
 Visit http://pyphant.sourceforge.net for more information.
 """
 
-__author__ = "Alexander Held, Andreas W. Liehr, Rolf Wuerdemann, " +\
-             "Klaus Zimmermann"
-
 __revision__ = '$Revision: 25 $'
 
 VERSION = '1.0b2.dev'
@@ -18,7 +15,8 @@ import setuptools
 setuptools.setup(
     name="pyphant.fmf",
     version=VERSION,
-    author=__author__,
+    author="Alexander Held, Andreas W. Liehr, Rolf Wuerdemann, " + \
+        "Klaus Zimmermann",
     author_email='alexander.held@fmf.uni-freiburg.de',
     maintainer='Alexander Held',
     maintainer_email='alexander.held@fmf.uni-freiburg.de',

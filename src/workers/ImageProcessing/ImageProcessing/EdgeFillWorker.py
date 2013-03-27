@@ -34,7 +34,6 @@ The Edge Fill Worker is a class of Pyphant's Image Processing
 Toolbox. It is used to backfill outlined features again.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

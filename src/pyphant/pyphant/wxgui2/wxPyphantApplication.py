@@ -33,7 +33,6 @@
 u"""
 """
 
-__author__ = "$Author$"
 __version__ = "1.0b1"
 # $Source$
 

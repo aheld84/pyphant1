@@ -32,7 +32,6 @@
 u"""
 """
 
-__author__ = "$Author: liehr $"
 __version__ = "$Revision: 10 $"
 # $Source$
 

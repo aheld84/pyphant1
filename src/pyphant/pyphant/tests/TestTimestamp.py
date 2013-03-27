@@ -32,7 +32,6 @@
 u"""Provides test for unique timestamps
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

@@ -32,7 +32,6 @@
 
 u"""Provides unittest class TestSlopeCalculator."""
 
-__author__ = "$Author:$"
 __version__ = "$Revision$"
 
 import sys

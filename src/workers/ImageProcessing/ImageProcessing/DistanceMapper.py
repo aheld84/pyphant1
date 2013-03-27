@@ -37,7 +37,6 @@ binary images through calculating the distance of every pixel to the
 nearest background pixel.
 """
 
-__author__ = "$Author: obi $"
 __version__ = "$Revision: 3671 $"
 # $Source$
 

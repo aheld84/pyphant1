@@ -33,7 +33,6 @@
 u"""Provides unittest class TestHistogram.
 """
 
-__author__ = "$Author:$"
 __version__ = "$Revision:$"
 # $Source$
 

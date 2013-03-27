@@ -33,7 +33,6 @@
 """
 This module provides the H5FileHandler class.
 """
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$:
 import tables

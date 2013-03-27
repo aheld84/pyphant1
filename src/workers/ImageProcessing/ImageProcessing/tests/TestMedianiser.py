@@ -33,7 +33,6 @@
 u"""Provides unittest class TestMedianizer
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

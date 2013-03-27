@@ -32,7 +32,6 @@
 u"""Provides unittest class TestErrorEstimation.
 """
 
-__author__ = "$Author: obi $"
 __version__ = "$Revision: 4164 $"
 # $Source$
 

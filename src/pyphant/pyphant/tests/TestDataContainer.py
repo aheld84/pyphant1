@@ -34,7 +34,6 @@
 u"""Provides unittest classes FieldContainerTestCase, SampleContainerTest.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

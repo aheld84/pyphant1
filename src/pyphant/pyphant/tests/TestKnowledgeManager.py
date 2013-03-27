@@ -33,7 +33,6 @@
 u"""Provides unittest classes
 """
 
-__author__ = "$Author$".replace('$','')
 __version__ = "$Revision$".replace('$','')
 # $Source$
 

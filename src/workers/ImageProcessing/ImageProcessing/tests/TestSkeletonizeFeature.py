@@ -33,7 +33,6 @@
 u"""Provides unittest classes TestSkeletonizeFeature, TestSkeletonizeCross, and TestCheckNeighbours.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

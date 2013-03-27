@@ -32,7 +32,6 @@
 u"""Provides unittest classes for Gradient worker
 """
 
-__author__ = "$Author$".replace('$','')
 __version__ = "$Revision$".replace('$','')
 # $Source$
 

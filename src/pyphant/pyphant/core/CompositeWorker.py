@@ -35,7 +35,6 @@ At the moment these can only be entire recipes, but it is planned
 that they can be subgraphs, too.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

@@ -35,7 +35,6 @@ column that was once extracted by using the column extractor in the
 orignial chart again.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

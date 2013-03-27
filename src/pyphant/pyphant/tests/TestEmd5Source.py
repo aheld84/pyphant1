@@ -33,7 +33,6 @@
 u"""Provides unittest classes TestMRA and TestMRADiscontinuousDiscretisation.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

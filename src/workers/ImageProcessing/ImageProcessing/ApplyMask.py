@@ -35,7 +35,6 @@ Toolbox. By using this worker one gray-scale image can be applied as a
 mask on another image.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

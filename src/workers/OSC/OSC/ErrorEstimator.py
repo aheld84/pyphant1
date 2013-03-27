@@ -34,7 +34,6 @@ The Estimate Error worker is a class of Pyphant's OSC-Toolbox. It
 evaluates the error caused by noise for every pixel in a field.
 """
 
-__author__ = "$Author: obi $"
 __version__ = "$Revision: 4276 $"
 # $Source$
 

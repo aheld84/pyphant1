@@ -34,7 +34,6 @@
 u"""Provides unittest classes FieldContainerTestCase.
 """
 
-__author__ = "$Author$".replace('$','')
 __version__ = "$Revision$".replace('$','')
 # $Source$
 

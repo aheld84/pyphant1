@@ -57,7 +57,6 @@ UNLESS field.dimensions==INDEX:
 #dimensions(hash, id)
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source: /home/obi/Projekte/pyphant/sourceforge/pyphant/pyphant/devel/trunk/src/pyphant/core/PyTablesPersister.py,v $
 

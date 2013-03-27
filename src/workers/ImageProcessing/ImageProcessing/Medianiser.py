@@ -36,7 +36,6 @@ standard median filter. In its configurations the size of the applied
 kernel and the number of smoothing runs can be edited.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

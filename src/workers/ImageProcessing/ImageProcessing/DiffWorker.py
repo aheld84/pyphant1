@@ -35,7 +35,6 @@ computes the difference between two images, eg. the skeletonised image
 and the origial image.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

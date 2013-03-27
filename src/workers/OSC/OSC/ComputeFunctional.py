@@ -34,7 +34,6 @@ u"""
 Pyphant module providing worker for finding the local extrema of 1D functions.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

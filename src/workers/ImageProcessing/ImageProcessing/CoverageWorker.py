@@ -36,7 +36,6 @@ threshold. Therefore required percentages of black and white material
 in the image can be edited.
 """
 
-__author__ = "$Author$"
 __version__ = "$Revision$"
 # $Source$
 

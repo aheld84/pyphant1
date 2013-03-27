@@ -33,7 +33,6 @@
 u"""Provides unittest classes TestApplyMask and TestApplyMask3D.
 """
 
-__author__ = "$Author:$"
 __version__ = "$Revision:$"
 # $Source$
 
