@@ -45,7 +45,7 @@ from pyphant.core import Worker
 class TestCompositeDummyWorker(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant").version
     name = "TestCompositeDummyWorker"
 
 

@@ -33,9 +33,10 @@ u"""
 The Worker module provides the Worker base class and some support.
 """
 
-
 import types, logging
 from pyphant.core import Connectors, Param, WorkerRegistry
+import pkg_resources
+
 
 class WorkerInfo(object):
 ##    __slots__ = ["name", "createWorker"] #not possible due to pickling restrictions.
@@ -71,7 +72,7 @@ class WorkerFactory(type):
 class Worker(object):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant").version
 
     __metaclass__ = WorkerFactory
     _sockets=[]

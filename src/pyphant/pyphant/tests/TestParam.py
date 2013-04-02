@@ -44,7 +44,7 @@ import pyphant.core.EventDispatcher as EventDispatcher
 class TestParamDummyWorker(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    pkg_resources.get_distribution("pyphant").version
     name = "TestParamDummyWorker"
 
 
