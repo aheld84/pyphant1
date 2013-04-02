@@ -33,7 +33,6 @@
 u"""
 """
 
-
 from pyphant.core import (Worker, Connectors, DataContainer)
 import copy
 import pkg_resources
@@ -44,37 +43,40 @@ class ColumnExtractor(Worker.Worker):
     VERSION = 1
     REVISION = pkg_resources.get_distribution("pyphant.tools").version
     name = "Extract Column"
-
     _sockets = [("osc", Connectors.TYPE_ARRAY)]
     _params = [("column", u"Column", [u"Absorption"], None),
                ("index", u"Row", 'All', None)]
 
     def refreshParams(self, subscriber=None):
         if self.socketOsc.isFull():
-            templ = self.socketOsc.getResult( subscriber )
+            templ = self.socketOsc.getResult(subscriber)
             self.paramColumn.possibleValues = templ.longnames.keys()
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def extract(self, osc, subscriber=0):
         col = osc[self.paramColumn.value]
-        if self.paramIndex.value=='All':
+        if self.paramIndex.value == 'All':
             result = copy.deepcopy(col)
         else:
             index = int(self.paramIndex.value)
-            if len(col.dimensions)>1:
+            if len(col.dimensions) > 1:
                 dim = col.dimensions[1]
             else:
                 oldDim = col.dimensions[0]
-                dim = DataContainer.FieldContainer(oldDim.data[index],
-                                                   unit = oldDim.unit,
-                                                   longname=oldDim.longname,
-                                                   shortname=oldDim.shortname)
+                dim = DataContainer.FieldContainer(
+                    oldDim.data[index],
+                    unit=oldDim.unit,
+                    longname=oldDim.longname,
+                    shortname=oldDim.shortname
+                    )
             data = col.maskedData[index]
-            result = DataContainer.FieldContainer(data.data, mask=data.mask,
-                                                  unit = col.unit,
-                                                  dimensions = [dim],
-                                                  longname=col.longname,
-                                                  shortname=col.shortname)
+            result = DataContainer.FieldContainer(
+                data.data, mask=data.mask,
+                unit=col.unit,
+                dimensions=[dim],
+                longname=col.longname,
+                shortname=col.shortname
+                )
         #result.attributes = osc.attributes
         result.attributes = col.attributes
         result.seal()

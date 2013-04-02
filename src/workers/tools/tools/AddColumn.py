@@ -35,9 +35,7 @@ column that was once extracted by using the column extractor in the
 orignial chart again.
 """
 
-
-from pyphant.core import (Worker, Connectors,
-                          Param, DataContainer)
+from pyphant.core import (Worker, Connectors)
 import copy
 import pkg_resources
 
@@ -47,7 +45,6 @@ class AddColumn(Worker.Worker):
     VERSION = 1
     REVISION = pkg_resources.get_distribution("pyphant.tools").version
     name = "Add Column"
-
     _sockets = [("sample", Connectors.TYPE_ARRAY),
                 ("field", Connectors.TYPE_IMAGE)]
 

@@ -30,12 +30,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-
 """
-
 
 from pyphant.core import Worker, Connectors
 import pkg_resources
+
 
 class AlgebraWorker(Worker.Worker):
     API = 2
