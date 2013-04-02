@@ -39,6 +39,7 @@ import numpy
 from pyphant.core import (Worker, Connectors)
 import logging
 import copy
+import pkg_resources
 
 _logger = logging.getLogger("pyphant")
 
@@ -69,7 +70,7 @@ def localNoise( y, samples=50):
 class ErrorEstimator(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision: 4276 $"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Estimate Error"
 
     _sockets = [("osc", Connectors.TYPE_IMAGE)]

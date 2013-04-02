@@ -43,12 +43,13 @@ from pyphant.core import (Worker, Connectors,
 import scipy.interpolate
 from pyphant import quantities
 import logging, copy, math
+import pkg_resources
 _logger = logging.getLogger("pyphant")
 
 class Smoother(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision: 4276 $"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Smoother"
 
     _sockets = [("osc", Connectors.TYPE_IMAGE)]

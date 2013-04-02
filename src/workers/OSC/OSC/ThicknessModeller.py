@@ -41,11 +41,12 @@ import OSC.OscAbsorption
 import scipy.interpolate
 from pyphant import quantities
 import logging, copy, math
+import pkg_resources
 
 class ThicknessModeller(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Coat Thickness Model"
 
     _sockets = [("osc", Connectors.TYPE_ARRAY)]
@@ -73,7 +74,7 @@ class ThicknessModeller(Worker.Worker):
 class ThicknessSmoother(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Coat Thickness Smoother"
 
     _sockets = [("osc", Connectors.TYPE_IMAGE)]

@@ -41,11 +41,12 @@ from pyphant.core import (Worker, Connectors,
 import scipy.interpolate
 from pyphant.quantities import Quantity
 import logging, copy, math
+import pkg_resources
 
 class OscThicknessCorrector(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Correct Thickness"
 
     _sockets = [("osc", Connectors.TYPE_ARRAY)]

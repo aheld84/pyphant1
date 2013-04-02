@@ -33,6 +33,7 @@
 u"""
 """
 
+import pkg_resources
 
 import zipfile, numpy, re, collections
 from pyphant.core import (Worker, Connectors,
@@ -160,7 +161,7 @@ def readSingleFile(b, pixelName):
 class OscLoader(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Data Loader"
 
     _params=[("filename", u"Filename", "", Connectors.SUBTYPE_FILE)]

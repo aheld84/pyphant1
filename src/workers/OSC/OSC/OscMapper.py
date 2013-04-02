@@ -40,12 +40,13 @@ from pyphant.quantities import Quantity
 from OSC.OscAbsorption import grid2Index
 import logging
 import copy
+import pkg_resources
 
 
 class OscMapper(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Mapper"
 
     _sockets = [("osc", Connectors.TYPE_ARRAY)]

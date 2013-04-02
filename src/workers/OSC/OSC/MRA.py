@@ -45,6 +45,7 @@ import logging, copy, math
 
 from scipy.special import ive
 from scipy.signal import convolve
+import pkg_resources
 
 def findMaxima(fieldData, numb_edge, lastExtrema=None):
     return findMinima(-fieldData,numb_edge, lastExtrema)
@@ -123,7 +124,7 @@ def pos_error_to_data_container(p_e):
 class MRA(Worker.Worker):
     API = 2
     VERSION = 2
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Multi Resolution Analyzer"
 
     _sockets = [("field", Connectors.TYPE_IMAGE)]

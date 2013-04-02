@@ -39,6 +39,7 @@ import numpy
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 import OSC.OscAbsorption as OA
+import pkg_resources
 import scipy.interpolate
 from pyphant import quantities
 import copy
@@ -46,7 +47,7 @@ import copy
 class ComputeFunctional(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Compute Functional"
 
     _sockets = [("field", Connectors.TYPE_ARRAY)]

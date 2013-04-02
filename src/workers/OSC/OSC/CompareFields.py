@@ -38,6 +38,7 @@ The Compare Fields Worker is a class of Pyphant's OSC Toolbox.
 import numpy
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
+import pkg_resources
 
 import scipy.interpolate
 from pyphant import quantities
@@ -46,7 +47,7 @@ import logging, copy, math
 class CompareFields(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Compare"
 
     _sockets = [("field1", Connectors.TYPE_IMAGE),

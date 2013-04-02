@@ -40,11 +40,12 @@ from pyphant.core import (Worker, Connectors,
 import scipy.interpolate
 from pyphant import quantities
 import copy
+import pkg_resources
 
 class EstimateParameter(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Estimate Parameter"
 
     _sockets = [("model", Connectors.TYPE_ARRAY),

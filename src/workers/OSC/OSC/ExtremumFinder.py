@@ -42,6 +42,7 @@ corresponds to an iteration over the rows of the data matrix.
 import numpy
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
+import pkg_resources
 
 import scipy.interpolate
 from pyphant import quantities
@@ -50,7 +51,7 @@ import copy
 class ExtremumFinder(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Find Extremum"
 
     _sockets = [("field", Connectors.TYPE_IMAGE)]

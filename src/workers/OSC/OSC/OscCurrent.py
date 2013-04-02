@@ -41,6 +41,7 @@ from pyphant.core import (Worker, Connectors,
 import scipy.interpolate
 from pyphant import quantities
 import copy, logging
+import pkg_resources
 _logger = logging.getLogger("pyphant")
 
 
@@ -55,7 +56,7 @@ def createModel(model):
 class OscThickness2CurrentDensity(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Convert Thickness to Current Density"
 
     _sockets = [("osc", Connectors.TYPE_IMAGE),

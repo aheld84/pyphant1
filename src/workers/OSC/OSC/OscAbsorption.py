@@ -38,6 +38,7 @@ import numpy
 from pyphant.core import (Worker, Connectors, DataContainer)
 from pyphant.quantities import Quantity
 import logging
+import pkg_resources
 import copy
 
 
@@ -100,7 +101,7 @@ def removePeak(Abso, lower, upper):
 class OscAbsorptionCalculator(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Compute Absorption"
 
     _sockets = [("osc", Connectors.TYPE_ARRAY)]
