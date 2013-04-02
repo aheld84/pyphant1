@@ -35,28 +35,23 @@ The Slicing Worker is a class of Pyphant's tools toolbox. It cuts out one
 part of a field and provides it as a new field to work on.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
-import numpy
-from pyphant.core import (Worker, Connectors,
-                          Param, DataContainer)
-import scipy.interpolate
+from pyphant.core import (Worker, Connectors, DataContainer)
 from pyphant import quantities
-import logging, copy, math
+import copy
+import pkg_resources
+
 
 class Slicing(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.tools").version
     name = "Slicing"
-
     _sockets = [("field", Connectors.TYPE_IMAGE)]
     _params = []
 
-    def __init__(self, parent=None, annotations={}):
+    def __init__(self, parent=None, annotations=None):
+        if annotations is None:
+            annotations = {}
         super(Slicing, self).__init__(parent, annotations)
         self.oldField = None
 
@@ -79,13 +74,20 @@ class Slicing(Worker.Worker):
                     intStart = dim.data.min() * dim.unit
                     intEnd   = dim.data.max() * dim.unit
                     unitname = ''
-                param = ('dim%i'%i,
-                            "%s %s (index #0:%i):" % (dim.longname,
-                                                      dim.shortname,
-                                                      len(dim.data) - 1),
-                             "%.4f %s:%.4f %s" % (intStart, unitname, intEnd,
-                                                unitname),
-                             None)
+                param = (
+                    'dim%i' % i,
+                    "%s %s (index #0:%i):" % (
+                        dim.longname,
+                        dim.shortname,
+                        len(dim.data) - 1
+                        ),
+                    "%.4f %s:%.4f %s" % (
+                        intStart,
+                        unitname,
+                        intEnd,
+                        unitname
+                        ),
+                    None)
                 self._params.append(param)
             self._params.reverse()
             self.initParams(self._params)
@@ -94,7 +96,7 @@ class Slicing(Worker.Worker):
     def extract(self, field, subscriber=0):
         if not hasattr(self, 'paramDim0'):
             self.refreshParams()
-        params = [str(eval('self.paramDim%i.value' %i))
+        params = [str(eval('self.paramDim%i.value' % i))
                   for i in range(len(field.dimensions))]
         for dim, arg in enumerate(params):
             if arg.startswith('#'):

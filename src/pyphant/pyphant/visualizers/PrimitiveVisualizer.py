@@ -32,10 +32,6 @@
 u"""
 """
 
-__id__ = "$Id: ImageVisualizer.py 22 2006-11-28 14:31:46Z liehr $"
-__author__ = "$Author: liehr $"
-__version__ = "$Revision: 22 $"
-# $Source$
 
 import pylab
 import pyphant.core.Connectors

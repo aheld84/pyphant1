@@ -33,16 +33,12 @@ u"""
 TODO
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 from pyphant.core import (Worker, Connectors, DataContainer)
 import copy
 import heapq
 import scipy
 import scipy.ndimage
+import pkg_resources
 #import pylab
 #import threading
 
@@ -50,7 +46,9 @@ import scipy.ndimage
 class Watershed(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Watershed"
     _sockets = [("image", Connectors.TYPE_IMAGE),
                 ("markers", Connectors.TYPE_IMAGE)]
@@ -70,7 +68,7 @@ class Watershed(Worker.Worker):
             heapq.heappush(q, (-d[y, x - 1], (y, x - 1)))
             heapq.heappush(q, (-d[y, x + 1], (y, x + 1)))
             heapq.heappush(q, (-d[y + 1, x - 1], (y + 1, x - 1)))
-            heapq.heappush(q, (-d[y + 1, x], (y + 1 , x)))
+            heapq.heappush(q, (-d[y + 1, x], (y + 1, x)))
             heapq.heappush(q, (-d[y + 1, x + 1], (y + 1, x + 1)))
         while q:
             y, x = heapq.heappop(q)[1]

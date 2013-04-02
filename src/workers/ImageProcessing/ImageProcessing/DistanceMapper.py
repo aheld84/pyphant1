@@ -36,17 +36,13 @@ Toolbox. It is used to determine the size of respective features in
 binary images through calculating the distance of every pixel to the
 nearest background pixel.
 """
-__id__ = "$Id: /local/pyphant/sourceforge/trunk/src/workers/"\
-         "ImageProcessing/ImageProcessing/DistanceMapper.py "\
-         "3671 2007-12-19T14:18:11.779018Z obi  $"
-__author__ = "$Author: obi $"
-__version__ = "$Revision: 3671 $"
-# $Source$
 
 from pyphant.core import (Worker, Connectors, DataContainer)
 import scipy
 import copy
 from ImageProcessing import FEATURE_COLOR
+import pkg_resources
+
 
 def UnEqualUnits():
     raise ValueError("The dimensions do not have equal units.")
@@ -63,7 +59,7 @@ class Metrics:
             [[rt2, self.dydx, rt2], [1, 2, 1], [rt2, self.dydx, rt2]]
             )
 
-    def distance(self,square):
+    def distance(self, square):
         assert square.shape == (3, 3), 'Method distance expects a 3x3 matrix '\
                'as input, but got a %ix%i matrix!' % square.shape
         metric = self.metric.copy()
@@ -87,7 +83,9 @@ class Metrics:
 class DistanceMapper(Worker.Worker):
     API = 2
     VERSION = 2
-    REVISION = "$Revision: 3671 $"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Map Distance"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 
@@ -117,7 +115,7 @@ class DistanceMapper(Worker.Worker):
             subscriber %= y * rowPercentage
             for x in xrange(1, nx - 1):
                 if a[x, y] > 0:
-                    a[x, y] = metric.distance(a[x - 1 : x + 2, y - 1 : y + 2])
+                    a[x, y] = metric.distance(a[x - 1:x + 2, y - 1:y + 2])
                     featurePixels.append((x, y))
         subscriber %= 50
         if len(featurePixels) > 0:
@@ -126,7 +124,7 @@ class DistanceMapper(Worker.Worker):
             for (x, y) in reversed(featurePixels):
                 acc += perc
                 subscriber %= acc
-                a[x, y] = metric.distance(a[x - 1 : x + 2, y - 1 : y + 2])
+                a[x, y] = metric.distance(a[x - 1:x + 2, y - 1:y + 2])
         a = scipy.where(a == g, 0, a)
         result = DataContainer.FieldContainer(
             a[1:-1, 1:-1] * metric.dx,

@@ -32,45 +32,47 @@
 u"""
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
-
+from pyphant.core import Worker, Connectors, DataContainer
 import ImageProcessing
+import scipy
+import copy
+import pkg_resources
 
-import scipy, copy
 
 class ConetworkThresholding(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Thresholdfilter"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
-    _params = [("feature [wt]", "FeatureWT", 50, None),
-               ("feature mass density [mg/ml]","FeatureRho",970,None),
-               ("background mass density [mg/ml]","BackgroundRho",1290,None)]
+    _params = [
+        ("feature [wt]", "FeatureWT", 50, None),
+        ("feature mass density [mg/ml]", "FeatureRho", 970, None),
+        ("background mass density [mg/ml]", "BackgroundRho", 1290, None)
+        ]
 
     def getCovering(self):
         wt = self.paramFeatureWT.value
-        PDMS=self.paramFeatureRho.value
-        PHEA=self.paramBackgroundRho.value
+        PDMS = self.paramFeatureRho.value
+        PHEA = self.paramBackgroundRho.value
 
-        covering = wt * PHEA / (wt * PHEA + (1.0-0.01*wt)*PDMS)
+        covering = wt * PHEA / (wt * PHEA + (1.0 - 0.01 * wt) * PDMS)
         return covering
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def threshold(self, image, subscriber=0):
-        th=self.paramThreshold.value
-        resultArray = scipy.where( image.data < th,
-                                   ImageProcessing.FEATURE_COLOR,
-                                   ImageProcessing.BACKGROUND_COLOR )
-        result = DataContainer.FieldContainer(resultArray,
-                                              dimensions=copy.deepcopy(image.dimensions),
-                                              longname=u"Binary Image", shortname=u"B")
+        th = self.paramThreshold.value
+        resultArray = scipy.where(
+            image.data < th,
+            ImageProcessing.FEATURE_COLOR,
+            ImageProcessing.BACKGROUND_COLOR
+            )
+        result = DataContainer.FieldContainer(
+            resultArray,
+            dimensions=copy.deepcopy(image.dimensions),
+            longname=u"Binary Image", shortname=u"B"
+            )
         result.seal()
         return result
-

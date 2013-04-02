@@ -35,25 +35,23 @@ computes the difference between two images, eg. the skeletonised image
 and the origial image.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 from pyphant.core import (Worker, Connectors)
+import pkg_resources
 
 
 class DiffWorker(Worker.Worker):
     API = 2
     VERSION = 2
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Difference"
     _params = [("absolute", u"Return absolute of difference: ",
                 [u"Yes", u"No"], None),
                ("longname", u"Name of result", 'default', None),
                ("symbol", u"Symbol of result", 'default', None)]
-    _sockets = [ ("image1", Connectors.TYPE_IMAGE),
-                 ("image2", Connectors.TYPE_IMAGE)]
+    _sockets = [("image1", Connectors.TYPE_IMAGE),
+                ("image2", Connectors.TYPE_IMAGE)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def diffImages(self, image1, image2, subscriber=0):

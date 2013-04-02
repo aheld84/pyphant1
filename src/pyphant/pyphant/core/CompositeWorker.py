@@ -35,13 +35,11 @@ At the moment these can only be entire recipes, but it is planned
 that they can be subgraphs, too.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
 
 import EventDispatcher, Worker, Connectors, Param
 import copy
+import pkg_resources
+
 
 class CompositeWorkerChangedEvent(object):
     def __init__(self, worker, message, data=None):
@@ -83,7 +81,7 @@ class ConnectorsExternalizationStateChangedEvent(CompositeWorkerChangedEvent):
 class CompositeWorker(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision: $"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant").version
     name = "Composite"
     _params = [("noSockets", "Number of sockets", 0, None),
                ("noPlugs", "Number of plugs", 0, None)]

@@ -33,10 +33,6 @@
 u"""Provides unittest class TestOscAbsorption.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
 
 
 import sys

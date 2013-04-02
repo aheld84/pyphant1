@@ -34,9 +34,6 @@ u"""
 Provides unittest class TestDistanceMapper and helper function stringFeature.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
 
 import sys,unittest,logging
 sys.path.append("..")

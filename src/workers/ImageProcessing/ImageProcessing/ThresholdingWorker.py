@@ -36,21 +36,19 @@ returns a binary image where pixels that comprise features are set to
 0x00 whereas background pixels are set to 0xFF.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 from pyphant.core import (Worker, Connectors, DataContainer)
 import ImageProcessing
 import scipy
 import copy
+import pkg_resources
 
 
 class ThresholdingWorker(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Threshold"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("threshold", "Threshold", "160.0", None),

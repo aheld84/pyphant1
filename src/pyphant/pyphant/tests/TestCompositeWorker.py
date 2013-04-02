@@ -32,10 +32,6 @@
 u"""
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
 
 import unittest
 import pkg_resources
@@ -49,7 +45,7 @@ from pyphant.core import Worker
 class TestCompositeDummyWorker(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant").version
     name = "TestCompositeDummyWorker"
 
 

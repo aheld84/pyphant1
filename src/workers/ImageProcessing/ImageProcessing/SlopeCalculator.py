@@ -33,18 +33,13 @@
 u"""
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
-from pyphant.core import Worker, Connectors,\
-                         Param, DataContainer
-
-import ImageProcessing
-
-import numpy, copy, pylab
+from pyphant.core import (Worker, Connectors, DataContainer)
+import numpy
+import copy
+import pylab
 from pyphant.quantities import Quantity as PQ
+import pkg_resources
+
 
 def unit(value):
     try:
@@ -53,40 +48,46 @@ def unit(value):
         uObj = PQ(value)
     return uObj
 
+
 class SlopeCalculator(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "SlopeCalculator"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = []
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def slope(self, image, subscriber=0):
-        assert image.dimensions[0].unit == image.dimensions[1].unit, "Units of both dimensions have to be equal."
+        msg = "Units of both dimensions have to be equal."
+        assert image.dimensions[0].unit == image.dimensions[1].unit, msg
 
-        newShape = [dim+2 for dim in image.data.shape]
-        paddedField=numpy.zeros(newShape,image.data.dtype)
-        paddedField[1:-1,1:-1] = image.data
-        paddedField[0,:]  = paddedField[1,:]
-        paddedField[-1,:] = paddedField[-2,:]
-        paddedField[:,0]  = paddedField[:,1]
-        paddedField[:,-1] = paddedField[:,-2]
+        newShape = [dim + 2 for dim in image.data.shape]
+        paddedField = numpy.zeros(newShape, image.data.dtype)
+        paddedField[1:-1, 1:-1] = image.data
+        paddedField[0, :]  = paddedField[1, :]
+        paddedField[-1, :] = paddedField[-2, :]
+        paddedField[:, 0]  = paddedField[:, 1]
+        paddedField[:, -1] = paddedField[:, -2]
 
         dx     = numpy.diff(image.dimensions[0].data)
         dy     = numpy.diff(image.dimensions[1].data)
         if dx.min() == dx.max() and dy.min() == dy.max():
             print "Calculating gradients with O(2)."
-            NablaX = 0.5*(paddedField[:,:-2]-paddedField[:,2:])/dx.min()
-            NablaY = 0.5*(paddedField[:-2,:]-paddedField[2:,:])/dy.min()
-            xAbs = NablaX[1:-1,:]**2
-            yAbs = NablaY[:,1:-1]**2
+            NablaX = 0.5 * (paddedField[:, :-2] - paddedField[:, 2:]) / \
+                dx.min()
+            NablaY = 0.5 * (paddedField[:-2, :] - paddedField[2:, :]) / \
+                dy.min()
+            xAbs = NablaX[1:-1, :] ** 2
+            yAbs = NablaY[:, 1:-1] ** 2
         else:
             print "Calculating (right-side) gradient with O(1)."
-            NablaX = numpy.diff(paddedField,axis=0)
-            NablaY = numpy.diff(paddedField,axis=1)
-            xAbs   = (NablaX[:,:-1]/dx[:,pylab.NewAxis])**2
-            yAbs   = (NablaY[:-1,:]/dy[pylab.NewAxis,:])**2
+            NablaX = numpy.diff(paddedField, axis=0)
+            NablaY = numpy.diff(paddedField, axis=1)
+            xAbs   = (NablaX[:, :-1] / dx[:, pylab.NewAxis]) ** 2
+            yAbs   = (NablaY[:-1, :] / dy[pylab.NewAxis, :]) ** 2
 
         gradient = numpy.sqrt(xAbs + yAbs)
 #        print image.data
@@ -95,12 +96,13 @@ class SlopeCalculator(Worker.Worker):
         #print gradient
 
         newUnit = unit(image.unit) / unit(image.dimensions[0].unit)
-        result = DataContainer.FieldContainer(gradient,
-                                              unit = newUnit,
-                                              dimensions=copy.deepcopy(image.dimensions),
-                                              longname=u"Slope of %s" % image.longname,
-                                              shortname=u"|\nabla %s|" % image.shortname,
-                                              rescale = True)
+        result = DataContainer.FieldContainer(
+            gradient,
+            unit=newUnit,
+            dimensions=copy.deepcopy(image.dimensions),
+            longname=u"Slope of %s" % image.longname,
+            shortname=u"|\nabla %s|" % image.shortname,
+            rescale=True
+            )
         result.seal()
         return result
-

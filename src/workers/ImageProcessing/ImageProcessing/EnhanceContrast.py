@@ -33,32 +33,34 @@ u"""
 Deprecated
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 from pyphant.core import (Worker, Connectors, DataContainer)
-import scipy, copy
+import scipy
+import copy
+import pkg_resources
+
 
 def normalizeHistogram(data):
     histogram = scipy.ndimage.histogram(data.astype("f"), 0, 255, 256)
     cumulatedHistogram = scipy.cumsum(histogram)
-    nch = cumulatedHistogram.astype("f")/len(data.flat)
-    inch = (nch*255).astype("i")
+    nch = cumulatedHistogram.astype("f") / len(data.flat)
+    inch = (nch * 255).astype("i")
     normalize = scipy.vectorize(lambda i: inch[i])
     return normalize(data)
     #return data
+
 
 def normalizeLinear(data):
     res = data - data.min()
     res = (res * 255) / res.max()
     return res
 
+
 class EnhanceContrast(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Enhance Contrast"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 
@@ -75,6 +77,7 @@ class EnhanceContrast(Worker.Worker):
             longname,
             image.shortname,
             copy.deepcopy(image.attributes),
-            False)
+            False
+            )
         result.seal()
         return result

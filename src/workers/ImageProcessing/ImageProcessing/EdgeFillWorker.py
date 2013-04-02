@@ -34,23 +34,21 @@ The Edge Fill Worker is a class of Pyphant's Image Processing
 Toolbox. It is used to backfill outlined features again.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 from pyphant.core import (Worker, Connectors)
 import copy
 from ImageProcessing import (BACKGROUND_COLOR, FEATURE_COLOR)
+import pkg_resources
 
 
 class EdgeFillWorker(Worker.Worker):
-    API = 2
-    VERSION = 1
-    REVISION = "$Revision$"[11:-1]
     """
     http://www.nabble.com/Here's-a-better-flood-fill-technique-t318692.html
     """
+    API = 2
+    VERSION = 1
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Edge Fill"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 
@@ -75,11 +73,13 @@ class EdgeFillWorker(Worker.Worker):
             return seeds
         maxX = image.shape[0]
         maxY = image.shape[1]
-        seeds = filterSeeds(image,
-                            [(x, 0) for x in range(0, maxX)] \
-                            + [(maxX - 1, y) for y in range(1, maxY - 1)] \
-                            + [(x, maxY - 1) for x in range(maxX - 1, -1, -1)] \
-                            + [(0, y) for y in range(maxY - 2, 0, -1)])
+        seeds = filterSeeds(
+            image,
+            [(x, 0) for x in range(0, maxX)] \
+                + [(maxX - 1, y) for y in range(1, maxY - 1)] \
+                + [(x, maxY - 1) for x in range(maxX - 1, -1, -1)] \
+                + [(0, y) for y in range(maxY - 2, 0, -1)]
+            )
         seeds = filter(lambda pos: image[pos] == seedColor, seeds)
         map(lambda pos: self.fillRegion(image, pos, newColor), seeds)
 

@@ -33,13 +33,11 @@ u"""
 TODO
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 from pyphant.core import (Worker, Connectors)
-import numpy, copy
+import numpy
+import copy
+import pkg_resources
+
 
 def gradient(data):
     return numpy.sqrt(sum(numpy.square(numpy.array(numpy.gradient(data)))))
@@ -48,7 +46,9 @@ def gradient(data):
 class Gradient(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Gradient"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 

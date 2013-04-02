@@ -34,73 +34,93 @@ u"""
 Pyphant module providing worker for finding the local extrema of 1D functions.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 import numpy
-from pyphant.core import (Worker, Connectors,
-                          Param, DataContainer)
+from pyphant.core import (Worker, Connectors, DataContainer)
 import OSC.OscAbsorption as OA
-import scipy.interpolate
-from pyphant import quantities
-import copy
+import pkg_resources
+
 
 class ComputeFunctional(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Compute Functional"
-
     _sockets = [("field", Connectors.TYPE_ARRAY)]
     _params = [("extentX", u"Extension of x-axis [%%]", 10, None),
                ("extentY", u"Extension of y-axis [%%]", 10, None)]
 
     def computeDistances(self, field, subscriber=1, percentage=0):
-        xGrid,yGrid = numpy.meshgrid(field.dimensions[-1].data,field.dimensions[-2].data)
-        x    = numpy.extract(numpy.logical_not(numpy.isnan(field.data)),xGrid)
-        xCon = DataContainer.FieldContainer(x,unit=field.dimensions[-1].unit,
-                                            longname=field.dimensions[-1].longname,
-                                            shortname=field.dimensions[-1].shortname)
-        y    = numpy.extract(numpy.logical_not(numpy.isnan(field.data)),field.data)
-        yCon = DataContainer.FieldContainer(y,longname=field.longname,
-                                            shortname=field.shortname,
-                                            unit=field.unit)
+        xGrid, yGrid = numpy.meshgrid(
+            field.dimensions[-1].data,
+            field.dimensions[-2].data
+            )
+        x = numpy.extract(numpy.logical_not(numpy.isnan(field.data)), xGrid)
+        xCon = DataContainer.FieldContainer(
+            x,
+            unit=field.dimensions[-1].unit,
+            longname=field.dimensions[-1].longname,
+            shortname=field.dimensions[-1].shortname
+            )
+        y = numpy.extract(
+            numpy.logical_not(numpy.isnan(field.data)),
+            field.data
+            )
+        yCon = DataContainer.FieldContainer(
+            y,
+            longname=field.longname,
+            shortname=field.shortname,
+            unit=field.unit
+            )
         xOff, xStep, xInd = OA.grid2Index(x, self.paramExtentX.value)
         yOff, yStep, yInd = OA.grid2Index(y, self.paramExtentY.value)
 
         xMax = xInd.maxV
         yMax = yInd.maxV
-        xDim = DataContainer.FieldContainer( numpy.linspace(xInd.minV,xInd.maxV,xInd.stepCount), xCon.unit,
-                                             longname = xCon.longname, shortname = xCon.shortname )
-        yDim = DataContainer.FieldContainer( numpy.linspace(yInd.minV,yInd.maxV,yInd.stepCount), yCon.unit,
-                                             longname = yCon.longname, shortname = yCon.shortname )
-        functional = numpy.ones((xInd.stepCount, yInd.stepCount), dtype='float')
-        distances = numpy.zeros(x.shape,'f')
+        xDim = DataContainer.FieldContainer(
+            numpy.linspace(xInd.minV, xInd.maxV, xInd.stepCount),
+            xCon.unit,
+            longname=xCon.longname,
+            shortname=xCon.shortname
+            )
+        yDim = DataContainer.FieldContainer(
+            numpy.linspace(yInd.minV, yInd.maxV, yInd.stepCount),
+            yCon.unit,
+            longname=yCon.longname,
+            shortname=yCon.shortname
+            )
+        functional = numpy.ones(
+            (xInd.stepCount, yInd.stepCount), dtype='float'
+            )
+        distances = numpy.zeros(x.shape, 'f')
         ni = functional.shape[0]
         nj = functional.shape[1]
-        increment = 50.0/(ni*nj)
+        increment = 50.0 / (ni * nj)
         for i in xrange(ni):
             for j in xrange(nj):
                 for k in xrange(len(x)):
-                    distances[k] = numpy.sqrt((x[k]-xDim.data[i])**2+
-                                              (y[k]-yDim.data[j])**2)
-                functional[i,j]=distances.min()
+                    distances[k] = numpy.sqrt(
+                        (x[k] - xDim.data[i]) ** 2 + \
+                        (y[k] - yDim.data[j]) ** 2
+                        )
+                functional[i, j] = distances.min()
                 percentage += increment
                 subscriber %= percentage
-        result = DataContainer.FieldContainer(functional.transpose(),
-                                              dimensions=[yDim, xDim],
-                                              longname = 'functional of %s'%field.longname,
-                                              shortname= 'F_{%s}'%field.shortname
-                                              )
+        result = DataContainer.FieldContainer(
+            functional.transpose(),
+            dimensions=[yDim, xDim],
+            longname='functional of %s' % field.longname,
+            shortname='F_{%s}' % field.shortname
+            )
         return result
 
     @Worker.plug(Connectors.TYPE_ARRAY)
     def compute(self, field, subscriber=1):
         percentage = 0
-        functionals = DataContainer.SampleContainer([self.computeDistances(column, subscriber, percentage) for column in field],
-                                                    longname='Functionals of %s'%field.longname,
-                                                    shortname='F_{%s}'%field.shortname)
+        functionals = DataContainer.SampleContainer(
+            [self.computeDistances(column, subscriber, percentage) \
+                 for column in field],
+            longname='Functionals of %s' % field.longname,
+            shortname='F_{%s}' % field.shortname
+            )
         functionals.seal()
         return functionals

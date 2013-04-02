@@ -32,10 +32,6 @@
 u"""
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
 
 import wx
 from pyphant.core.WriteFMF import field2fmf

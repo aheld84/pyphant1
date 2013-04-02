@@ -32,10 +32,6 @@
 u"""
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
 
 enc=lambda s: unicode(s, "utf-8")
 

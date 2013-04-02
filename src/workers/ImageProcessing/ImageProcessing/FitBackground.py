@@ -33,20 +33,19 @@ u"""
 Deprecated
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 from pyphant.core import (Worker, Connectors, DataContainer)
 import numpy
 import copy
 from scipy import (ndimage, interpolate)
+import pkg_resources
+
 
 class FitBackground(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Fit Background"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("poldegree", "Polynomial degree (1 to 5)", 3, None),
@@ -87,7 +86,6 @@ class FitBackground(Worker.Worker):
         clipmin, clipmax = data.min(), threshold
         return interpolate.bisplev(range(dims[0]), range(dims[1]),
                                    tck).clip(clipmin, clipmax)
-
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def fit_background(self, image, subscriber=0):

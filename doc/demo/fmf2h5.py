@@ -35,10 +35,6 @@ u"""usage = "usage: %prog  FMF-archivename"
 Load zipped FMF files and persist them in pyphant recipe.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
 
 import pkg_resources
 pkg_resources.require("Pyphant")

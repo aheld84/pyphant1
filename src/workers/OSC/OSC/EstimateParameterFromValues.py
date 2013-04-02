@@ -33,40 +33,46 @@
 u"""
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 import numpy
-from pyphant.core import (Worker, Connectors,
-                          Param, DataContainer)
-import scipy.interpolate
-from pyphant import quantities
-import copy
+from pyphant.core import (Worker, Connectors, DataContainer)
+import pkg_resources
+
 
 class EstimateParameterFromValues(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Estimate Parameter from Values"
-
-    _sockets = [("model", Connectors.TYPE_ARRAY),
-                ("experimental", Connectors.TYPE_ARRAY)]
-    _params = [("minima_model", u"Minima in the model", [u"Minima"], None),
-               ("maxima_model", u"Maxima in the model", [u"Maxima"], None),
-               ("minima_experimental", u"Minima in the experiment", [u"Minima"], None),
-               ("maxima_experimental", u"Maxima in the experiment", [u"Maxima"], None),
-               ("extentX", u"Extension of x-axis [%%]", 10, None),
-               ("extentY", u"Extension of y-axis [%%]", 10, None)]
+    _sockets = [
+        ("model", Connectors.TYPE_ARRAY),
+        ("experimental", Connectors.TYPE_ARRAY)
+        ]
+    _params = [
+        ("minima_model", u"Minima in the model", [u"Minima"], None),
+        ("maxima_model", u"Maxima in the model", [u"Maxima"], None),
+        (
+            "minima_experimental",
+            u"Minima in the experiment",
+            [u"Minima"],
+            None
+            ),
+        (
+            "maxima_experimental",
+            u"Maxima in the experiment",
+            [u"Maxima"],
+            None
+            ),
+        ("extentX", u"Extension of x-axis [%%]", 10, None),
+        ("extentY", u"Extension of y-axis [%%]", 10, None)
+        ]
 
     def refreshParams(self, subscriber=None):
         if self.socketModel.isFull():
-            templ = self.socketModel.getResult( subscriber )
+            templ = self.socketModel.getResult(subscriber)
             self.paramMinima_model.possibleValues = templ.longnames.keys()
             self.paramMaxima_model.possibleValues = templ.longnames.keys()
         if self.socketExperimental.isFull():
-            templ = self.socketExperimental.getResult( subscriber )
+            templ = self.socketExperimental.getResult(subscriber)
             self.paramMinima_experimental.possibleValues = templ.longnames.keys()
             self.paramMaxima_experimental.possibleValues = templ.longnames.keys()
 
@@ -89,7 +95,7 @@ class EstimateParameterFromValues(Worker.Worker):
         else:
             maxima_error = None
         parameter = []
-        inc = 100.0/float(len(minima))
+        inc = 100.0 / float(len(minima))
         acc = inc
         subscriber %= acc
         mask = []
@@ -104,17 +110,25 @@ class EstimateParameterFromValues(Worker.Worker):
                     lambda c: not numpy.isnan(c), maxima_error.next())
             else:
                 filtered_maxima_error = None
-            row_minima = numpy.array(filter(lambda c: not numpy.isnan(c), row_minima))
-            row_maxima = numpy.array(filter(lambda c: not numpy.isnan(c), row_minima))
+            row_minima = numpy.array(
+                filter(lambda c: not numpy.isnan(c), row_minima)
+                )
+            row_maxima = numpy.array(
+                filter(lambda c: not numpy.isnan(c), row_minima)
+                )
             grades = []
-            for rm_minima, rm_maxima in zip(minima_model.data.transpose(), maxima_model.data.transpose()):
+            for rm_minima, rm_maxima in zip(
+                minima_model.data.transpose(), maxima_model.data.transpose()
+                ):
                 rm_minima = filter(lambda c: not numpy.isnan(c), rm_minima)
                 rm_maxima = filter(lambda c: not numpy.isnan(c), rm_maxima)
                 grade = 0
                 if len(rm_minima) == len(row_minima):
-                    grade = sum(numpy.abs(numpy.array(rm_minima)-row_minima))
+                    grade = sum(numpy.abs(numpy.array(rm_minima) - row_minima))
                 if len(rm_maxima) == len(row_maxima):
-                    grade += sum(numpy.abs(numpy.array(rm_maxima)-row_maxima))
+                    grade += sum(
+                        numpy.abs(numpy.array(rm_maxima) - row_maxima)
+                        )
                 if grade == 0:
                     grades.append(numpy.nan)
                     continue
@@ -131,9 +145,10 @@ class EstimateParameterFromValues(Worker.Worker):
             subscriber %= acc
         result = DataContainer.FieldContainer(
             numpy.array(parameter),
-            mask = numpy.array(mask),
-            longname = minima_model.dimensions[-1].longname,
-            shortname = minima_model.dimensions[-1].shortname,
-            unit = minima_model.dimensions[-1].unit)
+            mask=numpy.array(mask),
+            longname=minima_model.dimensions[-1].longname,
+            shortname=minima_model.dimensions[-1].shortname,
+            unit=minima_model.dimensions[-1].unit
+            )
         result.seal()
         return result

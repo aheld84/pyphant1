@@ -32,21 +32,19 @@
 u"""
 """
 
-__id__ = "$Id: ThresholdingWorker.py 20 2006-11-21 18:17:23Z liehr $"
-__author__ = "$Author: liehr $"
-__version__ = "$Revision: 20 $"
-# $Source$
-
 from pyphant.core import (Worker, Connectors, DataContainer)
 import ImageProcessing
 import scipy
 import copy
+import pkg_resources
 
 
 class BiThresholdingWorker(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision: 20 $"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Bi-Thresholdfilter"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("lowerThreshold", "lower threshold", 125, None),
@@ -139,7 +137,7 @@ class BiThresholdingWorker(Worker.Worker):
         return result
 
     @Worker.plug(Connectors.TYPE_ARRAY)
-    def documentCovering(self, image,subscriber=0):
+    def documentCovering(self, image, subscriber=0):
         thresholds = scipy.array([self.paramLowerThreshold.value,
                                   self.paramUpperThreshold.value,
                                   scipy.amax(image.data)])

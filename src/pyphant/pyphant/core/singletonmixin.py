@@ -52,10 +52,6 @@ Not guaranteed to be fit for any particular purpose. Use at your
 own risk.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
 
 class SingletonException(Exception):
     pass

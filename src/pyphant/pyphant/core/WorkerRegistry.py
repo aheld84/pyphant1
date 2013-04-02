@@ -32,11 +32,6 @@
 u"""
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 import logging
 import singletonmixin
 import pkg_resources
@@ -87,15 +82,12 @@ class WorkerRegistry(singletonmixin.Singleton):
         if self._dirty:
             for worker in pkg_resources.iter_entry_points("pyphant.workers"):
                 wm = worker.load()
+                version = worker.dist.version
                 for module in wm.workers:
                     try:
                         moduleName = worker.module_name + "." + module
                         self._logger.info("Trying to import " + moduleName)
                         exec 'import ' + moduleName
-                        try:
-                            version = eval(moduleName + ".__version__")
-                        except:
-                            version = "unknown"
                         self._logger.info("Import module %s in version %s" \
                                           %(moduleName, version))
                     except ImportError, e:

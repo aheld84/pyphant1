@@ -30,20 +30,16 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 from pyphant.core import Worker, Connectors
+import pkg_resources
+
 
 class ExtractRows(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.tools").version
     name = "Extract Row"
     _sockets = [("table", Connectors.TYPE_ARRAY),
                 ("mask", Connectors.TYPE_IMAGE)]

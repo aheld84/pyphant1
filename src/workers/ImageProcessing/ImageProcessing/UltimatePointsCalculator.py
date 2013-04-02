@@ -34,19 +34,17 @@ The Ultimate Points Calculator Worker is a class of Pyphant's Image
 Processing Toolbox. It is used to calculate peaks in an image.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 from pyphant.core import (Worker, Connectors, DataContainer)
 import scipy
+import pkg_resources
 
 
 class UltimatePointsCalculator(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Ultimate Points"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 
@@ -62,7 +60,9 @@ class UltimatePointsCalculator(Worker.Worker):
             ultimatePoints.append((0, ny - 1, img[0, ny - 1]))
         if img[nx - 1, 0] == scipy.amax(scipy.amax(img[nx - 2:, :2])):
             ultimatePoints.append((nx - 1, 0, img[nx - 1, 0]))
-        if img[nx - 1, ny - 1] == scipy.amax(scipy.amax(img[nx - 2:, ny - 2:])):
+        if img[nx - 1, ny - 1] == scipy.amax(
+            scipy.amax(img[nx - 2:, ny - 2:])
+            ):
             ultimatePoints.append((nx - 1, ny - 1, img[nx - 1, ny - 1]))
         #upper edge:
         for x in xrange(1, nx - 1):
@@ -109,6 +109,8 @@ class UltimatePointsCalculator(Worker.Worker):
         x.seal()
         y.seal()
         z.seal()
-        return DataContainer.SampleContainer([x, y, z],
-                                             u"Ultimate points from %s"\
-                                             %(image.longname), u"D")
+        return DataContainer.SampleContainer(
+            [x, y, z],
+            u"Ultimate points from %s" % (image.longname, ),
+            u"D"
+            )

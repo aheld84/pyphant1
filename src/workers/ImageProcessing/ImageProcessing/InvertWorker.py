@@ -34,20 +34,18 @@ The Inverter Worker is a class of Pyphant's Image Processing
 Toolbox. It simply inverts an image.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 from pyphant.core import (Worker, Connectors)
 import scipy
 import copy
+import pkg_resources
 
 
 class InvertWorker(Worker.Worker):
-    API=2
-    VERSION=1
-    REVISION="$Revision$"
+    API = 2
+    VERSION = 1
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Invert"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 

@@ -34,10 +34,6 @@
 This module provides a wrapper class that translates the
 KnowledgeManager's summary dictionaries to an SQLite3 database.
 """
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$:
 
 import sqlite3
 import time

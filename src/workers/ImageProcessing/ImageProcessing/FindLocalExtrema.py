@@ -33,21 +33,19 @@ u"""
 TODO
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 from pyphant.core import (Worker, Connectors)
 import copy
 from scipy import ndimage
 from numpy import (alltrue, zeros)
+import pkg_resources
 
 
 class FindLocalExtrema(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Local Extrema"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("maxmin", "max/min", ["max", "min"], None),

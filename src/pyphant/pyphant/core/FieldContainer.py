@@ -54,9 +54,6 @@ The *FieldContainer* stores a sampled scalar Filed.
         its *unit* and coordinates of the idependent variable (*dimensions*).
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
 
 import scipy, copy, hashlib, threading, numpy, StringIO
 import os, platform, datetime, socket, urlparse

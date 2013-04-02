@@ -35,20 +35,18 @@ Toolbox. It removes all features of an image that are touching the
 edge until only the outline remains.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 from pyphant.core import (Worker, Connectors)
 import EdgeFillWorker
 import copy
+import pkg_resources
 
 
 class EdgeTouchingFeatureRemover(EdgeFillWorker.EdgeFillWorker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Remove Edge Touching Features"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 

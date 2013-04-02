@@ -33,43 +33,38 @@
 u"""
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 import numpy
-from pyphant.core import (Worker, Connectors,
-                          Param, DataContainer)
-import OSC.OscAbsorption
+from pyphant.core import (Worker, Connectors, DataContainer)
 import scipy.interpolate
-from pyphant import quantities
-import logging, copy, math
+import copy
+import pkg_resources
+
 
 class ThicknessModeller(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Coat Thickness Model"
-
     _sockets = [("osc", Connectors.TYPE_ARRAY)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def calcAbsorption(self, osc, subscriber=0):
         A = copy.deepcopy(osc[u'absorption'])
         heights = osc[u'thickness']
-        indexMap = dict([(h,i) for i,h in enumerate(heights.data)])
+        indexMap = dict([(h, i) for i, h in enumerate(heights.data)])
         h = copy.deepcopy(heights.data)
         h.sort()
-        data = numpy.vstack([ copy.deepcopy(A.data[indexMap[i]]) for i in h ])
+        data = numpy.vstack([copy.deepcopy(A.data[indexMap[i]]) for i in h ])
         height = copy.deepcopy(heights)
         height.data = h
         attr = copy.deepcopy(A.attributes).update(osc.attributes)
-        result = DataContainer.FieldContainer(data,unit=A.unit,
-                                              longname=A.longname,
-                                              shortname=A.shortname,
-                                              attributes=attr,
-                                              dimensions=[height, A.dimensions[-1]])
+        result = DataContainer.FieldContainer(
+            data, unit=A.unit,
+            longname=A.longname,
+            shortname=A.shortname,
+            attributes=attr,
+            dimensions=[height, A.dimensions[-1]]
+            )
         result.seal()
         return result
 
@@ -77,21 +72,27 @@ class ThicknessModeller(Worker.Worker):
 class ThicknessSmoother(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Coat Thickness Smoother"
-
     _sockets = [("osc", Connectors.TYPE_IMAGE)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def calcSmoother(self, osc, subscriber=0):
-        x,y = copy.deepcopy(osc.dimensions[0].data),copy.deepcopy(osc.dimensions[1].data)
-        X,Y = scipy.meshgrid(x,y)
-        Z = osc.data#scipy.diff(osc.data,2,0)
-        spline = scipy.interpolate.interp2d(X.flatten(),Y.flatten(),Z.flatten())
-        X,Y = scipy.meshgrid(numpy.linspace(x.min(), x.max(), 10),
-                             numpy.linspace(y.min(), y.max(), 10))
-        Z = spline(X.flatten(),Y.flatten())
-        Z.resize((10,10))
-        result = DataContainer.FieldContainer(Z,dimensions=osc.dimensions)
+        x, y = (
+            copy.deepcopy(osc.dimensions[0].data),
+            copy.deepcopy(osc.dimensions[1].data)
+            )
+        X, Y = scipy.meshgrid(x, y)
+        Z = osc.data  # scipy.diff(osc.data,2,0)
+        spline = scipy.interpolate.interp2d(
+            X.flatten(), Y.flatten(), Z.flatten()
+            )
+        X, Y = scipy.meshgrid(
+            numpy.linspace(x.min(), x.max(), 10),
+            numpy.linspace(y.min(), y.max(), 10)
+            )
+        Z = spline(X.flatten(), Y.flatten())
+        Z.resize((10, 10))
+        result = DataContainer.FieldContainer(Z, dimensions=osc.dimensions)
         result.seal()
         return result

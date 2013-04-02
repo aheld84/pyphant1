@@ -32,10 +32,6 @@
 u"""Provides test for unique timestamps
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
 
 import unittest
 import pkg_resources

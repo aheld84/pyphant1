@@ -35,22 +35,17 @@ The FMF Loader is a class of Pyphant's FMF Toolbox. It loads an FMF
 file from the location given in the worker's configuration.
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 import os.path
 from pyphant.core import (Worker, Connectors)
 from pyphant.core.LoadFMF import loadFMFFromFile
+import pkg_resources
 
 
 class FMFLoader(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.fmf").version
     name = "Load FMF files"
-
     _params = [("filename", u"Filename", "", Connectors.SUBTYPE_FILE)]
 
     def inithook(self):
@@ -62,7 +57,7 @@ class FMFLoader(Worker.Worker):
     def loadFMF(self, subscriber=0):
         filename = self.paramFilename.value
         if not os.path.exists(filename):
-            raise RuntimeError("Opening non existent file: "+filename)
+            raise RuntimeError("Opening non existent file: " + filename)
         result = loadFMFFromFile(filename, subscriber)
         result.seal()
         return result

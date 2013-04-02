@@ -32,10 +32,6 @@
 u"""
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core import Connectors, singletonmixin
 import logging, pkg_resources

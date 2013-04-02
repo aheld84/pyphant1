@@ -33,13 +33,10 @@
 This module provides a worker for selecting DCs by id (emd5)
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core import (Worker, Connectors)
 from pyphant.core.KnowledgeManager import KnowledgeManager
+import pkg_resources
 
 
 class Emd5Src(Worker.Worker):
@@ -48,7 +45,7 @@ class Emd5Src(Worker.Worker):
     """
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    pkg_resources.get_distribution("pyphant").version
     name = "Emd5Src"
     _params = [("emd5", u"id (emd5)", "", None)]
 

@@ -32,18 +32,16 @@
 u"""
 """
 
-__id__ = "$Id$"
-__author__ = "$Author$"
-__version__ = "$Revision$"
-# $Source$
-
 from pyphant.core import (Worker, Connectors)
+import pkg_resources
 
 
 class MarkInclusions(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Mark Inclusions"
     _sockets = [("zstack", Connectors.TYPE_IMAGE),
                 ("statistics", Connectors.TYPE_ARRAY)]
