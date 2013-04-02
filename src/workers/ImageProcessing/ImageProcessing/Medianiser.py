@@ -36,16 +36,18 @@ standard median filter. In its configurations the size of the applied
 kernel and the number of smoothing runs can be edited.
 """
 
-
 from pyphant.core import (Worker, Connectors)
 import scipy.ndimage.filters
 import copy
+import pkg_resources
 
 
 class Medianiser(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Median"
     _sockets = [("field", Connectors.TYPE_IMAGE)]
     _params = [("size", "Kernel Size", 5, None),

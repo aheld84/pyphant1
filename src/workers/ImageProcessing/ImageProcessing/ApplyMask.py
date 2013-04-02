@@ -35,7 +35,6 @@ Toolbox. By using this worker one gray-scale image can be applied as a
 mask on another image.
 """
 
-
 from pyphant.core import (Worker, Connectors)
 from pyphant.core.DataContainer import (FieldContainer, SampleContainer)
 from ImageProcessing import FEATURE_COLOR
@@ -71,7 +70,9 @@ class ApplyMask(Worker.Worker):
         """
         img, m = self.check(image, mask)
         subscriber %= 10.
-        result = scipy.where(m == FEATURE_COLOR, img, FEATURE_COLOR).astype('d')
+        result = scipy.where(
+            m == FEATURE_COLOR, img, FEATURE_COLOR
+            ).astype('d')
         subscriber %= 55.0
         container = copy.deepcopy(image)
         container.data = result
@@ -105,7 +106,7 @@ class ApplyMask(Worker.Worker):
                       )
         res = SampleContainer(
             fields,
-            u"Points from %s at %s"%(image.longname, mask.longname),
+            u"Points from %s at %s" % (image.longname, mask.longname),
             u"X1"
             )
         res.seal()

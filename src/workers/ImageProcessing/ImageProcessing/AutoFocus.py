@@ -33,13 +33,13 @@ u"""
 This module provides the refactored AutoFocus Worker and its little helpers
 """
 
-
 from pyphant.core import (Worker, Connectors)
 import numpy
 from scipy import ndimage
 from pyphant.quantities import Quantity
 from pyphant.core.DataContainer import SampleContainer
 import pkg_resources
+
 
 def sobel(data):
     return numpy.sqrt(ndimage.sobel(data, 0) ** 2 + \
@@ -71,7 +71,7 @@ class ZSUnits(object):
         except KeyError:
             dx = numpy.average(numpy.diff(self.dims[2].data)) \
                  * self.dims[2].unit
-        tolPercent = 2 # reasonable?
+        tolPercent = 2  # reasonable?
         assert abs(dy - dx) / dy <= tolPercent / 100., \
                self.DXDY % (dy.__repr__(), dx.__repr__())
         self.delta = dy
@@ -99,6 +99,7 @@ class Inclusion(object):
         self.succs = []
         sobel = numpy.sqrt(ndimage.sobel(dataDetail, 0) ** 2 + \
                            ndimage.sobel(dataDetail, 1) ** 2)
+
         def focusFootprint(fpd):
             return (numpy.where(fpd[1], sobel, 0.0).sum() / fpd[1].sum(),
                     fpd[0])
@@ -228,7 +229,9 @@ class AutoFocus(Worker.Worker):
             newInclusion = Inclusion(zind, label, slices, dataDetail,
                                      footprint, zsp, zsu)
             if not newInclusion.valid:
-                labelData[slices] = numpy.where(footprint, 0, labelData[slices])
+                labelData[slices] = numpy.where(
+                    footprint, 0, labelData[slices]
+                    )
                 continue
             inclusionList.append(newInclusion)
             inclusionDict[newInclusion.index] = newInclusion
@@ -250,7 +253,7 @@ class AutoFocus(Worker.Worker):
         del zstack
         labelData = None
         zsp = ZSParams(self)
-        zsp.estimateThreshold(data, subscriber) # 80%
+        zsp.estimateThreshold(data, subscriber)  # 80%
         inclusionList = []
         inclusionDict = {}
         # Calculate autofocus results:
@@ -274,12 +277,12 @@ class AutoFocus(Worker.Worker):
         baseArea = baseSize * zsu.amul * zsu.AQUANT
         projectedArea = baseSum * zsu.amul * zsu.AQUANT
         # Put info into SampleContainer:
-        attributes = {'ZStackType':'StatisticsSC',
-                      #'threshold':zsp.threshold,
-                      #'ZStackAttributes':attributes,
-                      'detectedInclusions':len(infoList),
-                      'baseArea':baseArea,
-                      'projectedArea':projectedArea}
+        attributes = {'ZStackType': 'StatisticsSC',
+                      #'threshold': zsp.threshold,
+                      #'ZStackAttributes': attributes,
+                      'detectedInclusions': len(infoList),
+                      'baseArea': baseArea,
+                      'projectedArea': projectedArea}
         longname = 'Statistics_' + longname
         if len(infoList) == 0:
             return SampleContainer(longname=longname, columns=[],

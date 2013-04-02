@@ -33,7 +33,6 @@ u"""
 TODO
 """
 
-
 from pyphant.core import (Worker, Connectors)
 import copy
 from scipy import ndimage

@@ -33,12 +33,12 @@ u"""
 Deprecated
 """
 
-
 from pyphant.core import (Worker, Connectors, DataContainer)
 import numpy
 import copy
 from scipy import (ndimage, interpolate)
 import pkg_resources
+
 
 class FitBackground(Worker.Worker):
     API = 2
@@ -86,7 +86,6 @@ class FitBackground(Worker.Worker):
         clipmin, clipmax = data.min(), threshold
         return interpolate.bisplev(range(dims[0]), range(dims[1]),
                                    tck).clip(clipmin, clipmax)
-
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def fit_background(self, image, subscriber=0):

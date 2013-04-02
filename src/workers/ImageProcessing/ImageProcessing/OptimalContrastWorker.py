@@ -32,15 +32,17 @@
 u"""
 """
 
-
 from pyphant.core import (Worker, Connectors, DataContainer)
 import PIL.ImageOps as ImageOps
+import pkg_resources
 
 
 class OptimalContrastWorker(Worker.Worker):
     API = 1
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Contrast Optimiser"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("cutoff", "Cutoff", 10, None)]

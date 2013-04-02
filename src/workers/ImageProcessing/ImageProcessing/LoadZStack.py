@@ -35,7 +35,6 @@ Toolbox. It simply loads a set of images from the location given in the
 worker's configuration as a 3d image.
 """
 
-
 from pyphant.core.Connectors import (SUBTYPE_FILE, TYPE_IMAGE)
 from pyphant.core import Worker
 import pkg_resources
@@ -108,8 +107,8 @@ class LoadZStack(Worker.Worker):
         image = FieldContainer(
             data=data, dimensions=dimensions, unit=unit,
             longname=longname, shortname=shortname,
-            attributes={'yFactor':Quantity(self.paramDy.value),
-                        'xFactor':Quantity(self.paramDx.value)}
+            attributes={'yFactor': Quantity(self.paramDy.value),
+                        'xFactor': Quantity(self.paramDx.value)}
             )
         image.seal()
         subscriber %= 100

@@ -36,7 +36,6 @@ Toolbox. It simply loads an image from the location given in the
 worker's configuration.
 """
 
-
 from pyphant.core import (Worker, Connectors)
 from pyphant.core.Helpers import loadImageAsGreyScale
 import pkg_resources

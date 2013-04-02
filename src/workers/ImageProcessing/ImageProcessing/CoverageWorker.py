@@ -36,12 +36,13 @@ threshold. Therefore required percentages of black and white material
 in the image can be edited.
 """
 
-
 from pyphant.core import (Worker, Connectors)
 import pkg_resources
 
+
 def weight2Coverage(w1, rho1, rho2):
     return (w1 * rho2) / (w1 * rho2 + (1.0 - w1) * rho1)
+
 
 def calculateThreshold(image, coveragePercent):
     import scipy

@@ -33,10 +33,11 @@ u"""
 TODO
 """
 
-
 from pyphant.core import (Worker, Connectors)
-import numpy, copy
+import numpy
+import copy
 import pkg_resources
+
 
 def gradient(data):
     return numpy.sqrt(sum(numpy.square(numpy.array(numpy.gradient(data)))))

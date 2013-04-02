@@ -35,7 +35,6 @@ computes the difference between two images, eg. the skeletonised image
 and the origial image.
 """
 
-
 from pyphant.core import (Worker, Connectors)
 import pkg_resources
 
@@ -51,8 +50,8 @@ class DiffWorker(Worker.Worker):
                 [u"Yes", u"No"], None),
                ("longname", u"Name of result", 'default', None),
                ("symbol", u"Symbol of result", 'default', None)]
-    _sockets = [ ("image1", Connectors.TYPE_IMAGE),
-                 ("image2", Connectors.TYPE_IMAGE)]
+    _sockets = [("image1", Connectors.TYPE_IMAGE),
+                ("image2", Connectors.TYPE_IMAGE)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def diffImages(self, image1, image2, subscriber=0):

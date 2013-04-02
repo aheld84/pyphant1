@@ -32,7 +32,6 @@
 u"""
 """
 
-
 from pyphant.core import (Worker, Connectors, DataContainer)
 import ImageProcessing
 import scipy
@@ -138,7 +137,7 @@ class BiThresholdingWorker(Worker.Worker):
         return result
 
     @Worker.plug(Connectors.TYPE_ARRAY)
-    def documentCovering(self, image,subscriber=0):
+    def documentCovering(self, image, subscriber=0):
         thresholds = scipy.array([self.paramLowerThreshold.value,
                                   self.paramUpperThreshold.value,
                                   scipy.amax(image.data)])
