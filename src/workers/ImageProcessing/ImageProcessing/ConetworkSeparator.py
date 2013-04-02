@@ -37,13 +37,16 @@ from pyphant.core import Worker, Connectors,\
                          Param, DataContainer
 
 import ImageProcessing
+import pkg_resources
 
 import scipy, copy
 
 class ConetworkThresholding(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Thresholdfilter"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("feature [wt]", "FeatureWT", 50, None),

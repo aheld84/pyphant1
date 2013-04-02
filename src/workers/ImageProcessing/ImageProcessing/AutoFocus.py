@@ -39,6 +39,7 @@ import numpy
 from scipy import ndimage
 from pyphant.quantities import Quantity
 from pyphant.core.DataContainer import SampleContainer
+import pkg_resources
 
 def sobel(data):
     return numpy.sqrt(ndimage.sobel(data, 0) ** 2 + \
@@ -204,7 +205,9 @@ class ZSParams(object):
 class AutoFocus(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "AutoFocus"
     _sockets = [("zstack", Connectors.TYPE_IMAGE)]
     _params = [("medianSize", "median size", "(80, 80)", None),

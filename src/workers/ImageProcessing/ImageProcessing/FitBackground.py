@@ -38,11 +38,14 @@ from pyphant.core import (Worker, Connectors, DataContainer)
 import numpy
 import copy
 from scipy import (ndimage, interpolate)
+import pkg_resources
 
 class FitBackground(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Fit Background"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("poldegree", "Polynomial degree (1 to 5)", 3, None),

@@ -38,12 +38,15 @@ worker's configuration as a 3d image.
 
 from pyphant.core.Connectors import (SUBTYPE_FILE, TYPE_IMAGE)
 from pyphant.core import Worker
+import pkg_resources
 
 
 class LoadZStack(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Load ZStack"
     _params = [
         ("path", u"Path (select any file)", "", SUBTYPE_FILE),

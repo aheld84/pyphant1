@@ -41,12 +41,15 @@ from pyphant.core.DataContainer import (FieldContainer, SampleContainer)
 from ImageProcessing import FEATURE_COLOR
 import scipy
 import copy
+import pkg_resources
 
 
 class ApplyMask(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Apply Mask"
     _sockets = [("image", Connectors.TYPE_IMAGE),
                 ("mask", Connectors.TYPE_IMAGE)]

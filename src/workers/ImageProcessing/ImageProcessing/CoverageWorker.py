@@ -38,6 +38,7 @@ in the image can be edited.
 
 
 from pyphant.core import (Worker, Connectors)
+import pkg_resources
 
 def weight2Coverage(w1, rho1, rho2):
     return (w1 * rho2) / (w1 * rho2 + (1.0 - w1) * rho1)
@@ -56,7 +57,9 @@ def calculateThreshold(image, coveragePercent):
 class CoverageWorker(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Coverage"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("w1", "Weight per cent of the dark material", "25%", None),

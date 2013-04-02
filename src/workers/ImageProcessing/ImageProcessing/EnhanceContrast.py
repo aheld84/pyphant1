@@ -36,6 +36,7 @@ Deprecated
 
 from pyphant.core import (Worker, Connectors, DataContainer)
 import scipy, copy
+import pkg_resources
 
 def normalizeHistogram(data):
     histogram = scipy.ndimage.histogram(data.astype("f"), 0, 255, 256)
@@ -54,7 +55,9 @@ def normalizeLinear(data):
 class EnhanceContrast(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Enhance Contrast"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 

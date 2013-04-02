@@ -42,6 +42,7 @@ from pyphant.core import (Worker, Connectors, DataContainer)
 import scipy
 import copy
 from ImageProcessing import FEATURE_COLOR
+import pkg_resources
 
 def UnEqualUnits():
     raise ValueError("The dimensions do not have equal units.")
@@ -82,7 +83,9 @@ class Metrics:
 class DistanceMapper(Worker.Worker):
     API = 2
     VERSION = 2
-    REVISION = "$Revision: 3671 $"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Map Distance"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 

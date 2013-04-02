@@ -39,12 +39,15 @@ worker's configuration.
 
 from pyphant.core import (Worker, Connectors)
 from pyphant.core.Helpers import loadImageAsGreyScale
+import pkg_resources
 
 
 class ImageLoaderWorker(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Load Image"
 ##     lengthUnits=[prefix[0]+'m' for prefix
 ##                  in quantities._prefixes if prefix[1]>1]

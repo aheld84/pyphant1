@@ -38,12 +38,15 @@ Toolbox. It simply inverts an image.
 from pyphant.core import (Worker, Connectors)
 import scipy
 import copy
+import pkg_resources
 
 
 class InvertWorker(Worker.Worker):
     API=2
     VERSION=1
-    REVISION="$Revision$"
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Invert"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 

@@ -38,15 +38,18 @@ Toolbox. It is used to backfill outlined features again.
 from pyphant.core import (Worker, Connectors)
 import copy
 from ImageProcessing import (BACKGROUND_COLOR, FEATURE_COLOR)
+import pkg_resources
 
 
 class EdgeFillWorker(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
     """
     http://www.nabble.com/Here's-a-better-flood-fill-technique-t318692.html
     """
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Edge Fill"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
 

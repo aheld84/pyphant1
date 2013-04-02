@@ -37,12 +37,15 @@ from pyphant.core import (Worker, Connectors, DataContainer)
 import ImageProcessing
 import scipy
 import copy
+import pkg_resources
 
 
 class BiThresholdingWorker(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision: 20 $"[11:-1]
+    REVISION = pkg_resources.get_distribution(
+        "pyphant.imageprocessing"
+        ).version
     name = "Bi-Thresholdfilter"
     _sockets = [("image", Connectors.TYPE_IMAGE)]
     _params = [("lowerThreshold", "lower threshold", 125, None),
