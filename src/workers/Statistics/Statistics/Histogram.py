@@ -40,11 +40,12 @@ automatically correctly labled.
 from pyphant.core import (Connectors, DataContainer,
                           Worker)
 import numpy
+import pkg_resources
 
 class Histogram(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.statistics").version
     name = "Histogram"
     _sockets=[("vector", Connectors.TYPE_IMAGE)]
     _params = [("bins", "Bins", 10, None)]
