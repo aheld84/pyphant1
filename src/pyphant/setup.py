@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from setuptools import setup, find_packages
 
 VERSION = '1.0b2.dev'
-
-
-from setuptools import setup, find_packages
 
 setup(
     name='pyphant',
@@ -21,17 +19,15 @@ setup(
         'sogl>=0.2.0',
         'paste',
         'simplejson',
-        ## The following are required,
-        ## but currently not setuptools enabled.
-        #'ScientificPython',
-        #'matplotlib',
-        #'scipy',
-        #'tables',
-        #'wxPython',
-        #'egenix-mx-base',
+        'matplotlib',
+        'numpy',
+        'scipy',
+        'tables',
+        'wxPython',
+        'egenix-mx-base',
         ],
     packages=find_packages(),
-    entry_points={'gui_scripts':[
+    entry_points={'gui_scripts': [
         'wxPyphant = pyphant.wxgui2.wxPyphantApplication:startWxPyphant'
         ]},
     include_package_data=True,
