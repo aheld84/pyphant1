@@ -39,12 +39,13 @@ orignial chart again.
 from pyphant.core import (Worker, Connectors,
                           Param, DataContainer)
 import copy
+import pkg_resources
 
 
 class AddColumn(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.tools").version
     name = "Add Column"
 
     _sockets = [("sample", Connectors.TYPE_ARRAY),

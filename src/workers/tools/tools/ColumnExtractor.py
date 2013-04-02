@@ -36,12 +36,13 @@ u"""
 
 from pyphant.core import (Worker, Connectors, DataContainer)
 import copy
+import pkg_resources
 
 
 class ColumnExtractor(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.tools").version
     name = "Extract Column"
 
     _sockets = [("osc", Connectors.TYPE_ARRAY)]

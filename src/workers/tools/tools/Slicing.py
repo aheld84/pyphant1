@@ -42,11 +42,12 @@ from pyphant.core import (Worker, Connectors,
 import scipy.interpolate
 from pyphant import quantities
 import logging, copy, math
+import pkg_resources
 
 class Slicing(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.tools").version
     name = "Slicing"
 
     _sockets = [("field", Connectors.TYPE_IMAGE)]
