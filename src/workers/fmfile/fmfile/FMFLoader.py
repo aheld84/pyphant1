@@ -39,12 +39,13 @@ file from the location given in the worker's configuration.
 import os.path
 from pyphant.core import (Worker, Connectors)
 from pyphant.core.LoadFMF import loadFMFFromFile
+import pkg_resources
 
 
 class FMFLoader(Worker.Worker):
     API = 2
     VERSION = 1
-    REVISION = "$Revision$"[11:-1]
+    REVISION = pkg_resources.get_distribution("pyphant.fmf").version
     name = "Load FMF files"
 
     _params = [("filename", u"Filename", "", Connectors.SUBTYPE_FILE)]
