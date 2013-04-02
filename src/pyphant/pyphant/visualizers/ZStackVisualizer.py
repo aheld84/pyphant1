@@ -32,8 +32,6 @@
 u"""
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core.Connectors import TYPE_IMAGE
 from pyphant.wxgui2.DataVisReg import DataVisReg

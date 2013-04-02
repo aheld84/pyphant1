@@ -36,8 +36,6 @@ Toolbox. It simply loads an image from the location given in the
 worker's configuration.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core import (Worker, Connectors)
 from pyphant.core.Helpers import loadImageAsGreyScale

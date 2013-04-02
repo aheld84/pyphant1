@@ -35,8 +35,6 @@ At the moment these can only be entire recipes, but it is planned
 that they can be subgraphs, too.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import EventDispatcher, Worker, Connectors, Param
 import copy

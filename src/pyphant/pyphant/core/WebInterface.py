@@ -36,8 +36,6 @@ This module provides the WebInterface class for the KnowledgeNode
 as well as some HTTP and HTML helper classes.
 """
 
-__version__ = "$Revision$"
-# $Source: $
 
 from types import (DictType, ListType, TupleType)
 from pyphant.core.bottle import (template, send_file, request)

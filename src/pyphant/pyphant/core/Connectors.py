@@ -32,8 +32,6 @@
 u"""
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import copy, threading, inspect, logging
 import Queue

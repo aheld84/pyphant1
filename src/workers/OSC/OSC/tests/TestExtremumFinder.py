@@ -33,8 +33,6 @@
 u"""Provides unittest classes TestExtremumFinder and TestExtremumFinderDiscontinuousDiscretisation.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 
 import sys

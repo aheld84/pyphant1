@@ -36,8 +36,6 @@ This module provides the KnowledgeManager class as well as some helper
 classes.
 """
 
-__version__ = "$Revision$"
-# $Source: $
 
 from pyphant.core.singletonmixin import Singleton
 import tempfile

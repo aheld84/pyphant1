@@ -52,8 +52,6 @@ Not guaranteed to be fit for any particular purpose. Use at your
 own risk.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 class SingletonException(Exception):
     pass

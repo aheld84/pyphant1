@@ -34,8 +34,6 @@ The OSC Toolbox holds workers for processing data coming from organic
 solar cells.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 workers=[
     "CompareFields",

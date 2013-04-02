@@ -34,8 +34,6 @@ u"""
 The Compare Fields Worker is a class of Pyphant's OSC Toolbox.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import numpy
 from pyphant.core import (Worker, Connectors,

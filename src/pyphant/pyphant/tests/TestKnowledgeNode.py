@@ -33,8 +33,6 @@
 u"""Provides unittest classes for KnowledgeNode.
 """
 
-__version__ = "$Revision$".replace('$','')
-# $Source$
 
 import unittest
 import pkg_resources

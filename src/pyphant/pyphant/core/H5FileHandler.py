@@ -33,8 +33,6 @@
 """
 This module provides the H5FileHandler class.
 """
-__version__ = "$Revision$"
-# $Source$:
 import tables
 from pyphant.core import DataContainer
 from pyphant.quantities import Quantity

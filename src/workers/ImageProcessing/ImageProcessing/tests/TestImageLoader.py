@@ -33,8 +33,6 @@
 u"""Provides unittest class TestImageLoader.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 
 import sys

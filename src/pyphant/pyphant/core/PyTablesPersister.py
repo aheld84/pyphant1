@@ -57,8 +57,6 @@ UNLESS field.dimensions==INDEX:
 #dimensions(hash, id)
 """
 
-__version__ = "$Revision$"
-# $Source: /home/obi/Projekte/pyphant/sourceforge/pyphant/pyphant/devel/trunk/src/pyphant/core/PyTablesPersister.py,v $
 
 import tables, datetime
 import sys

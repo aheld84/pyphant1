@@ -35,8 +35,6 @@ Toolbox. By using this worker one gray-scale image can be applied as a
 mask on another image.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core import (Worker, Connectors)
 from pyphant.core.DataContainer import (FieldContainer, SampleContainer)

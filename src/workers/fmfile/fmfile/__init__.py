@@ -34,7 +34,5 @@ The FMF Toolbox holds workers for processing full meta data format files.
 """
 
 
-__version__ = "$Revision$"
-# $Source$
 
 workers=["FMFLoader"]

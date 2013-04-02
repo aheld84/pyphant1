@@ -32,8 +32,6 @@
 u"""
 """
 
-__version__ = "$Revision: 20 $"
-# $Source$
 
 from pyphant.core import (Worker, Connectors, DataContainer)
 import ImageProcessing

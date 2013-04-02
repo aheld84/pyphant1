@@ -36,8 +36,6 @@ visualisd as bar charts or line charts. The rexpective axes are
 automatically correctly labled.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core import (Connectors, DataContainer,
                           Worker)

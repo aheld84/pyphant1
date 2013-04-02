@@ -32,8 +32,6 @@
 u"""
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core import Worker, Connectors,\
                          Param, DataContainer

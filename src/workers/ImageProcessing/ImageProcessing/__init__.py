@@ -34,8 +34,6 @@ The ImageProcessing toolbox holds workers to process data
 resulting from scalar fields.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 BACKGROUND_COLOR=255
 FEATURE_COLOR=0

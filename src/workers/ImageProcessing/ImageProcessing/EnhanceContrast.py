@@ -33,8 +33,6 @@ u"""
 Deprecated
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core import (Worker, Connectors, DataContainer)
 import scipy, copy

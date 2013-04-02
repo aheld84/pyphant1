@@ -33,8 +33,6 @@
 This module provides an HTTP server (paste) with URL routing (bottle)
 """
 
-__version__ = "$Revision$"
-# $Source: $
 
 import pyphant.core.bottle
 from paste import httpserver

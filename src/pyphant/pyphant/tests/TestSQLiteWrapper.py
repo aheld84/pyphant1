@@ -36,8 +36,6 @@ from __future__ import with_statement
 u"""Provides unittest classes for SQLiteWrapper.
 """
 
-__version__ = "$Revision$".replace('$','')
-# $Source$
 
 import unittest
 import pkg_resources

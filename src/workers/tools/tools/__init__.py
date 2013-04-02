@@ -33,8 +33,6 @@ u"""
 The tools toolbox holds general purpose workers.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 workers=[
     "AlgebraWorker",

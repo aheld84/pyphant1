@@ -35,8 +35,6 @@ u"""Provides unittest classes for AutoFocus, LoadZStack
 and MarkInclusions worker.
 """
 
-__version__ = "$Revision$".replace('$','')
-# $Source$
 
 import unittest
 import pkg_resources

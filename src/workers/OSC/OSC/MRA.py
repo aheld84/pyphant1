@@ -34,8 +34,6 @@
 u"""
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import numpy
 from pyphant.core import (Worker, Connectors,

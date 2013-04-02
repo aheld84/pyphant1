@@ -36,8 +36,6 @@ returns a binary image where pixels that comprise features are set to
 0x00 whereas background pixels are set to 0xFF.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core import (Worker, Connectors, DataContainer)
 import ImageProcessing

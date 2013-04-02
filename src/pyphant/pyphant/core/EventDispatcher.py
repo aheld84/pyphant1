@@ -32,8 +32,6 @@
 u"""
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 class EventDispatcher:
     def __init__(self):

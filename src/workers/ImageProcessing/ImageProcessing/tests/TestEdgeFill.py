@@ -32,8 +32,6 @@
 u"""Provides unittest classes for EdgeFillWorker
 """
 
-__version__ = "$Revision$".replace('$','')
-# $Source$
 
 import unittest
 import numpy

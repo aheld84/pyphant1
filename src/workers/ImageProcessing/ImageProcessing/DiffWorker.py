@@ -35,8 +35,6 @@ computes the difference between two images, eg. the skeletonised image
 and the origial image.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core import (Worker, Connectors)
 

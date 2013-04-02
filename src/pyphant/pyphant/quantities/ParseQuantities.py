@@ -33,8 +33,6 @@
 u"""
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import mx.DateTime.ISO
 from pyphant.quantities import Quantity

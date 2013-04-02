@@ -33,8 +33,6 @@
 u"""
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import zipfile, numpy, re, collections
 from pyphant.core import (Worker, Connectors,

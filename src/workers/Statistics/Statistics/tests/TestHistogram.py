@@ -33,8 +33,6 @@
 u"""Provides unittest class TestHistogram.
 """
 
-__version__ = "$Revision:$"
-# $Source$
 
 import sys
 import unittest

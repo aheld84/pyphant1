@@ -34,8 +34,6 @@ u"""
 Pyphant module providing worker for finding the local extrema of 1D functions.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import numpy
 from pyphant.core import (Worker, Connectors,

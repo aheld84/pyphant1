@@ -32,8 +32,6 @@
 u"""Provides simple instantiation tests for OSC workers.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import unittest
 import pkg_resources

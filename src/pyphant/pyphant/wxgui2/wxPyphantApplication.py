@@ -33,9 +33,6 @@
 u"""
 """
 
-__version__ = "1.0b1"
-# $Source$
-
 import os, os.path, pkg_resources
 from pyphant.core.Helpers import getPyphantPath
 LOGDIR = getPyphantPath()
@@ -123,7 +120,8 @@ class wxPyphantFrame(wx.Frame):
     ID_KM_SHARE = wx.NewId()
 
     def __init__(self, _wxPyphantApp):
-        self.titleStr = "wxPyphant %s | Recipe: %s" % (__version__, "%s")
+        version = pkg_resources.get_distribution("pyphant").version
+        self.titleStr = "wxPyphant %s | Recipe: %s" % (version, "%s")
         wx.Frame.__init__(self, None, -1, self.titleStr % "None",
                           size=(640,480))
         self._statusBar = self.CreateStatusBar()
@@ -605,7 +603,7 @@ import optparse
 
 def startWxPyphant():
     usage = "usage: %prog [options] pathToRecipe"
-    version = pkg_resources.require("pyphant")[0].version
+    version = pkg_resources.get_distribution("pyphant").version
     parser = optparse.OptionParser(usage, version=version)
     (options, args) = parser.parse_args()
 

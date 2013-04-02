@@ -36,8 +36,6 @@ threshold. Therefore required percentages of black and white material
 in the image can be edited.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core import (Worker, Connectors)
 

@@ -32,7 +32,6 @@
 
 __id__ = "$Id$"
 __author__ = "$Author: liehr $"
-__version__ = "$Revision: 29 $"
 
 import pyphant.core.PyTablesPersister
 from pyphant.visualizers.ImageVisualizer import F

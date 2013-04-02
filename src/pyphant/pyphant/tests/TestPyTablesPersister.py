@@ -34,8 +34,6 @@
 u"""Provides unittest classes FieldContainerTestCase.
 """
 
-__version__ = "$Revision$".replace('$','')
-# $Source$
 
 import unittest
 import pkg_resources

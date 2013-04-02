@@ -33,8 +33,6 @@
 u"""Provides unittest classes TestApplyMask and TestApplyMask3D.
 """
 
-__version__ = "$Revision:$"
-# $Source$
 
 import sys
 import unittest

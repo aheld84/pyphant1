@@ -32,8 +32,6 @@
 u"""
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import unittest
 import pkg_resources

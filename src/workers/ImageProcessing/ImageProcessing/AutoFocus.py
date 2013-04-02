@@ -33,8 +33,6 @@ u"""
 This module provides the refactored AutoFocus Worker and its little helpers
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core import (Worker, Connectors)
 import numpy

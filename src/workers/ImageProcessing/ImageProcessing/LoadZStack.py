@@ -35,8 +35,6 @@ Toolbox. It simply loads a set of images from the location given in the
 worker's configuration as a 3d image.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core.Connectors import (SUBTYPE_FILE, TYPE_IMAGE)
 from pyphant.core import Worker

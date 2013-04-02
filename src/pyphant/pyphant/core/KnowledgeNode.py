@@ -38,8 +38,6 @@ arbitrary many remote KnowledgeManagers. It comes with a RoutingHTTPServer
 and an optional WebInterface.
 """
 
-__version__ = "$Revision$"
-# $Source: $
 
 from pyphant.core.RoutingHTTPServer import (RoutingHTTPServer,
                                             UnreachableError)

@@ -33,6 +33,4 @@ u"""
 This is the main pyphant package.
 """
 
-__version__ = "$Revision$"
-# $Source$
 

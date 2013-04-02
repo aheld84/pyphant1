@@ -32,6 +32,4 @@
 u"""
 """
 
-__version__ = "$Revision$"
-# $Source$
 

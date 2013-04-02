@@ -33,8 +33,6 @@ u"""
 The Worker module provides the Worker base class and some support.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import types, logging
 from pyphant.core import Connectors, Param, WorkerRegistry
@@ -72,6 +70,7 @@ class WorkerFactory(type):
 
 class Worker(object):
     API = 2
+    VERSION = 1
     REVISION = "$Revision$"[11:-1]
 
     __metaclass__ = WorkerFactory

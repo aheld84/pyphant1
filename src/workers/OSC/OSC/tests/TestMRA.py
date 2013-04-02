@@ -33,8 +33,6 @@
 u"""Provides unittest classes TestMRA and TestMRADiscontinuousDiscretisation.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 
 import sys,copy

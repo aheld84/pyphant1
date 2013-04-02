@@ -33,8 +33,6 @@
 u"""
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import matplotlib
 import matplotlib.transforms

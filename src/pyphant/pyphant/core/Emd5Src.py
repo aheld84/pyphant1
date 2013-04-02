@@ -33,8 +33,6 @@
 This module provides a worker for selecting DCs by id (emd5)
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 from pyphant.core import (Worker, Connectors)
 from pyphant.core.KnowledgeManager import KnowledgeManager

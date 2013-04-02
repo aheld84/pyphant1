@@ -6,7 +6,6 @@ Pyphant Full Meta File Toolbox
 Visit http://pyphant.sourceforge.net for more information.
 """
 
-__revision__ = '$Revision: 25 $'
 
 VERSION = '1.0b2.dev'
 

@@ -32,8 +32,6 @@
 u"""Provides unittest classes for Invert worker
 """
 
-__version__ = "$Revision$".replace('$','')
-# $Source$
 
 import unittest
 import numpy

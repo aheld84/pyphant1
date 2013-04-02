@@ -32,8 +32,6 @@
 u"""
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import OneLineStringField
 import BoundedIntegerTextField

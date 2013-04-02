@@ -32,7 +32,6 @@
 
 __id__ = "$Id$"
 __author__ = "$Author: liehr $"
-__version__ = "$Revision: 29 $"
 
 import matplotlib
 matplotlib.use('wxagg') # This MUST stay in front of 'import pylab'!

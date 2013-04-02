@@ -32,8 +32,6 @@
 u"""
 """
 
-__version__ = "$Revision: 10 $"
-# $Source$
 
 import Image
 from scipy import *

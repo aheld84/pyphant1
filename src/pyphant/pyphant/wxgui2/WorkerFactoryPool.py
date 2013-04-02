@@ -32,8 +32,6 @@
 u"""
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 class WorkerFactoryPool:
     def __init__(self):

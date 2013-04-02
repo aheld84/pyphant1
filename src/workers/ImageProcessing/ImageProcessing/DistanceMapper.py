@@ -37,8 +37,6 @@ binary images through calculating the distance of every pixel to the
 nearest background pixel.
 """
 
-__version__ = "$Revision: 3671 $"
-# $Source$
 
 from pyphant.core import (Worker, Connectors, DataContainer)
 import scipy

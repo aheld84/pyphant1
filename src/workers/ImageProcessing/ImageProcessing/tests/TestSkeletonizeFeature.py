@@ -33,8 +33,6 @@
 u"""Provides unittest classes TestSkeletonizeFeature, TestSkeletonizeCross, and TestCheckNeighbours.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import sys
 import unittest

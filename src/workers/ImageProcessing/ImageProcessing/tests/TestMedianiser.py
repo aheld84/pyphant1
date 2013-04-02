@@ -33,8 +33,6 @@
 u"""Provides unittest class TestMedianizer
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 
 import sys

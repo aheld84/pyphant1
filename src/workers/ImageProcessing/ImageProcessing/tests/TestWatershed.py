@@ -32,8 +32,6 @@
 u"""Provides unittest classes for Watershed worker
 """
 
-__version__ = "$Revision$".replace('$','')
-# $Source$
 
 import unittest
 import numpy

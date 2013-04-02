@@ -38,8 +38,6 @@ algorithm loops over the 0th dimension denoting the y-axis, which
 corresponds to an iteration over the rows of the data matrix.
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import numpy
 from pyphant.core import (Worker, Connectors,

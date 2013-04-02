@@ -32,8 +32,6 @@
 u"""
 """
 
-__version__ = "$Revision$"
-# $Source$
 
 import pkg_resources
 pkg_resources.require('setuptools')

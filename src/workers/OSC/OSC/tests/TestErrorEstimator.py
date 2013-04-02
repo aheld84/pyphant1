@@ -32,8 +32,6 @@
 u"""Provides unittest class TestErrorEstimation.
 """
 
-__version__ = "$Revision: 4164 $"
-# $Source$
 
 
 import sys

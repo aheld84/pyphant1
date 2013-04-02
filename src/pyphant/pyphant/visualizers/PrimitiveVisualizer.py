@@ -32,8 +32,6 @@
 u"""
 """
 
-__version__ = "$Revision: 22 $"
-# $Source$
 
 import pylab
 import pyphant.core.Connectors
