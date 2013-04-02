@@ -33,7 +33,6 @@
 u"""
 """
 
-
 import numpy
 from pyphant.core import (Worker, Connectors, DataContainer)
 from pyphant.quantities import Quantity
@@ -48,7 +47,6 @@ class OscMapper(Worker.Worker):
     VERSION = 1
     REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Mapper"
-
     _sockets = [("osc", Connectors.TYPE_ARRAY)]
     _params = [("xAxis", u"x-Axis", [u"horizontal_table_position"], None),
                ("yAxis", u"y-Axis", [u"vertical_table_position"], None),
@@ -64,7 +62,7 @@ class OscMapper(Worker.Worker):
 
     def refreshParams(self, subscriber=None):
         if self.socketOsc.isFull():
-            templ = self.socketOsc.getResult( subscriber )
+            templ = self.socketOsc.getResult(subscriber)
             colNames = templ.longnames.keys()
             self.paramXAxis.possibleValues = colNames
             self.paramYAxis.possibleValues = colNames
@@ -78,14 +76,14 @@ class OscMapper(Worker.Worker):
         xDim = DataContainer.FieldContainer(
             numpy.linspace(xInd.minV, xInd.maxV, xInd.stepCount) - 0.5 * xStep,
             xCon.unit,
-            longname = xCon.longname,
-            shortname = xCon.shortname
+            longname=xCon.longname,
+            shortname=xCon.shortname
             )
         yDim = DataContainer.FieldContainer(
             numpy.linspace(yInd.minV, yInd.maxV, yInd.stepCount) - 0.5 * yStep,
             yCon.unit,
-            longname = yCon.longname,
-            shortname = yCon.shortname
+            longname=yCon.longname,
+            shortname=yCon.shortname
             )
         img = numpy.ones((yInd.stepCount, xInd.stepCount),
                          dtype='float') * numpy.NaN
@@ -94,19 +92,21 @@ class OscMapper(Worker.Worker):
             xi = xInd[xf[i]]
             yi = yInd[yf[i]]
             if not mask[yi, xi]:
-                self._logger.warning("Duplicate data for pixel (%.4g,%.4g). "
-                                     "Using first found value. "
-                                     "Is your data corrupt?"%(xf[i],yf[i]))
+                self._logger.warning(
+                    "Duplicate data for pixel (%.4g,%.4g). "
+                    "Using first found value. "
+                    "Is your data corrupt?" % (xf[i], yf[i])
+                    )
             else:
                 img[yi, xi] = h[i]
                 if h[i] > 0:
                     mask[yi, xi] = False
         result = DataContainer.FieldContainer(
-                                        img, fCon.unit, mask=mask,
-                                        dimensions=[yDim, xDim],
-                                        longname=u'Map of %s'%fCon.longname,
-                                        shortname=fCon.shortname
-                                        )
+            img, fCon.unit, mask=mask,
+            dimensions=[yDim, xDim],
+            longname=u'Map of %s' % fCon.longname,
+            shortname=fCon.shortname
+            )
         return result
 
     @Worker.plug(Connectors.TYPE_IMAGE)

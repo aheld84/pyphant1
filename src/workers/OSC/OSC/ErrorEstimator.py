@@ -34,7 +34,6 @@ The Estimate Error worker is a class of Pyphant's OSC-Toolbox. It
 evaluates the error caused by noise for every pixel in a field.
 """
 
-
 import numpy
 from pyphant.core import (Worker, Connectors)
 import logging
@@ -43,7 +42,8 @@ import pkg_resources
 
 _logger = logging.getLogger("pyphant")
 
-def localNoise( y, samples=50):
+
+def localNoise(y, samples=50):
     length = len(y)
     samples2 = samples / 2
     sampleM1 = samples - 1
@@ -51,16 +51,16 @@ def localNoise( y, samples=50):
     #Initialize extended y-vector
     yExtended = numpy.zeros(length + samples - samples % 2, 'float')
     #Mirroring to the left
-    yExtended[: samples2] = y[samples2 : 0 : -1]
+    yExtended[:samples2] = y[samples2:0:-1]
     #Copy of array
-    yExtended[samples2:length+samples2] = y
+    yExtended[samples2:length + samples2] = y
     #Mirroring to the right
-    yExtended[length + samples2:] = y[-2 : -2 - samples2 : -1]
+    yExtended[length + samples2:] = y[-2:-2 - samples2:-1]
     #Inititalize error vector
     error = numpy.zeros(y.shape, 'float')
     #Compute experimental standard deviation
     for i in xrange(samples2, length + samples2):
-        sample = yExtended[i - samples2 : i + samples2 + sampleMod]
+        sample = yExtended[i - samples2:i + samples2 + sampleMod]
         yMean = numpy.mean(sample)
         error[i - samples2] = numpy.sqrt(numpy.sum((yMean - sample) ** 2) /
                                          sampleM1)
@@ -72,10 +72,10 @@ class ErrorEstimator(Worker.Worker):
     VERSION = 1
     REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Estimate Error"
-
     _sockets = [("osc", Connectors.TYPE_IMAGE)]
-    _params = [ ("dA", u"Window Size in number of data points", 10, None)
-               ]
+    _params = [
+        ("dA", u"Window Size in number of data points", 10, None)
+        ]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def estimate(self, osc, subscriber=0):

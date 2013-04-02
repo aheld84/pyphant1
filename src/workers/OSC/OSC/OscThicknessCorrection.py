@@ -33,48 +33,47 @@
 u"""
 """
 
-
 import numpy
-from pyphant.core import (Worker, Connectors,
-                          Param, DataContainer)
-
-import scipy.interpolate
+from pyphant.core import (Worker, Connectors)
 from pyphant.quantities import Quantity
-import logging, copy, math
+import logging
+import copy
 import pkg_resources
+
 
 class OscThicknessCorrector(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Correct Thickness"
-
     _sockets = [("osc", Connectors.TYPE_ARRAY)]
-    _params = [("method","Correct thickness for", ["Spin Coating", "Printing"], None),
-               ("max_correction", "Max correction", "30 nm", None)]
-
+    _params = [
+        ("method", "Correct thickness for",
+         ["Spin Coating", "Printing"], None),
+        ("max_correction", "Max correction", "30 nm", None)
+        ]
 
     def inithook(self):
         self._logger = logging.getLogger("pyphant")
 
     def perform_spincoat_correction(self, x, y, uncorrected_t):
         t = copy.deepcopy(uncorrected_t)
-        r = numpy.sqrt(x.data**2+y.data**2)
+        r = numpy.sqrt(x.data ** 2 + y.data ** 2)
         r_min = r.min()
         r_max = r.max()
-        correction = Quantity(self.paramMax_correction.value)/t.unit
-        t.data = t.data + correction*((r-r_min)/(r_max-r_min))
-        t.longname='thickness corrected for spin coating'
-        t.shortname='t_c'
+        correction = Quantity(self.paramMax_correction.value) / t.unit
+        t.data = t.data + correction * ((r - r_min) / (r_max - r_min))
+        t.longname = 'thickness corrected for spin coating'
+        t.shortname = 't_c'
         return t
 
     def perform_print_correction(self, x, raw_y, uncorrected_t):
         t = copy.deepcopy(uncorrected_t)
         y = raw_y.data
-        d = 1.9*y**2 + 19.3*y + 49
+        d = 1.9 * y ** 2 + 19.3 * y + 49
         t.data = t.data - d
-        t.longname='thickness corrected for printing'
-        t.shortname='t_c'
+        t.longname = 'thickness corrected for printing'
+        t.shortname = 't_c'
         return t
 
     @Worker.plug(Connectors.TYPE_IMAGE)
@@ -88,6 +87,6 @@ class OscThicknessCorrector(Worker.Worker):
         elif method == "Printing":
             corrected_t = self.perform_print_correction(x, y, t)
         else:
-            raise RuntimeError, "Unknown correction method %s." % method
+            raise RuntimeError("Unknown correction method %s." % (method, ))
         corrected_t.seal()
         return corrected_t

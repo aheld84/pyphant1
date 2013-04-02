@@ -33,14 +33,12 @@
 u"""
 """
 
-
 import numpy
-from pyphant.core import (Worker, Connectors,
-                          Param, DataContainer)
-
+from pyphant.core import (Worker, Connectors, DataContainer)
 import scipy.interpolate
 from pyphant import quantities
-import copy, logging
+import copy
+import logging
 import pkg_resources
 _logger = logging.getLogger("pyphant")
 
@@ -48,20 +46,32 @@ _logger = logging.getLogger("pyphant")
 def createModel(model):
     xData = model.data[u'\\Psi_{3}'].tolist()[0]
     yData = model.data[u'\\Psi_{1}'].tolist()[0]
-    return scipy.interpolate.interp1d(xData,yData,
-                                      kind='linear',
-                                      bounds_error=False,
-                                      fill_value=0.0)
+    return scipy.interpolate.interp1d(
+        xData,
+        yData,
+        kind='linear',
+        bounds_error=False,
+        fill_value=0.0
+        )
+
 
 class OscThickness2CurrentDensity(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Convert Thickness to Current Density"
-
-    _sockets = [("osc", Connectors.TYPE_IMAGE),
-                ("model", Connectors.TYPE_ARRAY)]
-    _params = [("diameter", u"Diameter of probing area (eg. 800mum)", 'unknown', None)]
+    _sockets = [
+        ("osc", Connectors.TYPE_IMAGE),
+        ("model", Connectors.TYPE_ARRAY)
+        ]
+    _params = [
+        (
+            "diameter",
+            u"Diameter of probing area (eg. 800mum)",
+            'unknown',
+            None
+            )
+        ]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def calcCurrentDensity(self, osc, model, subscriber=0):
@@ -71,7 +81,8 @@ class OscThickness2CurrentDensity(Worker.Worker):
         # u'\\Psi_{4}': 1.0, u'\\Psi_{0}': 1.0}
         unit = model._units[u'\\Psi_{3}']
         inputUnit = osc.unit
-        assert inputUnit.isCompatible(unit.unit),'Units of input and output data are not compatible.'
+        msg = 'Units of input and output data are not compatible.'
+        assert inputUnit.isCompatible(unit.unit), msg
         factor = inputUnit.inUnitsOf(unit.unit).value
         #Get model
         modelOperator = createModel(model)
@@ -84,16 +95,20 @@ class OscThickness2CurrentDensity(Worker.Worker):
         if self.paramDiameter.value == 'unknown':
             factor = 1.0
         else:
-            diameter = quantities.Quantity(self.paramDiameter.value.encode('latin-1'))
-            factor = 0.25 * numpy.pi * diameter**2
-
+            diameter = quantities.Quantity(
+                self.paramDiameter.value.encode('latin-1')
+                )
+            factor = 0.25 * numpy.pi * diameter ** 2
         scaledUnit = factor * model._units[u'\\Psi_{1}']
         #Build Fieldcontainer
-        result = DataContainer.FieldContainer(resultData,
-                                              mask = osc.mask,
-                                              longname=u'maximal short current density',
-                                              shortname=u'\sigma',
-                                              unit=scaledUnit,rescale=True,
-                                              dimensions=copy.deepcopy(osc.dimensions))
+        result = DataContainer.FieldContainer(
+            resultData,
+            mask=osc.mask,
+            longname=u'maximal short current density',
+            shortname=u'\sigma',
+            unit=scaledUnit,
+            rescale=True,
+            dimensions=copy.deepcopy(osc.dimensions)
+            )
         result.seal()
         return result

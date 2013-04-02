@@ -35,25 +35,29 @@ The Smoother Worker is a class of Pyphant's OSC Toolbox. It is used to
 reduce noise from a field. The numer of smoothing runs can be edited.
 """
 
-
 import numpy
-from pyphant.core import (Worker, Connectors,
-                          Param, DataContainer)
-
+from pyphant.core import (Worker, Connectors, DataContainer)
 import scipy.interpolate
-from pyphant import quantities
-import logging, copy, math
+import logging
+import copy
 import pkg_resources
 _logger = logging.getLogger("pyphant")
+
 
 class Smoother(Worker.Worker):
     API = 2
     VERSION = 1
     REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Smoother"
-
     _sockets = [("osc", Connectors.TYPE_IMAGE)]
-    _params = [("smoothing", "Fit smoothing (0 no smoothing, larger value more smoothing)", "1", None)]
+    _params = [
+        (
+            "smoothing",
+            "Fit smoothing (0 no smoothing, larger value more smoothing)",
+            "1",
+            None
+            )
+        ]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def smooth(self, osc, subscriber=0):
@@ -66,24 +70,34 @@ class Smoother(Worker.Worker):
             y = osc.data[i]
             if osc.error != None:
                 error = copy.deepcopy(osc.error[i])
-                error[error==0] = numpy.finfo(type(0.3)).eps
-                weights = 1.0/(error**2)
-                smoothYTCK,fp,ier,msg = scipy.interpolate.splrep(x,y,w=weights,s=s,
-                                                                 full_output=True,task=0)
+                error[error == 0] = numpy.finfo(type(0.3)).eps
+                weights = 1.0 / (error ** 2)
+                smoothYTCK, fp, ier, msg = scipy.interpolate.splrep(
+                    x, y, w=weights, s=s,
+                    full_output=True, task=0
+                    )
             else:
-                smoothYTCK,fp,ier,msg = scipy.interpolate.splrep(x,y,s=s,
-                                                                 full_output=True,task=0)
-            if ier>0:
-                _logger.warning("There was a problem in fitting: %i: %s, fp: %f" %(ier, msg, fp))
-            smoothY = scipy.interpolate.splev(x,smoothYTCK)
+                smoothYTCK, fp, ier, msg = scipy.interpolate.splrep(
+                    x, y, s=s,
+                    full_output=True, task=0
+                    )
+            if ier > 0:
+                _logger.warning(
+                    "There was a problem in fitting: %i: %s, fp: %f" % (
+                        ier, msg, fp
+                        )
+                    )
+            smoothY = scipy.interpolate.splev(x, smoothYTCK)
             smoothedData.append(smoothY)
-            subscriber %= float(i)*100.0/float(count)
+            subscriber %= float(i) * 100.0 / float(count)
         sya = numpy.array(smoothedData)
-        result = DataContainer.FieldContainer(sya,
-                                             error = osc.error,
-                                             unit=osc.unit,
-                                             dimensions = osc.dimensions,
-                                             longname=u'Smoothed %s'%osc.longname,
-                                             shortname='\\widetilde{%s}'%osc.shortname)
+        result = DataContainer.FieldContainer(
+            sya,
+            error=osc.error,
+            unit=osc.unit,
+            dimensions=osc.dimensions,
+            longname=u'Smoothed %s' % osc.longname,
+            shortname='\\widetilde{%s}' % osc.shortname
+            )
         result.seal()
         return result

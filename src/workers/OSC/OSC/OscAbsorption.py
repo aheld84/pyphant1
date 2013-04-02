@@ -33,13 +33,11 @@
 u"""
 """
 
-
 import numpy
 from pyphant.core import (Worker, Connectors, DataContainer)
 from pyphant.quantities import Quantity
 import logging
 import pkg_resources
-import copy
 
 
 class IndexDict(object):
@@ -47,10 +45,13 @@ class IndexDict(object):
         self.minV = minV
         self.maxV = maxV
         self.step = step
+
     def __getitem__(self, key):
         return round((key - self.minV) / self.step)
+
     stepCount = property(lambda self:
                          round((self.maxV - self.minV) / self.step))
+
 
 def grid2Index(field, extension=0):
     _logger = logging.getLogger("pyphant")
@@ -65,7 +66,7 @@ def grid2Index(field, extension=0):
         fstep = fd.min()
         offset = fmin - extent
         fmax += extent
-    except ValueError, e: #Occurs if all elements of array are equal
+    except ValueError:  # Occurs if all elements of array are equal
         fstep = f[0]
         offset = f[0] - extent
         fmax = f[0] + extent
@@ -76,9 +77,10 @@ def grid2Index(field, extension=0):
     else:
         _logger.warning(u"There seems to be a problem with the discretisation.\
                             We are choosing 100 points.")
-        fstep = (fmax-offset) / 100.
+        fstep = (fmax - offset) / 100.
         indexDict = IndexDict(offset, fmax, fstep)
     return (offset, fstep, indexDict)
+
 
 def removePeak(Abso, lower, upper):
     dim = Abso.dimensions[-1]
@@ -103,7 +105,6 @@ class OscAbsorptionCalculator(Worker.Worker):
     VERSION = 1
     REVISION = pkg_resources.get_distribution("pyphant.osc").version
     name = "Compute Absorption"
-
     _sockets = [("osc", Connectors.TYPE_ARRAY)]
     _params = [("clipping", "Clipping", 1, None),
                ("mask_lamp", "Mask lamp", 0, None)]
