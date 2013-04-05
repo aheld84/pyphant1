@@ -29,7 +29,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""Provides simple instantiation tests for OSC workers.
+u"""Provides simple instantiation tests for tools workers.
 """
 
 
@@ -37,7 +37,7 @@ import unittest
 import pkg_resources
 
 pkg_resources.require("pyphant")
-pkg_resources.require("pyphant.osc")
+pkg_resources.require("pyphant.imageprocessing")
 
 
 class TestInstantiate(unittest.TestCase):
@@ -45,7 +45,7 @@ class TestInstantiate(unittest.TestCase):
         from pyphant.core.WorkerRegistry import WorkerRegistry
         wreg = WorkerRegistry.getInstance()
         workerInfos = [t for t in wreg.getToolBoxInfoList() \
-                       if t.name == 'OSC'][0].workerInfos
+                       if t.name == 'ImageProcessing'][0].workerInfos
         self.assertGreater(len(workerInfos), 0)
         for wInfo in workerInfos:
             wInfo.createWorker()
