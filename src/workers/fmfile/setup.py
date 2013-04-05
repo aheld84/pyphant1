@@ -9,9 +9,9 @@ Visit http://pyphant.sourceforge.net for more information.
 
 VERSION = '1.0b2.dev'
 
-import setuptools
+from setuptools import setup, find_packages
 
-setuptools.setup(
+setup(
     name="pyphant.fmf",
     version=VERSION,
     author="Alexander Held, Andreas W. Liehr, Rolf Wuerdemann, " + \
@@ -25,7 +25,7 @@ setuptools.setup(
         'pyphant>=1.0b2.dev',
         'ConfigObj'
         ],
-    packages=['fmfile'],
+    packages=find_packages(),
     entry_points="""
     [pyphant.workers]
     myeentry = fmfile

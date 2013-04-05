@@ -12,9 +12,9 @@ http://pyphant.sourceforge.net for more information.
 
 VERSION = '1.0b2.dev'
 
-import setuptools
+from setuptools import setup, find_packages
 
-setuptools.setup(
+setup(
     name="pyphant.statistics",
     version=VERSION,
     author="Alexander Held, Andreas W. Liehr, Klaus Zimmermann",
@@ -24,7 +24,7 @@ setuptools.setup(
     license="BSD",
     description=__doc__,
     install_requires=['pyphant>=1.0b2.dev'],
-    packages=['Statistics'],
+    packages=find_packages(),
     entry_points="""
     [pyphant.workers]
     myeentry = Statistics
