@@ -1,0 +1,2 @@
+recursive-include ImageProcessing/tests/resources/misc *.png
+recursive-include ImageProcessing/tests/resources/zstack *.tif

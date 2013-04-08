@@ -38,12 +38,6 @@ wether the visualizers run without assertions."""
 import sys, os.path
 import tempfile
 import unittest
-sys.path.append("..")
-
-import pkg_resources
-
-pkg_resources.require("pyphant")
-
 import numpy
 from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 from pyphant.core import DataContainer as DC

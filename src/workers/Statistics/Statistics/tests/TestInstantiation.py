@@ -34,10 +34,6 @@ u"""Provides simple instantiation tests for tools workers.
 
 
 import unittest
-import pkg_resources
-
-pkg_resources.require("pyphant")
-pkg_resources.require("pyphant.statistics")
 
 
 class TestInstantiate(unittest.TestCase):

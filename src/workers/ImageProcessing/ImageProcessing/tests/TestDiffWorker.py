@@ -35,8 +35,6 @@ u"""Provides unittest classes for DiffWorker
 
 import unittest
 import numpy
-import pkg_resources
-pkg_resources.require("pyphant")
 from ImageProcessing.DiffWorker import DiffWorker
 from pyphant.core.DataContainer import FieldContainer
 from pyphant.quantities import Quantity

@@ -32,5 +32,6 @@ setup(
     [pyphant.visualizers]
     pil.image = fmfile.FMFWriter:FMFWriter
     """,
+    include_package_data=True,
     test_suite='fmfile.tests'
     )

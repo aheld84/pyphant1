@@ -34,8 +34,6 @@ u"""
 
 
 import unittest
-import pkg_resources
-pkg_resources.require("pyphant")
 
 import pyphant.core.EventDispatcher as EventDispatcher
 

@@ -29,5 +29,6 @@ setup(
     [pyphant.workers]
     myeentry = ImageProcessing
     """,
+    include_package_data=True,
     test_suite='ImageProcessing.tests'
     )

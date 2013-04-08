@@ -32,8 +32,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import pkg_resources
-pkg_resources.require('pyphant')
 
 import unittest, numpy
 from pyphant.quantities import Quantity

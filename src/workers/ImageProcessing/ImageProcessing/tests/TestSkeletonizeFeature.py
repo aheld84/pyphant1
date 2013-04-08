@@ -36,12 +36,6 @@ u"""Provides unittest classes TestSkeletonizeFeature, TestSkeletonizeCross, and 
 
 import sys
 import unittest
-sys.path.append("..")
-
-import pkg_resources
-
-pkg_resources.require("pyphant")
-
 import ImageProcessing as I
 import ImageProcessing.SkeletonizeFeature as IM
 import TestDistanceMapper as TDM

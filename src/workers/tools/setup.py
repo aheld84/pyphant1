@@ -25,5 +25,6 @@ setup(
     [pyphant.workers]
     myeentry = tools
     """,
+    include_package_data=True,
     test_suite='tools.tests'
     )

@@ -35,12 +35,6 @@ u"""Provides unittest class TestSlopeCalculator."""
 
 import sys
 import unittest
-sys.path.append("..")
-
-import pkg_resources
-
-pkg_resources.require("pyphant")
-
 import numpy
 import pylab
 import ImageProcessing as I

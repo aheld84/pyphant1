@@ -35,8 +35,6 @@ u"""Provides unittest classes for Invert worker
 
 import unittest
 import numpy
-import pkg_resources
-pkg_resources.require("pyphant")
 
 
 class InvertTestCase(unittest.TestCase):

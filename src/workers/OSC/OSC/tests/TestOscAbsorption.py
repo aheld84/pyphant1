@@ -38,13 +38,6 @@ u"""Provides unittest class TestOscAbsorption.
 import sys
 import copy
 import unittest
-sys.path.append("..")
-
-import pkg_resources
-
-pkg_resources.require("pyphant")
-pkg_resources.require("pyphant.osc")
-
 import os.path
 
 import numpy, scipy, scipy.optimize
