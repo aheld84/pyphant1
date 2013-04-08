@@ -35,8 +35,6 @@ u"""Provides unittest classes for KnowledgeNode.
 
 
 import unittest
-import pkg_resources
-pkg_resources.require("pyphant")
 from pyphant.core.KnowledgeNode import (KnowledgeNode, RemoteKN,
                                         get_kn_autoport)
 import tempfile

@@ -36,12 +36,6 @@ u"""Provides unittest class TestHistogram.
 
 import sys
 import unittest
-sys.path.append("..")
-
-import pkg_resources
-
-pkg_resources.require("pyphant")
-
 import Statistics.Histogram as S
 import numpy
 import scipy.special

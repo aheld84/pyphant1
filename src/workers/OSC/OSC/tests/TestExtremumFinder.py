@@ -37,13 +37,6 @@ u"""Provides unittest classes TestExtremumFinder and TestExtremumFinderDiscontin
 
 import sys
 import unittest
-sys.path.append("..")
-
-import pkg_resources
-
-pkg_resources.require("pyphant")
-pkg_resources.require("pyphant.osc")
-
 import numpy, scipy, scipy.optimize
 import OSC.ExtremumFinder as EF
 from pyphant.core import DataContainer as DC

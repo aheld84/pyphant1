@@ -34,10 +34,6 @@ u"""Provides simple instantiation tests for fmfile workers.
 
 
 import unittest
-import pkg_resources
-
-pkg_resources.require("pyphant")
-pkg_resources.require("pyphant.fmf")
 
 
 class TestInstantiate(unittest.TestCase):

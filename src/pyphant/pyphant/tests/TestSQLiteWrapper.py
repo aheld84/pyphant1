@@ -38,8 +38,6 @@ u"""Provides unittest classes for SQLiteWrapper.
 
 
 import unittest
-import pkg_resources
-pkg_resources.require("pyphant")
 import pyphant.core.SQLiteWrapper
 from pyphant.quantities import Quantity
 from pyphant.core.H5FileHandler import (im_id, im_summary)

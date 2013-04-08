@@ -34,10 +34,6 @@ u"""Provides simple instantiation tests for OSC workers.
 
 
 import unittest
-import pkg_resources
-
-pkg_resources.require("pyphant")
-pkg_resources.require("pyphant.osc")
 
 
 class TestInstantiate(unittest.TestCase):

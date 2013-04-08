@@ -1,0 +1,1 @@
+recursive-include pyphant/tests/resources/fmf *.fmf

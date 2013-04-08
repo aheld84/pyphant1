@@ -36,15 +36,10 @@ Provides unittest class TestDistanceMapper and helper function stringFeature.
 
 
 import sys,unittest,logging
-sys.path.append("..")
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s %(message)s')#,
 #                    filename='/tmp/myapp.log',
 #                    filemode='w')
-
-import pkg_resources
-
-pkg_resources.require("pyphant")
 
 import ImageProcessing as I
 import ImageProcessing.DistanceMapper as IM

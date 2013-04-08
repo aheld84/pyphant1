@@ -35,8 +35,6 @@ u"""Provides unittest classes
 
 
 import unittest
-import pkg_resources
-pkg_resources.require("pyphant")
 from pyphant.core.KnowledgeManager import (KnowledgeManager,
                                            CACHE_MAX_SIZE,
                                            CACHE_MAX_NUMBER)

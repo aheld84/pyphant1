@@ -40,6 +40,7 @@ from pyphant.quantities import Quantity
 from pyphant.quantities.ParseQuantities import str2unit
 from copy import deepcopy
 from pyphant.core import LoadFMF
+import pkg_resources
 
 #Estimate floating point accuracy
 ACCURACY = 1.0 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.
@@ -410,10 +411,9 @@ N_2	1	2
 
 class Emd5ConsistencyTestCase(unittest.TestCase):
     def setUp(self):
-        from pyphant import __path__ as path
-        import os
-        self.filename = os.path.join(path[0], 'tests', 'resources',
-                                     'fmf','dep.fmf')
+        self.filename = pkg_resources.resource_filename(
+            'pyphant', 'tests/resources/fmf/dep.fmf'
+            )
 
     def testImportFMF(self):
         from pyphant.core.LoadFMF import loadFMFFromFile
@@ -446,14 +446,11 @@ class Emd5ConsistencyTestCase(unittest.TestCase):
 
 
 class LoaderTestCase(unittest.TestCase):
-    def setUp(self):
-        from pyphant import __path__ as path
-        import os
-        self.path = os.path.join(path[0], 'tests', 'resources', 'fmf')
-
     def load(self, filename):
-        import os
-        data = LoadFMF.loadFMFFromFile(os.path.join(self.path, filename))
+        res = 'tests/resources/fmf/' + filename
+        data = LoadFMF.loadFMFFromFile(
+            pkg_resources.resource_filename('pyphant', res)
+            )
         data.seal()
         return data
 

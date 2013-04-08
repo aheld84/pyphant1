@@ -34,9 +34,6 @@ u"""Provides test for unique timestamps
 
 
 import unittest
-import pkg_resources
-
-pkg_resources.require("pyphant")
 
 
 class TestModuleUniqueTimestamp(unittest.TestCase):

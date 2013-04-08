@@ -36,9 +36,6 @@ u"""Provides unittest classes FieldContainerTestCase, SampleContainerTest.
 
 
 import unittest
-import pkg_resources
-pkg_resources.require("pyphant")
-
 import scipy
 import copy
 from pyphant.quantities import Quantity

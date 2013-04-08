@@ -46,9 +46,5 @@ if platform.system()=='Linux' and not 'DISPLAY' in os.environ:
 #    r"\usepackage[utf8]{inputenc}", r"\usepackage{amsmath}"
 #    )
 
-#files=os.listdir(sys.modules[__name__].__path__[0])
-#for module in filter(lambda file: file[-3:]=='.py', files):
-#    if not module == '__init__.py':
-#        exec 'import ' + module[:-3]
 import ImageVisualizer, Chart, KMVisualizer, ConfigurablePlot, \
        ZStackVisualizer

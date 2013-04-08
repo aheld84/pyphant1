@@ -36,8 +36,6 @@ u"""Provides unittest classes TestMRA and TestMRADiscontinuousDiscretisation.
 
 
 import unittest
-import pkg_resources
-pkg_resources.require("pyphant")
 
 
 import numpy

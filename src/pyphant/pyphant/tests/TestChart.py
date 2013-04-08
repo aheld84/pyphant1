@@ -36,11 +36,7 @@ u"""Provides unittests for ImageVisualizers. Because it is difficult to check th
 import sys, os.path
 import tempfile
 import unittest
-sys.path.append("..")
 
-import pkg_resources
-
-pkg_resources.require("pyphant")
 
 import numpy
 from pyphant.visualizers.Chart import LineChart,ScatterPlot

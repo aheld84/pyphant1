@@ -35,7 +35,6 @@ u"""
 
 import unittest
 import pkg_resources
-pkg_resources.require("pyphant")
 import pyphant.core.Param as Param
 from pyphant.core import Worker
 import pyphant.core.EventDispatcher as EventDispatcher

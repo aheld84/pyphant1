@@ -37,10 +37,6 @@ u"""Provides unittest classes TestMRA and TestMRADiscontinuousDiscretisation.
 
 import sys,copy
 import unittest
-sys.path.append("..")
-import pkg_resources
-pkg_resources.require("pyphant")
-pkg_resources.require("pyphant.osc")
 import numpy, scipy, scipy.optimize
 import OSC.MRA as MRA
 from pyphant.core import DataContainer as DC

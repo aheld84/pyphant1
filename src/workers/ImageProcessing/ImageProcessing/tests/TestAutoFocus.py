@@ -38,11 +38,11 @@ and MarkInclusions worker.
 
 import unittest
 import pkg_resources
-pkg_resources.require("pyphant")
 import os
-from ImageProcessing import __path__ as ppath
-importDir = os.path.join(ppath[0], "tests", "resources",
-                         "zstack")
+
+importDir = pkg_resources.resource_filename(
+    'ImageProcessing', 'tests/resources/zstack/'
+    )
 
 
 class ZStackTestCase(unittest.TestCase):

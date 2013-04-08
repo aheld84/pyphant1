@@ -37,14 +37,7 @@ u"""Provides unittest class TestImageLoader.
 
 import sys
 import unittest
-sys.path.append("..")
-
 import pkg_resources
-
-pkg_resources.require("pyphant")
-
-import os.path
-
 import ImageProcessing.ImageLoaderWorker as IL
 import PIL.Image as Image
 import scipy, numpy
@@ -53,7 +46,9 @@ import pyphant.quantities as pq
 class TestImageLoader(unittest.TestCase):
     def setUp(self):
         self.worker = IL.ImageLoaderWorker(None)
-        self.demoFile = os.path.join(os.path.dirname(__file__),"demo.png")
+        self.demoFile = pkg_resources.resource_filename(
+            'ImageProcessing', 'tests/resources/misc/demo.png'
+            )
         self.worker.paramFilename.value = self.demoFile
 
     def testLoadGs(self):

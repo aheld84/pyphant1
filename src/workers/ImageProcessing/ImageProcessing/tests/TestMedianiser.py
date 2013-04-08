@@ -37,12 +37,6 @@ u"""Provides unittest class TestMedianizer
 
 import sys
 import unittest
-sys.path.append("..")
-
-import pkg_resources
-
-pkg_resources.require("pyphant")
-
 import ImageProcessing.Medianiser as IM
 import numpy
 import pyphant.quantities as pq

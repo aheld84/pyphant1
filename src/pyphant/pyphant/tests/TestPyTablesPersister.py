@@ -36,8 +36,6 @@ u"""Provides unittest classes FieldContainerTestCase.
 
 
 import unittest
-import pkg_resources
-pkg_resources.require("pyphant")
 
 import scipy
 import copy, datetime
