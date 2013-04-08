@@ -29,8 +29,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import with_statement
-
 """
 This module provides the KnowledgeNode class which is used as an
 HTTP communication channel between one local KnowledgeManager and
@@ -38,7 +36,7 @@ arbitrary many remote KnowledgeManagers. It comes with a RoutingHTTPServer
 and an optional WebInterface.
 """
 
-
+from __future__ import with_statement
 from pyphant.core.RoutingHTTPServer import (RoutingHTTPServer,
                                             UnreachableError)
 import sqlite3
@@ -56,8 +54,8 @@ except ImportError:
     from simplejson import (dumps, load, loads)
 from tempfile import (mkdtemp, mkstemp)
 import os
-from pyphant import __path__ as pyphant_source_path
 import pyphant.core.bottle
+import pkg_resources
 
 
 class SkipError(Exception):
@@ -73,7 +71,7 @@ class RemoteKN(object):
     This class represents a remote KnowledgeNode.
     """
 
-    status_dict = {0:'offline', 1:'online', 2:'disabled'}
+    status_dict = {0: 'offline', 1: 'online', 2: 'disabled'}
 
     def __init__(self, host, port, status=1, timeout=300.0):
         """
@@ -154,7 +152,7 @@ class RemoteKN(object):
                 raise SkipError()
             else:
                 try:
-                    query = urlencode({'skip':dumps(skip), 'dc_id':dc_id})
+                    query = urlencode({'skip': dumps(skip), 'dc_id': dc_id})
                     url = '%sget_dc_url/?%s' % (self.url, query)
                     try:
                         stream = urlopen(url, timeout=60.0)
@@ -207,8 +205,8 @@ class KnowledgeNode(RoutingHTTPServer):
             self._dbase = dbase
         self._restore_remotes()
         self._setup_routes()
-        self._tempdir = mkdtemp(prefix = 'HDF5Wrap')
-        tpl_path = os.path.join(pyphant_source_path[0], 'web', 'templates')
+        self._tempdir = mkdtemp(prefix='HDF5Wrap')
+        tpl_path = pkg_resources.resource_filename('pyphant', 'web/templates/')
         if not tpl_path in pyphant.core.bottle.TEMPLATE_PATH:
             pyphant.core.bottle.TEMPLATE_PATH.append(tpl_path)
         from pyphant.core.WebInterface import WebInterface
@@ -248,7 +246,7 @@ class KnowledgeNode(RoutingHTTPServer):
             try:
                 rmtree(self._tempdir)
             except OSError:
-                km.logger.warn("Could not delete '%s'." % self._tempdir)
+                self.km.logger.warn("Could not delete '%s'." % self._tempdir)
 
     def register_remote(self, host, port):
         host = host.lower()
@@ -365,7 +363,7 @@ class KnowledgeNode(RoutingHTTPServer):
                     break
                 except (DCNotFoundError, UnreachableError, SkipError):
                     pass
-        return {'skip':skip, 'dc_url':dc_url}
+        return {'skip': skip, 'dc_url': dc_url}
 
     def handle_wrapped(self, filename):
         send_file(filename, self._tempdir,
@@ -379,6 +377,7 @@ def get_kn_autoport(ports, logger=None, *args, **kargs):
     If no port is free, a socket.error (no. 98) is raised.
     """
     import socket
+
     def log(text):
         if logger is None:
             print text

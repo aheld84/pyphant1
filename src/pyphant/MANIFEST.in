@@ -1,1 +1,4 @@
 recursive-include pyphant/tests/resources/fmf *.fmf
+recursive-include pyphant/web/images *.gif *.ico *.png
+include pyphant/web/script/LaTeXMathML.js
+recursive-include pyphant/web/templates/ *.tpl

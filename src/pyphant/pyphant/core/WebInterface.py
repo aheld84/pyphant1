@@ -29,23 +29,21 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import with_statement
-
 """
 This module provides the WebInterface class for the KnowledgeNode
 as well as some HTTP and HTML helper classes.
 """
 
-
-from types import (DictType, ListType, TupleType)
+from __future__ import with_statement
+from types import (ListType, TupleType)
 from pyphant.core.bottle import (template, send_file, request)
 from pyphant.core.Helpers import getPyphantPath
 from urllib import urlencode
 from pyphant.core.KnowledgeNode import RemoteError
 from pyphant.core.KnowledgeManager import DCNotFoundError
-from types import StringTypes
 from pyphant.core.SQLiteWrapper import SQLiteWrapper
 import os
+import pkg_resources
 
 
 def cond(condition, results):
@@ -53,6 +51,7 @@ def cond(condition, results):
         return results[0]
     else:
         return results[1]
+
 
 def validate(value_validator_message_list):
     valid = True
@@ -66,6 +65,7 @@ def validate(value_validator_message_list):
     if not valid:
         raise ValueError(error_msg)
 
+
 def validate_keys(keys, mapping):
     try:
         validate([(k, lambda k: k in mapping, "Missing parameter: %s") \
@@ -75,12 +75,14 @@ def validate_keys(keys, mapping):
                         message=verr.args[0], back_url='/')
     return True
 
+
 def order_bar(keys, order_by, order_asc):
     keydict = dict([(key, key) for key in keys])
     extra = cond(order_asc, (" +", " -"))
-    keydict[order_by] = "<i>%s</i>%s" % (order_by, extra) 
+    keydict[order_by] = "<i>%s</i>%s" % (order_by, extra)
     return [HTMLJSButton(keydict[key],
                          "set_order_by('%s');" % key) for key in keys]
+
 
 def shorten(tolong, premax=7, postmax=15):
     if len(tolong) > premax + postmax + 3:
@@ -92,8 +94,10 @@ def shorten(tolong, premax=7, postmax=15):
     else:
         return tolong
 
+
 def html_latex(mathstr):
     return '<pre class="LaTeX">$%s$</pre>' % mathstr
+
 
 def nice(value, key, do_shorten):
     if isinstance(value, (TupleType, ListType)):
@@ -117,7 +121,8 @@ class HTMLLink():
     """
     This class provides HTML code for hyperlinks.
     """
-    def __init__(self, url, linkobj, target = None):
+
+    def __init__(self, url, linkobj, target=None):
         """
         url -- self explanatory
         linkobj -- obj the user sees to click on
@@ -255,18 +260,19 @@ class HTMLStatus(object):
         return HTMLImage('/images/%s.gif' % self.status,
                          width=12, height=12, alt=self.status).getHTML()
 
+
 class HTMLSummaryLink(HTMLLink):
     def __init__(self, emd5_tag):
-        qry = urlencode({'id':emd5_tag[0]})
+        qry = urlencode({'id': emd5_tag[0]})
         HTMLLink.__init__(self, '/summary?' + qry, emd5_tag[1])
 
 
 class HTMLFCScheme(object):
     def __init__(self, fc_id, kn):
         self.dom = kn.km.search(['shortname', 'latex_unit'],
-                                {'type':'field', 'dim_of':{'id':fc_id}})
+                                {'type': 'field', 'dim_of': {'id': fc_id}})
         self.rng = kn.km.search(['shortname', 'latex_unit'],
-                                {'type':'field', 'id':fc_id})[0]
+                                {'type': 'field', 'id': fc_id})[0]
         self.latex = '$%s$(%s)[%s]'
         self.html = """<pre class="LaTeX">%s</pre>"""
 
@@ -282,11 +288,11 @@ class HTMLFCScheme(object):
 
 class HTMLSCScheme(object):
     def __init__(self, sc_id, kn):
-        columns = kn.km.search(['id'], {'type':'field',
-                                        'col_of':{'id':sc_id}})
+        columns = kn.km.search(['id'], {'type': 'field',
+                                        'col_of': {'id': sc_id}})
         self.fc_schemes = [HTMLFCScheme(col[0], kn) for col in columns]
-        self.shortname = kn.km.search(['shortname'], {'type':'sample',
-                                                      'id':sc_id})[0][0]
+        self.shortname = kn.km.search(['shortname'], {'type': 'sample',
+                                                      'id': sc_id})[0][0]
         self.html = """<pre class="LaTeX">%s</pre>"""
 
     def getSpaced(self):
@@ -303,7 +309,7 @@ class HTMLChildrenTable(HTMLTable):
     def __init__(self, dc_id, kn):
         child = cond(dc_id.endswith('field'), ('dim_of', 'col_of'))
         result = kn.km.search(
-            ['id', 'longname'], {'type':'field', child:{'id':dc_id}})
+            ['id', 'longname'], {'type': 'field', child: {'id': dc_id}})
         rows = [[HTMLSummaryLink(res) for res in result]]
         HTMLTable.__init__(self, rows, headings=False)
 
@@ -341,8 +347,7 @@ class WebInterface(object):
         """
         self.enabled = enabled
         self.kn = knowledge_node
-        from pyphant import __path__ as ppath
-        self.rootdir = os.path.join(ppath[0], 'web')
+        self.rootdir = pkg_resources.resource_filename('pyphant', 'web/')
         self.url_link = HTMLLink(self.kn.url, self.kn.url).getHTML()
         self.menu = HTMLTable(
             [[HTMLLink('/search?shorten=True', 'Browse Data Containers'),
@@ -376,7 +381,9 @@ class WebInterface(object):
         remote_rows = [[('URL', 2), 'UUID', ('Action', 2)]]
         for remote in self.kn.remotes:
             endisstr = cond(remote._status == 2, ('enable', 'disable'))
-            qdict = {'host':remote.host, 'port':remote.port, 'action':endisstr}
+            qdict = {
+                'host': remote.host, 'port': remote.port, 'action': endisstr
+                }
             endis = HTMLLink('/remote_action?' + urlencode(qdict), endisstr)
             qdict['action'] = 'remove'
             rem = HTMLLink('/remote_action?' + urlencode(qdict), 'remove')
@@ -407,10 +414,10 @@ class WebInterface(object):
         if not self.enabled:
             return template('disabled')
         qry = request.GET
-        action_dict = {'enable':self.kn.enable_remote,
-                       'disable':self.kn.disable_remote,
-                       'remove':self.kn.remove_remote,
-                       'add':self.kn.register_remote}
+        action_dict = {'enable': self.kn.enable_remote,
+                       'disable': self.kn.disable_remote,
+                       'remove': self.kn.remove_remote,
+                       'add': self.kn.register_remote}
         valk = validate_keys(['host', 'port', 'action'], qry)
         if not valk is True:
             return valk
@@ -462,7 +469,7 @@ class WebInterface(object):
     def common_summary(self, dc_id):
         dctype = cond(dc_id.endswith('field'), ('field', 'sample'))
         keys = ['id', 'machine', 'creator', 'date', 'hash', 'longname']
-        result = self.kn.km.search(keys, {'type':dctype, 'id':dc_id})
+        result = self.kn.km.search(keys, {'type': dctype, 'id': dc_id})
         if result == []:
             raise DCNotFoundError(template(
                 'message', heading='Parameter Error', back_url='/',
@@ -502,10 +509,12 @@ class WebInterface(object):
         # --- qry verification and completion ---
         common_keys = ['type', 'machine', 'creator', 'longname', 'shortname']
         complete = dict([(key, self.anystr) for key in common_keys])
-        complete.update({'order_by':'date', 'order_asc':'True', 'offset':'0',
-                         'jump':'False', 'date_from':'', 'date_to':'',
-                         'shorten':'False', 'add_attr':'False',
-                         'rem_attr':'None'})
+        complete.update(
+            {'order_by': 'date', 'order_asc': 'True', 'offset': '0',
+             'jump': 'False', 'date_from': '', 'date_to': '',
+             'shorten': 'False', 'add_attr': 'False',
+             'rem_attr': 'None'}
+            )
         qry = request.GET
         for key in complete:
             if not key in qry:
@@ -540,14 +549,18 @@ class WebInterface(object):
             qry['attr_key' + attr_post[-1]] = ''
             qry['attr_value' + attr_post[-1]] = ''
         from pyphant.core.Helpers import utf82uc
+
         def testany(str1):
             str2 = utf82uc(str1)
             if str2 == u"":
                 str2 = self.kn.km.any_value
             return str2
-        search_dict['attributes'] = dict([(qry['attr_key' + apost],
-                                           testany(qry['attr_value' + apost])) \
-                                          for apost in attr_post])
+
+        search_dict['attributes'] = dict(
+            [(qry['attr_key' + apost],
+              testany(qry['attr_value' + apost])) \
+                 for apost in attr_post]
+            )
         #print search_dict
         # --- common search keys ---
         optionss = [[(self.anystr, )] \
