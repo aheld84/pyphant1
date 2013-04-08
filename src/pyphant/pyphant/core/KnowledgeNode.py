@@ -54,8 +54,8 @@ except ImportError:
     from simplejson import (dumps, load, loads)
 from tempfile import (mkdtemp, mkstemp)
 import os
-from pyphant import __path__ as pyphant_source_path
 import pyphant.core.bottle
+import pkg_resources
 
 
 class SkipError(Exception):
@@ -205,8 +205,8 @@ class KnowledgeNode(RoutingHTTPServer):
             self._dbase = dbase
         self._restore_remotes()
         self._setup_routes()
-        self._tempdir = mkdtemp(prefix = 'HDF5Wrap')
-        tpl_path = os.path.join(pyphant_source_path[0], 'web', 'templates')
+        self._tempdir = mkdtemp(prefix='HDF5Wrap')
+        tpl_path = pkg_resources.resource_filename('pyphant', 'web/templates/')
         if not tpl_path in pyphant.core.bottle.TEMPLATE_PATH:
             pyphant.core.bottle.TEMPLATE_PATH.append(tpl_path)
         from pyphant.core.WebInterface import WebInterface

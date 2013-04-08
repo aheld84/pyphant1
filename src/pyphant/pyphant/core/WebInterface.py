@@ -43,6 +43,7 @@ from pyphant.core.KnowledgeNode import RemoteError
 from pyphant.core.KnowledgeManager import DCNotFoundError
 from pyphant.core.SQLiteWrapper import SQLiteWrapper
 import os
+import pkg_resources
 
 
 def cond(condition, results):
@@ -346,8 +347,7 @@ class WebInterface(object):
         """
         self.enabled = enabled
         self.kn = knowledge_node
-        from pyphant import __path__ as ppath
-        self.rootdir = os.path.join(ppath[0], 'web')
+        self.rootdir = pkg_resources.resource_filename('pyphant', 'web/')
         self.url_link = HTMLLink(self.kn.url, self.kn.url).getHTML()
         self.menu = HTMLTable(
             [[HTMLLink('/search?shorten=True', 'Browse Data Containers'),
