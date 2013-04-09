@@ -48,11 +48,13 @@ class DummyProvider(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def load(self, subscriber=0):
-        print self.paramSource.value
         if not self.paramSource.value:
             raise ValueError('Not initialized!')
         else:
             return [42, -1]
+
+    def __hash__(self):
+        return 2
 
 
 class DummyConsumer(Worker.Worker):
@@ -71,6 +73,9 @@ class DummyConsumer(Worker.Worker):
     @Worker.plug(Connectors.TYPE_IMAGE)
     def check(self, socket1, subscriber=0):
         return True
+
+    def __hash__(self):
+        return 1
 
 
 class RaiseHandler(logging.Handler):
