@@ -33,7 +33,6 @@
 This module provides a worker for selecting DCs by id (emd5)
 """
 
-
 from pyphant.core import (Worker, Connectors)
 from pyphant.core.KnowledgeManager import KnowledgeManager
 import pkg_resources
@@ -45,12 +44,12 @@ class Emd5Src(Worker.Worker):
     """
     API = 2
     VERSION = 1
-    pkg_resources.get_distribution("pyphant").version
+    REVISION = pkg_resources.get_distribution("pyphant").version
     name = "Emd5Src"
     _params = [("emd5", u"id (emd5)", "", None)]
 
     @Worker.plug(Connectors.TYPE_IMAGE)
-    def getDataContainer(self, subscriber = 0):
+    def getDataContainer(self, subscriber=0):
         emd5 = self.paramEmd5.value
         kmanager = KnowledgeManager.getInstance()
         return kmanager.getDataContainer(emd5)

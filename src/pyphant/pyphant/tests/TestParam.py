@@ -32,7 +32,6 @@
 u"""
 """
 
-
 import unittest
 import pkg_resources
 import pyphant.core.Param as Param
@@ -43,7 +42,7 @@ import pyphant.core.EventDispatcher as EventDispatcher
 class TestParamDummyWorker(Worker.Worker):
     API = 2
     VERSION = 1
-    pkg_resources.get_distribution("pyphant").version
+    REVISION = pkg_resources.get_distribution("pyphant").version
     name = "TestParamDummyWorker"
 
 
