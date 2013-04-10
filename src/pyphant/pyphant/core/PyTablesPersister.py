@@ -231,26 +231,47 @@ def instantiateWorker( parent, workerGroup ):
     worker = eval(module+"."+workerGroup._v_attrs.clazz+"(parent, annotations)")
     return worker
 
-def restoreParamsToWorkers(recipeGroup, workers):
-    for workerGroup in recipeGroup:
-        worker = workers[workerGroup._v_name]
+def restoreParamsToWorker(worker, workerGroup):
+    try:
+        worker.refreshParams()
+    except:
+        _logger.warning(
+            u"Attempted refreshParam failed for %s. Check Parameters!" % (
+                worker.name,
+                ),
+            exc_info=True
+            )
+    for paramName in workerGroup.parameters._v_attrs._v_attrnamesuser:
+        param = getattr(workerGroup.parameters._v_attrs, paramName)
+        if type(param) == scipy.ndarray:
+            param = unicode(param)
+        elif type(param) == scipy.string_:
+            param = str(param)
+        elif type(param) == scipy.int32:
+            param = int(param)
         try:
-            worker.refreshParams()
-        except:
-            _logger.warning(u"Attempted refreshParam failed for %s. Check Parameters!"%worker.name,
-                            exc_info = True)
-        for paramName in workerGroup.parameters._v_attrs._v_attrnamesuser:
-            param = getattr(workerGroup.parameters._v_attrs, paramName)
-            if type(param)==scipy.ndarray:
-                param=unicode(param)
-            elif type(param)==scipy.string_:
-                param=str(param)
-            elif type(param)==scipy.int32:
-                param=int(param)
-            try:
-                worker.getParam(paramName).overrideValue(param)
-            except KeyError:
-                _logger.warning(u'Could not restore "%s" to parameter: "%s"'%(param,paramName))
+            worker.getParam(paramName).overrideValue(param)
+        except KeyError:
+            _logger.warning(
+                u'Could not restore "%s" to parameter: "%s"' % (
+                    param, paramName
+                    )
+                )
+
+def restoreParamsToWorkerParentsFirst(worker, worker2group, visited):
+    if worker in visited:
+        return
+    parents = [s.getPlug().worker for s in worker.getSockets() if s.isFull()]
+    for parent in parents:
+        restoreParamsToWorkerParentsFirst(parent, worker2group, visited)
+    restoreParamsToWorker(worker, worker2group[worker])
+    visited.add(worker)
+
+def restoreParamsToWorkers(recipeGroup, workers):
+    visited = set()
+    worker2group = dict([(workers[wg._v_name], wg) for wg in recipeGroup])
+    for worker in worker2group:
+        restoreParamsToWorkerParentsFirst(worker, worker2group, visited)
 
 def loadRecipe(h5):
     recipeGroup = h5.root.recipe
