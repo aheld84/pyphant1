@@ -43,7 +43,6 @@ from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 import numpy
 import pyphant.quantities as pq
 from pyphant.core import DataContainer
-import pylab
 
 #Define helper function providing the curved feature
 def ring(width=1,radius=9,center=[0,0],dim=11):

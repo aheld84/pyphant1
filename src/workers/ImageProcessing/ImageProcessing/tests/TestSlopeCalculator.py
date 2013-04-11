@@ -36,7 +36,6 @@ u"""Provides unittest class TestSlopeCalculator."""
 import sys
 import unittest
 import numpy
-import pylab
 import ImageProcessing as I
 import ImageProcessing.SlopeCalculator as IM
 import pyphant.quantities as pq

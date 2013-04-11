@@ -36,7 +36,6 @@ u"""
 from pyphant.core import (Worker, Connectors, DataContainer)
 import numpy
 import copy
-import pylab
 from pyphant.quantities import Quantity as PQ
 import pkg_resources
 
@@ -86,8 +85,8 @@ class SlopeCalculator(Worker.Worker):
             print "Calculating (right-side) gradient with O(1)."
             NablaX = numpy.diff(paddedField, axis=0)
             NablaY = numpy.diff(paddedField, axis=1)
-            xAbs   = (NablaX[:, :-1] / dx[:, pylab.NewAxis]) ** 2
-            yAbs   = (NablaY[:-1, :] / dy[pylab.NewAxis, :]) ** 2
+            xAbs   = (NablaX[:, :-1] / dx[:, numpy.newaxis]) ** 2
+            yAbs   = (NablaY[:-1, :] / dy[numpy.newaxis, :]) ** 2
 
         gradient = numpy.sqrt(xAbs + yAbs)
 #        print image.data

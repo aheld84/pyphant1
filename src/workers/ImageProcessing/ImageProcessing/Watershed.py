@@ -39,7 +39,6 @@ import heapq
 import scipy
 import scipy.ndimage
 import pkg_resources
-#import pylab
 #import threading
 
 
