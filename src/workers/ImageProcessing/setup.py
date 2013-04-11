@@ -25,7 +25,9 @@ setup(
     description=__doc__,
     install_requires=[
         'pyphant>=1.0b2.dev',
-        'PIL'
+        'PIL',
+        'numpy',
+        'scipy',
         ],
     packages=find_packages(),
     entry_points="""
