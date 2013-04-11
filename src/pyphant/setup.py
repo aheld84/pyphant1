@@ -25,6 +25,7 @@ setup(
         'tables',
         'wxPython',
         'egenix-mx-base',
+        'configobj',
         ],
     packages=find_packages(),
     entry_points={'gui_scripts': [
