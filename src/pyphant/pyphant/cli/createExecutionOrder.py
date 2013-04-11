@@ -1,5 +1,7 @@
 import pkg_resources
 pkg_resources.require('pyphant')
+pkg_resources.require('pyphant.imageprocessing')
+pkg_resources.require('tables')
 from pyphant.core import PyTablesPersister
 from pyphant.core.H5FileHandler import H5FileHandler
 import optparse
