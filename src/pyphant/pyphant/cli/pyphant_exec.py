@@ -29,8 +29,9 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#import pkg_resources
-#pkg_resources.require("pyphant")
+import pkg_resources
+pkg_resources.require("pyphant")
+pkg_resources.require("tables")
 
 def main():
     import sys

@@ -23,7 +23,10 @@ setup(
     maintainer_email='alexander.held@fmf.uni-freiburg.de',
     license="BSD",
     description=__doc__,
-    install_requires=['pyphant>=1.0b2.dev'],
+    install_requires=[
+        'pyphant>=1.0b2.dev',
+        'PIL'
+        ],
     packages=find_packages(),
     entry_points="""
     [pyphant.workers]

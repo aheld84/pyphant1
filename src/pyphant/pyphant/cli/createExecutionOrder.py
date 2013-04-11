@@ -1,5 +1,7 @@
 import pkg_resources
 pkg_resources.require('pyphant')
+pkg_resources.require('pyphant.imageprocessing')
+pkg_resources.require('tables')
 from pyphant.core import PyTablesPersister
 from pyphant.core.H5FileHandler import H5FileHandler
 import optparse
@@ -42,9 +44,11 @@ def processArgs(h5):
     # Order ::= (socketMap, resultPlug)
     return (options, args, recipe, [(options.socketMap, [p.id for p in options.requestedResults])])
 
-from pyphant.core.Helpers import loadImageAsGreyScale
+from ImageProcessing.ImageLoaderWorker import ImageLoaderWorker
 def f2dc(f):
-    res = loadImageAsGreyScale(f)
+    il = ImageLoaderWorker()
+    il.paramFilename.value=f
+    res = il.plugLoadImageAsGreyScale.getResult()
     res.seal()
     return res
 

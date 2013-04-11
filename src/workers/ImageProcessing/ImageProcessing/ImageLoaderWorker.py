@@ -36,9 +36,11 @@ Toolbox. It simply loads an image from the location given in the
 worker's configuration.
 """
 
-from pyphant.core import (Worker, Connectors)
-from pyphant.core.Helpers import loadImageAsGreyScale
+from pyphant.core import (Worker, Connectors, DataContainer)
 import pkg_resources
+import PIL.Image
+import scipy
+from pyphant.quantities import Quantity
 
 
 class ImageLoaderWorker(Worker.Worker):
@@ -62,7 +64,7 @@ class ImageLoaderWorker(Worker.Worker):
 ## Result is colour image
 ##     @Worker.plug(Connectors.TYPE_IMAGE)
 ##     def loadImage(self, subscriber=0):
-##         im=Image.open(self.paramFilename.value)
+##         im=PIL.Image.open(self.paramFilename.value)
 ##         im.load()
 ##         size=im.size
 ##         print scipy.fromimage(im).shape
@@ -76,11 +78,40 @@ class ImageLoaderWorker(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def loadImageAsGreyScale(self, subscriber=0):
-        result = loadImageAsGreyScale(
-            self.paramFilename.value,
-            self.paramXScale.value,
-            self.paramYScale.value,
-            self.paramFieldUnit.value
+        im = PIL.Image.open(self.paramFilename.value)
+        if im.mode == "I;16":
+            im = im.convert("I")
+            data = scipy.misc.fromimage(im).astype("int16")
+        else:
+            data = scipy.misc.fromimage(im, flatten=True)
+        Ny, Nx = data.shape
+        xUnit = Quantity(self.paramXScale.value.encode('utf-8'))
+        xAxis = DataContainer.FieldContainer(
+            scipy.linspace(0.0, xUnit.value, Nx, True),
+            xUnit / xUnit.value,
+            longname='x-coordinate',
+            shortname='x'
+            )
+        if self.paramYScale.value == 'link2X':
+            yUnit = xUnit * float(Ny) / Nx
+        else:
+            yUnit = Quantity(self.paramYScale.value.encode('utf-8'))
+        yAxis = DataContainer.FieldContainer(
+            scipy.linspace(0.0, yUnit.value, Ny, True),
+            yUnit / yUnit.value,
+            longname='y-coordinate',
+            shortname='y'
+            )
+        try:
+            FieldUnit = Quantity(self.paramFieldUnit.value.encode('utf-8'))
+        except AttributeError:
+            FieldUnit = self.paramFieldUnit.value
+        result = DataContainer.FieldContainer(
+            data,
+            FieldUnit,
+            longname="Image",
+            shortname="I",
+            dimensions=[yAxis, xAxis]
             )
         result.seal()
         return result
