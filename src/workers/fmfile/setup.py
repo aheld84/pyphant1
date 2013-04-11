@@ -23,7 +23,8 @@ setup(
     description=__doc__,
     install_requires=[
         'pyphant>=1.0b2.dev',
-        'ConfigObj'
+        'ConfigObj',
+        'wxPython',
         ],
     packages=find_packages(),
     entry_points="""
