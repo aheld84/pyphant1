@@ -43,7 +43,6 @@ from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 import numpy
 import pyphant.quantities as pq
 from pyphant.core import DataContainer
-import pylab
 
 class TestApplyMask(unittest.TestCase):
     """Tests the correct application of binary masks."""

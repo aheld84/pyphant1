@@ -47,7 +47,6 @@ from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 import numpy
 import pyphant.quantities as pq
 from pyphant.core import DataContainer
-import pylab
 import copy
 
 def stringFeature(Nx,width=1,directions=1,distanceToBorder=1):
@@ -70,7 +69,7 @@ def stringFeature(Nx,width=1,directions=1,distanceToBorder=1):
 
 def makeDim(longname,shortname,dimLength,dimUnit='1mum'):
     dimension = DataContainer.FieldContainer(
-        pylab.linspace(0,1,dimLength),
+        numpy.linspace(0,1,dimLength),
         unit = dimUnit,
         longname = longname, shortname=shortname)
     return dimension
