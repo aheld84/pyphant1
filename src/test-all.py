@@ -1,24 +1,23 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os, os.path
-
+import os
+import os.path
 import sys
-
 import unittest
 
 suites = []
 for root, dirs, files in os.walk("."):
-    for i, d in enumerate(dirs):
-        if d == ".svn":
-            del dirs[i]
+    for ignore in ('.git', 'dist', 'build', '__pycache__'):
+        if ignore in dirs:
+            dirs.remove(ignore)
 
     files = filter(lambda f: f.startswith('Test') and f.endswith('.py'), files)
 
-    if len(files)>0:
+    if len(files) > 0:
         sys.path.append(root)
         for f in files:
             mod = f[:-3]
-            exec 'import '+mod
+            exec 'import ' + mod
             mod = sys.modules[mod]
             suites.append(unittest.TestLoader().loadTestsFromModule(mod))
 
