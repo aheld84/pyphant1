@@ -206,7 +206,7 @@ class KnowledgeNode(RoutingHTTPServer):
         self._restore_remotes()
         self._setup_routes()
         self._tempdir = mkdtemp(prefix='HDF5Wrap')
-        tpl_path = pkg_resources.resource_filename('pyphant', 'web/templates/')
+        tpl_path = pkg_resources.resource_filename('pyphant', 'web/templates')
         if not tpl_path in pyphant.core.bottle.TEMPLATE_PATH:
             pyphant.core.bottle.TEMPLATE_PATH.append(tpl_path)
         from pyphant.core.WebInterface import WebInterface

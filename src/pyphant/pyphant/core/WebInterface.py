@@ -347,7 +347,7 @@ class WebInterface(object):
         """
         self.enabled = enabled
         self.kn = knowledge_node
-        self.rootdir = pkg_resources.resource_filename('pyphant', 'web/')
+        self.rootdir = pkg_resources.resource_filename('pyphant', 'web')
         self.url_link = HTMLLink(self.kn.url, self.kn.url).getHTML()
         self.menu = HTMLTable(
             [[HTMLLink('/search?shorten=True', 'Browse Data Containers'),

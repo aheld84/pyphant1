@@ -41,7 +41,7 @@ import pkg_resources
 import os
 
 importDir = pkg_resources.resource_filename(
-    'ImageProcessing', 'tests/resources/zstack/'
+    'ImageProcessing', 'tests/resources/zstack'
     )
 
 
