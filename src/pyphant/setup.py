@@ -3,7 +3,7 @@
 
 from setuptools import setup, find_packages
 
-VERSION = '1.0b2.dev'
+VERSION = '1.0b2'
 
 setup(
     name='pyphant',

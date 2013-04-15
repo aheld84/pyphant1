@@ -7,7 +7,7 @@ Visit http://pyphant.sourceforge.net for more information.
 """
 
 
-VERSION = '1.0b2.dev'
+VERSION = '1.0b2'
 
 from setuptools import setup, find_packages
 
@@ -21,7 +21,7 @@ setup(
     license="BSD",
     description=__doc__,
     install_requires=[
-        'pyphant>=1.0b2.dev',
+        'pyphant>=1.0b2',
         'numpy',
         'scipy',
         'matplotlib',
