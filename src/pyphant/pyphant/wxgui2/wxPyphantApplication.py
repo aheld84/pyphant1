@@ -64,14 +64,12 @@ import webbrowser
 pltform = platform.system()
 
 
-class wxPyphantApplication(wx.PySimpleApp):
+class wxPyphantApplication(wx.App):
     def __init__(self, pathToRecipe=None):
         self.pathToRecipe = pathToRecipe
-        wx.PySimpleApp.__init__(self)
+        wx.App.__init__(self)
 
     def OnInit(self):
-        if not wx.PySimpleApp.OnInit(self):
-            return False
         self._logger = logging.getLogger("pyphant")
         sys.excepthook = self.excepthook
         sogl.SOGLInitialize()
