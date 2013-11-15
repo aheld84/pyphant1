@@ -55,8 +55,9 @@ class WorkerRepository(wx.TreeCtrl):
         workerInfo = self.GetItemData(event.Item).Data
         if workerInfo is not None:
             dropSource = wx.DropSource(self)
-            pickledObj = cPickle.dumps(workerInfo)
-            data = wx.TextDataObject(pickledObj)
+            dump = cPickle.dumps(workerInfo)
+            data = wx.CustomDataObject('PYPHANT_WORKER')
+            data.SetData(dump)
             dropSource.SetData(data)
             dragResult = dropSource.DoDragDrop(True)
         event.Skip()
