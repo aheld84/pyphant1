@@ -218,7 +218,7 @@ class AutoFocus(Worker.Worker):
 
     def autofocus(self, data, zsp, zsu, zind, inclusionList,
                   inclusionDict, lastLabelData):
-        labelData = ndimage.label(zsp.binary[zind])[0]
+        labelData = ndimage.label(zsp.binary[zind], output=numpy.int32)[0]
         slicess = ndimage.find_objects(labelData)
         #previousMatchedStacks = {} # WTF?
         for label, slices in enumerate(slicess, start=1):

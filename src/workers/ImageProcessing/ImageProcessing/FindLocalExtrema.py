@@ -36,7 +36,7 @@ TODO
 from pyphant.core import (Worker, Connectors)
 import copy
 from scipy import ndimage
-from numpy import (alltrue, zeros)
+from numpy import (alltrue, zeros, int32)
 import pkg_resources
 
 
@@ -89,7 +89,7 @@ class FindLocalExtrema(Worker.Worker):
         return points
 
     def findExtrema(self, data):
-        labeled = ndimage.label(data)[0]
+        labeled = ndimage.label(data, output=int32)[0]
         self.nextlabel = 1
         slices = ndimage.find_objects(labeled)
         res = zeros(data.shape, int)
