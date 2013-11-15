@@ -134,7 +134,7 @@ class FieldContainerTestCase(unittest.TestCase):
                         prohibited.")
         try:
             field.data[1] = 4
-        except RuntimeError, e:
+        except (RuntimeError, ValueError):
             pass
         else:
             self.fail("Modification of sealed FieldContainer was not \
@@ -741,7 +741,7 @@ class CommonSampleContainerTests(SampleContainerTest):
                       "prohibited.")
         try:
             sample['i'].data[0] = 4
-        except RuntimeError, e:
+        except (RuntimeError, ValueError):
             pass
         else:
             self.fail("Modification of sealed FieldContainer was not "
