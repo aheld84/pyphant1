@@ -58,15 +58,20 @@ class PyphantCanvas(sogl.ShapeCanvas):
 #        print self._draggedShape
 
 
-class CanvasDropTarget(wx.TextDropTarget):
+class CanvasDropTarget(wx.PyDropTarget):
     def __init__(self, parent):
-        wx.TextDropTarget.__init__(self)
+        wx.PyDropTarget.__init__(self)
         self.parent = parent
-        self.data = wx.PyTextDataObject()
+        self.df = wx.CustomDataFormat('PYPHANT_WORKER')
+        self.data = wx.CustomDataObject(self.df)
         self.SetDataObject(self.data)
 
-    def OnDropText(self,x,y,data):
-        self.parent.diagram.addWorker(data,(x,y))
-        #self.parent.Refresh()
+    def OnDrop(self, x, y):
         return True
 
+    def OnData(self, x, y, d):
+        if self.GetData():
+            dump = self.data.GetData()
+            self.parent.diagram.addWorker(dump, (x, y))
+        #self.parent.Refresh()
+        return d
