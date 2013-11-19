@@ -59,7 +59,7 @@ class ConfigureFrame(wx.Dialog):
         if len(pl) <= 0:
             self.Add(wx.StaticText(self, label="Nothing to be configured"))
         else:
-            sizer = wx.FlexGridSizer(len(pl),3,5,5)
+            sizer = wx.FlexGridSizer(len(pl) + 2, 3, 5, 5)
             sizer.Add(wx.StaticText(self, label="Label"))
             sizer.Add(wx.StaticText(self, label="Value"))
             sizer.Add(wx.StaticText(self, label="is external"))
