@@ -132,6 +132,13 @@ class wxPyphantFrame(wx.Frame):
         except AbortRecipeCreation:
             self.shutdown()
             return
+        except IOError as error:
+            self._wxPyphantApp._logger.error(
+                error.message,
+                exc_info=sys.exc_info()
+                )
+            self.shutdown()
+            return
         self._initAui()
         self.compositeWorkerStack = []
 
