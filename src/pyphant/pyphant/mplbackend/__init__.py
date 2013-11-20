@@ -48,11 +48,13 @@ def ensure_mpl_backend(backend=None):
         else:
             backend = 'wxagg'
     import matplotlib
-    matplotlib.use(backend)
     active_backend = matplotlib.get_backend()
     if active_backend.lower() != backend.lower():
-        raise EnvironmentError(
-            "Could not select matplotlib backend '%s' ('%s' is active)!" \
-            % (backend, active_backend)
-            )
+        matplotlib.use(backend)
+        active_backend = matplotlib.get_backend()
+        if active_backend.lower() != backend.lower():
+            raise EnvironmentError(
+                "Could not select matplotlib backend '%s' ('%s' is active)!" \
+                % (backend, active_backend)
+                )
     return active_backend
