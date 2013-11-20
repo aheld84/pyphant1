@@ -40,6 +40,7 @@ from pyphant.core import (Worker, Connectors, DataContainer)
 import pkg_resources
 import PIL.Image
 import scipy
+import scipy.misc
 from pyphant.quantities import Quantity
 
 
