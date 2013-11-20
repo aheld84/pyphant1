@@ -41,6 +41,7 @@ import pkg_resources
 import ImageProcessing.ImageLoaderWorker as IL
 import PIL.Image as Image
 import scipy, numpy
+import scipy.misc
 import pyphant.quantities as pq
 
 class TestImageLoader(unittest.TestCase):
