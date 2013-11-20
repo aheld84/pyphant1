@@ -39,7 +39,6 @@ import unittest
 import ImageProcessing as I
 import ImageProcessing.SkeletonizeFeature as IM
 import TestDistanceMapper as TDM
-from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 import numpy
 import pyphant.quantities as pq
 from pyphant.core import DataContainer

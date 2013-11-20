@@ -31,7 +31,8 @@
 
 u"""Provides unittests for ImageVisualizers. Because it is difficult to check the correct visualization of a image, it is just checked, wether the visualizers run without assertions."""
 
-
+from pyphant.mplbackend import ensure_mpl_backend
+ensure_mpl_backend('agg')
 
 import sys, os.path
 import tempfile

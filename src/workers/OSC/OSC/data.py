@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
+from pyphant.mplbackend import ensure_mpl_backend
+ensure_mpl_backend('wxagg')
 import numpy, scipy, scipy.signal, scipy.interpolate
-import matplotlib
-matplotlib.rcParams['backend']='WXAgg'
-matplotlib.rcParams['text.usetex']=True
-#matplotlib.rcParams['text.latex.unicode']=True
 import pylab
 
 a = numpy.array([[276.1833E+0, 255.3097E+0, 2.4406E+0, 309.2355E+0, 287.1405E+0],

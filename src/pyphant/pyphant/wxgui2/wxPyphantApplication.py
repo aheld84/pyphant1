@@ -32,6 +32,8 @@
 
 u"""
 """
+from pyphant.mplbackend import ensure_mpl_backend
+ensure_mpl_backend('wxagg')
 
 import os, os.path, pkg_resources
 from pyphant.core.Helpers import getPyphantPath

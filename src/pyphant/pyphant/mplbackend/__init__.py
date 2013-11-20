@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2006-2007, Rectorate of the University of Freiburg
-# Copyright (c) 2009, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2006-2013, Rectorate of the University of Freiburg
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,39 +29,30 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""Provides unittest class TestSlopeCalculator."""
 
+def ensure_mpl_backend(backend=None):
+    """
+    Tries to select the matplotlib backend.
 
-import sys
-import unittest
-import numpy
-import ImageProcessing as I
-import ImageProcessing.SlopeCalculator as IM
-import pyphant.quantities as pq
-from TestDistanceMapper import stringFeature
-from pyphant.core import DataContainer
-
-class TestSlopeCalculator(unittest.TestCase):
-    """Tests the correct computation of distance maps for equally spaced features composed from one or more strings."""
-    def setUp(self):
-        self.dim = 11
-        self.worker = IM.SlopeCalculator(None)
-
-    def testSlopeOfString(self):
-        """All elements of a string-like feature have distance 1 to the background."""
-
-        referenceField = DataContainer.FieldContainer(
-            stringFeature(self.dim),
-            unit = '1',
-            longname='String Feature',
-            shortname='S')
-
-        referenceField.seal()
-        result = self.worker.slope(referenceField)
-
-        afoot = numpy.where(referenceField.data == I.FEATURE_COLOR,1,0)
-#        numpy.testing.assert_array_equal(afoot,result.data)
-#        assert(result.unit == referenceField.dimensions[0].unit)
-
-if __name__ == '__main__':
-    unittest.main()
+    Raises EnvironmentError, if the desired backend is valid but could not be selected.
+    If `backend` is None, either 'agg' or 'wxagg' is chosen, depending on whether
+    a display is present (on Linux and Darwin).
+    For other platforms, 'wxagg' is always the default.
+    Returns the selected backend as given by matplotlib.get_backend().
+    """
+    if backend is None:
+        import platform
+        import os
+        if platform.system() in ('Linux', 'Darwin') and not 'DISPLAY' in os.environ:
+            backend = 'agg'
+        else:
+            backend = 'wxagg'
+    import matplotlib
+    matplotlib.use(backend)
+    active_backend = matplotlib.get_backend()
+    if active_backend.lower() != backend.lower():
+        raise EnvironmentError(
+            "Could not select matplotlib backend '%s' ('%s' is active)!" \
+            % (backend, active_backend)
+            )
+    return active_backend
