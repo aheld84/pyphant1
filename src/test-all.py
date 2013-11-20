@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from pyphant.mplbackend import ensure_mpl_backend
+ensure_mpl_backend('agg')
 import os
 import os.path
 import sys

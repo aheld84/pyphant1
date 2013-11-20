@@ -43,7 +43,6 @@ logging.basicConfig(level=logging.DEBUG,
 
 import ImageProcessing as I
 import ImageProcessing.DistanceMapper as IM
-from pyphant.visualizers.ImageVisualizer import ImageVisualizer
 import numpy
 import pyphant.quantities as pq
 from pyphant.core import DataContainer
