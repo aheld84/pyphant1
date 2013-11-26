@@ -42,7 +42,7 @@ class TestInstantiate(unittest.TestCase):
         wreg = WorkerRegistry.getInstance()
         workerInfos = [t for t in wreg.getToolBoxInfoList() \
                        if t.name == 'OSC'][0].workerInfos
-        self.assertGreater(len(workerInfos), 0)
+        self.assertTrue(len(workerInfos) > 0)
         for wInfo in workerInfos:
             wInfo.createWorker()
 
