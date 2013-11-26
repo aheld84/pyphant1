@@ -59,6 +59,13 @@ class TestImageLoader(unittest.TestCase):
         gs = self.worker.plugLoadImageAsGreyScale.getResult()
         numpy.testing.assert_array_equal(orig, gs.data)
 
+    def testScalarFieldUnit(self):
+        """Check for correct setting of scalar field unit."""
+        unit = "250"
+        self.worker.paramFieldUnit.value = unit
+        gs = self.worker.plugLoadImageAsGreyScale.getResult()
+        self.assertEqual(gs.unit, 250.)
+
     def testSimpleFieldUnit(self):
         """Check for correct setting of field unit in a basic case."""
         unit = "1 V/m"
@@ -72,6 +79,22 @@ class TestImageLoader(unittest.TestCase):
         self.worker.paramFieldUnit.value = unit
         gs = self.worker.plugLoadImageAsGreyScale.getResult()
         self.assertEqual(gs.unit, pq.Quantity(unit))
+
+    def testScalarXScale(self):
+        """Check for correct handling of scalar xScale."""
+        unit = "20"
+        self.worker.paramXScale.value = unit
+        gs = self.worker.plugLoadImageAsGreyScale.getResult()
+        self.assertEqual(gs.dimensions[-1].unit, 1.0)
+        self.assertAlmostEqual(gs.dimensions[-1].data.max(), 20.)
+
+    def testScalarYScale(self):
+        """Check for correct handling of scalar yScale."""
+        unit = "20"
+        self.worker.paramYScale.value = unit
+        gs = self.worker.plugLoadImageAsGreyScale.getResult()
+        self.assertEqual(gs.dimensions[-2].unit, 1.0)
+        self.assertAlmostEqual(gs.dimensions[-2].data.max(), 20.)
 
     def testSimpleXScale(self):
         """Check for correct handling of xScale."""
