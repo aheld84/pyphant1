@@ -41,7 +41,7 @@ import pkg_resources
 import PIL.Image
 import scipy
 import scipy.misc
-from pyphant.quantities import Quantity
+from pyphant.core.Helpers import parseFCUnit
 
 
 class ImageLoaderWorker(Worker.Worker):
@@ -51,14 +51,8 @@ class ImageLoaderWorker(Worker.Worker):
         "pyphant.imageprocessing"
         ).version
     name = "Load Image"
-##     lengthUnits=[prefix[0]+'m' for prefix
-##                  in quantities._prefixes if prefix[1]>1]
-##     lengthUnits.append('m')
-##     lengthUnits+=[prefix[0]+'m' for prefix
-##                   in quantities._prefixes if prefix[1]<1]
-
     _params = [("filename", u"Filename", "", Connectors.SUBTYPE_FILE),
-               ("fieldUnit", u"Unit of the field", 1, None),
+               ("fieldUnit", u"Unit of the field", "1", None),
                ("xScale", u"Scale of the x-axis (eg. 100nm)", '1mum', None),
                ("yScale", u"Scale of the y-axis (eg. 100nm)", 'link2X', None)]
 
@@ -77,6 +71,12 @@ class ImageLoaderWorker(Worker.Worker):
 ##                                                    self.paramYUnit.value)
 ##         return result
 
+    def _getScalar(self, fc_unit):
+        try:
+            return fc_unit.value
+        except AttributeError:
+            return fc_unit
+
     @Worker.plug(Connectors.TYPE_IMAGE)
     def loadImageAsGreyScale(self, subscriber=0):
         im = PIL.Image.open(self.paramFilename.value)
@@ -86,30 +86,27 @@ class ImageLoaderWorker(Worker.Worker):
         else:
             data = scipy.misc.fromimage(im, flatten=True)
         Ny, Nx = data.shape
-        xUnit = Quantity(self.paramXScale.value.encode('utf-8'))
+        xUnit = parseFCUnit(self.paramXScale.value)
         xAxis = DataContainer.FieldContainer(
-            scipy.linspace(0.0, xUnit.value, Nx, True),
-            xUnit / xUnit.value,
+            scipy.linspace(0.0, self._getScalar(xUnit), Nx, True),
+            xUnit / self._getScalar(xUnit),
             longname='x-coordinate',
             shortname='x'
             )
         if self.paramYScale.value == 'link2X':
             yUnit = xUnit * float(Ny) / Nx
         else:
-            yUnit = Quantity(self.paramYScale.value.encode('utf-8'))
+            yUnit = parseFCUnit(self.paramYScale.value)
         yAxis = DataContainer.FieldContainer(
-            scipy.linspace(0.0, yUnit.value, Ny, True),
-            yUnit / yUnit.value,
+            scipy.linspace(0.0, self._getScalar(yUnit), Ny, True),
+            yUnit / self._getScalar(yUnit),
             longname='y-coordinate',
             shortname='y'
             )
-        try:
-            FieldUnit = Quantity(self.paramFieldUnit.value.encode('utf-8'))
-        except AttributeError:
-            FieldUnit = self.paramFieldUnit.value
+        fieldUnit = parseFCUnit(self.paramFieldUnit.value)
         result = DataContainer.FieldContainer(
             data,
-            FieldUnit,
+            fieldUnit,
             longname="Image",
             shortname="I",
             dimensions=[yAxis, xAxis]

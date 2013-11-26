@@ -207,3 +207,18 @@ def getModuleUniqueTimestamp():
     finally:
         TIMESTAMP_LOCK.release()
     return timestamp
+
+
+def parseFCUnit(s):
+    """
+    Parses the string/unicode s into a float or a Quantity.
+
+    Returns a float or a Quantity or raises an error.
+    See quantities package for possible errors.
+    """
+    s = uc2utf8(s)
+    try:
+        return float(s)
+    except ValueError:
+        from pyphant.quantities import Quantity
+        return Quantity(s)
