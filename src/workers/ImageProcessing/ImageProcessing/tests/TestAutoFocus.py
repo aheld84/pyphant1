@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.5
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2006-2010, Rectorate of the University of Freiburg
