@@ -48,14 +48,6 @@ from pyphant.quantities import isQuantity
 #from NonUniformImage import NonUniformImage
 from matplotlib.image import NonUniformImage
 
-class F(pylab.Formatter):
-    def __init__(self, container, *args, **kwargs):
-        self.container=container
-    def __call__(self, x, pos=None):
-        try:
-            return str(x*self.container.unit)#.replace('mu',r'\textmu{}')
-        except IndexError, error:
-            return str(x)
 
 class ImageVisualizer(object):
     name='Image Visualizer'
@@ -127,7 +119,7 @@ class ImageVisualizer(object):
                          vmax=vmax,
                          origin='lower',
                          extent=(xmin, xmax, ymin, ymax))
-            pylab.colorbar(format=F(self.fieldContainer), ax=ax)
+            pylab.colorbar(ax=ax)
         else:
             im = NonUniformImage(ax, extent=(xmin,xmax,ymin,ymax))
             if vmin is not None or vmax is not None:
@@ -139,7 +131,7 @@ class ImageVisualizer(object):
             ax.images.append(im)
             ax.set_xlim(xmin,xmax)
             ax.set_ylim(ymin,ymax)
-            pylab.colorbar(im,format=F(self.fieldContainer), ax=ax)
+            pylab.colorbar(im, ax=ax)
         pylab.xlabel(self.fieldContainer.dimensions[-1].shortlabel)
         pylab.ylabel(self.fieldContainer.dimensions[-2].shortlabel)
         pylab.title(self.fieldContainer.label)
