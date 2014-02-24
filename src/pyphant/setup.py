@@ -4,7 +4,7 @@
 from setuptools import setup, find_packages
 from setuptools.command.test import test
 
-VERSION = '1.0b3.dev'
+VERSION = '1.0b3'
 
 
 class EnsureAggUnittests(test):
@@ -25,7 +25,7 @@ setup(
     license="BSD",
     url='http://pyphant.sourceforge.net/',
     install_requires=[
-        'sogl>=0.2.0',
+        'sogl>=0.2.1',
         'paste',
         'simplejson',
         'matplotlib',
