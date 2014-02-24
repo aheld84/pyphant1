@@ -7,7 +7,7 @@ Visit http://pyphant.sourceforge.net for more information.
 """
 
 
-VERSION = '1.0b3'
+VERSION = '1.0b4.dev'
 
 from setuptools import setup, find_packages
 
@@ -22,7 +22,7 @@ setup(
     license="BSD",
     description=__doc__,
     install_requires=[
-        'pyphant>=1.0b3',
+        'pyphant>=1.0b4.dev',
         'wxPython',
         ],
     packages=find_packages(),

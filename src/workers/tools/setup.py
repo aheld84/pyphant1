@@ -6,7 +6,7 @@ Pyphant Tools toolbox
 Visit http://pyphant.sourceforge.net for more information.
 """
 
-VERSION = '1.0b3'
+VERSION = '1.0b4.dev'
 
 from setuptools import setup, find_packages
 
@@ -19,7 +19,7 @@ setup(
     maintainer_email='alexander.held@fmf.uni-freiburg.de',
     license="BSD",
     description=__doc__,
-    install_requires=['pyphant>=1.0b3'],
+    install_requires=['pyphant>=1.0b4.dev'],
     packages=find_packages(),
     entry_points="""
     [pyphant.workers]
