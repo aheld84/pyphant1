@@ -4,7 +4,7 @@
 from setuptools import setup, find_packages
 from setuptools.command.test import test
 
-VERSION = '1.0b3'
+VERSION = '1.0b4.dev'
 
 
 class EnsureAggUnittests(test):
