@@ -37,6 +37,7 @@ worker's configuration as a 3d image.
 
 from pyphant.core.Connectors import (SUBTYPE_FILE, TYPE_IMAGE)
 from pyphant.core import Worker
+from pyphant.core.Helpers import parseFCUnit
 import pkg_resources
 
 
@@ -50,7 +51,7 @@ class LoadZStack(Worker.Worker):
     _params = [
         ("path", u"Path (select any file)", "", SUBTYPE_FILE),
         ("regex", u"File Filter Regex", r'(?i)^.+\.tif$', None),
-        ("fieldUnit", u"Unit of the field", 1, None),
+        ("fieldUnit", u"Unit of the field", "1", None),
         ("dz", u"z increment", '1 mum', None),
         ("dy", u"y increment", '1 mum', None),
         ("dx", u"x increment", '1 mum', None),
@@ -72,7 +73,6 @@ class LoadZStack(Worker.Worker):
         from scipy.misc import imread
         import numpy
         from pyphant.core.DataContainer import FieldContainer
-        from pyphant.quantities import Quantity
         path = os.path.realpath(self.paramPath.value)
         if os.path.isfile(path):
             path = os.path.dirname(path)
@@ -98,17 +98,14 @@ class LoadZStack(Worker.Worker):
         dimensions = [
             self.getDimension(a, data.shape[i]) for i, a in enumerate(axes)
             ]
-        try:
-            unit = Quantity(self.paramFieldUnit.value)
-        except AttributeError:
-            unit = self.paramFieldUnit.value
+        unit = parseFCUnit(self.paramFieldUnit.value)
         longname = self.paramLongname.value
         shortname = self.paramShortname.value
         image = FieldContainer(
             data=data, dimensions=dimensions, unit=unit,
             longname=longname, shortname=shortname,
-            attributes={'yFactor': Quantity(self.paramDy.value),
-                        'xFactor': Quantity(self.paramDx.value)}
+            attributes={'yFactor': parseFCUnit(self.paramDy.value),
+                        'xFactor': parseFCUnit(self.paramDx.value)}
             )
         image.seal()
         subscriber %= 100
@@ -123,13 +120,18 @@ class LoadZStack(Worker.Worker):
         from pyphant.quantities import Quantity
         from pyphant.core.DataContainer import FieldContainer
         import numpy
-        delta = Quantity(self.getParam('d' + axis).value)
-        start = Quantity(self.getParam('start' + axis).value)
+        delta = parseFCUnit(self.getParam('d' + axis).value)
+        start = parseFCUnit(self.getParam('start' + axis).value)
 
-        start = start.inUnitsOf(delta.unit)
-        data = start.value + numpy.arange(0, length, dtype=float) * delta.value
+        if isinstance(delta, Quantity):
+            unit = Quantity(1.0, delta.unit)
+            start = start.inUnitsOf(delta.unit).value
+            delta = delta.value
+        else:
+            unit = 1
+        data = start + numpy.arange(0, length, dtype=float) * delta
         dim = FieldContainer(
-            data, unit=Quantity(1.0, delta.unit),
+            data, unit=unit,
             shortname=axis,
             longname='%s-Axis' % (axis.upper(), )
             )
