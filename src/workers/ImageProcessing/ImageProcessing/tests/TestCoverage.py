@@ -41,7 +41,7 @@ class CoverageTestCase(unittest.TestCase):
     def setUp(self):
         from pyphant.core.DataContainer import FieldContainer
         data = numpy.arange(0, 256, 1).reshape((16, 16))
-        self.image = FieldContainer(data)
+        self.image = FieldContainer(data, unit=1e10)
         self.image.seal()
 
     def testRatiosUpToTenPercentError(self):

@@ -52,7 +52,7 @@ def calculateThreshold(image, coveragePercent):
     targetValue = cumsum[-1] * coveragePercent
     index = scipy.argmin(scipy.absolute(cumsum - targetValue))
     threshold = histogram[1][index]
-    return threshold * image.unit
+    return threshold
 
 
 class CoverageWorker(Worker.Worker):
