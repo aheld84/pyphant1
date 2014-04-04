@@ -234,31 +234,41 @@ Concerning the ordering of data matrices and the dimension list consult http://w
     dimensions = property(_get_dimensions,_set_dimensions)
 
     def _getLabel(self):
-        if len(self._dimensions)>0:
+        if len(self._dimensions) > 0:
             shortnames = [dim.shortname for dim in self._dimensions]
             shortnames.reverse()
             dependency = '(%s)' % ','.join(shortnames)
         else:
             dependency = ''
-        label = u"%s $%s%s$ / %s" % (self.longname.title(), self.shortname, dependency, self.unit)
-        try:
-            if not isQuantity(self.unit) and self.unit == 1:
-                label = u"%s $%s%s$ / a.u." % (self.longname.title(),self.shortname,dependency)
-        except:
-            pass #just a ScientificPython bug
-        return label.replace('1.0 ',r'')#.replace('mu',u'\\textmu{}')
-    label=property(_getLabel)
+        return u"%s $%s%s$ / %s" % (
+            self.longname.title(), self.shortname,
+            dependency, self._formatUnit()
+            )
+    label = property(_getLabel)
 
     def _getShortLabel(self):
-        if not isQuantity(self.unit) and self.unit == 1:
-            if self.longname == 'index':
-                label = u"%s $%s$" % (self.longname.title(),self.shortname)
-            else:
-                label = u"%s $%s$ / a.u." % (self.longname.title(),self.shortname)
+        unit = self._formatUnit()
+        if unit == u'a.u.' and self.longname.lower() == 'index':
+            return u"%s $%s$" % (self.longname.title(), self.shortname)
         else:
-            label =  u"%s $%s$ / %s" % (self.longname.title(), self.shortname, self.unit)
-        return label.replace('1.0 ',r'')#.replace('mu',u'\\textmu{}')
-    shortlabel=property(_getShortLabel)
+            return u"%s $%s$ / %s" % (
+                self.longname.title(), self.shortname, unit
+                )
+    shortlabel = property(_getShortLabel)
+
+    def _formatUnit(self):
+        unit = unicode(self.unit)
+        try:
+            if not isQuantity(self.unit) and self.unit == 1:
+                return u'a.u.'
+        except:
+            # is this bug still present?
+            # why catch everything?
+            pass  # just a ScientificPython bug
+        unit = unit.replace(u'1.0 ', u'')#.replace(u'mu',u'\\textmu{}')
+        if u' ' in unit or u'/' in unit or u'*' in unit:
+            unit = u'(%s)' % (unit, )
+        return unit
 
     def _getRawDataBytes(self):
         return self.data.nbytes \
