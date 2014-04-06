@@ -112,7 +112,7 @@ class FieldContainerTestCase(unittest.TestCase):
                                self.unit,
                                longname=self.longname,
                                shortname=self.shortname)
-        self.assertEqual(field.label,"%s $%s(i,j)$ / %s" % (self.longname,
+        self.assertEqual(field.label,"%s $%s(i,j)$ / (%s)" % (self.longname,
                                                             self.shortname,
                                                             self.unit))
 
