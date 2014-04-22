@@ -29,7 +29,11 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Python modul including a base 64 encoded PNG file of the Pyphant logo based on pyphant-shade-Information-Analysis-Framework-ARTS-small.png."""
+"""
+Python module including a base 64 encoded PNG file of the Pyphant logo
+
+based on pyphant-shade-Information-Analysis-Framework-ARTS-small.png.
+"""
 
 pic_b64 = """iVBORw0KGgoAAAANSUhEUgAAA9oAAAKoCAYAAACIioc5AAAAAXNSR0IArs4c6QAAAAlwSFlzAABc
 RgAAXEYBFJRDQQAAAAd0SU1FB9oHFhAVIKjeJBYAAAAddEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRo

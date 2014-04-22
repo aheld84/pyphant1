@@ -34,16 +34,20 @@ def ensure_mpl_backend(backend=None):
     """
     Tries to select the matplotlib backend.
 
-    Raises EnvironmentError, if the desired backend is valid but could not be selected.
-    If `backend` is None, either 'agg' or 'wxagg' is chosen, depending on whether
-    a display is present (on Linux and Darwin).
+    Raises EnvironmentError, if the desired backend is valid
+    but could not be selected.
+    If `backend` is None, either 'agg' or 'wxagg' is chosen,
+    depending on whether a display is present (on Linux and Darwin).
     For other platforms, 'wxagg' is always the default.
     Returns the selected backend as given by matplotlib.get_backend().
     """
     if backend is None:
         import platform
         import os
-        if platform.system() in ('Linux', 'Darwin') and not 'DISPLAY' in os.environ:
+        if (
+            platform.system() in ('Linux', 'Darwin') and not
+            'DISPLAY' in os.environ
+            ):
             backend = 'agg'
         else:
             backend = 'wxagg'

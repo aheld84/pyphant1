@@ -35,8 +35,7 @@ At the moment these can only be entire recipes, but it is planned
 that they can be subgraphs, too.
 """
 
-
-import EventDispatcher, Worker, Connectors, Param
+from pyphant.core import (EventDispatcher, Worker, Connectors, Param)
 import copy
 import pkg_resources
 
@@ -47,15 +46,18 @@ class CompositeWorkerChangedEvent(object):
         self.message = message
         self.data = data
 
+
 class WorkerAddedEvent(CompositeWorkerChangedEvent):
     def __init__(self, worker, data=None):
         CompositeWorkerChangedEvent.__init__(self, worker,
                                              "Worker Added", data)
 
+
 class WorkerRemovedEvent(CompositeWorkerChangedEvent):
     def __init__(self, worker, data=None):
         CompositeWorkerChangedEvent.__init__(self, worker,
                                              "Worker Removed", data)
+
 
 class ConnectionEvent(CompositeWorkerChangedEvent):
     def __init__(self, plug, socket, message, data=None):
@@ -63,20 +65,27 @@ class ConnectionEvent(CompositeWorkerChangedEvent):
                                              message, data)
         self.plug = plug
         self.socket = socket
+
+
 class ConnectionCreatedEvent(ConnectionEvent):
     def __init__(self, plug, socket, data=None):
         ConnectionEvent.__init__(self, plug, socket,
                                  "Connection created", data)
+
+
 class ConnectionDestroyedEvent(ConnectionEvent):
     def __init__(self, plug, socket, data=None):
         ConnectionEvent.__init__(self, plug, socket,
                                  "Connection destroyed", data)
+
+
 class ConnectorsExternalizationStateChangedEvent(CompositeWorkerChangedEvent):
     def __init__(self, worker, connector, data=None):
         CompositeWorkerChangedEvent.__init__(
             self, worker, "Connectors externalization state changed", data
             )
         self.connector = connector
+
 
 class CompositeWorker(Worker.Worker):
     API = 2
@@ -101,12 +110,12 @@ class CompositeWorker(Worker.Worker):
         for i in xrange(self.paramNoSockets.value):
             name = "socket%i" % i
             socketProxy = Connectors.ConnectorProxy(self, True, name)
-            setattr(self, 'socket'+self.upperFirstLetter(name), socketProxy)
+            setattr(self, 'socket' + self.upperFirstLetter(name), socketProxy)
             self._sockets[name] = socketProxy
         for i in xrange(self.paramNoPlugs.value):
             name = "plug%i" % i
             plugProxy = Connectors.ConnectorProxy(self, False, name)
-            setattr(self, 'plug'+self.upperFirstLetter(name), plugProxy)
+            setattr(self, 'plug' + self.upperFirstLetter(name), plugProxy)
             self._plugs[name] = plugProxy
 
     def addWorker(self, worker, data=None):
@@ -188,12 +197,14 @@ class CompositeWorker(Worker.Worker):
         map(lambda worker: listenerDict[WorkerAddedEvent](
                 WorkerAddedEvent(worker)
                 ), self._workers)
+
         def connectionInformer(worker):
             for socket in worker.getSockets():
                 if socket.isFull():
-                    [ (issubclass(ConnectionCreatedEvent, x)
+                    [(issubclass(ConnectionCreatedEvent, x)
                        and l(ConnectionCreatedEvent(socket.getPlug(), socket)))
-                      for (x, l) in listenerDict.items() ]
+                      for (x, l) in listenerDict.items()]
+
         connectionInformer(self)
         map(connectionInformer, self._workers)
 
@@ -202,11 +213,11 @@ class CompositeWorker(Worker.Worker):
 
     def registerListener(self, listener,
                          eventType=CompositeWorkerChangedEvent):
-        self._eventDispatcher.registerListener( listener, eventType)
+        self._eventDispatcher.registerListener(listener, eventType)
 
     def unregisterListener(self, listener,
                            eventType=CompositeWorkerChangedEvent):
-        self._eventDispatcher.unregisterListener( listener, eventType )
+        self._eventDispatcher.unregisterListener(listener, eventType)
 
     def _notifyListeners(self, event):
         self._eventDispatcher.dispatchEvent(event)
@@ -239,6 +250,7 @@ class CompositeWorker(Worker.Worker):
         else:
             return False
 
+
 class CompositeWorkerWalker(object):
     def __init__(self, compositeWorker):
         self._compositeWorker = compositeWorker
@@ -256,5 +268,3 @@ class CompositeWorkerWalker(object):
                     worker = plug.worker
                     if worker not in visited:
                         toVisit.append(worker)
-
-

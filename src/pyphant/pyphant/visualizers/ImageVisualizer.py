@@ -41,7 +41,9 @@ try:
 except:
     MPL_LT_0_98_1 = True
 
-import pylab, scipy, numpy
+import pylab
+import scipy
+import numpy
 from pyphant.core.Connectors import TYPE_IMAGE
 from pyphant.wxgui2.DataVisReg import DataVisReg
 from pyphant.quantities import isQuantity
@@ -50,21 +52,22 @@ from matplotlib.image import NonUniformImage
 
 
 class ImageVisualizer(object):
-    name='Image Visualizer'
-    def __init__(self, fieldContainer,show=True):
+    name = 'Image Visualizer'
+
+    def __init__(self, fieldContainer, show=True):
         self.fieldContainer = fieldContainer
         self.show = show
         self.execute()
 
-    def dataPrinter(self,event):
-        x=self.fieldContainer.dimensions[-1]
-        y=self.fieldContainer.dimensions[-2]
-        zLabel=self.fieldContainer.shortname
+    def dataPrinter(self, event):
+        x = self.fieldContainer.dimensions[-1]
+        y = self.fieldContainer.dimensions[-2]
+        zLabel = self.fieldContainer.shortname
         if event.inaxes:
-            xc=event.xdata
-            yc=event.ydata
-            xi = numpy.abs(x.data-xc).argmin()
-            yi = numpy.abs(y.data-yc).argmin()
+            xc = event.xdata
+            yc = event.ydata
+            xi = numpy.abs(x.data - xc).argmin()
+            yi = numpy.abs(y.data - yc).argmin()
             if ((self.fieldContainer.mask != None)
                 and self.fieldContainer.mask[yi, xi]):
                 val = "n/a"
@@ -76,17 +79,19 @@ class ImageVisualizer(object):
                     val = "nan"
             xval = xc * x.unit
             yval = yc * y.unit
+
             def format(val):
                 if not isQuantity(val):
-                    if type(val) in (type(' '),type(u' ')):
+                    if type(val) in (type(' '), type(u' ')):
                         valstr = val
                     else:
                         valstr = "%.4g" % val
                 else:
-                    valstr = "%.3f %s" % (val.value,val.unit.name())
+                    valstr = "%.3f %s" % (val.value, val.unit.name())
                 return valstr
-            labels = map(format,[xval,yval,val])
-            labels.insert(0,zLabel)
+
+            labels = map(format, [xval, yval, val])
+            labels.insert(0, zLabel)
             self.figure.canvas.toolbar.set_message("%s(%s,%s) = %s"
                                                    % tuple(labels))
         else:
@@ -98,10 +103,10 @@ class ImageVisualizer(object):
         self.figure.canvas.mpl_connect('motion_notify_event', self.dataPrinter)
         x = self.fieldContainer.dimensions[-1].data
         y = self.fieldContainer.dimensions[-2].data
-        xmin=scipy.amin(x)
-        xmax=scipy.amax(x)
-        ymin=scipy.amin(y)
-        ymax=scipy.amax(y)
+        xmin = scipy.amin(x)
+        xmax = scipy.amax(x)
+        ymin = scipy.amin(y)
+        ymax = scipy.amax(y)
         #Support for images with non uniform axes adapted
         #from python-matplotlib-doc/examples/pcolor_nonuniform.py
         ax = self.figure.add_subplot(111)
@@ -121,7 +126,7 @@ class ImageVisualizer(object):
                          extent=(xmin, xmax, ymin, ymax))
             pylab.colorbar(ax=ax)
         else:
-            im = NonUniformImage(ax, extent=(xmin,xmax,ymin,ymax))
+            im = NonUniformImage(ax, extent=(xmin, xmax, ymin, ymax))
             if vmin is not None or vmax is not None:
                 im.set_clim(vmin, vmax)
                 im.set_data(x, y, self.fieldContainer.maskedData)
@@ -129,8 +134,8 @@ class ImageVisualizer(object):
                 im.set_data(x, y, self.fieldContainer.maskedData)
                 im.autoscale_None()
             ax.images.append(im)
-            ax.set_xlim(xmin,xmax)
-            ax.set_ylim(ymin,ymax)
+            ax.set_xlim(xmin, xmax)
+            ax.set_ylim(ymin, ymax)
             pylab.colorbar(im, ax=ax)
         pylab.xlabel(self.fieldContainer.dimensions[-1].shortlabel)
         pylab.ylabel(self.fieldContainer.dimensions[-2].shortlabel)

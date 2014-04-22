@@ -32,5 +32,8 @@
 u"""
 """
 
-import ImageVisualizer, Chart, KMVisualizer, ConfigurablePlot, \
-       ZStackVisualizer
+import ImageVisualizer
+import Chart
+import KMVisualizer
+import ConfigurablePlot
+import ZStackVisualizer

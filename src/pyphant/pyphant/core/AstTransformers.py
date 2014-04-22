@@ -24,8 +24,10 @@ class ReplaceName(LocationFixingNodeTransformer):
 
     def visit_Str(self, node):
         quantity = Quantity(node.s)
+
         class QuantityDummy(object):
             pass
+
         dummy = QuantityDummy()
         dummy.unit = Quantity(1.0, quantity.unit)
         dummy.data = quantity.value

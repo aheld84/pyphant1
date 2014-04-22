@@ -37,6 +37,8 @@ from matplotlib.image import AxesImage
 import numpy as np
 from numpy import ma
 from matplotlib import _image, colors as mcolors
+from matplotlib import cm
+
 
 class NonUniformImage(AxesImage):
     def __init__(self, ax,
@@ -57,15 +59,15 @@ class NonUniformImage(AxesImage):
         height *= magnification
         im = _image.pcolor(self._Ax, self._Ay, self._A,
                            height, width,
-                           (x0, x0+v_width, y0, y0+v_height))
+                           (x0, x0 + v_width, y0, y0 + v_height))
         fc = self.axes.get_frame().get_facecolor()
         bg = mcolors.colorConverter.to_rgba(fc, 0)
         im.set_bg(*bg)
         return im
 
     def set_data(self, x, y, A):
-        x = np.asarray(x,np.float32)
-        y = np.asarray(y,np.float32)
+        x = np.asarray(x, np.float32)
+        y = np.asarray(y, np.float32)
         A = ma.asarray(A)
         if len(x.shape) != 1 or len(y.shape) != 1\
            or A.shape[0:2] != (y.shape[0], x.shape[0]):
@@ -73,22 +75,25 @@ class NonUniformImage(AxesImage):
         if len(A.shape) not in [2, 3]:
             raise TypeError("Can only plot 2D or 3D data")
         if len(A.shape) == 3 and A.shape[2] not in [1, 3, 4]:
-            raise TypeError("3D arrays must have three (RGB) or four (RGBA) color components")
+            raise TypeError(
+                "3D arrays must have three (RGB) or "
+                "four (RGBA) color components"
+                )
         if len(A.shape) == 3 and A.shape[2] == 1:
             A.shape = A.shape[0:2]
         if len(A.shape) == 2:
             if A.dtype != np.uint8:
-                A = (self.cmap(self.norm(A))*255).astype(np.uint8)
+                A = (self.cmap(self.norm(A)) * 255).astype(np.uint8)
             else:
-                A = np.repeat(A[:,:,np.newaxis], 4, 2)
-                A[:,:,3] = 255
+                A = np.repeat(A[:, :, np.newaxis], 4, 2)
+                A[:, :, 3] = 255
         else:
             if A.dtype != np.uint8:
-                A = (255*A).astype(np.uint8)
+                A = (255 * A).astype(np.uint8)
             if A.shape[2] == 3:
-                B = zeros(tuple(list(A.shape[0:2]) + [4]), np.uint8)
-                B[:,:,0:3] = A
-                B[:,:,3] = 255
+                B = np.zeros(tuple(list(A.shape[0:2]) + [4]), np.uint8)
+                B[:, :, 0:3] = A
+                B[:, :, 3] = 255
                 A = B
         self._A = A
         self._Ax = x
@@ -122,5 +127,4 @@ class NonUniformImage(AxesImage):
     def set_cmap(self, cmap):
         if self._A is not None:
             raise RuntimeError('Cannot change colors after loading data')
-        cm.ScalarMappable.set_cmap(self, norm)
-
+        cm.ScalarMappable.set_cmap(self, cmap)

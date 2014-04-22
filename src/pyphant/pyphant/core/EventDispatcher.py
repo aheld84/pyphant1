@@ -39,7 +39,7 @@ class EventDispatcher:
 
     def registerListener(self, listener, eventType):
         try:
-            self._listeners[eventType].append( listener )
+            self._listeners[eventType].append(listener)
         except KeyError:
             self._listeners[eventType] = [listener]
 
@@ -53,7 +53,7 @@ class EventDispatcher:
 
     def unregisterListener(self, listener, eventType=None):
         if eventType:
-            self._listeners[eventType].remove( listener )
+            self._listeners[eventType].remove(listener)
         else:
             for listeners in self._listeners.values():
                 try:
@@ -68,5 +68,3 @@ class EventDispatcher:
             #if key in self._listeners:
             for listener in self._listeners[key]:
                 listener(event)
-
-

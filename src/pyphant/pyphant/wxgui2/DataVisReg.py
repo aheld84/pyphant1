@@ -32,24 +32,28 @@
 u"""
 """
 
+from pyphant.core import singletonmixin
+import logging
+import pkg_resources
 
-from pyphant.core import Connectors, singletonmixin
-import logging, pkg_resources
 
 class DataVisReg(singletonmixin.Singleton):
-
     def __init__(self):
-        self._registry={}
+        self._registry = {}
         self._logger = logging.getLogger("pyphant")
         self._logger.info("Initialized DataVisReg")
         self._dirty = True
 
     def registerVisualizer(self, dataType, visualizer):
         if not dataType in self._registry:
-            self._logger.info('Added new dataType "%s"'%dataType)
-            self._registry[dataType]=[]
+            self._logger.info('Added new dataType "%s"' % dataType)
+            self._registry[dataType] = []
         if not visualizer in self._registry[dataType]:
-            self._logger.info('Added visualizer "%s" to dataType "%s"'%(visualizer,dataType))
+            self._logger.info(
+                'Added visualizer "%s" to dataType "%s"' % (
+                    visualizer, dataType
+                    )
+                )
             self._registry[dataType].append(visualizer)
 
     def getVisualizers(self, dataType):
@@ -63,4 +67,6 @@ class DataVisReg(singletonmixin.Singleton):
         except KeyError:
             return []
 
+
+# loads visualizers
 import pyphant.visualizers

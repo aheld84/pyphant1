@@ -55,10 +55,12 @@ class ZStackPlotPanel(PlotPanel):
     def _setfc(self, fieldContainer):
         self._fieldContainer = fieldContainer
         attrs = fieldContainer.attributes
+
         def scale(quant, name):
             if quant is None:
                 return getattr(fieldContainer.data, name[1:])()
             return quant / fieldContainer.unit
+
         bounds = [scale(attrs.get(name, None), name) \
                   for name in ['vmin', 'vmax']]
         self.vmin, self.vmax = bounds
@@ -240,7 +242,8 @@ class ZStackConfigPanel(wx.PyPanel):
 
 
 class ZStackVisualizer(wx.Frame):
-    name='Z-Stack'
+    name = 'Z-Stack'
+
     def __init__(self, dataContainer, show=True):
         self.init_zvalues(dataContainer)
         self.init_cvalues(dataContainer)

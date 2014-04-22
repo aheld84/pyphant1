@@ -29,7 +29,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-def getPyphantPath(subdir = ''):
+
+def getPyphantPath(subdir=''):
     """
     returns full pyphant path with optional subdirectory
     subdir -- subdirectory that is created if it does not exist already,
@@ -42,19 +43,22 @@ def getPyphantPath(subdir = ''):
     path = os.path.join(homedir, '.pyphant', subdir)
     # Create the dir in a multi process save way:
     try:
-        os.makedirs(path) #<-- ignores EEXIST in all but top recursion levels
+        os.makedirs(path)  # <-- ignores EEXIST in all but top recursion levels
     except OSError, ose:
         if ose.errno != os.errno.EEXIST:
             raise
     return path
 
+
 def getUsername():
     import getpass
     return getpass.getuser()
 
+
 def getMachine():
     import socket
     return unicode(socket.getfqdn(), 'utf-8')
+
 
 def enableLogging():
     """
@@ -70,6 +74,7 @@ def enableLogging():
     l.addHandler(h)
     l.info("Logger 'pyphant' has been configured for debug purposes.")
 
+
 def uc2utf8(stype):
     """
     Returns utf-8 encoded version of stype, if stype was unicode, else
@@ -77,6 +82,7 @@ def uc2utf8(stype):
     If stype is of ListType, the above applies for all entries of the list.
     """
     from types import UnicodeType, ListType
+
     def convert(arg):
         if isinstance(arg, UnicodeType):
             return arg.encode('utf-8')
@@ -85,6 +91,7 @@ def uc2utf8(stype):
         return map(convert, stype)
     return convert(stype)
 
+
 def utf82uc(stype):
     """
     Returns a unicode object created from a utf-8 encoded string.
@@ -92,6 +99,7 @@ def utf82uc(stype):
     List are treated similar to uc2utf8, see docstring there.
     """
     from types import StringType, ListType
+
     def convert(arg):
         if isinstance(arg, StringType):
             return unicode(arg, 'utf')
@@ -99,6 +107,7 @@ def utf82uc(stype):
     if isinstance(stype, ListType):
         return map(convert, stype)
     return convert(stype)
+
 
 def emd52dict(emd5):
     """
@@ -114,6 +123,7 @@ def emd52dict(emd5):
     retdict['hash'] = emd5_split[5].split('.')[0]
     retdict['type'] = emd5_split[5].split('.')[1]
     return retdict
+
 
 def batch(recipe, input, plug, longname, dobatch=True, temporary=False):
     """
@@ -159,10 +169,14 @@ def batch(recipe, input, plug, longname, dobatch=True, temporary=False):
     socket.pullPlug()
     return output
 
+
 def makeSC(column_data, longnames, shortnames, longname, shortname,
-           attributes={}):
+           attributes=None):
+    if attributes is None:
+        attributes = {}
     unzipped = zip(*column_data)
     assert len(unzipped) == len(longnames) == len(shortnames)
+
     def get_column_fc(col, ln, sn):
         try:
             from pyphant.quantities import Quantity
@@ -184,10 +198,12 @@ def makeSC(column_data, longnames, shortnames, longname, shortname,
     sc.seal()
     return sc
 
+
 from threading import Lock
 TIMESTAMP_LOCK = Lock()
 LAST_TIMESTAMP = ''
 del Lock
+
 
 def getModuleUniqueTimestamp():
     global TIMESTAMP_LOCK

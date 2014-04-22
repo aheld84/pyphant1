@@ -39,7 +39,9 @@ class WorkerFactoryPool:
 
     def registerFactory(self, factory, name):
         if name in self._workerFactoryPool.keys():
-            raise KeyError, "WorkerFactory with name \"" + name + "\" already exists"
+            raise KeyError(
+                "WorkerFactory with name \"" + name + "\" already exists"
+                )
         self._workerFactoryPool[name] = factory
 
     def getWorkerFactoryList(self):

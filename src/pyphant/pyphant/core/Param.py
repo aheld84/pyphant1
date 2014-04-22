@@ -33,7 +33,9 @@ u"""
 """
 
 
-import Connectors, EventDispatcher
+from pyphant.core import Connectors
+from pyphant.core import EventDispatcher
+
 
 def createParam(worker, paramName, displayName, values, subtype=None):
     if isinstance(values, list):

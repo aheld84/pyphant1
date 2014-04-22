@@ -43,7 +43,7 @@ with H5FileHandler('demo.h5', 'r') as handler:
 #Configure ImageLoaderWorker
 inputWorker = recipe.getWorker('Load Image')
 imageName = 'demo.png'
-inputWorker.getParam('filename').value=imageName
+inputWorker.getParam('filename').value = imageName
 
 #Fetch Result
 worker = recipe.getWorker('Invert')

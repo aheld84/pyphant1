@@ -280,7 +280,7 @@ class HTMLFCScheme(object):
         domstr = ''
         for shortname, unit in self.dom:
             domstr += "$%s$[%s],&nbsp;&nbsp;" % (shortname, unit)
-        return self.latex  % (self.rng[0], domstr[:-13], self.rng[1])
+        return self.latex % (self.rng[0], domstr[:-13], self.rng[1])
 
     def getHTML(self):
         return self.html % self.getSpaced()

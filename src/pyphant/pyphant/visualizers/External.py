@@ -40,23 +40,34 @@ import os
 import wx
 import csv
 
-from scipy.io import write_array
+# deprecated:
+# from scipy.io import write_array
+from numpy import savetxt as write_array
+
 from pyphant.quantities import isQuantity
 import scipy
 
+
 class ExternalDAT(object):
-    name='Export to ASCII file'
+    name = 'Export to ASCII file'
+
     def __init__(self, dataContainer):
         self.dataContainer = dataContainer
         self.execute()
 
     def execute(self):
-        dialog = wx.FileDialog(None,message='Choose file for saving the data', defaultDir=os.getcwd(),
-                              style=wx.SAVE | wx.OVERWRITE_PROMPT,
-                               wildcard = "Comma separated values (*.csv)|*.csv|Plain text (*.dat)|*.dat")
+        dialog = wx.FileDialog(
+            None, message='Choose file for saving the data',
+            defaultDir=os.getcwd(),
+            style=wx.SAVE | wx.OVERWRITE_PROMPT,
+            wildcard=(
+                "Comma separated values "
+                "(*.csv)|*.csv|Plain text (*.dat)|*.dat"
+                )
+            )
         if dialog.ShowModal() == wx.ID_OK:
             path = dialog.GetPath()
-            print "Selected:",path
+            print "Selected:", path
         else:
             print "Nothing was selected."
         dialog.Destroy()
@@ -68,49 +79,50 @@ class ExternalDAT(object):
 
     def saveField(self, path):
         if not isQuantity(self.dataContainer.unit):
-            self.ordinate = self.dataContainer.data*self.dataContainer.unit
+            self.ordinate = self.dataContainer.data * self.dataContainer.unit
         else:
-            self.ordinate = self.dataContainer.data*self.dataContainer.unit.value
+            self.ordinate = (
+                self.dataContainer.data * self.dataContainer.unit.value
+                )
         self.abscissa = self.dataContainer.dimensions[0].data
-        outData = scipy.transpose(scipy.array([self.abscissa,self.ordinate]))
+        outData = scipy.transpose(scipy.array([self.abscissa, self.ordinate]))
         if path[-3:] == 'csv':
-            outFile = file(path,'wb')
-            csvWriter = csv.writer(outFile,dialect='excel')
-            csvWriter.writerow([self.dataContainer.dimensions[0].label, self.dataContainer.label])
+            outFile = file(path, 'wb')
+            csvWriter = csv.writer(outFile, dialect='excel')
+            csvWriter.writerow(
+                [self.dataContainer.dimensions[0].label,
+                 self.dataContainer.label]
+                )
             csvWriter.writerows(outData.tolist())
         else:
-            outFile = file(path,'w')
-            outFile.write(str([self.dataContainer.dimensions[0].label, self.dataContainer.label])+"\n")
-            write_array(outFile,outData)
+            outFile = file(path, 'w')
+            outFile.write(
+                str([self.dataContainer.dimensions[0].label,
+                     self.dataContainer.label]) + "\n"
+                )
+            write_array(outFile, outData)
         outFile.close()
 
     def saveSample(self, path):
         outData = self.dataContainer.data
 
         if path[-3:] == 'csv':
-            outFile = file(path,'wb')
-            csvWriter = csv.writer(outFile,dialect='excel')
-            #csvWriter.writerow([self.dataContainer.dimensions[0].label, self.dataContainer.label])
+            outFile = file(path, 'wb')
+            csvWriter = csv.writer(outFile, dialect='excel')
+            #csvWriter.writerow(
+            #    [self.dataContainer.dimensions[0].label,
+            #     self.dataContainer.label]
+            #    )
             csvWriter.writerows(outData.tolist())
         else:
-            outFile = file(path,'w')
-            #outFile.write(str([self.dataContainer.dimensions[0].label, self.dataContainer.label])+"\n")
-            write_array(outFile,outData.tolist())
+            outFile = file(path, 'w')
+            #outFile.write(
+            #    str([
+            #            self.dataContainer.dimensions[0].label,
+            #            self.dataContainer.label]) + "\n"
+            #    )
+            write_array(outFile, outData.tolist())
         outFile.close()
 
 
 DataVisReg.getInstance().registerVisualizer(Connectors.TYPE_ARRAY, ExternalDAT)
-
-
-
-
-
-
-
-
-
-
-
-
-
-

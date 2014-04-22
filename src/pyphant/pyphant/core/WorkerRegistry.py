@@ -33,7 +33,7 @@ u"""
 """
 
 import logging
-import singletonmixin
+from pyphant.core import singletonmixin
 import pkg_resources
 
 
@@ -44,7 +44,7 @@ class ToolBoxInfo(object):
         self._logger = logging.getLogger("pyphant")
 
     def sortWorkerInfos(self):
-        self.workerInfos.sort(key=lambda x:x.name.lower())
+        self.workerInfos.sort(key=lambda x: x.name.lower())
 
     def __eq__(self, other):
         return self.name == other.name
@@ -88,8 +88,11 @@ class WorkerRegistry(singletonmixin.Singleton):
                         moduleName = worker.module_name + "." + module
                         self._logger.info("Trying to import " + moduleName)
                         exec 'import ' + moduleName
-                        self._logger.info("Import module %s in version %s" \
-                                          %(moduleName, version))
+                        self._logger.info(
+                            "Import module %s in version %s" % (
+                                moduleName, version
+                                )
+                            )
                     except ImportError, e:
                         self._logger.warning(
                             "worker archive " + worker.module_name \

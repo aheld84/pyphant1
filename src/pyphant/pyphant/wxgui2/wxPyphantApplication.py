@@ -35,7 +35,9 @@ u"""
 from pyphant.mplbackend import ensure_mpl_backend
 ensure_mpl_backend('wxagg')
 
-import os, os.path, pkg_resources
+import os
+import os.path
+import pkg_resources
 from pyphant.core.Helpers import getPyphantPath
 LOGDIR = getPyphantPath()
 import logging
@@ -58,8 +60,8 @@ import wx.aui
 import sogl
 import pyphant.wxgui2.paramvisualization.ParamVisReg as ParamVisReg
 from pyphant.core.H5FileHandler import H5FileHandler
-import WorkerRepository
-import ConfigureFrame
+from pyphant.wxgui2 import WorkerRepository
+from pyphant.wxgui2 import ConfigureFrame
 import platform
 from pyphant.core.KnowledgeManager import KnowledgeManager
 import webbrowser
@@ -123,7 +125,7 @@ class wxPyphantFrame(wx.Frame):
         version = pkg_resources.get_distribution("pyphant").version
         self.titleStr = "wxPyphant %s | Recipe: %s" % (version, "%s")
         wx.Frame.__init__(self, None, -1, self.titleStr % "None",
-                          size=(640,480))
+                          size=(640, 480))
         self._statusBar = self.CreateStatusBar()
         self._wxPyphantApp = _wxPyphantApp
         self._initMenuBar()
@@ -154,7 +156,6 @@ class wxPyphantFrame(wx.Frame):
                 wx.Size(220, -1))
             self._workerRepository.Expand(self._workerRepository.RootItem)
         except:
-            import sys
             self._wxPyphantApp._logger.error(
                 u"An exception occured while loading the toolboxes.",
                 exc_info=sys.exc_info())
@@ -173,6 +174,7 @@ class wxPyphantFrame(wx.Frame):
             self, -1, "", wx.DefaultPosition, wx.Size(640, 200),
             wx.NO_BORDER | wx.TE_MULTILINE | wx.TE_READONLY
             )
+
         class TextCtrlStream(object):
             def __init__(self, textctrl):
                 self.textctrl = textctrl
@@ -182,6 +184,7 @@ class wxPyphantFrame(wx.Frame):
                     wx.CallAfter(self.textctrl.WriteText, msg)
                 except wx.PyDeadObjectError:
                     pass
+
         handler = logging.StreamHandler(TextCtrlStream(self._logpane))
         handler.setFormatter(logging.Formatter(
             "%(asctime)s - %(levelname)s:%(name)s:%(thread)"\
@@ -210,7 +213,9 @@ class wxPyphantFrame(wx.Frame):
                 osMessage = "Choose existing recipe to open or name a new "\
                             "recipe to create"
             else:
-                raise OSError, "Operating System %s not supported!" % pltform
+                raise OSError(
+                    "Operating System %s not supported!" % (pltform, )
+                    )
             wc = "Pyphant Recipe(*.h5)|*.h5"
             dlg = wx.FileDialog(
                 self, message=osMessage, defaultDir=os.getcwd(),
@@ -232,7 +237,7 @@ class wxPyphantFrame(wx.Frame):
                     dlg.Destroy()
                     raise AbortRecipeCreation
             dlg.Destroy()
-        import PyphantCanvas
+        from pyphant.wxgui2 import PyphantCanvas
         if self._wxPyphantApp.pathToRecipe[-3:] == '.h5':
             if os.path.exists(self._wxPyphantApp.pathToRecipe):
                 try:
@@ -330,7 +335,7 @@ class wxPyphantFrame(wx.Frame):
         updateMenu = wx.Menu()
         updateMenu.Append(self.ID_UPDATE_PYPHANT, "Update &Pyphant")
         self.Bind(wx.EVT_MENU, self.onUpdatePyphant, id=self.ID_UPDATE_PYPHANT)
-        self.updateIds = { self.ID_UPDATE_PYPHANT : 'pyphant' }
+        self.updateIds = {self.ID_UPDATE_PYPHANT: 'pyphant'}
         for toolbox in pkg_resources.iter_entry_points("pyphant.workers"):
             dist = toolbox.dist
             nId = wx.NewId()
@@ -365,7 +370,7 @@ class wxPyphantFrame(wx.Frame):
         msg = u"Trying to update package '%s'.\nYou will be notified "\
               "when the process has finished.\n"\
               "Please press 'OK' now to begin." % packageName
-        dlg = wx.MessageDialog(self, msg, cpt, style=wx.OK|wx.CANCEL)
+        dlg = wx.MessageDialog(self, msg, cpt, style=wx.OK | wx.CANCEL)
         dlgid = dlg.ShowModal()
         dlg.Destroy()
         if dlgid != wx.ID_OK:
@@ -373,7 +378,8 @@ class wxPyphantFrame(wx.Frame):
         try:
             import pyphant.core.UpdateManager
             error = pyphant.core.UpdateManager.updatePackage(
-                self.updateIds[event.Id])
+                self.updateIds[event.Id]
+                )
         except Exception, exc:
             error = "%s:\n%s" % (exc.__class__.__name__, exc.message)
         if error is not None and len(error) > 0:
@@ -395,7 +401,7 @@ class wxPyphantFrame(wx.Frame):
         logpane.Show(True)
         self._auiManager.Update()
 
-    def onQuit(self,event):
+    def onQuit(self, event):
         self.Close()
 
     def onClose(self, event):
@@ -405,7 +411,9 @@ class wxPyphantFrame(wx.Frame):
             msg = "The recipe has changed since the last saving.\n"\
                   "Do you want to save before terminating?"
             dlg = wx.MessageDialog(
-                self, msg, cpt, style=wx.YES|wx.NO|wx.CANCEL|wx.ICON_QUESTION)
+                self, msg, cpt,
+                style=wx.YES | wx.NO | wx.CANCEL | wx.ICON_QUESTION
+                )
             dlgid = dlg.ShowModal()
             if dlgid == wx.ID_YES:
                 self.onSaveCompositeWorker()
@@ -425,7 +433,7 @@ class wxPyphantFrame(wx.Frame):
         self.Destroy()
 
     def editCompositeWorker(self, worker):
-        import PyphantCanvas
+        from pyphant.wxgui2 import PyphantCanvas
         self.compositeWorkerStack.append(self._remainingSpace)
         self._remainingSpace = PyphantCanvas.PyphantCanvas(self, worker)
         self._remainingSpace.diagram.recipe.registerListener(
@@ -455,7 +463,7 @@ class wxPyphantFrame(wx.Frame):
             url = dlg.GetValue()
             cpt2 = "Info"
             msg2 = "Successfully imported DataContainers from\n'%s'"\
-                   % (url ,)
+                   % (url, )
             km = KnowledgeManager.getInstance()
             try:
                 km.registerURL(url)
@@ -480,7 +488,7 @@ class wxPyphantFrame(wx.Frame):
             km = KnowledgeManager.getInstance()
             cpt2 = "Info"
             msg2 = "Successfully imported DataContainer(s) from\n'%s'"\
-                   % (filename ,)
+                   % (filename, )
             try:
                 km.registerURL(url)
             except Exception:
@@ -538,27 +546,27 @@ class wxPyphantFrame(wx.Frame):
 class mySplashScreen(wx.Frame):
     def __init__(self, parent):
         self.parent = parent
-        wx.Frame.__init__(self, None, -1, "Shaped Window",
-                         style =
-                           wx.FRAME_SHAPED
-                         | wx.SIMPLE_BORDER
-                         | wx.FRAME_NO_TASKBAR
-                         | wx.STAY_ON_TOP
-                         )
+        wx.Frame.__init__(
+            self, None, -1, "Shaped Window",
+            style=wx.FRAME_SHAPED
+            | wx.SIMPLE_BORDER
+            | wx.FRAME_NO_TASKBAR
+            | wx.STAY_ON_TOP
+            )
 
         self.hasShape = False
-        self.delta = (0,0)
+        self.delta = (0, 0)
 
-        self.Bind(wx.EVT_RIGHT_UP,      self.OnExit)
-        self.Bind(wx.EVT_PAINT,         self.OnPaint)
+        self.Bind(wx.EVT_RIGHT_UP, self.OnExit)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
 
         self.timer = wx.Timer(self)
-        self.timer.Start(5000,oneShot=True)
+        self.timer.Start(5000, oneShot=True)
         self.Bind(wx.EVT_TIMER, self.OnExit)
 
         import StringIO
         import base64
-        import pyphantLogo
+        from pyphant.wxgui2 import pyphantLogo
 
         png = base64.decodestring(pyphantLogo.pic_b64)
         stream = StringIO.StringIO(png)
@@ -567,7 +575,7 @@ class mySplashScreen(wx.Frame):
         self.bmp = wxImage.ConvertToBitmap()
 
         w, h = self.bmp.GetWidth(), self.bmp.GetHeight()
-        self.SetClientSize( (w, h) )
+        self.SetClientSize((w, h))
 
         if wx.Platform != "__WXMAC__":
             # wxMac clips the tooltip to the window shape, YUCK!!!
@@ -584,7 +592,7 @@ class mySplashScreen(wx.Frame):
             self.SetWindowShape()
 
         dc = wx.ClientDC(self)
-        dc.DrawBitmap(self.bmp, 0,0, True)
+        dc.DrawBitmap(self.bmp, 0, 0, True)
 
     def SetWindowShape(self, *evt):
         # Use the bitmap's mask to determine the region
@@ -593,7 +601,7 @@ class mySplashScreen(wx.Frame):
 
     def OnPaint(self, evt):
         dc = wx.PaintDC(self)
-        dc.DrawBitmap(self.bmp, 0,0, True)
+        dc.DrawBitmap(self.bmp, 0, 0, True)
 
     def OnExit(self, evt):
         self.Hide()
@@ -607,6 +615,7 @@ class mySplashScreen(wx.Frame):
 
 
 import optparse
+
 
 def startWxPyphant():
     usage = "usage: %prog [options] pathToRecipe"

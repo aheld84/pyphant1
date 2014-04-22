@@ -33,12 +33,14 @@ u"""
 """
 
 
-enc=lambda s: unicode(s, "utf-8")
+enc = lambda s: unicode(s, "utf-8")
 
-import platform,os,socket,datetime
+import socket
+import datetime
 from pyphant.core import FMFGen
 import numpy
 import pyphant.core.Helpers
+
 
 def dtype2colFormat(dtype):
     if dtype.name.startswith('float'):
@@ -49,27 +51,30 @@ def dtype2colFormat(dtype):
         print dtype
         return "%s"
 
+
 def field2fmf(fieldContainer):
     factory = FMFGen.gen_factory(out_coding='utf-8', eol='\n')
     fc = factory.gen_fmf()
     fc.add_reference_item('author', pyphant.core.Helpers.getUsername())
-    fc.add_reference_item('title',fieldContainer.longname)
-    fc.add_reference_item('place',socket.getfqdn())
-    fc.add_reference_item('created',datetime.datetime.utcnow().isoformat())
+    fc.add_reference_item('title', fieldContainer.longname)
+    fc.add_reference_item('place', socket.getfqdn())
+    fc.add_reference_item('created', datetime.datetime.utcnow().isoformat())
     sec = factory.gen_section("parameters")
-    for key,value in fieldContainer.attributes.iteritems():
-        if type(value)==type([]):
+    for key, value in fieldContainer.attributes.iteritems():
+        if type(value) == type([]):
             output = ' '.join(value)
         else:
             output = str(value)
-        sec.add_item(key,output)
+        sec.add_item(key, output)
     fc.add_section(sec)
-    if len(fieldContainer.data.shape)==1:
+    if len(fieldContainer.data.shape) == 1:
         dim = fieldContainer.dimensions[0]
         if fieldContainer.error == None:
             data = numpy.vstack([dim.data, fieldContainer.data])
         else:
-            data = numpy.vstack([dim.data, fieldContainer.data,fieldContainer.error])
+            data = numpy.vstack(
+                [dim.data, fieldContainer.data, fieldContainer.error]
+                )
         tab = factory.gen_table(data.transpose())
         tab.add_column_def(dim.longname, dim.shortname, str(dim.unit))
         if fieldContainer.error == None:
@@ -79,8 +84,8 @@ def field2fmf(fieldContainer):
         tab.add_column_def(fieldContainer.longname,
                            fieldContainer.shortname,
                            str(fieldContainer.unit),
-                           dependencies = [dim.shortname],
-                           error = errorSymbol)
+                           dependencies=[dim.shortname],
+                           error=errorSymbol)
         if fieldContainer.error != None:
             tab.add_column_def(u"uncertainty of %s" % fieldContainer.longname,
                                errorSymbol,
@@ -90,20 +95,25 @@ def field2fmf(fieldContainer):
         try:
             data = numpy.vstack([dim.data, fieldContainer.data])
         except:
-            print dim.data,fieldContainer
+            print dim.data, fieldContainer
         tab = factory.gen_table(data.transpose())
-        tab.add_column_def(dim.longname, dim.shortname, str(dim.unit), format=dtype2colFormat(dim.data.dtype))
-        superscript = ('st','nd','rd')
+        tab.add_column_def(
+            dim.longname, dim.shortname,
+            str(dim.unit), format=dtype2colFormat(dim.data.dtype)
+            )
+        superscript = ('st', 'nd', 'rd')
         for i in xrange(len(fieldContainer.dimensions[0].data)):
-            if i<3:
+            if i < 3:
                 sup = superscript[i]
             else:
                 sup = 'th'
-            longname = "%i$^%s$ %s" % (i+1,sup,fieldContainer.longname)
-            shortname = "%s_%i" % (fieldContainer.shortname,i+1)
-            tab.add_column_def(longname,shortname,
-                               str(fieldContainer.unit),
-                               dependencies = [dim.shortname],
-                               format=dtype2colFormat(fieldContainer.data.dtype))
+            longname = "%i$^%s$ %s" % (i + 1, sup, fieldContainer.longname)
+            shortname = "%s_%i" % (fieldContainer.shortname, i + 1)
+            tab.add_column_def(
+                longname, shortname,
+                str(fieldContainer.unit),
+                dependencies=[dim.shortname],
+                format=dtype2colFormat(fieldContainer.data.dtype)
+                )
     fc.add_table(tab)
     return str(fc)

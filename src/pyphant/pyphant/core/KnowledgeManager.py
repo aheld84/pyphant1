@@ -29,16 +29,13 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import with_statement
-
 """
 This module provides the KnowledgeManager class as well as some helper
 classes.
 """
 
-
+from __future__ import with_statement
 from pyphant.core.singletonmixin import Singleton
-import tempfile
 import os
 import logging
 import re
@@ -57,6 +54,7 @@ CACHE_MAX_NUMBER = 100
 KM_PATH = 'KMstorage'
 REHDF5 = re.compile(r'..*\.h5$|..*\.hdf$|..*\.hdf5$')
 REFMF = re.compile(r'..*\.fmf$')
+
 
 def getFilenameFromDcId(dcId, temporary=False):
     """
@@ -106,7 +104,7 @@ class TestCachedDC(object):
         return self.id == other.id
 
 
-KM_DBASE = u'default' # modify for debug purposes
+KM_DBASE = u'default'  # modify for debug purposes
 
 
 class KnowledgeManager(Singleton):
@@ -143,6 +141,7 @@ class KnowledgeManager(Singleton):
     ------------
     KM is NOT thread-safe yet.
     """
+
     def __init__(self):
         """
         Sets up the DataBase if it has not been initialized yet,
@@ -159,7 +158,7 @@ class KnowledgeManager(Singleton):
         else:
             self.dbase = KM_DBASE
         self.any_value = AnyValue()
-        self.node = None # for hooking up a KnowledgeNode
+        self.node = None  # for hooking up a KnowledgeNode
         self.uuid = uuid1().urn
         tmpdir = getPyphantPath(os.path.join(KM_PATH, 'tmp'))
         if os.path.isdir(tmpdir):
@@ -190,9 +189,13 @@ class KnowledgeManager(Singleton):
 
     def updateIndex(self):
         file_list = []
+
         def accumulate_files(flist, directory, files):
-            for fname in [afname for afname in files if afname.endswith('.h5')]:
+            for fname in [
+                afname for afname in files if afname.endswith('.h5')
+                ]:
                 flist.append(os.path.realpath(os.path.join(directory, fname)))
+
         os.path.walk(getPyphantPath(KM_PATH), accumulate_files, file_list)
         try:
             from wx import (ProgressDialog, PyNoAppError)
@@ -431,11 +434,13 @@ class KnowledgeManager(Singleton):
         with SQLiteWrapper(self.dbase) as wrapper:
             return wrapper.get_emd5_list()
 
-    def search(self, result_keys, search_dict={}, order_by=None,
+    def search(self, result_keys, search_dict=None, order_by=None,
                order_asc=True, limit=-1, offset=0, distinct=False):
         """
         see SQLiteWrapper.get_andsearch_result
         """
+        if search_dict is None:
+            search_dict = {}
         with SQLiteWrapper(self.dbase) as wrapper:
             return wrapper.get_andsearch_result(
                 result_keys, search_dict, order_by, order_asc,

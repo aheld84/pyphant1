@@ -37,19 +37,22 @@ import Queue
 import wx
 from pyphant.core.Connectors import Computer
 
-        
 
 class ConfigureFrame(wx.Dialog):
     def __init__(self, parent, paramVisReg, worker):
-        from PyphantDiagram import ProgressMeter
-        self._paramVisReg=paramVisReg
-        wx.Dialog.__init__(self, parent, -1, "Configure "+worker.getParam("name").value)
-        self._paramDict={}
+        from pyphant.wxgui2.PyphantDiagram import ProgressMeter
+        self._paramVisReg = paramVisReg
+        wx.Dialog.__init__(
+            self, parent, -1, "Configure " + worker.getParam("name").value
+            )
+        self._paramDict = {}
         progress = ProgressMeter("Acquiring Param data")
         exception_queue = Queue.Queue()
-        computer = Computer(worker.refreshParams, exception_queue, subscriber=progress)
+        computer = Computer(
+            worker.refreshParams, exception_queue, subscriber=progress
+            )
         computer.start()
-        while (progress.percentage<100) and (computer.isAlive()):
+        while (progress.percentage < 100) and (computer.isAlive()):
             progress.update()
         progress.finishAllProcesses()
         progress.Destroy()
@@ -65,21 +68,20 @@ class ConfigureFrame(wx.Dialog):
             sizer.Add(wx.StaticText(self, label="is external"))
             for param in pl:
                 sizer.Add(wx.StaticText(self, label=param.displayName))
-                vis=self._paramVisReg.createVisualizerFor(self, param)
+                vis = self._paramVisReg.createVisualizerFor(self, param)
                 sizer.Add(vis)
-                checkBox=wx.CheckBox(self)
+                checkBox = wx.CheckBox(self)
                 checkBox.SetValue(param.isExternal)
                 sizer.Add(checkBox)
-                self._paramDict[vis]=(param,checkBox)
+                self._paramDict[vis] = (param, checkBox)
             sizer.Add(self.CreateButtonSizer(wx.OK | wx.CANCEL))
             self.SetSizer(sizer)
             sizer.Fit(self)
 
     def applyAll(self, event=None):
-        for (vis,(param,checkBox)) in self._paramDict.items():
+        for (vis, (param, checkBox)) in self._paramDict.items():
             try:
-                param.value=vis.getValue()
-                param.isExternal=checkBox.GetValue()
+                param.value = vis.getValue()
+                param.isExternal = checkBox.GetValue()
             except ValueError, (e):
                 print "Caught a ValueError in ", vis, ":", e
-
