@@ -157,7 +157,7 @@ def skeletonize(data, subscriber=0):
     runs = 0
     isCorner = zeros((nx + 2, ny + 2), 'bool')
     while not erosionComplete:
-        ruleI   = (image == IP.FEATURE_COLOR)
+        ruleI = (image == IP.FEATURE_COLOR)
         XFeat, YFeat = ruleI.nonzero()
         numberFeatures = len(XFeat)
         erosedPixels = 0
@@ -196,7 +196,7 @@ def skeletonize(data, subscriber=0):
             erosionComplete = True
             subscriber %= 100.
         else:
-            xCorn, yCorn = (neighbourhood[:, :, 2] > 0 ).nonzero()
+            xCorn, yCorn = (neighbourhood[:, :, 2] > 0).nonzero()
             for x, y in zip(xCorn.tolist(), yCorn.tolist()):
                 if neighbourhood[x, y, 2] == 1:
                     isCorner[x + 1, y - 1] = True

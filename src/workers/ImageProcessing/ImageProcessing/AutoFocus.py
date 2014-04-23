@@ -41,6 +41,7 @@ from pyphant.core.DataContainer import SampleContainer
 import pkg_resources
 
 
+# unused ???
 def sobel(data):
     return numpy.sqrt(ndimage.sobel(data, 0) ** 2 + \
                       ndimage.sobel(data, 1) ** 2)

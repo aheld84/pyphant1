@@ -58,7 +58,7 @@ class Medianiser(Worker.Worker):
         im = copy.deepcopy(field)
         size = self.paramSize.value
         ru = self.paramRuns.value
-        for i in range(ru):
+        for _ in xrange(ru):
             im.data = scipy.ndimage.filters.median_filter(im.data, size=size)
         im.seal()
         return im

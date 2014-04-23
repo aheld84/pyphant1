@@ -73,8 +73,12 @@ class EstimateParameterFromValues(Worker.Worker):
             self.paramMaxima_model.possibleValues = templ.longnames.keys()
         if self.socketExperimental.isFull():
             templ = self.socketExperimental.getResult(subscriber)
-            self.paramMinima_experimental.possibleValues = templ.longnames.keys()
-            self.paramMaxima_experimental.possibleValues = templ.longnames.keys()
+            self.paramMinima_experimental.possibleValues = (
+                templ.longnames.keys()
+                )
+            self.paramMaxima_experimental.possibleValues = (
+                templ.longnames.keys()
+                )
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def compute(self, model, experimental, subscriber=1):

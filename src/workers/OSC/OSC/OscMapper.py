@@ -71,8 +71,8 @@ class OscMapper(Worker.Worker):
     def calcNormal(self, osc, xCon, yCon, fCon, xf, yf, h):
         xOff, xStep, xInd = grid2Index(xf, self.paramExtentX.value)
         yOff, yStep, yInd = grid2Index(yf, self.paramExtentY.value)
-        xMax = xInd.maxV # never used!
-        yMax = yInd.maxV # never used!
+        xMax = xInd.maxV  # never used!
+        yMax = yInd.maxV  # never used!
         xDim = DataContainer.FieldContainer(
             numpy.linspace(xInd.minV, xInd.maxV, xInd.stepCount) - 0.5 * xStep,
             xCon.unit,

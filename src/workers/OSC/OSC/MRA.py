@@ -233,6 +233,7 @@ def main():
     mra.paramScale.value = "1.0m"
     roots = mra.mra(data)
     pylab.plot(x, y, x, z)
+    # this is broken: roots is a SampleContainer which has no data attribute
     pylab.vlines(roots.data, -4, 4)
     pylab.vlines(roots.data + roots.error, -4, 4, linestyle='dashed')
     pylab.vlines(roots.data - roots.error, -4, 4, linestyle='dashed')

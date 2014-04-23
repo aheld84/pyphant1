@@ -33,8 +33,7 @@ u"""
 The tools toolbox holds general purpose workers.
 """
 
-
-workers=[
+workers = [
     "AlgebraWorker",
     "ExtractRows",
     "AddColumn",

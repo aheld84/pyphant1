@@ -36,14 +36,12 @@ u"""
 
 import pylab
 import pyphant.core.Connectors
-from pyphant.core import DataContainer
 from pyphant.wxgui2.DataVisReg import DataVisReg
-from pyphant.quantities import isQuantity
 from pyphant.visualizers.Chart import LineChart
 
-class AbsorptionVisualizer(LineChart):
-    name='OSC Visualizer'
 
+class AbsorptionVisualizer(LineChart):
+    name = 'OSC Visualizer'
 
     def prepare(self):
         def setField(name):
@@ -56,7 +54,7 @@ class AbsorptionVisualizer(LineChart):
         pylab.figure()
 
         data = self.dataContainer
-        if self.dataContainer.numberOfColumns()>2:
+        if self.dataContainer.numberOfColumns() > 2:
             if u'Smoothed Absorption' in data.longnames.keys():
                 setField(u'Smoothed Absorption')
             elif u'Absorption' in data.longnames.keys():
@@ -81,24 +79,10 @@ class AbsorptionVisualizer(LineChart):
 
     def draw(self):
         for i in xrange(len(self.ordinates)):
-            pylab.plot(self.abscissae[i],self.ordinates[i])
+            pylab.plot(self.abscissae[i], self.ordinates[i])
         for i in xrange(len(self.mins)):
             pylab.axvline(self.mins[i])
 
-DataVisReg.getInstance().registerVisualizer(pyphant.core.Connectors.TYPE_ARRAY, AbsorptionVisualizer)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+DataVisReg.getInstance().registerVisualizer(
+    pyphant.core.Connectors.TYPE_ARRAY, AbsorptionVisualizer
+    )

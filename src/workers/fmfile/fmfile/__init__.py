@@ -33,6 +33,4 @@ u"""
 The FMF Toolbox holds workers for processing full meta data format files.
 """
 
-
-
-workers=["FMFLoader"]
+workers = ["FMFLoader"]

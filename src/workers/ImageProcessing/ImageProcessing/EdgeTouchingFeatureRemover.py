@@ -36,7 +36,7 @@ edge until only the outline remains.
 """
 
 from pyphant.core import (Worker, Connectors)
-import EdgeFillWorker
+from ImageProcessing import EdgeFillWorker
 import copy
 import pkg_resources
 
