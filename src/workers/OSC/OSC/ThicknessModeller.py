@@ -54,7 +54,7 @@ class ThicknessModeller(Worker.Worker):
         indexMap = dict([(h, i) for i, h in enumerate(heights.data)])
         h = copy.deepcopy(heights.data)
         h.sort()
-        data = numpy.vstack([copy.deepcopy(A.data[indexMap[i]]) for i in h ])
+        data = numpy.vstack([copy.deepcopy(A.data[indexMap[i]]) for i in h])
         height = copy.deepcopy(heights)
         height.data = h
         attr = copy.deepcopy(A.attributes).update(osc.attributes)

@@ -32,6 +32,4 @@
 u"""
 """
 
-
-
-workers=[ "Histogram"]
+workers = ["Histogram"]

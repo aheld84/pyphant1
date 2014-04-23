@@ -33,13 +33,14 @@ import pkg_resources
 pkg_resources.require("pyphant")
 pkg_resources.require("tables")
 
+
 def main():
     import sys
     filename = sys.argv[1]
     from pyphant.core import KnowledgeManager
     km = KnowledgeManager.KnowledgeManager.getInstance()
     import os.path
-    km.registerURL("file://"+os.path.realpath(filename))
+    km.registerURL("file://" + os.path.realpath(filename))
     import tables
     h5 = tables.openFile(filename, 'r+')
     from pyphant.core import PyTablesPersister
@@ -53,7 +54,7 @@ def main():
             w = recipe.getWorker(sSpec[0])
             s = getattr(w, sSpec[-1])
             src = Emd5Src(recipe)
-            src.paramEmd5.value=emd5
+            src.paramEmd5.value = emd5
             if s.isFull():
                 s.pullPlug()
             s.insert(src.plugGetDataContainer)
@@ -65,6 +66,7 @@ def main():
         h5 = tables.openFile(filename, 'r+')
         PyTablesPersister.saveResult(res, h5)
         h5.close()
+
 
 if __name__ == '__main__':
     main()

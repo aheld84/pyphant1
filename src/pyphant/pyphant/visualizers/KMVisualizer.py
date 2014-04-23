@@ -33,14 +33,14 @@ u"""
 """
 
 
-
 from pyphant.core.Connectors import (TYPE_IMAGE, TYPE_ARRAY)
 from pyphant.wxgui2.DataVisReg import DataVisReg
 from pyphant.core.KnowledgeManager import KnowledgeManager
 
 
 class KMVisualizer(object):
-    name='Register @ KnowledgeManager'
+    name = 'Register @ KnowledgeManager'
+
     def __init__(self, DataContainer, show=True):
         if show:
             kmanager = KnowledgeManager.getInstance()

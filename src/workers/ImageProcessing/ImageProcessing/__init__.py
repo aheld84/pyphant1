@@ -34,11 +34,10 @@ The ImageProcessing toolbox holds workers to process data
 resulting from scalar fields.
 """
 
+BACKGROUND_COLOR = 255
+FEATURE_COLOR = 0
 
-BACKGROUND_COLOR=255
-FEATURE_COLOR=0
-
-workers=[
+workers = [
     "ApplyMask",
     "AutoFocus",
     "CoverageWorker",
@@ -60,6 +59,7 @@ workers=[
     "UltimatePointsCalculator",
     "Watershed",
     ]
+
 
 def isFeature(point):
     if point == FEATURE_COLOR:

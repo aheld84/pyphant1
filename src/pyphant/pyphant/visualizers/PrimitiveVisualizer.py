@@ -32,15 +32,13 @@
 u"""
 """
 
-
-import pylab
 import pyphant.core.Connectors
 from pyphant.wxgui2.DataVisReg import DataVisReg
-import scipy
 
 
 class PrimitiveVisualizer(object):
-    name='Primitive Visualizer'
+    name = 'Primitive Visualizer'
+
     def __init__(self, fieldContainer):
         self.fieldContainer = fieldContainer
         self.execute()
@@ -49,5 +47,6 @@ class PrimitiveVisualizer(object):
         print self.fieldContainer
 
 
-DataVisReg.getInstance().registerVisualizer(pyphant.core.Connectors.TYPE_INT, PrimitiveVisualizer)
-
+DataVisReg.getInstance().registerVisualizer(
+    pyphant.core.Connectors.TYPE_INT, PrimitiveVisualizer
+    )

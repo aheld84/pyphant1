@@ -35,12 +35,14 @@ u"""
 
 import pkg_resources
 pkg_resources.require('setuptools')
-import StringIO, sys
+import StringIO
+import sys
 import logging
 
 ei = pkg_resources.load_entry_point('setuptools',
                                     'console_scripts',
                                     'easy_install')
+
 
 def updatePackage(package):
     stdout, stderr = StringIO.StringIO(), StringIO.StringIO()
@@ -50,10 +52,10 @@ def updatePackage(package):
     log = logging.getLogger("pyphant")
     out = stdout.getvalue()
     stdout.close()
-    if len(out)>0:
+    if len(out) > 0:
         log.info(out)
     err = stderr.getvalue()
     stderr.close()
-    if len(err)>0:
+    if len(err) > 0:
         log.warn(err)
     sys.stdout, sys.stderr = old

@@ -47,11 +47,11 @@ _logger = logging.getLogger("pyphant")
 im = IndexMarker()
 im_id = u"emd5://pyphant/pyphant/0001-01-01_00:00:00.000000/%s.field" \
         % utf82uc(im.hash)
-im_summary = {'id':im_id, 'longname':utf82uc(im.longname),
-              'shortname':utf82uc(im.shortname), 'hash':utf82uc(im.hash),
-              'creator':u'pyphant', 'machine':u'pyphant',
-              'date':u'0001-01-01_00:00:00.000000',
-              'unit':1, 'dimensions':[im_id], 'attributes':{}}
+im_summary = {'id': im_id, 'longname': utf82uc(im.longname),
+              'shortname': utf82uc(im.shortname), 'hash': utf82uc(im.hash),
+              'creator': u'pyphant', 'machine': u'pyphant',
+              'date': u'0001-01-01_00:00:00.000000',
+              'unit': 1, 'dimensions': [im_id], 'attributes': {}}
 
 
 class H5FileHandler(object):
@@ -70,7 +70,7 @@ class H5FileHandler(object):
         assert mode in ['r', 'w', 'a']
         exists = os.path.isfile(filename)
         if mode == 'r' and not exists:
-            raise IOError("File '%s' does not exist!"%(filename, ))
+            raise IOError("File '%s' does not exist!" % (filename, ))
         self.filename = filename
         self.mode = mode
         if mode == 'w':
@@ -80,12 +80,12 @@ class H5FileHandler(object):
         self.handle = None
 
     def __enter__(self):
-        assert self.handle ==  None
+        assert self.handle is None
         self.handle = tables.openFile(self.filename, self.mode)
         return self
 
     def __exit__(self, type, value, traceback):
-        if self.handle != None:
+        if self.handle is not None:
             self.handle.close()
             self.handle = None
 
@@ -130,7 +130,9 @@ class H5FileHandler(object):
         elif uriType == 'sample':
             result = self.loadSample(resNode)
         else:
-            raise TypeError, "Unknown result uriType in <%s>" % resNode._v_title
+            raise TypeError(
+                "Unknown result uriType in <%s>" % (resNode._v_title, )
+                )
         return result
 
     def loadField(self, resNode):
@@ -149,7 +151,7 @@ class H5FileHandler(object):
         """
         return PyTablesPersister.loadSample(self.handle, resNode)
 
-    def loadSummary(self, dcId = None):
+    def loadSummary(self, dcId=None):
         """
         Extracts meta data about a given DataContainer and returns it
         as a dictionary.
@@ -158,9 +160,9 @@ class H5FileHandler(object):
                 If dcId == None, a dictionary that maps emd5s to summaries
                 is returned, where IndexMarker objects are ignored.
         """
-        if dcId == None:
+        if dcId is None:
             summary = {}
-            for group in self.handle.walkGroups(where = "/results"):
+            for group in self.handle.walkGroups(where="/results"):
                 currDcId = group._v_attrs.TITLE
                 if len(currDcId) > 0:
                     tmp = self.loadSummary(currDcId)
@@ -176,23 +178,29 @@ class H5FileHandler(object):
             resNode, uriType = self.getNodeAndTypeFromId(dcId)
             summary['longname'] = utf82uc(self.handle.getNodeAttr(resNode,
                                                                   "longname"))
-            summary['shortname'] = utf82uc(self.handle.getNodeAttr(resNode,
-                                                                   "shortname"))
+            summary['shortname'] = utf82uc(
+                self.handle.getNodeAttr(resNode, "shortname")
+                )
             summary.update(emd52dict(dcId))
             try:
-                summary['machine'] = utf82uc(self.handle.getNodeAttr(resNode,
-                                                                     "machine"))
-                summary['creator'] = utf82uc(self.handle.getNodeAttr(resNode,
-                                                                     "creator"))
+                summary['machine'] = utf82uc(
+                    self.handle.getNodeAttr(resNode, "machine")
+                    )
+                summary['creator'] = utf82uc(
+                    self.handle.getNodeAttr(resNode, "creator")
+                    )
             except:
-                pass # machine, creator set by emd52dict(dcId) before
+                pass  # machine, creator set by emd52dict(dcId) before
             attributes = {}
             if uriType == 'field':
                 for key in resNode.data._v_attrs._v_attrnamesuser:
-                    attributes[key]=self.handle.getNodeAttr(resNode.data, key)
+                    attributes[key] = self.handle.getNodeAttr(
+                        resNode.data, key
+                        )
                 unit = eval(utf82uc(self.handle.getNodeAttr(resNode, "unit")))
                 summary['unit'] = unit
                 dimTable = resNode.dimensions
+
                 def filterIndexMarker(emd5):
                     if self.isIndexMarker(emd5):
                         return im_id
@@ -229,22 +237,27 @@ class H5FileHandler(object):
         dcHash, uriType = DataContainer.parseId(result.id)
         resId = u"result_" + dcHash
         try:
-            resultGroup = self.handle.getNode("/results/"+resId)
+            resultGroup = self.handle.getNode("/results/" + resId)
         except tables.NoSuchNodeError:
             try:
-                resultGroup = self.handle.createGroup("/results", resId,
-                                                      result.id.encode("utf-8"))
+                resultGroup = self.handle.createGroup(
+                    "/results", resId, result.id.encode("utf-8")
+                    )
             except tables.NoSuchNodeError:
                 self.handle.createGroup('/', 'results')
-                resultGroup = self.handle.createGroup("/results", resId,
-                                                      result.id.encode("utf-8"))
+                resultGroup = self.handle.createGroup(
+                    "/results", resId, result.id.encode("utf-8")
+                    )
             if uriType == 'field':
                 self.saveField(resultGroup, result)
             elif uriType == 'sample':
                 self.saveSample(resultGroup, result)
             else:
-                raise KeyError, "Unknown UriType %s in saving result %s."\
-                    % (uriType, result.id)
+                raise KeyError(
+                    "Unknown UriType %s in saving result %s." % (
+                        uriType, result.id
+                        )
+                    )
         return resId
 
     def saveSample(self, resultGroup, result):

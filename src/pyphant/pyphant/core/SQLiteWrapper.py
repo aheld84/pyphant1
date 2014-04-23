@@ -36,19 +36,24 @@ KnowledgeManager's summary dictionaries to an SQLite3 database.
 """
 
 import sqlite3
-import time
-from pyphant.core.Helpers import (utf82uc, uc2utf8, emd52dict)
-from pyphant.quantities import (Quantity,PhysicalUnit,_base_units)
+import time  # needed for eval ??
+from pyphant.core.Helpers import (utf82uc, emd52dict)
+from pyphant.quantities import (Quantity, PhysicalUnit, _base_units)
 PhysicalQuantity = Quantity
 from types import (FloatType, IntType, LongType, StringTypes)
 
-DBASE_VERSION = 2 #increment if there have been structural changes to the dbase!
+# increment if there have been structural changes to the dbase!
+DBASE_VERSION = 2
+
 
 def quantity2powers(quantity):
     numberOfBaseUnits = len(_base_units)
     if isinstance(quantity, Quantity):
         result = tuple(quantity.unit.powers)
-        assert len(result) == numberOfBaseUnits, "Expecting %i base units, but got a tupple of %i unit powers insteat." % (numberOfBaseUnits,len(result))
+        assert len(result) == numberOfBaseUnits, (
+            "Expecting %i base units, but got a tuple "
+            "of %i unit powers instead." % (numberOfBaseUnits, len(result))
+            )
         return result
     elif isinstance(quantity, (FloatType, IntType, LongType)):
         return (0, ) * numberOfBaseUnits
@@ -56,6 +61,7 @@ def quantity2powers(quantity):
         raise ValueError("Expected (Quantity, FloatType, IntType, "\
                              "LongType) but got %s instead."\
                              % (type(quantity), ))
+
 
 def str2number(str):
     try:
@@ -66,6 +72,7 @@ def str2number(str):
         except ValueError:
             value = float(str)
     return value
+
 
 def quantity2dbase(quantity):
     if isinstance(quantity, (FloatType, IntType, LongType)):
@@ -78,6 +85,7 @@ def quantity2dbase(quantity):
                              "LongType) but got %s instead."\
                              % (type(quantity), ))
 
+
 def dbase2quantity(dbase):
     if isinstance(dbase, StringTypes):
         if dbase.startswith("P"):
@@ -88,8 +96,10 @@ def dbase2quantity(dbase):
     else:
         raise ValueError("Broken FC unit in dbase: %s" % (dbase.__repr__(), ))
 
+
 def unitname2latex(unitname):
-    return unitname #TODO
+    return unitname  # TODO
+
 
 def dbase2latex(dbase):
     if isinstance(dbase, StringTypes):
@@ -101,6 +111,7 @@ def dbase2latex(dbase):
     else:
         raise ValueError("Broken FC unit in dbase: %s" % (dbase.__repr__(), ))
 
+
 def date2dbase(date):
     """extends a short datestring to YYYY-MM-DD_hh:mm:ss.ssssss standard
     """
@@ -108,6 +119,7 @@ def date2dbase(date):
     date = date.replace(' ', '_')
     complete_str = '0000-01-01_00:00:00.000000'
     return date + complete_str[len(date):]
+
 
 def emd52type(emd5):
     if emd5.endswith('d'):
@@ -117,11 +129,13 @@ def emd52type(emd5):
     else:
         raise ValueError(emd5)
 
+
 def replace_type(str, type):
     if type == 'field':
         return str % ('fc', )
     elif type == 'sample':
         return str % ('sc', )
+
 
 def get_wildcards(length, char, braces=False, commas=True):
     if braces:
@@ -141,6 +155,7 @@ def get_wildcards(length, char, braces=False, commas=True):
         wc += ')'
     return wc
 
+
 def create_table(table_name, columns, cursor, ignore_exists=False):
     if ignore_exists:
         query = "CREATE TABLE IF NOT EXISTS %s (" % (table_name, )
@@ -150,6 +165,7 @@ def create_table(table_name, columns, cursor, ignore_exists=False):
         query += name + " " + type + ", "
     query = query[:-2] + ")"
     cursor.execute(query)
+
 
 def create_trigger(trigger_name, action, table_name,
                   statements, cursor):
@@ -339,9 +355,11 @@ class SQLiteWrapper(object):
                 quantity2powers(summary['unit']))
             l_row_id = self.cursor.lastrowid
         except sqlite3.IntegrityError:
-            exe("SELECT bu_id FROM km_base_units WHERE m=? AND g=? "\
-                    "AND s=? AND A=? AND K=? AND mol=? AND cd=? AND rad=? "\
-                    "AND sr=? AND EUR=? AND bit=?", quantity2powers(summary['unit']))
+            exe("SELECT bu_id FROM km_base_units WHERE m=? AND g=? "
+                "AND s=? AND A=? AND K=? AND mol=? AND cd=? AND rad=? "
+                "AND sr=? AND EUR=? AND bit=?",
+                quantity2powers(summary['unit'])
+                )
             tmp = self.cursor.fetchone()
             assert tmp != None
             l_row_id = tmp[0]
@@ -414,7 +432,7 @@ class SQLiteWrapper(object):
                 exe("INSERT OR ABORT INTO km_temporary VALUES (?)",
                     (entry_id,))
             except sqlite3.IntegrityError:
-                pass # Already set to temporary!
+                pass  # Already set to temporary!
         else:
             exe("DELETE FROM km_temporary WHERE dc_id=?",
                 (entry_id,))
@@ -615,7 +633,7 @@ class SQLiteWrapper(object):
             qry += where
         return qry, values
 
-    def get_andsearch_result(self, result_keys, search_dict={},
+    def get_andsearch_result(self, result_keys, search_dict=None,
                              order_by=None, order_asc=True,
                              limit=-1, offset=0, distinct=False):
         """returns a list of tuples filled with values of the result keys
@@ -669,13 +687,15 @@ class SQLiteWrapper(object):
                                  'dimensions':[{'unit':tunit}]})
            --> [('emd5_1', 'name_1'), ('emd5_2', 'name_2'), ...]
         """
-        if order_by == None:
+        if search_dict is None:
+            search_dict = {}
+        if order_by is None:
             order = ''
         else:
             assert order_by in result_keys
             assert order_by in self.sortable_keys
             order = ' ORDER BY %s %s' \
-                    % (order_by, {True:'ASC', False:'DESC'}[order_asc])
+                    % (order_by, {True: 'ASC', False: 'DESC'}[order_asc])
         assert isinstance(limit, int)
         assert isinstance(offset, int)
         if not search_dict.has_key('type'):
@@ -692,7 +712,9 @@ class SQLiteWrapper(object):
             else:
                 dist_str = ' ALL'
             query = "%s UNION%s %s%s LIMIT %d OFFSET %d"
-            query = query % (fc_query, dist_str, sc_query, order, limit, offset)
+            query = query % (
+                fc_query, dist_str, sc_query, order, limit, offset
+                )
             if search_dict != {}:
                 values = fc_values + sc_values
             else:
@@ -700,12 +722,12 @@ class SQLiteWrapper(object):
             mod_search_dict = search_dict
         else:
             if search_dict['type'] == 'field':
-                 allowed_search_keys = self.fc_search_keys
-                 allowed_result_keys = self.common_result_keys \
-                                       + ['unit', 'latex_unit']
+                allowed_search_keys = self.fc_search_keys
+                allowed_result_keys = self.common_result_keys \
+                    + ['unit', 'latex_unit']
             elif search_dict['type'] == 'sample':
-                 allowed_search_keys = self.sc_search_keys
-                 allowed_result_keys = self.common_result_keys
+                allowed_search_keys = self.sc_search_keys
+                allowed_result_keys = self.common_result_keys
             mod_search_dict = search_dict.copy()
             mod_search_dict.pop('type')
             self.verify_keys(mod_search_dict.keys(), allowed_search_keys)
@@ -721,7 +743,6 @@ class SQLiteWrapper(object):
 
 
 class RowWrapper(object):
-
     def __init__(self, emd5, cursor, type):
         self.cursor = cursor
         self.emd5 = emd5
@@ -756,7 +777,6 @@ class RowWrapper(object):
 
 
 class FCRowWrapper(RowWrapper):
-
     def __init__(self, emd5, cursor):
         RowWrapper.__init__(self, emd5, cursor, 'fc')
         self.dimension_query = "SELECT dim_id FROM km_fc_dimensions "\
@@ -783,7 +803,6 @@ class FCRowWrapper(RowWrapper):
 
 
 class SCRowWrapper(RowWrapper):
-
     def __init__(self, emd5, cursor):
         RowWrapper.__init__(self, emd5, cursor, 'sc')
         self.column_query = "SELECT fc_id FROM km_sc_columns "\

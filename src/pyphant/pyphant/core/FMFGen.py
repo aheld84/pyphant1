@@ -2,7 +2,6 @@
 """
 Module for generating encoded strings representing data in FMF format.
 
- Version control ID: $Id$
 
 Example:
 
@@ -65,8 +64,6 @@ Please have a look at the test examples included in the source distribution
 for further examples.
 """
 
-
-
 #########################################################################################################
 # TODO, Ideen:
 # ------------
@@ -86,11 +83,7 @@ for further examples.
 #########################################################################################################
 
 
-import sys
-import string
-
 import datetime
-
 import logging
 _log = logging.getLogger("fmfgen")
 
@@ -101,16 +94,18 @@ RPAREN_DEPEND = ')'
 
 DEFAULT_EOL = '\r\n'
 
-DEFAULT_OUT_ENCODING = 'utf-8' # Windows ANSI encoding, Western Europe
-DEFAULT_IN_ENCODING = 'utf-8' # Windows ANSI encoding, Western Europe
+DEFAULT_OUT_ENCODING = 'utf-8'  # Windows ANSI encoding, Western Europe
+DEFAULT_IN_ENCODING = 'utf-8'  # Windows ANSI encoding, Western Europe
 
 DEFAULT_TABLE_LONGNAME_PATTERN = 'table %d'
 DEFAULT_TABLE_SHORTNAME_PATTERN = 'T_{%d}'
 DEFAULT_COL_FORMAT = '%s'
 DEFAULT_COL_DELIM = '\t'
 
+
 def is_unicode(s):
-    return type(s)==unicode
+    return type(s) == unicode
+
 
 def assure_unicode(obj, coding):
     """Return a unicode string for the given object.
@@ -118,21 +113,24 @@ def assure_unicode(obj, coding):
      If the obj is a string, the given coding will be used for conversion.
      Complex numbers will be written without parantheses.
      Datetime objects will be printed in isoformat (including 'T')."""
-    if isinstance(obj,complex):
+    if isinstance(obj, complex):
         obj = str(obj)[1:-1]
-    elif isinstance(obj,datetime.datetime):
+    elif isinstance(obj, datetime.datetime):
         obj = obj.isoformat()
     if is_unicode(obj):
         return obj
     else:
-        return unicode(obj,coding)
+        return unicode(obj, coding)
+
 
 class _xproperty(property):
     """Extension of the built-in properties.
     Automatically creates a getter and optional a setter, if no
     reference to a method is given, but  a name of a variable instead.
     """
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None, *args, **kwds):
+    def __init__(
+        self, fget=None, fset=None, fdel=None, doc=None, *args, **kwds
+        ):
         """Constructor with automatically generated getter and setter.
         The following constructor automatically creates a getter and a setter,
         if given as variable name. This reduces stupid method declarations.
@@ -141,22 +139,33 @@ class _xproperty(property):
             http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/110061
         """
         super(_xproperty, self).__init__(
-          (isinstance(fget, str) and (lambda obj: getattr(obj, fget)) or fget),
-          (isinstance(fset, str) and (lambda obj, val: setattr(obj, fset, val)) or fset),
-          fdel, doc)
+            (
+                isinstance(fget, str) and
+                (lambda obj: getattr(obj, fget)) or fget
+                ),
+            (
+                isinstance(fset, str) and
+                (lambda obj, val: setattr(obj, fset, val)) or fset
+                ),
+            fdel, doc
+            )
         # print "doc=",doc, " self.__doc__", self.__doc__
         #if doc is not None:
         #    if self.__doc__ is None:
         #        self.__doc__=""
         #    self.__doc__+=doc
-        self.__doc__=doc
+        self.__doc__ = doc
+
 
 class _AutoProperty(_xproperty):
     """Extension of the built-in properties.
     Automatically creates a getter and optional a setter, if no
     reference to a method is given, but  a name of a variable instead.
     """
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None,*args,**kwds):
+
+    def __init__(
+        self, fget=None, fset=None, fdel=None, doc=None, *args, **kwds
+        ):
         """Constructor with automatically generated getter and setter.
         The following constructor automatically creates a getter and a setter,
         if given as variable name. This reduces stupid method declarations.
@@ -165,19 +174,26 @@ class _AutoProperty(_xproperty):
             http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/110061
         """
         # if both fget and fset are strings, they must be equal
-        assert (not isinstance(fget, str)) or (not isinstance(fset, str)) or (fget==fset),\
-               "fget and fset should be equal, if both strings"
-
-        super(_AutoProperty,self).__init__(fget,fset,fdel,doc,*args,**kwds)
-        self.__doc__=doc
+        assert (
+            (not isinstance(fget, str)) or
+            (not isinstance(fset, str)) or
+            (fget == fset)
+            ), "fget and fset should be equal, if both strings"
+        super(_AutoProperty, self).__init__(
+            fget, fset, fdel, doc, *args, **kwds
+            )
+        self.__doc__ = doc
 
 
 class FMFBuildException(Exception):
     pass
 
+
 class _FMFElement(object):
-    def __init__(self, in_coding=DEFAULT_IN_ENCODING,
-                 out_coding=DEFAULT_OUT_ENCODING, eol=DEFAULT_EOL, *args, **kwds):
+    def __init__(
+        self, in_coding=DEFAULT_IN_ENCODING,
+        out_coding=DEFAULT_OUT_ENCODING, eol=DEFAULT_EOL, *args, **kwds
+        ):
         """Initialise general element of FMF structure with common arguments."""
 
         # check, if given coding is known
@@ -195,6 +211,7 @@ class _FMFElement(object):
     def __str__(self):
         return self.unicode().encode(self._out_coding)
 
+
 class _Item(_FMFElement):
 
     def __init__(self, metatag, value, *args, **kwds):
@@ -205,9 +222,10 @@ class _Item(_FMFElement):
 
         Both arguments are assumed to be unicode.
         """
-        super(_Item,self).__init__(*args,**kwds)
-        assert is_unicode(metatag), "Given metatag is not unicode: %s" % (metatag,)
-        assert is_unicode(value), "Given value is not unicode: %s" % (value,)
+        super(_Item, self).__init__(*args, **kwds)
+        assert is_unicode(metatag), \
+            "Given metatag is not unicode: %s" % (metatag, )
+        assert is_unicode(value), "Given value is not unicode: %s" % (value, )
 
         # metatag should be alphanumerical?! What does this mean?
         self._metatag = metatag
@@ -221,8 +239,10 @@ class _Item(_FMFElement):
 
 
 class _ColumnDef(_Item):
-    def __init__(self, longname, shortname, unit=None,
-                 deps=[], error = None,format=DEFAULT_COL_FORMAT, *args, **kwds):
+    def __init__(
+        self, longname, shortname, unit=None,
+        deps=None, error=None, format=DEFAULT_COL_FORMAT, *args, **kwds
+        ):
         """Column definition as item for a data definition section.
 
          longname  --  long name for the column, human-readable
@@ -230,24 +250,27 @@ class _ColumnDef(_Item):
          unit      --  unit like 'm/s' (optional, default: None)
          deps      --  list of dependencies, which are themselves short names
                        of other columns (optional, default: [])
-         error     --  Reference to the column symbol listing the respective error
+         error     --  Reference to the column symbol listing
+                       the respective error
          format    --  format specifier used for column values (optional)
 
-        The instances given for 'longname', 'shortname', 'deps' items and 'unit'
-        are assumed to be unicode.
+        The instances given for 'longname', 'shortname', 'deps' items and
+        'unit' are assumed to be unicode.
         """
+        if deps is None:
+            deps = []
 
         value = shortname
-        if len(deps)>0:
+        if len(deps) > 0:
             value += LPAREN_DEPEND
             for d in deps[:-1]:
                 value += u"%s," % (d,)
-            value += deps[-1]+RPAREN_DEPEND
+            value += deps[-1] + RPAREN_DEPEND
         if unit is not None:
             value += u" [%s]" % (unit,)
         if error is not None:
             value += u" +- %s" % (error,)
-        super(_ColumnDef,self).__init__( longname, value, *args, **kwds)
+        super(_ColumnDef, self).__init__(longname, value, *args, **kwds)
 
         self._shortname = shortname
         self._unit = unit
@@ -262,6 +285,7 @@ class _ColumnDef(_Item):
     error = _AutoProperty('_error')
     format = _AutoProperty('_format')
 
+
 class _Section(_FMFElement):
 
     def __init__(self, tag, reserved=False, *args, **kwds):
@@ -272,8 +296,11 @@ class _Section(_FMFElement):
 
          The 'tag' is assumed to be a unicode string.
         """
-        super(_Section,self).__init__(*args,**kwds)
-        _log.debug("Generating an FMF section tagged '%s'. Reserved section? %s", tag, reserved)
+        super(_Section, self).__init__(*args, **kwds)
+        _log.debug(
+            "Generating an FMF section tagged '%s'. Reserved section? %s",
+            tag, reserved
+            )
         self._tag = tag
         self._reserved = reserved
         self._items = []
@@ -286,11 +313,11 @@ class _Section(_FMFElement):
             c = RESERVED_MARK
         else:
             c = ''
-        return u"[%s%s]%s" % (c,self._tag,self._eol)
+        return u"[%s%s]%s" % (c, self._tag, self._eol)
 
     def unicode(self):
         s = self._header()
-        s += u''.join([ it.unicode() for it in self._items])
+        s += u''.join([it.unicode() for it in self._items])
         return s
 
     def add_item(self, metatag, value, arg_coding=None):
@@ -301,38 +328,46 @@ class _Section(_FMFElement):
           arg_coding --  input encoding of 'metatag' and 'value'.
                          Optional, default is to use the factory's settings.
         """
-        item = self._factory._gen_item(metatag, value,arg_coding=arg_coding)
+        item = self._factory._gen_item(metatag, value, arg_coding=arg_coding)
         self._items.append(item)
 
-    def add_quantity_item(self, longname, value, shortname=None, unit=None,
-                          error_value=None, error_unit=None, rel_error=False, arg_coding=None):
+    def add_quantity_item(
+        self, longname, value, shortname=None, unit=None,
+        error_value=None, error_unit=None, rel_error=False, arg_coding=None
+        ):
         """Adding a quantity as item to this section.
 
           longname    --  used as key/metatag of this item
           value       --  numeric value of the quantity
           shortname   --  optional, short name of the item
           unit        --  optional, unit of the value
-          error_value --  optional, numeric error value, interpretation depends on
-                          'rel_error'
-          error_unit  --  optional, unit of the error value; only useful for absolute
-                          errors; if not given, the unit of the quantity's value
+          error_value --  optional, numeric error value, interpretation
+                          depends on 'rel_error'
+          error_unit  --  optional, unit of the error value;
+                          only useful for absolute errors;
+                          if not given, the unit of the quantity's value
                           will be taken
           rel_error   --  optional, boolean, defaults to 'False'; if
-                          'True', error_value is assumed to be a relative error, so
-                          the absolute error is
-
-                            +/- value*error_value
+                          'True', error_value is assumed to be
+                          a relative error,
+                          so the absolute error is +/- value*error_value
 
           arg_coding --  input encoding of the arguments.
                          Optional, default is to use the factory's settings.
 
-         It is not checked whether the unit and the error's unit are compatible.
+         It is not checked whether the unit and the error's
+         unit are compatible.
         """
         if (error_unit is not None) and rel_error:
-            raise FMFBuildException("Specification of error's unit not useful when giving a relative error value.")
+            raise FMFBuildException(
+                "Specification of error's unit not useful "
+                "when giving a relative error value."
+                )
         if (error_unit is not None) and (unit is None):
-            raise FMFBuildException("Specification of error's unit must go along with specification of value's unit.")
-
+            raise FMFBuildException(
+                "Specification of error's unit must go along "
+                "with specification of value's unit."
+                )
 
         if error_value is None:
             combined_value = str(value)
@@ -341,25 +376,29 @@ class _Section(_FMFElement):
         else:
             if error_unit is None:
                 if rel_error:
-                    combined_value = "(1 \\pm %s) %s" % (error_value,value)
+                    combined_value = "(1 \\pm %s) %s" % (error_value, value)
                 else:
-                    combined_value = "(%s \\pm %s)" % (value,error_value)
+                    combined_value = "(%s \\pm %s)" % (value, error_value)
                 if unit is not None:
                     combined_value += " %s" % (unit,)
             else:
-                combined_value = "%s %s \\pm %s %s" % (value,unit,error_value,error_unit)
+                combined_value = "%s %s \\pm %s %s" % (
+                    value, unit, error_value, error_unit
+                    )
 
         if shortname is not None:
-            combined_value = "%s=%s" % (shortname,combined_value)
+            combined_value = "%s=%s" % (shortname, combined_value)
 
         self.add_item(longname, combined_value, arg_coding=arg_coding)
-
 
     tag = _AutoProperty('_tag')
     reserved = _AutoProperty('_reserved')
 
+
 class _Table(_FMFElement):
-    def __init__(self, seq2D, longname, shortname, autonames=False, *args, **kwds):
+    def __init__(
+        self, seq2D, longname, shortname, autonames=False, *args, **kwds
+        ):
         """Initialise a table.
 
          seq2D     -- sequence of sequences allowing access by
@@ -369,21 +408,27 @@ class _Table(_FMFElement):
          longname  -- long, human readable name for the table
          shortname -- symbol for the table
          autonames -- flag indicating wheter both names are automatically
-                      generated and not explicitly chosen by a human user (default:False)
+                      generated and not explicitly chosen by a human user
+                      (default:False)
 
          'longname' and 'shortname' are assumed to be unicode strings.
-         The tbale is able generate its own data definition section and data section.
+         The table is able to generate its own data definition section
+         and data section.
         """
-        super(_Table,self).__init__(*args,**kwds)
+        super(_Table, self).__init__(*args, **kwds)
 
         self._seq2D = seq2D
 
         self._check_row_lengths(seq2D)
 
         if not is_unicode(longname):
-                raise FMFBuildException("Table must be initialized with a unicode string as longname.")
+            raise FMFBuildException(
+                "Table must be initialized with a unicode string as longname."
+                )
         if not is_unicode(shortname):
-                raise FMFBuildException("Table must be initialized with a unicode string  as shortname.")
+            raise FMFBuildException(
+                "Table must be initialized with a unicode string as shortname."
+                )
 
         self._longname = longname
         self._shortname = shortname
@@ -400,13 +445,18 @@ class _Table(_FMFElement):
         """
         len0 = len(seq2D[0])
         for row in seq2D:
-            if len(row)!=len0:
-                raise FMFBuildException("Table '%s' has rows with different lengths." \
-                                    % (self._shortname,))
+            if len(row) != len0:
+                raise FMFBuildException(
+                    "Table '%s' has rows with different lengths." % (
+                        self._shortname,
+                        )
+                    )
 
-    def add_column_def(self, longname, shortname, unit=None, dependencies=[],
-                       error = None,
-                       format=DEFAULT_COL_FORMAT, arg_coding=None): # , data=None):
+    def add_column_def(
+        self, longname, shortname, unit=None, dependencies=None,
+        error=None,
+        format=DEFAULT_COL_FORMAT, arg_coding=None
+        ):  # , data=None):
         """Add a column definition to the table.
 
          longname  --  long name for the column, human-readable
@@ -419,12 +469,16 @@ class _Table(_FMFElement):
                        elements of 'dependencies'. Optional, default is to use
                        the factory's settings.
         """
+        if dependencies is None:
+            dependencies = []
         # Proposal for an additional argument:
         #         data      --  sequence with references to data items; length must be
         #                       equal to current number of rows in the table; data
         #                       is joined to the current table (optional)
-        coldef = self._factory._gen_column_def(longname, shortname, unit, dependencies,error,
-                                               format, arg_coding)
+        coldef = self._factory._gen_column_def(
+            longname, shortname, unit, dependencies, error,
+            format, arg_coding
+            )
         self._coldefs.append(coldef)
         #if not data is None:
         #    if len(data)!=self.num_rows:
@@ -445,19 +499,24 @@ class _Table(_FMFElement):
         #
         # check for number of data definitions
         #
-        if len(self._coldefs)!=len(self._seq2D[0]):
-            raise FMFBuildException("Table '%s' has %d columns, but %d columns definitions." \
-                                    % (self._shortname,len(self._seq2D[0]),len(self._coldefs)))
+        if len(self._coldefs) != len(self._seq2D[0]):
+            raise FMFBuildException(
+                "Table '%s' has %d columns, but %d columns definitions." % (
+                    self._shortname, len(self._seq2D[0]), len(self._coldefs)
+                    )
+                )
         #
         # check, whether dependencies are ok
         #
-        shortnames = [ cd.shortname for cd in self._coldefs]
+        shortnames = [cd.shortname for cd in self._coldefs]
         for cd in self._coldefs:
             for dep in cd.deps:
                 if not dep in shortnames:
-                    raise FMFBuildException("Shortname '%s', which has been given as dependency " % (dep,)\
-                                            +"for column '%s', is not defined in a separate column."\
-                                            % (cd.longname,))
+                    raise FMFBuildException(
+                        "Shortname '%s', which has been given as dependency "
+                        "for column '%s', is not defined in a "
+                        "separate column." % (dep, cd.longname)
+                        )
         #
         # prepare data definition section
         #
@@ -476,27 +535,30 @@ class _Table(_FMFElement):
             data_section_name += u": %s" % (self._shortname,)
         data_section = self._factory.gen_section(data_section_name)
         data_lines = []
-        col_formats = [ cd.format for cd in self._coldefs]
-        for i,row in enumerate(self._seq2D):
+        col_formats = [cd.format for cd in self._coldefs]
+        for i, row in enumerate(self._seq2D):
             line = u""
-            for j,value in enumerate(row):
-                if isinstance(value,complex):
-                    value = str(value)[1:-1] # leave out parantheses
-                elif isinstance(value,datetime.datetime):
+            for j, value in enumerate(row):
+                if isinstance(value, complex):
+                    value = str(value)[1:-1]  # leave out parantheses
+                elif isinstance(value, datetime.datetime):
                     value = value.isoformat()
-                if isinstance(value,str):
-                    value = unicode(value,self._in_coding)
+                if isinstance(value, str):
+                    value = unicode(value, self._in_coding)
 
                 try:
                     line += col_formats[j] % (value,)
                 except:
-                    raise FMFBuildException("Couldn't format '%s' with %s" % (value,col_formats[j]))
-                if j<len(row)-1:
+                    raise FMFBuildException(
+                        "Couldn't format '%s' with %s" % (
+                            value, col_formats[j]
+                            )
+                        )
+                if j < len(row) - 1:
                     line += DEFAULT_COL_DELIM
                 else:
                     line += self._eol
             data_lines.append(line)
-
 
         #
         # construct text representation of this table
@@ -513,7 +575,7 @@ class _Table(_FMFElement):
 
     def _get_num_cols(self):
         """Return the number of columns."""
-        if len(self._seq2D)>0:
+        if len(self._seq2D) > 0:
             return len(self._seq2D[0])
         else:
             return 0
@@ -521,20 +583,25 @@ class _Table(_FMFElement):
     shortname = _AutoProperty('_shortname')
     longname = _AutoProperty('_longname')
     autonames = _AutoProperty('_autonames')
-    suppress_section_shortnames = _AutoProperty('_suppress_section_shortnames',\
-                                                '_suppress_section_shortnames')
+    suppress_section_shortnames = _AutoProperty(
+        '_suppress_section_shortnames',
+        '_suppress_section_shortnames'
+        )
     num_rows = _AutoProperty(_get_num_rows)
     num_cols = _AutoProperty(_get_num_cols)
+
 
 class _FMFContainer(_FMFElement):
 
     def __init__(self, *args, **kwds):
         """Initialise a container holding data by means of FMF data structure."""
-        super(_FMFContainer,self).__init__(*args,**kwds)
+        super(_FMFContainer, self).__init__(*args, **kwds)
 
         self._user_sections = {}
-        self._user_sections_tags = [] # for saving the order
-        self._reference_section = _Section('reference', reserved=True, *args, **kwds)
+        self._user_sections_tags = []  # for saving the order
+        self._reference_section = _Section(
+            'reference', reserved=True, *args, **kwds
+            )
 
         self._tables = []
         self._tables_section = None
@@ -544,8 +611,10 @@ class _FMFContainer(_FMFElement):
 
          metatag   -- key of the reference item, e.g. 'author'
          value     -- value of the reference item
-         arg_coding -- if strings are encoded differently from default encoding,
-                      it can be specified here (default: encoding of the container)"""
+         arg_coding -- if strings are encoded differently from
+                       default encoding, it can be
+                       specified here (default: encoding of the container)
+        """
         if arg_coding is None:
             arg_coding = self._in_coding
         self._reference_section.add_item(metatag, value, arg_coding=arg_coding)
@@ -557,10 +626,16 @@ class _FMFContainer(_FMFElement):
         """
 
         if section.reserved:
-            raise FMFBuildException("User defined sections shouldn't marked as reserved (section: %s)." % (section.tag,))
+            raise FMFBuildException(
+                "User defined sections shouldn't marked "
+                "as reserved (section: %s)." % (section.tag, )
+                )
 
         if section.tag in self._user_sections.keys():
-            raise FMFBuildException("Section '%s' is already included. Each section can only be added once.")
+            raise FMFBuildException(
+                "Section '%s' is already included. "
+                "Each section can only be added once."
+                )
 
         self._user_sections[section.tag] = section
         self._user_sections_tags.append(section.tag)
@@ -571,27 +646,30 @@ class _FMFContainer(_FMFElement):
           table -- the table to be added
         """
         self._tables.append(table)
-        if ((not table.autonames) or (len(self._tables)>1)) \
+        if ((not table.autonames) or (len(self._tables) > 1)) \
                and self._tables_section is None:
             self._tables_section = self._factory.gen_section('*tables')
-            if len(self._tables)>1:
+            if len(self._tables) > 1:
                 # this call adds the second table, so hand in former table
                 tab0 = self._tables[0]
-                self._tables_section.add_item(tab0.longname,tab0.shortname)
+                self._tables_section.add_item(tab0.longname, tab0.shortname)
         if self._tables_section is not None:
-            self._tables_section.add_item(table.longname,table.shortname)
+            self._tables_section.add_item(table.longname, table.shortname)
 
     def unicode(self):
 
-        if len(self._tables)==0:
-            raise FMFBuildException("Cannot generate FMF file content to which no table has been added.")
+        if len(self._tables) == 0:
+            raise FMFBuildException(
+                "Cannot generate FMF file content "
+                "to which no table has been added."
+                )
 
         # *reference
         # user defined sections
         # *data definitions
         # *data
 
-        s = u"; -*- coding: %s -*-%s" % (self._out_coding,self._eol)
+        s = u"; -*- coding: %s -*-%s" % (self._out_coding, self._eol)
         s += self._reference_section.unicode()
         for tag in self._user_sections_tags:
             s += self._user_sections[tag].unicode()
@@ -604,6 +682,7 @@ class _FMFContainer(_FMFElement):
         return s
 
     sections = _AutoProperty('_sections')
+
 
 class _FMFElementFactory(object):
     """Produces elements which can be inserted into an FMF data structure."""
@@ -618,10 +697,10 @@ class _FMFElementFactory(object):
 
         self._table_count = 0
 
-        self._element_kwds = { 'in_coding': in_coding,
-                               'out_coding':out_coding,
-                               'eol': eol,
-                               'factory': self}
+        self._element_kwds = {'in_coding': in_coding,
+                              'out_coding': out_coding,
+                              'eol': eol,
+                              'factory': self}
 
     def _gen_item(self, metatag, value, arg_coding=None, *args, **kwds):
         """Generate an item for latter insertion into a section.
@@ -630,7 +709,8 @@ class _FMFElementFactory(object):
          value      -- value of the item
          arg_coding -- if encoding of 'metatag' and 'value' differs
                        from standard input encoding, it can be specified here
-                        (Default: use input encoding given when instanitating factory)
+                       (Default: use input encoding given
+                        when instanitating factory)
 
          Usually not directly called. Use section methods instead.
         """
@@ -638,11 +718,14 @@ class _FMFElementFactory(object):
             arg_coding = self._in_coding
         metatag = assure_unicode(metatag, arg_coding)
         value = assure_unicode(value, arg_coding)
-        kwds.update(self._element_kwds) # mix in the coding and line marker information
+        # mix in the coding and line marker information
+        kwds.update(self._element_kwds)
         return _Item(metatag, value, *args, **kwds)
 
-    def _gen_column_def(self, longname, shortname, unit=None, dependencies=[], error = None,
-                       format=DEFAULT_COL_FORMAT, arg_coding=None, *args, **kwds):
+    def _gen_column_def(
+        self, longname, shortname, unit=None, dependencies=None, error=None,
+        format=DEFAULT_COL_FORMAT, arg_coding=None, *args, **kwds
+        ):
         """Generate a column definition.
 
          longname  --  long name for the column, human-readable
@@ -657,28 +740,35 @@ class _FMFElementFactory(object):
 
          Usually not directly called. Use table methods instead.
         """
+        if dependencies is None:
+            dependencies = []
         if arg_coding is None:
             arg_coding = self._in_coding
         longname = assure_unicode(longname, arg_coding)
         shortname = assure_unicode(shortname, arg_coding)
-        if (unit is not None) and str(unit)!='1':
+        if (unit is not None) and str(unit) != '1':
             unit = assure_unicode(unit, arg_coding)
             if unit.startswith('1.0 '):
-                unit=unit[4:]
+                unit = unit[4:]
         else:
             unit = None
-        for i,d in enumerate(dependencies):
+        for i, d in enumerate(dependencies):
             dependencies[i] = assure_unicode(d, arg_coding)
-        kwds.update(self._element_kwds) # mix in the coding and line marker information
-        return _ColumnDef(longname, shortname, unit, dependencies, error, format, *args, **kwds)
+        # mix in the coding and line marker information
+        kwds.update(self._element_kwds)
+        return _ColumnDef(
+            longname, shortname, unit, dependencies,
+            error, format, *args, **kwds
+            )
 
     def gen_section(self, tag, arg_coding=None, *args, **kwds):
         """Generate a section for latter inclusion in a FMF file.
 
           tag        -- tag of the section
-          arg_coding -- if encoding of 'tag' differs from standard input encoding,
-                        it can be specified here
-                        (Default: use input encoding given when instanitating factory)
+          arg_coding -- if encoding of 'tag' differs from standard
+                        input encoding, it can be specified here
+                        (Default: use input encoding given when
+                         instanitating factory)
         """
         if arg_coding is None:
             arg_coding = self._in_coding
@@ -686,22 +776,29 @@ class _FMFElementFactory(object):
         reserved = tag.startswith(RESERVED_MARK)
         if reserved:
             tag = tag[len(RESERVED_MARK):]
-        kwds.update(self._element_kwds) # mix in the coding and line marker information
+        # mix in the coding and line marker information
+        kwds.update(self._element_kwds)
         return _Section(tag, reserved=reserved, *args, **kwds)
 
-    def gen_table(self, seq2D, longname=None, shortname=None, arg_coding=None, *args, **kwds):
+    def gen_table(
+        self, seq2D, longname=None, shortname=None,
+        arg_coding=None, *args, **kwds
+        ):
         """Return a table for inclusion into FMF container.
 
          seq2D      -- sequence of sequences representing the table
-         shortname  -- short name used to reference table definitions (optional)
+         shortname  -- short name used to reference table definitions
+                       (optional)
          longname   -- long name used to describe the table (optional)
          arg_coding -- if encoding of 'longname' and 'shortname' differs from
                        standard input encoding, it should be specified here
-                       (Default: use input encoding given when instantiating factory)
+                       (Default: use input encoding given
+                        when instantiating factory)
 
-         If shortname or longname is not given, a default name will be constructed
-         using a global counter for tables as index. If both names are not given,
-         the default names will be built with the same index number.
+         If shortname or longname is not given, a default name
+         will be constructed using a global counter for tables as index.
+         If both names are not given, the default names will be
+         built with the same index number.
         """
         if arg_coding is None:
             arg_coding = self._in_coding
@@ -710,25 +807,31 @@ class _FMFElementFactory(object):
         if (longname is None) or (shortname is None):
             self._table_count += 1
             if longname is None:
-                longname = DEFAULT_TABLE_LONGNAME_PATTERN % (self._table_count,)
+                longname = DEFAULT_TABLE_LONGNAME_PATTERN % (
+                    self._table_count,
+                    )
             if shortname is None:
-                shortname = DEFAULT_TABLE_SHORTNAME_PATTERN % (self._table_count,)
+                shortname = DEFAULT_TABLE_SHORTNAME_PATTERN % (
+                    self._table_count,
+                    )
 
         longname = assure_unicode(longname, arg_coding)
         shortname = assure_unicode(shortname, arg_coding)
-        kwds.update(self._element_kwds) # mix in the coding and line marker information
-        return _Table( seq2D, longname, shortname, autonames, *args, **kwds)
+        # mix in the coding and line marker information
+        kwds.update(self._element_kwds)
+        return _Table(seq2D, longname, shortname, autonames, *args, **kwds)
 
     def gen_fmf(self, *args, **kwds):
         """Generate a fmf structure suitable for output in a file.
         """
-        kwds.update(self._element_kwds) # mix in the coding and line marker information
+        # mix in the coding and line marker information
+        kwds.update(self._element_kwds)
         return _FMFContainer(*args, **kwds)
 
 
-def gen_factory( in_coding=DEFAULT_IN_ENCODING,
-                 out_coding=DEFAULT_OUT_ENCODING,
-                 eol=DEFAULT_EOL):
+def gen_factory(in_coding=DEFAULT_IN_ENCODING,
+                out_coding=DEFAULT_OUT_ENCODING,
+                eol=DEFAULT_EOL):
     """Return a factory for elements of a FMF data structure using common settings.
 
      in_coding  --  default encoding assumed for incoming strings,
@@ -739,9 +842,4 @@ def gen_factory( in_coding=DEFAULT_IN_ENCODING,
 
      The default arguments are typical for Windows systems.
     """
-    return _FMFElementFactory(in_coding,out_coding,eol)
-
-
-
-
-
+    return _FMFElementFactory(in_coding, out_coding, eol)

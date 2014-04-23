@@ -64,9 +64,11 @@ comprises a quantity of the same kind. Each row can be regarded as the
 realization of a random variable.
 """
 from __future__ import with_statement
-
-
-import copy, hashlib, threading, numpy, StringIO
+import copy
+import hashlib
+import threading
+import numpy
+import StringIO
 import urlparse
 from pyphant.core.AstTransformers import (
     ReplaceName, ReplaceCompare, ReplaceOperator, UnitCalculator,
@@ -79,10 +81,11 @@ _logger = logging.getLogger("pyphant")
 #Default string encoding
 enc = lambda s: unicode(s, "utf-8")
 
+
 def parseId(id):
     u"""Returns tuple (HASH, TYPESTRING) from given .id attribute."""
     resUri = urlparse.urlsplit(id)
-    return resUri[2].split('/')[-1].split('.') #(hash, uriType)
+    return resUri[2].split('/')[-1].split('.')  # (hash, uriType)
 
 
 class DataContainer(object):
@@ -103,6 +106,7 @@ class DataContainer(object):
     id = None
     hash = None
     masterLock = threading.Lock()
+
     def __init__(self, longname, shortname, attributes=None):
         self.longname = longname
         self.shortname = shortname
@@ -119,8 +123,8 @@ class DataContainer(object):
             subscript = '_{%s}' % index
             result = self.shortname + subscript
         else:
-            subscript = '_{%s,%s}' % (self.shortname[pos+1:], index)
-            result = self.shortname[:pos]+subscript
+            subscript = '_{%s,%s}' % (self.shortname[pos + 1:], index)
+            result = self.shortname[:pos] + subscript
         if persistent:
             self.shortname = result
         return result
@@ -174,11 +178,13 @@ class DataContainer(object):
             else:
                 self.hash = self.generateHash()
                 self.timestamp = Helpers.getModuleUniqueTimestamp()
-                self.id = u"emd5://%s/%s/%s/%s.%s" % (self.machine,
-                                                      self.creator,
-                                                      enc(self.timestamp.isoformat('_')),
-                                                      self.hash,
-                                                      self.typeString)
+                self.id = u"emd5://%s/%s/%s/%s.%s" % (
+                    self.machine,
+                    self.creator,
+                    enc(self.timestamp.isoformat('_')),
+                    self.hash,
+                    self.typeString
+                    )
 
 
 from FieldContainer import *
@@ -208,6 +214,7 @@ class SampleContainer(DataContainer):
 \t\t\t  of the DataContainer.
 """
     typeString = u"sample"
+
     def __init__(self, columns, longname='Realizations of random variable',
                  shortname='X', attributes=None):
         """columns: List of FieldContainer"""
@@ -221,7 +228,7 @@ class SampleContainer(DataContainer):
         for i in xrange(len(self.columns)):
             self.longnames[self.columns[i].longname] = columns[i]
             self.shortnames[self.columns[i].shortname] = columns[i]
-    columns = property(lambda self:self._columns, _setColumns)
+    columns = property(lambda self: self._columns, _setColumns)
 
     def _getLabel(self):
         return u"%s %s" % (self.longname, self.shortname)
@@ -267,7 +274,7 @@ class SampleContainer(DataContainer):
             return self.shortnames[key]
         except KeyError:
             pass
-        raise KeyError(u'No column named "%s" could be found.'%key)
+        raise KeyError(u'No column named "%s" could be found.' % (key, ))
 
     def __eq__(self, other):
         try:
@@ -374,9 +381,9 @@ class SampleContainer(DataContainer):
         factorExpr = rpo.visit(factorExpr)
         localDict = dict([(key, value.data) \
                           for key, value in rpn.localDict.iteritems()])
-        numpyDict = {'logical_and':numpy.logical_and,
-                     'logical_or':numpy.logical_or,
-                     'logical_not':numpy.logical_not}
+        numpyDict = {'logical_and': numpy.logical_and,
+                     'logical_or': numpy.logical_or,
+                     'logical_not': numpy.logical_not}
         localDict.update(numpyDict)
         data = eval(compile(factorExpr, '<calcColumn>', 'eval'), {}, localDict)
         unitcalc = UnitCalculator(rpn.localDict)
@@ -468,4 +475,4 @@ def assertEqual(con1, con2, rtol=1e-5, atol=1e-8):
     if con1.__eq__(con2, rtol, atol):
         return True
     else:
-        raise AssertionError, diagnosis.getvalue()
+        raise AssertionError(diagnosis.getvalue())

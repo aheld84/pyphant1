@@ -34,17 +34,17 @@ u"""
 """
 
 
-import copy
 import pylab
 import numpy
 import pyphant.core.Connectors
 from pyphant.core import DataContainer
 from pyphant.wxgui2.DataVisReg import DataVisReg
-from pyphant.quantities import isQuantity
+
 
 class Chart(object):
-    name='General chart'
-    def __init__(self, dataContainer,show=True):
+    name = 'General chart'
+
+    def __init__(self, dataContainer, show=True):
         self.dataContainer = dataContainer
         self.data = []
         self.prepare()
@@ -59,12 +59,16 @@ class Chart(object):
     def prepare(self):
         pylab.ioff()
         self.figure = pylab.figure()
-        if isinstance(self.dataContainer.data[0], DataContainer.FieldContainer):
+        if isinstance(
+            self.dataContainer.data[0], DataContainer.FieldContainer
+            ):
             ref = self.dataContainer.data[0]
             self.addDataContainer(ref)
             for fc in self.dataContainer.data[1:]:
                 fc = fc.inUnitsOf(ref)
-                fc.dimensions[-1] = fc.dimensions[-1].inUnitsOf(ref.dimensions[-1])
+                fc.dimensions[-1] = fc.dimensions[-1].inUnitsOf(
+                    ref.dimensions[-1]
+                    )
                 self.addDataContainer(fc)
             pylab.xlabel(self.dataContainer.data[0].dimensions[-1].shortlabel)
             pylab.ylabel(self.dataContainer.data[0].label)
@@ -74,7 +78,7 @@ class Chart(object):
             pylab.ylabel(self.dataContainer.label)
         try:
             pylab.title(self.dataContainer.attributes['title'])
-        except KeyError,TypeError:
+        except (KeyError, TypeError):
             pass
         self.xmin = min([numpy.nanmin(d['abscissa']) for d in self.data])
         self.xmax = max([numpy.nanmax(d['abscissa']) for d in self.data])
@@ -83,15 +87,17 @@ class Chart(object):
 
     def addDataContainer(self, dataContainer):
         dataDict = {}
-        if len(dataContainer.data.shape)==1:
-            dataDict['data'] = dataContainer.data[numpy.newaxis,:]
+        if len(dataContainer.data.shape) == 1:
+            dataDict['data'] = dataContainer.data[numpy.newaxis, :]
             if dataContainer.error != None:
-                dataDict['error'] = dataContainer.error[numpy.newaxis,:]
+                dataDict['error'] = dataContainer.error[numpy.newaxis, :]
             else:
                 dataDict['error'] = None
             if dataContainer.mask != None:
-                dataDict['mask'] = dataContainer.mask[numpy.newaxis,:]
-                dataDict['maskedData'] = numpy.ma.array(dataDict['data'], mask=dataDict['mask'])
+                dataDict['mask'] = dataContainer.mask[numpy.newaxis, :]
+                dataDict['maskedData'] = numpy.ma.array(
+                    dataDict['data'], mask=dataDict['mask']
+                    )
             else:
                 dataDict['mask'] = None
                 dataDict['maskedData'] = numpy.ma.array(dataDict['data'])
@@ -100,12 +106,13 @@ class Chart(object):
             dataDict['error'] = dataContainer.error
             dataDict['mask'] = dataContainer.mask
             if dataDict['mask'] != None:
-                dataDict['maskedData'] = numpy.ma.array(dataDict['data'], mask=dataDict['mask'])
+                dataDict['maskedData'] = numpy.ma.array(
+                    dataDict['data'], mask=dataDict['mask']
+                    )
             else:
                 dataDict['maskedData'] = numpy.ma.array(dataDict['data'])
         dataDict['abscissa'] = dataContainer.dimensions[-1].data
         self.data.append(dataDict)
-
 
     def finalize(self):
         pylab.ion()
@@ -126,11 +133,16 @@ class BarChart(Chart):
                           width=width)
         else:
             for i in xrange(data.shape[0]):
-                line = pylab.bar(abscissa, maskedData[i],
-                                 yerr=error[i],
-                                 width=width)
-        xextent = (self.xmax-self.xmin)*0.03
-        pylab.axis([self.xmin-xextent, self.xmax+width+xextent, ymin, self.ymax*1.03])
+                pylab.bar(abscissa, maskedData[i],
+                          yerr=error[i],
+                          width=width)
+        xextent = (self.xmax - self.xmin) * 0.03
+        pylab.axis(
+            [self.xmin - xextent,
+             self.xmax + width + xextent,
+             ymin,
+             self.ymax * 1.03]
+            )
 
 
 class LineChart(Chart):
@@ -145,19 +157,25 @@ class LineChart(Chart):
             for i in xrange(data.shape[0]):
                 line = pylab.plot(abscissa, maskedData[i], self.linestyle)
                 color = [l._color for l in line]
-                for direction in [-1.,1.]:
-                    ordinate = maskedData[i] + direction*error[i]
+                for direction in [-1., 1.]:
+                    ordinate = maskedData[i] + direction * error[i]
                     line = pylab.plot(abscissa, ordinate, linestyle=':')
                     for j in xrange(len(color)):
                         line[j]._color = color[j]
         pylab.axis([self.xmin, self.xmax, self.ymin, self.ymax])
+
 
 class ScatterPlot(LineChart):
     name = u"Scatter Plot"
     linestyle = 'o'
 
 
-DataVisReg.getInstance().registerVisualizer(pyphant.core.Connectors.TYPE_IMAGE, BarChart)
-DataVisReg.getInstance().registerVisualizer(pyphant.core.Connectors.TYPE_IMAGE, LineChart)
-DataVisReg.getInstance().registerVisualizer(pyphant.core.Connectors.TYPE_IMAGE, ScatterPlot)
-
+DataVisReg.getInstance().registerVisualizer(
+    pyphant.core.Connectors.TYPE_IMAGE, BarChart
+    )
+DataVisReg.getInstance().registerVisualizer(
+    pyphant.core.Connectors.TYPE_IMAGE, LineChart
+    )
+DataVisReg.getInstance().registerVisualizer(
+    pyphant.core.Connectors.TYPE_IMAGE, ScatterPlot
+    )

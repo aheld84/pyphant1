@@ -58,21 +58,30 @@ UNLESS field.dimensions==INDEX:
 """
 
 
-import tables, datetime
+import tables
+from tables import StringCol, Col
 import sys
 from pyphant.core import (CompositeWorker, DataContainer)
-from tables import StringCol, Col
+
+# imports needed for eval when loading?
+# this should be fixed by passing an appropiate dict to eval
+import datetime
 from pyphant.quantities import Quantity
 from pyphant.quantities import Quantity as PhysicalQuantity
+
 import scipy
 import logging
 _logger = logging.getLogger("pyphant")
 
-_reservedAttributes = ('longname', 'shortname', 'columns', 'creator', 'machine')
+_reservedAttributes = (
+    'longname', 'shortname', 'columns', 'creator', 'machine'
+    )
+
 
 class Connection(tables.IsDescription):
-    destinationWorker = tables.StringCol(len("worker_"+str(sys.maxint))+1)
+    destinationWorker = tables.StringCol(len("worker_" + str(sys.maxint)) + 1)
     destinationSocket = tables.StringCol(64)
+
 
 ##########################################################################
 # Saving Part
@@ -84,15 +93,17 @@ def saveExecutionOrder(h5, order):
         executionOrderGroup = h5.createGroup('/', 'executionOrder')
     import md5
     m = md5.new()
-    m.update(str(sorted(order[0].items()))) # Call 'sorted' to
-                                            # normalize representation
-                                            # of order[0]
+    m.update(str(sorted(order[0].items())))  # Call 'sorted' to
+                                             # normalize representation
+                                             # of order[0]
     m.update(str(sorted(order[1])))
-    name = "pre_"+m.hexdigest()
+    name = "pre_" + m.hexdigest()
     orderGroup = h5.createGroup(executionOrderGroup, name)
+
     class InputDescription(tables.IsDescription):
         socket = StringCol(max(map(len, order[0].keys())))
         data = StringCol(max(map(len, order[0].values())))
+
     input = h5.createTable(orderGroup, 'input', InputDescription, "Socket Map")
     m = input.row
     for s, d in order[0].iteritems():
@@ -102,6 +113,7 @@ def saveExecutionOrder(h5, order):
     input.flush()
     orderGroup._v_attrs.resultPlug = order[1]
 
+
 def saveRecipe(h5, recipe, saveResults=True):
     recipeGroup = h5.createGroup("/", "recipe")
     h5.createGroup("/", "results")
@@ -110,16 +122,19 @@ def saveRecipe(h5, recipe, saveResults=True):
     for worker in workers:
         saveWorker(h5, recipeGroup, worker, saveResults)
 
+
 def saveWorker(h5, recipeGroup, worker, saveResults=True):
-    workerGroup = h5.createGroup(recipeGroup, "worker_"+str(hash(worker)))
+    workerGroup = h5.createGroup(recipeGroup, "worker_" + str(hash(worker)))
     saveBaseAttributes(h5, workerGroup, worker)
     savePlugs(h5, workerGroup, worker, saveResults)
     saveParameters(h5, workerGroup, worker)
+
 
 def saveParameters(h5, workerGroup, worker):
     paramGroup = h5.createGroup(workerGroup, "parameters")
     for (paramName, param) in worker._params.iteritems():
         h5.setNodeAttr(paramGroup, paramName, param.value)
+
 
 def savePlugs(h5, workerGroup, worker, saveResults=True):
     plugs = h5.createGroup(workerGroup, "plugs")
@@ -128,13 +143,19 @@ def savePlugs(h5, workerGroup, worker, saveResults=True):
         if plug.resultIsAvailable() and saveResults:
             resId = saveResult(plug._result, h5)
             h5.setNodeAttr(plugGroup, "result", resId)
-        connectionTable = h5.createTable(plugGroup, 'connections', Connection, expectedrows=len(plug._sockets))
-        connection=connectionTable.row
+        connectionTable = h5.createTable(
+            plugGroup, 'connections',
+            Connection, expectedrows=len(plug._sockets)
+            )
+        connection = connectionTable.row
         for socket in plug._sockets:
-            connection['destinationWorker'] = "worker_"+str(hash(socket.worker))
+            connection['destinationWorker'] = (
+                "worker_" + str(hash(socket.worker))
+                )
             connection['destinationSocket'] = socket.name
             connection.append()
         connectionTable.flush()
+
 
 def saveBaseAttributes(h5, workerGroup, worker):
     h5.setNodeAttr(workerGroup, "module", worker.__class__.__module__)
@@ -144,19 +165,26 @@ def saveBaseAttributes(h5, workerGroup, worker):
     h5.setNodeAttr(workerGroup, "WorkerRevision", worker.REVISION)
     h5.setNodeAttr(workerGroup, "Annotations", worker._annotations)
 
+
 def saveResult(result, h5):
     hash, uriType = DataContainer.parseId(result.id)
-    resId = u"result_"+hash
+    resId = u"result_" + hash
     try:
-        resultGroup = h5.getNode("/results/"+resId)
-    except tables.NoSuchNodeError, e:
-        resultGroup = h5.createGroup("/results", resId, result.id.encode("utf-8"))
-        if uriType=='field':
+        resultGroup = h5.getNode("/results/" + resId)
+    except tables.NoSuchNodeError:
+        resultGroup = h5.createGroup(
+            "/results", resId, result.id.encode("utf-8")
+            )
+        if uriType == 'field':
             saveField(h5, resultGroup, result)
-        elif uriType=='sample':
+        elif uriType == 'sample':
             saveSample(h5, resultGroup, result)
         else:
-            raise KeyError, "Unknown UriType %s in saving result %s." % (uriType, result.id)
+            raise KeyError(
+                "Unknown UriType %s in saving result %s." % (
+                    uriType, result.id
+                    )
+                )
     return resId
 
 
@@ -165,17 +193,18 @@ def saveSample(h5, resultGroup, result):
     h5.setNodeAttr(resultGroup, "shortname", result.shortname.encode("utf-8"))
     h5.setNodeAttr(resultGroup, "creator", result.creator.encode("utf-8"))
     h5.setNodeAttr(resultGroup, "machine", result.machine.encode("utf-8"))
-    for key,value in result.attributes.iteritems():
+    for key, value in result.attributes.iteritems():
         if key in _reservedAttributes:
             raise ValueError("Attributes should not be named %s, "
                              "but one was in fact called %s!"
                              % (str(_reservedAttributes), key))
-        h5.setNodeAttr(resultGroup,key,value)
+        h5.setNodeAttr(resultGroup, key, value)
     #Store fields of sample Container and gather list of field IDs
     columns = []
     for column in result.columns:
-        columns.append(saveResult(column,h5))
+        columns.append(saveResult(column, h5))
     h5.setNodeAttr(resultGroup, "columns", columns)
+
 
 def saveField(h5, resultGroup, result):
     def dump(inputList):
@@ -184,17 +213,21 @@ def saveField(h5, resultGroup, result):
                 return arg.encode('utf-8')
             else:
                 return arg.__repr__()
-        if type(inputList)==type([]):
-            return map(conversion,inputList)
+        if type(inputList) == type([]):
+            return map(conversion, inputList)
         else:
-            return map(dump,inputList)
-    if result.data.dtype.char in ['U','O']:
+            return map(dump, inputList)
+    if result.data.dtype.char in ['U', 'O']:
         unicodeData = scipy.array(dump(result.data.tolist()))
-        h5.createArray(resultGroup, "data", unicodeData, result.longname.encode("utf-8"))
+        h5.createArray(
+            resultGroup, "data", unicodeData, result.longname.encode("utf-8")
+            )
     else:
-        h5.createArray(resultGroup, "data", result.data, result.longname.encode("utf-8"))
-    for key,value in result.attributes.iteritems():
-        h5.setNodeAttr(resultGroup.data,key,value)
+        h5.createArray(
+            resultGroup, "data", result.data, result.longname.encode("utf-8")
+            )
+    for key, value in result.attributes.iteritems():
+        h5.setNodeAttr(resultGroup.data, key, value)
     h5.setNodeAttr(resultGroup, "longname", result.longname.encode("utf-8"))
     h5.setNodeAttr(resultGroup, "shortname", result.shortname.encode("utf-8"))
     h5.setNodeAttr(resultGroup, "creator", result.creator.encode("utf-8"))
@@ -202,34 +235,41 @@ def saveField(h5, resultGroup, result):
 
     if result.error != None:
         h5.createArray(resultGroup, "error", result.error,
-                       (u"Error of "+result.longname).encode("utf-8"))
+                       (u"Error of " + result.longname).encode("utf-8"))
     if result.mask != None:
         h5.createArray(resultGroup, "mask", result.mask,
-                       (u"Mask of "+result.longname).encode("utf-8"))
+                       (u"Mask of " + result.longname).encode("utf-8"))
     h5.setNodeAttr(resultGroup, "unit", repr(result.unit).encode("utf-8"))
-    if result.dimensions!=DataContainer.INDEX:
-        idLen=max([len(dim.id.encode("utf-8")) for dim in result.dimensions])
-        dimTable = h5.createTable(resultGroup, "dimensions",
-                                  {"hash":StringCol(32), "id":StringCol(idLen)},
-                                  (u"Dimensions of "+result.longname).encode("utf-8"),
-                                  expectedrows=len(result.dimensions))
+    if result.dimensions != DataContainer.INDEX:
+        idLen = max([len(dim.id.encode("utf-8")) for dim in result.dimensions])
+        dimTable = h5.createTable(
+            resultGroup, "dimensions",
+            {"hash": StringCol(32), "id": StringCol(idLen)},
+            (u"Dimensions of " + result.longname).encode("utf-8"),
+            expectedrows=len(result.dimensions)
+            )
         for dim in result.dimensions:
             d = dimTable.row
-            d["hash"]=dim.hash.encode("utf-8")
-            d["id"]=dim.id.encode("utf-8")
+            d["hash"] = dim.hash.encode("utf-8")
+            d["id"] = dim.id.encode("utf-8")
             d.append()
             saveResult(dim, h5)
         dimTable.flush()
 
+
 ##########################################################################
 # Loading Part
 ##########################################################################
-def instantiateWorker( parent, workerGroup ):
+def instantiateWorker(parent, workerGroup):
+    # better pass as dict to eval
     annotations = workerGroup._v_attrs.Annotations
     module = workerGroup._v_attrs.module
-    exec "import "+module
-    worker = eval(module+"."+workerGroup._v_attrs.clazz+"(parent, annotations)")
+    exec "import " + module  # is this save?
+    worker = eval(
+        module + "." + workerGroup._v_attrs.clazz + "(parent, annotations)"
+        )
     return worker
+
 
 def restoreParamsToWorker(worker, workerGroup):
     try:
@@ -258,6 +298,7 @@ def restoreParamsToWorker(worker, workerGroup):
                     )
                 )
 
+
 def restoreParamsToWorkerParentsFirst(worker, worker2group, visited):
     if worker in visited:
         return
@@ -267,11 +308,13 @@ def restoreParamsToWorkerParentsFirst(worker, worker2group, visited):
     restoreParamsToWorker(worker, worker2group[worker])
     visited.add(worker)
 
+
 def restoreParamsToWorkers(recipeGroup, workers):
     visited = set()
     worker2group = dict([(workers[wg._v_name], wg) for wg in recipeGroup])
     for worker in worker2group:
         restoreParamsToWorkerParentsFirst(worker, worker2group, visited)
+
 
 def loadRecipe(h5):
     recipeGroup = h5.root.recipe
@@ -286,34 +329,43 @@ def loadRecipe(h5):
     restoreParamsToWorkers(recipeGroup, workers)
     return recipe
 
+
 def createWorkerGraph(recipeGroup, workers, recipe):
     for workerGroup in recipeGroup:
-        workers[workerGroup._v_name]=instantiateWorker(recipe, workerGroup)
+        workers[workerGroup._v_name] = instantiateWorker(recipe, workerGroup)
     for workerGroup in recipeGroup:
         for plugGroup in workerGroup.plugs:
-            plug=workers[workerGroup._v_name].getPlug(plugGroup._v_name)
+            plug = workers[workerGroup._v_name].getPlug(plugGroup._v_name)
             for connection in plugGroup.connections.iterrows():
-                workers[connection['destinationWorker']].getSocket(connection['destinationSocket']).insert(plug)
+                workers[connection['destinationWorker']].getSocket(
+                    connection['destinationSocket']
+                    ).insert(plug)
+
 
 def restoreResultsToWorkers(recipeGroup, workers, h5):
     for workerGroup in recipeGroup:
         for plugGroup in workerGroup.plugs:
-            plug=workers[workerGroup._v_name].getPlug(plugGroup._v_name)
+            plug = workers[workerGroup._v_name].getPlug(plugGroup._v_name)
             try:
                 resId = plugGroup._v_attrs.result
-                resNode = h5.getNode("/results/"+resId)
+                resNode = h5.getNode("/results/" + resId)
                 hash, uriType = DataContainer.parseId(resNode._v_title)
-                if uriType==u'field':
-                    result=loadField(h5, resNode)
-                elif uriType==u'sample':
+                if uriType == u'field':
+                    result = loadField(h5, resNode)
+                elif uriType == u'sample':
                     _logger.info("Trying to load sample data...")
-                    result=loadSample(h5, resNode)
+                    result = loadSample(h5, resNode)
                     _logger.info("...successfully loaded.")
                 else:
-                    raise TypeError, "Unknown result uriType in <%s>"%resNode._v_title
+                    raise TypeError(
+                        "Unknown result uriType in <%s>" % (
+                            resNode._v_title,
+                            )
+                        )
                 plug._result = result
             except (AttributeError, tables.NoSuchNodeError), e:
-                _logger.info( "Exception: "+str(e) )
+                _logger.info("Exception: " + str(e))
+
 
 def loadField(h5, resNode):
     longname = unicode(h5.getNodeAttr(resNode, "longname"), 'utf-8')
@@ -327,33 +379,41 @@ def loadField(h5, resNode):
         creator = emd5dict['creator']
         machine = emd5dict['machine']
     data = scipy.array(resNode.data.read())
+
     def loads(inputList):
-        if type(inputList)==type([]):
+        if type(inputList) == type([]):
             try:
-                return map(lambda s: eval(s),inputList)
+                return map(lambda s: eval(s), inputList)
             except:
-                return map(lambda s: unicode(s, 'utf-8'),inputList)
+                return map(lambda s: unicode(s, 'utf-8'), inputList)
         else:
-            return map(loads,inputList)
+            return map(loads, inputList)
     if data.dtype.char == 'S':
         data = scipy.array(loads(data.tolist()))
     attributes = {}
     for key in resNode.data._v_attrs._v_attrnamesuser:
-        attributes[key]=h5.getNodeAttr(resNode.data,key)
+        attributes[key] = h5.getNodeAttr(resNode.data, key)
     try:
         error = scipy.array(resNode.error.read())
-    except tables.NoSuchNodeError, e:
+    except tables.NoSuchNodeError:
         error = None
     try:
         mask = scipy.array(resNode.mask.read())
-    except tables.NoSuchNodeError, e:
+    except tables.NoSuchNodeError:
         mask = None
     unit = eval(unicode(h5.getNodeAttr(resNode, "unit"), 'utf-8'))
     try:
         dimTable = resNode.dimensions
-        dimensions = [loadField(h5, h5.getNode("/results/result_"+DataContainer.parseId(row['id'])[0]))
-                      for row in dimTable.iterrows()]
-    except tables.NoSuchNodeError, e:
+        dimensions = [
+            loadField(
+                h5,
+                h5.getNode(
+                    "/results/result_" + DataContainer.parseId(row['id'])[0]
+                    )
+                )
+            for row in dimTable.iterrows()
+            ]
+    except tables.NoSuchNodeError:
         dimensions = DataContainer.INDEX
     result = DataContainer.FieldContainer(data, unit, error, mask,
                                           dimensions, longname, shortname,
@@ -363,8 +423,11 @@ def loadField(h5, resNode):
     result.seal(resNode._v_title)
     return result
 
+
 def loadSample(h5, resNode):
-    result = DataContainer.SampleContainer.__new__(DataContainer.SampleContainer)
+    result = DataContainer.SampleContainer.__new__(
+        DataContainer.SampleContainer
+        )
     result.longname = unicode(h5.getNodeAttr(resNode, "longname"), 'utf-8')
     result.shortname = unicode(h5.getNodeAttr(resNode, "shortname"), 'utf-8')
     result.creator = unicode(h5.getNodeAttr(resNode, "creator"), 'utf-8')
@@ -372,30 +435,40 @@ def loadSample(h5, resNode):
     result.attributes = {}
     for key in resNode._v_attrs._v_attrnamesuser:
         if key not in _reservedAttributes:
-            result.attributes[key]=h5.getNodeAttr(resNode,key)
+            result.attributes[key] = h5.getNodeAttr(resNode, key)
     columns = []
-    for resId in h5.getNodeAttr(resNode,"columns"):
-        nodename = "/results/"+resId
-        hash, uriType = DataContainer.parseId(h5.getNodeAttr(nodename, "TITLE"))
+    for resId in h5.getNodeAttr(resNode, "columns"):
+        nodename = "/results/" + resId
+        hash, uriType = DataContainer.parseId(
+            h5.getNodeAttr(nodename, "TITLE")
+            )
         if uriType == 'sample':
             loader = loadSample
-        elif uriType =='field':
+        elif uriType == 'field':
             loader = loadField
         else:
-            raise KeyError, "Unknown UriType %s in saving result %s." % (uriType, result.id)
-        columns.append(loader(h5,h5.getNode(nodename)))
-    result.columns=columns
+            raise KeyError(
+                "Unknown UriType %s in saving result %s." % (
+                    uriType, result.id
+                    )
+                )
+        columns.append(loader(h5, h5.getNode(nodename)))
+    result.columns = columns
     result.seal(resNode._v_title)
     return result
+
 
 def loadExecutionOrders(h5):
     orders = []
     for orderGroup in h5.root.executionOrder:
         socketMapTable = orderGroup.input
-        socketMap = dict([(row['socket'], row['data']) for row in socketMapTable.iterrows()])
+        socketMap = dict(
+            [(row['socket'], row['data']) for row in socketMapTable.iterrows()]
+            )
         resultPlug = orderGroup._v_attrs.resultPlug
         orders.append((socketMap, resultPlug))
     return orders
+
 
 def pruneResults(h5):
     h5.removeNode("/results", recursive=True)

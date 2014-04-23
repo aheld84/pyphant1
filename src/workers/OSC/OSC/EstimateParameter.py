@@ -73,8 +73,12 @@ class EstimateParameter(Worker.Worker):
             self.paramMaxima_model.possibleValues = templ.longnames.keys()
         if self.socketExperimental.isFull():
             templ = self.socketExperimental.getResult(subscriber)
-            self.paramMinima_experimental.possibleValues = templ.longnames.keys()
-            self.paramMaxima_experimental.possibleValues = templ.longnames.keys()
+            self.paramMinima_experimental.possibleValues = (
+                templ.longnames.keys()
+                )
+            self.paramMaxima_experimental.possibleValues = (
+                templ.longnames.keys()
+                )
 
     def calculateThickness(
         self, row_minima, row_maxima, minima_model, maxima_model,

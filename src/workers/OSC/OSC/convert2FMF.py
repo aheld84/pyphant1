@@ -32,7 +32,9 @@
 
 """usage = "usage: %prog [options] archivename"
 
-Converts ZIP or TAR archives to the Full Metadata File (FMF) format. The input archive has to contain either absorption measurements (Riede-INI) or simulated absorption curves (KSH-INI).
+Converts ZIP or TAR archives to the Full Metadata File (FMF) format.
+The input archive has to contain either absorption measurements (Riede-INI)
+or simulated absorption curves (KSH-INI).
 
 Example file header for KSH-INI:
 
@@ -88,22 +90,27 @@ SPALTE5=WhiteRef[counts]
 276.1833E+0	257.1975E+0	3.4475E+0	309.2355E+0	294.1412E+0
 276.7759E+0	98.5742E+0	-295.3656E-3	114.5368E+0	168.5804E+0
 """
-import tarfile,zipfile
+
+import tarfile
+import zipfile
 import re
 import datetime
 import StringIO
 from optparse import OptionParser
-import platform,os
 import pyphant.core.Helpers
 
-parser= OptionParser(__doc__)
-parser.add_option("-i", "--input-format", dest="iniFormat",default='RiedeINI',
-                  help="FORMAT of input data (default is RiedeINI)", metavar="FORMAT",
-                  choices=('RiedeINI','KSH-INI'))
+parser = OptionParser(__doc__)
+parser.add_option(
+    "-i", "--input-format", dest="iniFormat", default='RiedeINI',
+    help="FORMAT of input data (default is RiedeINI)", metavar="FORMAT",
+    choices=('RiedeINI', 'KSH-INI')
+    )
 (options, args) = parser.parse_args()
 archiveName = args[0]
 iniFormat = options.iniFormat
-print "Converting %s from %s format to Full Metadata File format." % (archiveName,iniFormat)
+print "Converting %s from %s format to Full Metadata File format." % (
+    archiveName, iniFormat
+    )
 
 
 class archive:
@@ -121,7 +128,7 @@ class archive:
         elif self.type == 'ZIP':
             return self.archiveIN.namelist()
 
-    def extractedfile(self,filename):
+    def extractedfile(self, filename):
         if self.type == 'TAR':
             datfile = self.archiveIN.extractfile(filename)
             return datfile.readlines()
@@ -135,7 +142,8 @@ class archive:
 searcher = re.compile("Sim_abs_(\d+)(\w+).dat")
 archiveIN = archive(archiveName)
 
-zip = zipfile.ZipFile(archiveName[:-4]+'_patched.zip','w')
+zip = zipfile.ZipFile(archiveName[:-4] + '_patched.zip', 'w')
+
 
 def annotation():
     stream = ''
@@ -144,6 +152,7 @@ def annotation():
     stream += 'place: Freiburg i. Brsg.\n'
     stream += 'organization: Freiburger Materialforschungszentrum (FMF)\n'
     return stream
+
 
 for datInfo in archiveIN.names():
     modDate = datetime.datetime.now()
@@ -180,8 +189,10 @@ for datInfo in archiveIN.names():
                 line = 'white reference intensity: I_0(\\lambda)\n'
             elif not line.startswith('['):
                 words = line.split('=')
-                if len(words)>1:
-                    line = "%s: %s" % (words[0].lower().replace(' ','-'),words[1])
+                if len(words) > 1:
+                    line = "%s: %s" % (
+                        words[0].lower().replace(' ', '-'), words[1]
+                        )
             if line.startswith('tisch_pos_x'):
                 x = line.split(':')[1][:-2]
                 line = 'horizontal_table_position: x = %s mm\n' % x
@@ -190,7 +201,9 @@ for datInfo in archiveIN.names():
                 line = 'vertical_table_position: y = %s mm\n' % y
             if line.startswith('kommentar:'):
                 stream += annotation()
-                line = 'title: %s at (x,y)=(%s,%s)\"\n' % (line.split(':')[1][1:-3],x,y)
+                line = 'title: %s at (x,y)=(%s,%s)\"\n' % (
+                    line.split(':')[1][1:-3], x, y
+                    )
         elif iniFormat == 'KSH-INI':
             if line.startswith('AUTHOR') or line.startswith('OPERATOR'):
                 line = 'author: %s\n' % line.split('=')[1][:-2]
@@ -199,15 +212,15 @@ for datInfo in archiveIN.names():
                 stream += "thickness: h = %s %s\n" % width.groups()
             elif line.startswith('SPALTE2'):
                 line = 'absorption: A(\\lambda)\n'
-        line = line.replace('<','').replace('>','').replace('\x0d','')
-        line = line.replace('\" \"','ohne')
+        line = line.replace('<', '').replace('>', '').replace('\x0d', '')
+        line = line.replace('\" \"', 'ohne')
         stream += line
-    info=zipfile.ZipInfo(datInfo,date_time=modDate.utctimetuple()[:6])
+    info = zipfile.ZipInfo(datInfo, date_time=modDate.utctimetuple()[:6])
     info.compress_type = zipfile.ZIP_DEFLATED
     info.external_attr = 2175008768L
     if iniFormat == 'RiedeINI':
-        zip.writestr(info,stream.encode('cp1252'))
+        zip.writestr(info, stream.encode('cp1252'))
     elif iniFormat == 'KSH-INI':
-        zip.writestr(info,stream.encode('utf-8'))
+        zip.writestr(info, stream.encode('utf-8'))
 archiveIN.close()
 zip.close()

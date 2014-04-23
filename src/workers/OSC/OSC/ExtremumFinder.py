@@ -179,7 +179,7 @@ def findLocalExtrema1D(y, x, sigmaY=None):
     #Compute differences $\vec{\Delta}_y$ of data vector $\vec{y}$.
     #The differencing reduces the dimensionalty of the vector by one:
     #$\text{dim}\vec{\Delta}_y=\text{dim}\vec{x}-1$.
-    DeltaY   = numpy.diff(y)
+    DeltaY = numpy.diff(y)
     #Test if the sign of successive elements of DeltaY change sign.
     #These elements are candidates for the estimation of local extrema.
     #The result is a vector b_x0 of booleans with
@@ -195,7 +195,7 @@ def findLocalExtrema1D(y, x, sigmaY=None):
     l_sigmaX0 = []
     #Init list l_curv_sign for collecting the sign of the curvature
     #at the position of the locale extrema.
-    l_curv_sign   = []
+    l_curv_sign = []
     #If one or more local extrema have been found, estimate its position,
     #otherwise set its position to NaN.
     if numpy.sometrue(b_x0):

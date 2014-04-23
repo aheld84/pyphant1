@@ -32,5 +32,3 @@
 u"""
 This is the main pyphant package.
 """
-
-

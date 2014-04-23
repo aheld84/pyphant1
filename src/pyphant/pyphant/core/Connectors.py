@@ -33,11 +33,18 @@ u"""
 """
 
 
-import copy, threading, inspect, logging
+import copy
+import threading
+import inspect
+import logging
+
+# used in exec statement; shouldn't this be passed as a name to exec?
 import Queue
+
 
 class FullSocketError(ValueError):
     pass
+
 
 TYPE_ARRAY = 'scipy.array'
 TYPE_IMAGE = 'pil.image'
@@ -47,6 +54,7 @@ SUBTYPE_FILE = "filename"
 TYPE_INACTIVE = type(None)
 TYPE_BOOL = type(True)
 DEFAULT_DATA_TYPE = TYPE_ARRAY
+
 
 class Connector(object):
     def __init__(self, worker, name, type=DEFAULT_DATA_TYPE, pre=""):
@@ -65,7 +73,8 @@ class Connector(object):
             self.worker.connectorsExternalizationStateChanged(self)
     isExternal = property(_getIsExternal, _setIsExternal)
     id = property(lambda self:
-                  self.worker.id+"."+self.pre+self.name.capitalize())
+                  self.worker.id + "." + self.pre + self.name.capitalize())
+
 
 class Computer(threading.Thread):
     def __init__(self, method, exception_queue, **kwargs):
@@ -82,7 +91,7 @@ class Computer(threading.Thread):
             except Exception, e:
                 logging.getLogger('pyphant').error(
                     u"An unhandled exception occured in the calculation.",
-                    exc_info = True)
+                    exc_info=True)
                 self.exception_queue.put(e)
                 raise
 
@@ -94,7 +103,7 @@ class Plug(Connector):
         self._resultLock = threading.Lock()
         self._sockets = []
 
-    def __getstate__(self):#this could be done with marshalling
+    def __getstate__(self):  # this could be done with marshalling
         pdict = copy.copy(self.__dict__)
         pdict['_result'] = None
         del pdict['_resultLock']
@@ -136,6 +145,7 @@ class Updater(object):
             self.subscriber.updateProcess(self.process, percentage)
         return self
 
+
 class CalculatingPlug(Plug):
     def __init__(self, method, name, type=DEFAULT_DATA_TYPE):
         Plug.__init__(self, method.im_self, name, type)
@@ -145,16 +155,16 @@ class CalculatingPlug(Plug):
     def createWrapper(self, method):
         args, varargs, varkw, defaults = inspect.getargspec(method)
         sockets = args[1:-1]
-        name = method.func_name+'PyphantWrapper'
-        l = 'def '+name+'(subscriber, method=method, process=self):\n'
+        name = method.func_name + 'PyphantWrapper'
+        l = 'def ' + name + '(subscriber, method=method, process=self):\n'
         l += '\texception_queue=Queue.Queue()\n'
         for s in sockets:
-            l += '\t'+s+'=Computer(method.im_self.getSocket("'
-            l += s+'").getResult, exception_queue, subscriber=subscriber)\n'
+            l += '\t' + s + '=Computer(method.im_self.getSocket("'
+            l += s + '").getResult, exception_queue, subscriber=subscriber)\n'
         for s in sockets:
-            l += '\t'+s+'.start()\n'
+            l += '\t' + s + '.start()\n'
         for s in sockets:
-            l += '\t'+s+'.join()\n'
+            l += '\t' + s + '.join()\n'
         l += '\texceptions=[]\n'
         l += '\twhile not exception_queue.empty():\n'
         l += '\t\texceptions.append(exception_queue.get())\n'
@@ -165,12 +175,12 @@ class CalculatingPlug(Plug):
         #so do not add a space!
         l += '\treturn method( subscriber=Updater(subscriber, process),'
         for s in sockets:
-            l += s+'='+s+'.result,'
-        l = l[:-1]+')\n'
+            l += s + '=' + s + '.result,'
+        l = l[:-1] + ')\n'
         exec l
         return eval(name)
 
-    def __getstate__(self):#this could be done with marshalling
+    def __getstate__(self):  # this could be done with marshalling
         pdict = super(CalculatingPlug, self).__getstate__()
         del pdict['_func']
         return pdict
@@ -179,7 +189,7 @@ class CalculatingPlug(Plug):
         super(CalculatingPlug, self).__setstate__(pdict)
         self._func = self.createWrapper(getattr(self.worker, self._methodName))
 
-    def getResult(self, subscriber = None):
+    def getResult(self, subscriber=None):
         self._resultLock.acquire()
         try:
             if not self.resultIsAvailable():
@@ -192,6 +202,7 @@ class CalculatingPlug(Plug):
         finally:
             self._resultLock.release()
         return result
+
 
 class Socket(Connector):
     def __init__(self, worker, name, type=DEFAULT_DATA_TYPE):
@@ -233,9 +244,10 @@ class Socket(Connector):
     def getPlug(self):
         return self._plug
 
-    def getResult(self, subscriber = None):
+    def getResult(self, subscriber=None):
         return self._plug.getResult(subscriber)
     value = property(getResult)
+
 
 class ConnectorProxy(Socket, Plug):
     def __init__(self, worker, isSocket, name, type=DEFAULT_DATA_TYPE):
@@ -246,7 +258,7 @@ class ConnectorProxy(Socket, Plug):
         self._resultLock = threading.Lock()
         self._sockets = []
 
-    def __getstate__(self):#this could be done with marshalling
+    def __getstate__(self):  # this could be done with marshalling
         pdict = copy.copy(self.__dict__)
         pdict['_result'] = None
         del pdict['_resultLock']

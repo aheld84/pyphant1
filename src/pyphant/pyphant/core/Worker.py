@@ -33,17 +33,20 @@ u"""
 The Worker module provides the Worker base class and some support.
 """
 
-import types, logging
+import types
+import logging
 from pyphant.core import Connectors, Param, WorkerRegistry
 import pkg_resources
 
 
 class WorkerInfo(object):
-##    __slots__ = ["name", "createWorker"] #not possible due to pickling restrictions.
+# not possible due to pickling restrictions:
+#   __slots__ = ["name", "createWorker"]
     def __init__(self, cls):
         self.name = cls.name
         self.toolBoxName = cls.__module__.split('.')[0]
         self.createWorker = cls
+
 
 def plug(returnType):
     def setPlug(_plug):
@@ -53,21 +56,24 @@ def plug(returnType):
     return setPlug
 
 
-def identifyPlugs(n,cdict):
-    f=cdict[n]
+def identifyPlugs(n, cdict):
+    f = cdict[n]
     return isinstance(f, types.FunctionType)\
            and getattr(f, 'isPlug', False)
+
 
 class WorkerFactory(type):
     workerRegistry = WorkerRegistry.WorkerRegistry.getInstance()
     log = logging.getLogger("pyphant")
+
     def __init__(cls, name, bases, cdict):
-        cls._plugs=[]
-        for f in filter(lambda key : identifyPlugs(key, cdict), cdict):
+        cls._plugs = []
+        for f in filter(lambda key: identifyPlugs(key, cdict), cdict):
             cls._plugs.append((f, cdict[f]))
         super(WorkerFactory, cls).__init__(name, bases, cdict)
         if cls.__name__ != 'Worker':
             WorkerFactory.workerRegistry.registerWorker(WorkerInfo(cls))
+
 
 class Worker(object):
     API = 2
@@ -75,10 +81,11 @@ class Worker(object):
     REVISION = pkg_resources.get_distribution("pyphant").version
 
     __metaclass__ = WorkerFactory
-    _sockets=[]
-    _plugs=[]
-    _params=[]
-    DEFAULT_ANNOTATIONS={"pos":(0,0)}
+    _sockets = []
+    _plugs = []
+    _params = []
+    DEFAULT_ANNOTATIONS = {"pos": (0, 0)}
+
     def __init__(self, parent=None, annotations=None):
         if annotations is None:
             annotations = {}
@@ -86,19 +93,19 @@ class Worker(object):
         map(lambda k: self._annotations.setdefault(
             k, Worker.DEFAULT_ANNOTATIONS[k]),
             Worker.DEFAULT_ANNOTATIONS.keys())
-        self.parent=parent
+        self.parent = parent
         self.initSockets(self._sockets)
         self.initPlugs(self._plugs)
         self.initParams(self._params)
         self.inithook()
         if parent:
-            basename=self.getParam('name').value
+            basename = self.getParam('name').value
             for i in xrange(10000):
                 try:
                     parent.addWorker(self)
                     break
                 except ValueError:
-                    self.getParam('name').value = basename+'_%i'%i
+                    self.getParam('name').value = basename + '_%i' % (i, )
 
     def _id(self):
         if self.parent != None:
@@ -106,7 +113,7 @@ class Worker(object):
         else:
             pre = ""
         if pre != "":
-            return pre+"."+self.getParam('name').value
+            return pre + "." + self.getParam('name').value
         else:
             return self.getParam('name').value
     id = property(_id)
@@ -118,41 +125,42 @@ class Worker(object):
         pass
 
     def initPlugs(self, plugs):
-        self._plugs={}
+        self._plugs = {}
         for (name, func) in plugs:
             p = Connectors.CalculatingPlug(getattr(self, func.func_name),
                                            name, func.returnType)
-            setattr(self, 'plug'+self.upperFirstLetter(name), p)
-            self._plugs[name]=p
+            setattr(self, 'plug' + self.upperFirstLetter(name), p)
+            self._plugs[name] = p
 
     def initSockets(self, sockets):
-        self._sockets={}
+        self._sockets = {}
         for socket in sockets:
             if isinstance(socket, tuple):
-                name=socket[0]
-                type=socket[1]
+                name = socket[0]
+                type = socket[1]
             else:
-                name=socket
-                type=Connectors.DEFAULT_DATA_TYPE
-            s=Connectors.Socket(self, name, type)
-            setattr(self, 'socket'+self.upperFirstLetter(name), s)
-            self._sockets[name]=s
+                name = socket
+                type = Connectors.DEFAULT_DATA_TYPE
+            s = Connectors.Socket(self, name, type)
+            setattr(self, 'socket' + self.upperFirstLetter(name), s)
+            self._sockets[name] = s
 
     def upperFirstLetter(self, name):
-        return name[0].upper()+name[1:]
+        return name[0].upper() + name[1:]
 
     def initParams(self, params):
-        self._params={}
-        self._order=[]
-        self.addParam('name',Param.createParam(self,'name','Name',
-                                               self.name))
+        self._params = {}
+        self._order = []
+        self.addParam(
+            'name', Param.createParam(self, 'name', 'Name', self.name)
+            )
         for (name, displayName, value, subtype) in params:
-            p=Param.createParam(self, name, displayName, value, subtype)
-            setattr(self, 'param'+self.upperFirstLetter(name), p)
+            p = Param.createParam(self, name, displayName, value, subtype)
+            setattr(self, 'param' + self.upperFirstLetter(name), p)
             self.addParam(name, p)
 
     def setAnnotation(self, key, value):
-        self._annotations[key]=value
+        self._annotations[key] = value
 
     def getAnnotation(self, key):
         try:
@@ -165,15 +173,15 @@ class Worker(object):
 
     def addParam(self, name, param):
         if name in self._params:
-            raise AttributeError, "Parameter \"" + name + "\" already exists."
-        self._params[name]=param
+            raise AttributeError("Parameter \"" + name + "\" already exists.")
+        self._params[name] = param
         self._order.append(name)
 
     def getParam(self, name):
         return self._params[name]
 
     def getParamList(self):
-        paramList=[]
+        paramList = []
         for name in self._order:
             paramList.append(self._params[name])
         return paramList
@@ -181,7 +189,7 @@ class Worker(object):
     def registerParamListener(self, listener, param, eventType):
         self.getParam(param).registerListener(listener, eventType)
 
-    def unregisterParamListener(self, vetoer, param, eventType):
+    def unregisterParamListener(self, listener, param, eventType):
         self.getParam(param).unregisterListener(listener, eventType)
 
     def invalidate(self, event=None):
@@ -200,11 +208,11 @@ class Worker(object):
         return self._plugs.values()
 
     def findConnectorForId(self, id):
-        splittedId = id.split('.',1)
-        if len(splittedId)==1:
+        splittedId = id.split('.', 1)
+        if len(splittedId) == 1:
             return getattr(self, splittedId[0])
-        raise ValueError, "Illegal connector id <%s>"%id
+        raise ValueError("Illegal connector id <%s>" % (id, ))
 
     def connectorsExternalizationStateChanged(self, connector):
         if self.parent:
-            self.parent.workersConnectorStateChanged(self,connector)
+            self.parent.workersConnectorStateChanged(self, connector)

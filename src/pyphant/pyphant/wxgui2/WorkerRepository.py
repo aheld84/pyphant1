@@ -32,7 +32,6 @@
 u"""
 """
 
-
 import wx
 import cPickle
 from pyphant.core.WorkerRegistry import WorkerRegistry
@@ -59,5 +58,5 @@ class WorkerRepository(wx.TreeCtrl):
             data = wx.CustomDataObject('PYPHANT_WORKER')
             data.SetData(dump)
             dropSource.SetData(data)
-            dragResult = dropSource.DoDragDrop(True)
+            dropSource.DoDragDrop(True)
         event.Skip()
