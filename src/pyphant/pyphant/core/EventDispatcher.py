@@ -29,8 +29,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""
-"""
+"""A minimal implementation of an event dispatcher supporting event types"""
 
 
 class EventDispatcher:

@@ -30,8 +30,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-This module provides the KnowledgeManager class as well as some helper
-classes.
+The purpose of this module is the storage and management of DataContainers
+
+This module provides the KnowledgeManager class as well as some helper classes.
 """
 
 from __future__ import with_statement

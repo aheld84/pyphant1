@@ -30,10 +30,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-This module provides the KnowledgeNode class which is used as an
-HTTP communication channel between one local KnowledgeManager and
-arbitrary many remote KnowledgeManagers. It comes with a RoutingHTTPServer
-and an optional WebInterface.
+This module provides the KnowledgeNode class
+
+which is used as an HTTP communication channel between one
+local KnowledgeManager and arbitrary many remote KnowledgeManagers.
+It comes with a RoutingHTTPServer and an optional WebInterface.
 """
 
 from __future__ import with_statement

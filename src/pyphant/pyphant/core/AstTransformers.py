@@ -27,6 +27,11 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+"""
+This module ships classes for SampleContainer algebra expressions
+
+based on python's abstract syntax trees.
+"""
 
 from pyphant.quantities import Quantity
 from ast import (NodeTransformer, fix_missing_locations, Name, Load,

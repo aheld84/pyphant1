@@ -31,8 +31,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-This module provides a wrapper class that translates the
-KnowledgeManager's summary dictionaries to an SQLite3 database.
+This module provides a wrapper class
+
+that translates the KnowledgeManager's summary dictionaries
+to an SQLite3 database.
 """
 
 import sqlite3

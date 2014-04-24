@@ -29,7 +29,10 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""
+"""
+This module provides a visualizer for 3D images
+
+interpreted as a z-stack of 2D images
 """
 
 
