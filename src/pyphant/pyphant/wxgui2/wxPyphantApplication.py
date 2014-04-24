@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2006-2010, Rectorate of the University of Freiburg
@@ -629,3 +630,7 @@ def startWxPyphant():
         pathToRecipe = None
     wxPyphantApp = wxPyphantApplication(pathToRecipe)
     wxPyphantApp.MainLoop()
+
+
+if __name__ == "__main__":
+    startWxPyphant()
