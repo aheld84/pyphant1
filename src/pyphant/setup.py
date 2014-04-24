@@ -30,6 +30,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+"""setup script for the pyphant package"""
 
 from setuptools import setup, find_packages
 from setuptools.command.test import test

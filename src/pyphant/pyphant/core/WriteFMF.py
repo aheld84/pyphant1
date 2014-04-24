@@ -29,8 +29,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""
-"""
+"""This module is used for writing fieldContainers to FMF"""
 
 
 enc = lambda s: unicode(s, "utf-8")

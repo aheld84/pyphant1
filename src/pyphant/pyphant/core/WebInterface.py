@@ -31,6 +31,7 @@
 
 """
 This module provides the WebInterface class for the KnowledgeNode
+
 as well as some HTTP and HTML helper classes.
 """
 

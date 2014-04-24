@@ -31,6 +31,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+"""script for running all unit tests from pyphant and the toolboxes"""
+
 from pyphant.mplbackend import ensure_mpl_backend
 ensure_mpl_backend('agg')
 import os

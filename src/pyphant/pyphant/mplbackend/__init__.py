@@ -29,6 +29,10 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+"""
+This module provides a function for loading a specific matplotlib backend.
+"""
+
 
 def ensure_mpl_backend(backend=None):
     """

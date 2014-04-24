@@ -29,8 +29,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-u"""
-"""
+"""This module provides classes for managing a collection of workers."""
 
 import logging
 from pyphant.core import singletonmixin
