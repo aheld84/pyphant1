@@ -156,7 +156,9 @@ class TestFMFversion1_0(unittest.TestCase):
     def almostEqual(self, a, b):
         diff = a - b
         mean = 0.5 * (a + b)
-        self.assertTrue(abs(diff / mean) < ACCURACY)
+        error = abs(diff / mean)
+        self.assertTrue(error < ACCURACY, 
+                        "Floating point calculation error detected: Relativ error %e is larger than floating point accuracy %e for %s and %s differing by %s." % (error, ACCURACY,a,b,a-b) )
 
     def setUp(self):
         self.FMFinput = """# -*- fmf-version: 1.0; coding: utf-8 -*-
