@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008-2009,  Rectorate of the University of Freiburg
-# Copyright (c) 2009-2011, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009-2014, Andreas W. Kempa-Liehr (obi@uni-muenster.de)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@ from pyphant.core import LoadFMF
 import pkg_resources
 
 #Estimate floating point accuracy
-ACCURACY = 1.0 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.
+ACCURACY = 1.0 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1
 
 class FieldContainerCondenseDim(unittest.TestCase):
     def setUp(self):
