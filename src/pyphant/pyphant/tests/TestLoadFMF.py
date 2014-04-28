@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2008-2009,  Rectorate of the University of Freiburg
-# Copyright (c) 2009-2011, Andreas W. Liehr (liehr@users.sourceforge.net)
+# Copyright (c) 2009-2014, Andreas W. Kempa-Liehr (obi@uni-muenster.de)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,8 +41,8 @@ from copy import deepcopy
 from pyphant.core import LoadFMF
 import pkg_resources
 
-#Estimate floating point accuracy
-ACCURACY = 1.0 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.
+#Estimated floating point accuracy, with factor 1.7 taking account of detected floating point errors
+ACCURACY = 1.7 * ( 1.0 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 -0.1 )
 
 class FieldContainerCondenseDim(unittest.TestCase):
     def setUp(self):
@@ -156,7 +156,9 @@ class TestFMFversion1_0(unittest.TestCase):
     def almostEqual(self, a, b):
         diff = a - b
         mean = 0.5 * (a + b)
-        self.assertTrue(abs(diff / mean) < ACCURACY)
+        error = abs(diff / mean)
+        self.assertTrue(error < ACCURACY, 
+                        "Calculation error detected: Relativ error %e is larger than floating point accuracy %e for %s and %s differing by %s." % (error, ACCURACY,a,b,a-b) )
 
     def setUp(self):
         self.FMFinput = """# -*- fmf-version: 1.0; coding: utf-8 -*-
