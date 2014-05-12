@@ -1,0 +1,82 @@
+% -*- coding: utf-8 -*-
+\documentclass[a4paper]{article}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{makeidx}
+\usepackage[totoc]{idxlayout}
+
+\lstMakeShortInline[basicstyle=\small\ttfamily]|
+
+\makeindex
+
+\begin{document}
+\title{Pyphant Manual}
+\author{Alexander Held}
+
+\maketitle
+
+\date{}
+
+\begin{abstract}
+  This manual describes the structure and use of pyphant (TODO:
+  Citation). Pyphant is an open source project currently developed
+  mainly by the service group ``Scientific Data Processing'' at the
+  Freiburg Materials Research Center, University of Freiburg,
+  Germany. Pyphant consists of a collection of python packages
+  offering a framework for scientific data analysis including a
+  collection of building blocks organized into toolboxes. Pyphant
+  features a flexible plugin architecture allowing for the application
+  in many different fields. It ships with a graphical user interface
+  allowing for the development of scientific data analysis workflows
+  using graphical programming.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+\label{sec:introduction}
+
+\subsection{Installation}
+\label{sec:introduction_installation}
+
+\subsection{Pyphant Quick Tour}
+\label{sec:introduction_a_quick_tour}
+
+\section{Data Model}
+\label{sec:data_model}
+
+\subsection{Quantities}
+\label{sec:data_model_quantities}
+
+\subsection{Field Containers}
+\label{sec:data_model_fcs}
+
+\subsection{Sample Containers}
+\label{sec:data_model_scs}
+
+\subsection{Knowledge Manager}
+\label{sec:data_model_knowledge_manager}
+
+\section{Data Processing}
+\label{sec:data_processing}
+
+\subsection{Workers}
+\label{sec:data_processing_workers}
+
+\subsection{Recipes}
+\label{sec:data_processing_recipes}
+
+\subsection{Visualizers}
+\label{sec:data_processing_visualizers}
+
+\bibliography{bibliography}
+
+\clearpage
+
+\printindex
+
+\end{document}
+
+%%% Local Variables:
+%%% TeX-PDF-mode: t
+%%% End:
