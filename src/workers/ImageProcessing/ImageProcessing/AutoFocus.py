@@ -221,7 +221,6 @@ class AutoFocus(Worker.Worker):
                   inclusionDict, lastLabelData):
         labelData = ndimage.label(zsp.binary[zind], output=numpy.int32)[0]
         slicess = ndimage.find_objects(labelData)
-        #previousMatchedStacks = {} # WTF?
         for label, slices in enumerate(slicess, start=1):
             slices = [slice(max(sli.start - 4, 0), sli.stop + 4) \
                       for sli in slices]
