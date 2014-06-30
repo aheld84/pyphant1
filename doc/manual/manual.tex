@@ -140,7 +140,7 @@ for the readers familiar with numpy\cite{numpy}, a |FieldContainer| is
 an extension of a numpy array adding units, axes and some more
 features. This explains the occurance of the three other parameters in
 \autoref{fig:gui_LI_worker_parameters}. The default values are to
-convert the image to a dimensionless field with a pixel size of
+convert the image to a dimensionless field with a size of
 \SI{1}{\micro\metre\squared}. The syntax for entering units is the
 same as in the Full-Metadata Format\cite{Riede2010651}. The special
 value |link2X| indicates to use the same scaling for the y-axis as for
@@ -232,6 +232,40 @@ incompatible. Try to set the axes units for instance to \si{m} and
 \si{s}. You will get an error message and a python traceback will be
 written to the log file which is also visible in the bottom of the
 GUI. Go back and set both units to be compatible again.
+
+In a last step, we add the |Histogram| worker from the |Statistics|
+toolbox to the recipe. It takes a |FieldContainer| as input and
+calculates a histogram of its field values as an output. In that case,
+the output is a one dimensional |FieldContainer| irrespective of the
+dimensionality of the input. You may want to set its |Bins| parameter
+to a higher value than the default (10). Connect the |Gradient|
+worker's output |Plug| to the |Socket| of the |Histogram| worker. Once
+you're done with that, you can visualize the histogram by choosing the
+|Bar chart| visualizer on the |Histogram| worker's |Plug| which is
+appropriate for histograms. If you are uncertain about those steps, go
+back and review how we connected the |Gradient| worker and visualized
+its output. In our case, the resulting visualization for 50 bins is
+shown in \autoref{fig:gui_barvis_histo} as a reference. Your result
+may differ depending on the image you have chosen, its scaling and the
+number of bins you entered.
+\begin{figure}[h]
+  \centering
+  \includegraphics[scale=0.75]{fig/gui_barvis_histo.png}
+  \caption{Bar chart visualization of a 50 bin histogram of the
+    gradient magnitude}
+  \label{fig:gui_barvis_histo}
+\end{figure}
+
+Having completed your first recipe, it is time to save it to
+disk. The according menu items are found in the |File| menu. Also
+notice the |Save results| checkbox in the |File| menu. It controls
+whether the cached results of the workers should be saved to disk for
+faster evaluation when reloading the recipe. You may uncheck it in
+order to save disk space.
+
+This completes the GUI part of the quick tour. In the next section, we
+will learn how to write our own workers and visualizers and how to use
+pyphant through its python API rather than through the GUI.
 
 \FloatBarrier
 \subsubsection{Extending and Scripting Pyphant}
