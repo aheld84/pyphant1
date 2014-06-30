@@ -30,20 +30,21 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 u"""
-TODO
+this module provides the Gradient worker
 """
 
 from pyphant.core import (Worker, Connectors)
-import numpy
+import numpy as np
 import copy
 import pkg_resources
 
 
-def gradient(data):
-    return numpy.sqrt(sum(numpy.square(numpy.array(numpy.gradient(data)))))
-
-
 class Gradient(Worker.Worker):
+    """
+    calculate the gradient magnitude
+
+    using numpy's gradient function
+    """
     API = 2
     VERSION = 1
     REVISION = pkg_resources.get_distribution(
@@ -54,15 +55,23 @@ class Gradient(Worker.Worker):
 
     @Worker.plug(Connectors.TYPE_IMAGE)
     def gradientWorker(self, image, subscriber=0):
-        for dim in image.dimensions:
-            assert dim.unit == image.dimensions[0].unit, \
-                   "Non-uniform dimensions!"
-        newdata = gradient(image.data.astype(float))
+        d0 = image.dimensions[0]
+        dims = [d0] + [d.inUnitsOf(d0) for d in image.dimensions[1:]]
+        data = image.data.astype(float)
+        gradient = np.gradient(data)
+        magnitude = np.zeros_like(data)
+        for i, (dim, grad) in enumerate(zip(dims, gradient)):
+            shape = [1, ] * len(dims)
+            shape[i] = dim.data.shape[0]
+            grad /= np.gradient(dim.data).reshape(shape)
+            magnitude += grad ** 2
+        magnitude = np.sqrt(magnitude)
+
         longname = "Gradient"
         from pyphant.core.DataContainer import FieldContainer
         result = FieldContainer(
-            newdata,
-            image.unit / image.dimensions[0].unit,
+            magnitude,
+            image.unit / d0.unit,
             None,
             copy.deepcopy(image.mask),
             copy.deepcopy(image.dimensions),
