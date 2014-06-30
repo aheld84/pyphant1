@@ -57,16 +57,17 @@ class GradientTestCase(unittest.TestCase):
             [
                 [0., 1., 2.],
                 [30., 10., 50.],
-                [8., 9., 6.]
+                [8., 9., 6.],
+                [-10., 0., 22.]
                 ]
             )
         x = FieldContainer(np.array([1., 10., 200.]), unit=Quantity('1 m'))
-        y = FieldContainer(np.array([0., 2., 4.]), unit=Quantity('1 cm'))
+        y = FieldContainer(np.array([0., 2., 4., 8.]), unit=Quantity('1 cm'))
         fc = FieldContainer(im, unit=Quantity('5 V'), dimensions=[y, x])
         fc.seal()
         grad_y, grad_x = np.gradient(fc.data)
-        grad_y /= np.gradient(y.data)
-        grad_x /= np.gradient(x.data)
+        grad_y /= np.gradient(y.data).reshape((4, 1))
+        grad_x /= np.gradient(x.data).reshape((1, 3))
         grad_y = FieldContainer(
             grad_y, unit=fc.unit / y.unit,
             dimensions=copy.deepcopy(fc.dimensions)
