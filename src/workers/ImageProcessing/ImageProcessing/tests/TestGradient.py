@@ -79,7 +79,8 @@ class GradientTestCase(unittest.TestCase):
         grad_x = grad_x.inUnitsOf(grad_y)
         expected_result = FieldContainer(
             (grad_x.data ** 2 + grad_y.data ** 2) ** 0.5,
-            unit=copy.deepcopy(grad_y.unit)
+            unit=copy.deepcopy(grad_y.unit),
+            dimensions=copy.deepcopy(fc.dimensions)
             )
         result = Gradient().gradientWorker(fc)
         self.assertEqual(expected_result, result)
