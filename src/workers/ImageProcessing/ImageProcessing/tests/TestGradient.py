@@ -32,17 +32,17 @@
 u"""Provides unittest classes for Gradient worker
 """
 
-
 import unittest
-import numpy
+import numpy as np
+from ImageProcessing.Gradient import Gradient
+from pyphant.core.DataContainer import FieldContainer
+from pyphant.quantities import Quantity
+import copy
 
 
 class GradientTestCase(unittest.TestCase):
     def testUnits(self):
-        from ImageProcessing.Gradient import Gradient
-        from pyphant.core.DataContainer import FieldContainer
-        from pyphant.quantities import Quantity
-        data = (numpy.arange(0, 256, .01)).reshape((80, 320))
+        data = (np.arange(0, 256, .01)).reshape((80, 320))
         image = FieldContainer(data, unit=Quantity('1 mJ'))
         for dim in image.dimensions:
             dim.unit = Quantity('1 cm')
@@ -52,6 +52,36 @@ class GradientTestCase(unittest.TestCase):
         self.assertEqual(result.dimensions, image.dimensions)
         self.assertEqual(result.unit, Quantity('1 mJ / cm'))
 
+    def testNonUniformAxes(self):
+        im = np.array(
+            [
+                [0., 1., 2.],
+                [30., 10., 50.],
+                [8., 9., 6.]
+                ]
+            )
+        x = FieldContainer(np.array([1., 10., 200.]), unit=Quantity('1 m'))
+        y = FieldContainer(np.array([0., 2., 4.]), unit=Quantity('1 cm'))
+        fc = FieldContainer(im, unit=Quantity('5 V'), dimensions=[y, x])
+        fc.seal()
+        grad_y, grad_x = np.gradient(fc.data)
+        grad_y /= np.gradient(y.data)
+        grad_x /= np.gradient(x.data)
+        grad_y = FieldContainer(
+            grad_y, unit=fc.unit / y.unit,
+            dimensions=copy.deepcopy(fc.dimensions)
+            )
+        grad_x = FieldContainer(
+            grad_x, unit=fc.unit / x.unit,
+            dimensions=copy.deepcopy(fc.dimensions)
+            )
+        grad_x = grad_x.inUnitsOf(grad_y)
+        expected_result = FieldContainer(
+            (grad_x.data ** 2 + grad_y.data ** 2) ** 0.5,
+            unit=copy.deepcopy(grad_y.unit)
+            )
+        result = Gradient().gradientWorker(fc)
+        self.assertEqual(expected_result, result)
 
 if __name__ == "__main__":
     import sys
