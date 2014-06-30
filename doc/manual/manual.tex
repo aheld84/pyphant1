@@ -12,6 +12,7 @@
 \usepackage[margin=3cm]{geometry}
 \usepackage{placeins}
 \usepackage{siunitx}
+\usepackage{minted}
 
 \lstMakeShortInline[basicstyle=\small\ttfamily]|
 
@@ -82,15 +83,14 @@ programming. These processing steps are called workers and a specific
 arrangement of workers is called a recipe. Let us begin by opening
 pyphant's GUI in order to create a new recipe. This is done by passing
 the filename of the recipe to the GUI script:
-\begin{lstlisting}[style=terminal,label={lst:start_gui},caption={Invoking
-the GUI}]
+\begin{lstlisting}[style=terminal]
 $ wxPyphant quicktour.h5
 \end{lstlisting}
 We assume a Linux or OS X installation for this quick tour. MS Windows
 users, please refer to the instructions in the readme
 file\cite{wingui}. Recipes are stored in the HDF5\cite{hdf5} data
 format and the file extension has to be |.h5| for that
-reason. \autoref{lst:start_gui} should bring up pyphant's splash
+reason. The above command should bring up pyphant's splash
 screen and then a window similar to \autoref{fig:gui}.
 \begin{figure}[h]
   \centering
@@ -275,6 +275,63 @@ For this part of the quick tour, we assume that the reader has a basic
 knowledge of python\cite{python}, numpy\cite{numpy} and
 scipy\cite{scipy}. If this is not the case, we recommend going through
 some of the tutorials to be found on the respective homepages.
+
+Let us begin by reformulating the above example by API calls instead
+of graphical programming to get a first glimpse at pyphant's API. This
+is shown in Listing~\ref{lst:api001}.
+
+\begin{listing}[h]
+  \inputminted[linenos]{python}{api001.py}
+  \caption{The gradient magnitude histogram example in terms of API
+    calls}
+  \label{lst:api001}
+\end{listing}
+
+As can be seen from the import statements in lines 2 -- 5, the
+toolboxes are separate python packages. Usually, a worker is located
+inside its own module, but this is not necessarily the case. The core
+of pyphant is found in the |pyphant.core| package. A recipe is also
+known as a |CompositeWorker| and an empty one is created as shown in
+line 8. Every parameter of a worker is an object. Paramters can be
+accessed by the magic (i.e. auto-generated) attribute |param| followed
+by the name of the parameter, where the first letter has to be
+capitalized. The value of a parameter is accessed as shown in line 14.
+
+|Sockets| and |Plugs| can be accessed by name, but since all the
+workers in our little example have at most one |Socket| or |Plug|, it
+is more convenient to pick them as the only entry in the list of all
+|Sockets| or |Plugs| as shown in line 20, which also illustrates how
+to connect a |Plug| and a |Socket|. The result of a plug is obtained
+by calling |getResult| on it. The underlying numpy array of a
+|FieldContainer| is accessed as its |data| member. We have skipped the
+visualization of the |FieldContainers| in Listing~\ref{lst:api001} as
+we will come back to visualizers in a minute.
+
+IO in the HDF5 format is handled by the
+|pyphant.core.H5FileHandler.H5FileHandler| class. Saving and loading a
+recipe is shown in Listing~\ref{lst:api002}.
+
+\begin{listing}[h]
+  \inputminted[linenos]{python}{api002.py}
+  \caption{Saving and loading a recipe}
+  \label{lst:api002}
+\end{listing}
+
+The |H5FileHandler| is used as a context manager similar to python's
+builtin |open|. It supports the file modes |'r'|, |'w'| and |'a'|
+which stand for read, (over)write and append respectively.
+
+When loading a recipe, you may wonder how to access the workers
+contained in it. For this purpose, every worker has a unique name,
+which happens to also be a parameter called
+|Name|. Listing~\ref{lst:api003} shows how to access the |Gradient|
+worker from the GUI example.
+
+\begin{listing}[h]
+  \inputminted[linenos]{python}{api003.py}
+  \caption{Access a worker by name}
+  \label{lst:api003}
+\end{listing}
 
 
 \section{Data Model}
