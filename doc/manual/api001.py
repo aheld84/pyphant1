@@ -19,8 +19,8 @@ gradient = Gradient()
 recipe.addWorker(gradient)
 gradient.getSockets()[0].insert(loader.getPlugs()[0])
 
-# instantiate a Histogram worker, insert it into the recipe
-# and set its bins parameter
+# instantiate a Histogram worker, insert it into the recipe,
+# set its bins parameter and connect it to the Gradient worker
 histogram = Histogram()
 recipe.addWorker(histogram)
 histogram.paramBins.value = 50
