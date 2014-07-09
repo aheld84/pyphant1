@@ -4,6 +4,6 @@ manual.dvi
 manual.idx
 manual.ilg
 manual.ind
-manual.pdf
+# manual.pdf
 manual.toc
 manual.pyg
