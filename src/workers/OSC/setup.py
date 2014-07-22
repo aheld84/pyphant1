@@ -55,8 +55,8 @@ setup(
     version=VERSION,
     author="Andreas W. Liehr, Klaus Zimmermann",
     author_email='klaus.zimmermann@fmf.uni-freiburg.de',
-    maintainer='Klaus Zimmermann',
-    maintainer_email='klaus.zimmermann@fmf.uni-freiburg.de',
+    maintainer='SGWissInfo',
+    maintainer_email='servicegruppe.wissinfo@fmf.uni-freiburg.de',
     license="BSD",
     description=__doc__,
     install_requires=[

@@ -51,8 +51,8 @@ setup(
     description='Workflow modelling app',
     author='Alexander Held, Andreas W. Liehr, Klaus Zimmermann',
     author_email='alexander.held@fmf.uni-freiburg.de',
-    maintainer='Alexander Held',
-    maintainer_email='alexander.held@fmf.uni-freiburg.de',
+    maintainer='SGWissInfo',
+    maintainer_email='servicegruppe.wissinfo@fmf.uni-freiburg.de',
     license="BSD",
     url='http://pyphant.sourceforge.net/',
     install_requires=[
